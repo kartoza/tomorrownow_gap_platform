@@ -61,7 +61,7 @@ Wait until it is on.
 
 The web can be accessed using `http://localhost:5000/`
 
-If the web is taking long time to load, restart cloud_native_gis_dev_1
+If the web is taking long time to load, restart tomorrownow_gap_dev_1
 container.<br>
 The sequence should be `make dev`, after that run or restart
-cloud_native_gis_dev_1.
+tomorrownow_gap_dev_1.
