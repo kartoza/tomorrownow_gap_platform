@@ -12,15 +12,13 @@ volumes:
 x-common-django:
   &default-common-django
   image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}:${DJANGO_TAG:-1.0.0}
-  env_file:
-      - .env
   environment:
     - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-core.settings.dev}
-    
+
     - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
     - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
     - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
-    
+
     - DATABASE_NAME=${DATABASE_NAME:-django}
     - DATABASE_USERNAME=${DATABASE_USERNAME:-docker}
     - DATABASE_PASSWORD=${DATABASE_PASSWORD:-docker}
@@ -28,7 +26,7 @@ x-common-django:
     - DATABASE_PORT=${DATABASE_PORT:-5432}
     - REDIS_HOST=${REDIS_HOST:-redis}
     - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_password}
-    
+
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - SENTRY_DSN=${SENTRY_DSN:-}
     - SECRET_KEY=SECRET_KEY

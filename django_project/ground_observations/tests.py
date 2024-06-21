@@ -1,3 +1,6 @@
-from django.test import TestCase
+# coding=utf-8
+"""
+Tomorrow Now GAP.
 
-# Create your tests here.
+.. note:: Tests
+"""

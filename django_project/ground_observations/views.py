@@ -1,3 +1,6 @@
-from django.shortcuts import render
+# coding=utf-8
+"""
+Tomorrow Now GAP.
 
-# Create your views here.
+.. note:: App Config
+"""

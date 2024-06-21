@@ -14,10 +14,10 @@ ADMINS = ()
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'django',
-        'USER': 'docker',
-        'PASSWORD': 'docker',
-        'HOST': 'db',
+        'NAME': os.environ['DATABASE_NAME'],
+        'USER': os.environ['DATABASE_USERNAME'],
+        'PASSWORD': os.environ['DATABASE_PASSWORD'],
+        'HOST': os.environ['DATABASE_HOST'],
         'PORT': 5432,
         'TEST_NAME': 'unittests',
     }
@@ -35,3 +35,5 @@ INSTALLED_APPS = INSTALLED_APPS + (
 TEMPLATES[0]['DIRS'] += [
     absolute_path('frontend', 'templates'),
 ]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
