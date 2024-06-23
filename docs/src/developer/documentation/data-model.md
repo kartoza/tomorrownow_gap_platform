@@ -14,3 +14,5 @@ context_id:
 
 ## Ground observations
 
+![database design](./img/ground-observations-database-design-1.png)
+
