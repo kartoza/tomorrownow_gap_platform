@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from django.contrib.gis.db import models
 
 from core.models.general import Definition
+import uuid
 
 
 class Provider(Definition):
@@ -15,8 +16,14 @@ class Provider(Definition):
 
     Override Definition model that contains name and description .
     """
+    name = models.CharField(max_length=255)
+    provider = models.UUIDField(
+        unique=True, default=uuid.uuid4, editable=False
+    )
+    description = models.TextField()
 
-    pass
+    def __str__(self):
+        return self.name
 
 
 class Attribute(Definition):
@@ -25,7 +32,14 @@ class Attribute(Definition):
     Override Definition model that contains name and description .
     """
 
-    pass
+    name = models.CharField(max_length=255)
+    attribute = models.UUIDField(
+        unique=True, default=uuid.uuid4, editable=False
+    )
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
 
 
 class Country(Definition):
@@ -40,15 +54,20 @@ class Country(Definition):
             MultiPolygonField geometry representing the country boundaries.
     """
 
+    name = models.CharField(max_length=255)
     iso_a3 = models.TextField(
         unique=True
     )
     geometry = models.MultiPolygonField(
         srid=4326
     )
+    description = models.TextField()
 
     class Meta:  # noqa
         verbose_name_plural = "countries"
+
+    def __str__(self):
+        return self.name
 
 
 class Station(Definition):
@@ -66,6 +85,10 @@ class Station(Definition):
             Foreign key referencing the Provider model based on provider_id.
     """
 
+    name = models.CharField(max_length=255)
+    station = models.UUIDField(
+        unique=True, default=uuid.uuid4, editable=False
+    )
     country = models.ForeignKey(
         Country, on_delete=models.CASCADE
     )
@@ -75,6 +98,10 @@ class Station(Definition):
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
     )
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
 
 
 class Measurement(models.Model):
