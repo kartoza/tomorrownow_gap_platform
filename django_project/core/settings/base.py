@@ -3,7 +3,9 @@
 
 import os
 
-from .utils import absolute_path
+from .utils import absolute_path, ensure_secret_key_file
+
+ensure_secret_key_file()
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
