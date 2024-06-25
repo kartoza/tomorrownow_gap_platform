@@ -30,10 +30,9 @@ DEBUG = TEMPLATE_DEBUG = False
 INSTALLED_APPS = INSTALLED_APPS + (
     'core',
     'frontend',
+    'gap'
 )
 
 TEMPLATES[0]['DIRS'] += [
     absolute_path('frontend', 'templates'),
 ]
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

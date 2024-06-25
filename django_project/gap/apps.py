@@ -9,8 +9,8 @@ from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class GroundObservationsConfig(AppConfig):
+class GAPConfig(AppConfig):
     """App Config for GroundObservations."""
 
-    name = 'ground_observations'
+    name = 'gap'
     verbose_name = _('Ground Observations')

@@ -8,44 +8,20 @@ Tomorrow Now GAP.
 from django.contrib.gis.db import models
 
 from core.models.general import Definition
-import uuid
 
 
 class Provider(Definition):
-    """Model representing a data provider.
-
-    Override Definition model that contains name and description .
-    """
-    name = models.CharField(max_length=255)
-    provider = models.UUIDField(
-        unique=True, default=uuid.uuid4, editable=False
-    )
-    description = models.TextField()
-
-    def __str__(self):
-        return self.name
+    """Model representing a data provider."""
+    pass
 
 
 class Attribute(Definition):
-    """Model representing an attribute of a measurement.
-
-    Override Definition model that contains name and description .
-    """
-
-    name = models.CharField(max_length=255)
-    attribute = models.UUIDField(
-        unique=True, default=uuid.uuid4, editable=False
-    )
-    description = models.TextField()
-
-    def __str__(self):
-        return self.name
+    """Model representing an attribute of a measurement."""
+    pass
 
 
 class Country(Definition):
     """Model representing a country.
-
-    Override Definition model that contains name and description .
 
     Attributes:
         name (str): Name of the country.
@@ -53,21 +29,18 @@ class Country(Definition):
         geometry (Polygon):
             MultiPolygonField geometry representing the country boundaries.
     """
-
-    name = models.CharField(max_length=255)
-    iso_a3 = models.TextField(
-        unique=True
+    iso_a3 = models.CharField(
+        unique=True,
+        max_length=255
     )
     geometry = models.MultiPolygonField(
-        srid=4326
+        srid=4326,
+        blank=True,
+        null=True
     )
-    description = models.TextField()
 
     class Meta:  # noqa
         verbose_name_plural = "countries"
-
-    def __str__(self):
-        return self.name
 
 
 class Station(Definition):
@@ -85,10 +58,6 @@ class Station(Definition):
             Foreign key referencing the Provider model based on provider_id.
     """
 
-    name = models.CharField(max_length=255)
-    station = models.UUIDField(
-        unique=True, default=uuid.uuid4, editable=False
-    )
     country = models.ForeignKey(
         Country, on_delete=models.CASCADE
     )
@@ -98,10 +67,10 @@ class Station(Definition):
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
     )
-    description = models.TextField()
-
-    def __str__(self):
-        return self.name
+    type = models.CharField(
+        max_length=255,
+        help_text="Type of the station, e.g. Ground Observation"
+    )
 
 
 class Measurement(models.Model):
