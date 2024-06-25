@@ -26,3 +26,6 @@ docs/site/*
 docks/mkdocs.yml
 .direnv
 docs/mkdocs.yml
+
+# ignore .env in root project for vscode
+.env

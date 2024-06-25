@@ -95,3 +95,13 @@ services:
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
+
+  dev:
+    <<: *default-common-django
+    entrypoint: []
+    volumes:
+      - static-data:/home/web/static
+      - media-data:/home/web/media
+    links:
+      - db
+      - redis
