@@ -1,50 +1,63 @@
 # ground_observations/factories.py
 import factory
 from factory.django import DjangoModelFactory
-from gap.models import Provider, Attribute, Country, Station, Measurement
-from django.contrib.gis.geos import Point, MultiPolygon
+from gap.models import (
+    Provider, Attribute, Country, Station, Measurement
+)
+from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
-# class ProviderFactory(DjangoModelFactory):
-#     class Meta:
-#         model = Provider
 
-#     provider = factory.LazyFunction(uuid.uuid4)
-#     name = factory.Faker('company')
-#     description = factory.Faker('text')
+class ProviderFactory(DjangoModelFactory):
+    class Meta:
+        model = Provider
 
-# class AttributeFactory(DjangoModelFactory):
-#     class Meta:
-#         model = Attribute
+    name = factory.Faker('company')
+    description = factory.Faker('text')
 
-#     attribute = factory.LazyFunction(uuid.uuid4)
-#     name = factory.Faker('word')
-#     description = factory.Faker('text')
 
-# class CountryFactory(DjangoModelFactory):
-#     class Meta:
-#         model = Country
+class AttributeFactory(DjangoModelFactory):
+    class Meta:
+        model = Attribute
 
-#     name = factory.Faker('country')
-#     iso_a3 = factory.Faker('country_code')
-#     geometry = MultiPolygon([factory.LazyFunction(lambda: MultiPolygon(Point(0, 0)))])
-#     description = factory.Faker('text')
+    name = factory.Sequence(
+        lambda n: f'attribute-{n}'
+    )
+    description = factory.Faker('text')
 
-# class StationFactory(DjangoModelFactory):
-#     class Meta:
-#         model = Station
 
-#     station = factory.LazyFunction(uuid.uuid4)
-#     name = factory.Faker('word')
-#     country = factory.SubFactory(CountryFactory)
-#     geometry = factory.LazyFunction(lambda: Point(0, 0))
-#     provider = factory.SubFactory(ProviderFactory)
-#     description = factory.Faker('text')
+class CountryFactory(DjangoModelFactory):
+    class Meta:
+        model = Country
 
-# class MeasurementFactory(DjangoModelFactory):
-#     class Meta:
-#         model = Measurement
+    name = factory.Faker('country')
+    iso_a3 = factory.Faker('country_code')
+    geometry = factory.LazyAttribute(
+        lambda _: MultiPolygon(
+            Polygon(((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
+        )
+    )
+    description = factory.Faker('text')
 
-#     station = factory.SubFactory(StationFactory)
-#     attribute = factory.SubFactory(AttributeFactory)
-#     date = factory.Faker('date')
-#     value = factory.Faker('random_float')
+
+class StationFactory(DjangoModelFactory):
+    class Meta:
+        model = Station
+
+    name = factory.Sequence(
+        lambda n: f'station-{n}'
+    )
+    country = factory.SubFactory(CountryFactory)
+    geometry = factory.LazyFunction(lambda: Point(0, 0))
+    provider = factory.SubFactory(ProviderFactory)
+    description = factory.Faker('text')
+    type = 'Ground Observation'
+
+
+class MeasurementFactory(DjangoModelFactory):
+    class Meta:
+        model = Measurement
+
+    station = factory.SubFactory(StationFactory)
+    attribute = factory.SubFactory(AttributeFactory)
+    date = factory.Faker('date')
+    value = factory.Faker('pyfloat')
