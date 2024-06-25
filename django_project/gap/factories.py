@@ -14,7 +14,8 @@ from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
 class ProviderFactory(DjangoModelFactory):
     """Factory class for Provider model."""
-    class Meta:
+
+    class Meta:  # noqa
         model = Provider
 
     name = factory.Faker('company')
@@ -23,7 +24,8 @@ class ProviderFactory(DjangoModelFactory):
 
 class AttributeFactory(DjangoModelFactory):
     """Factory class for Attribute model."""
-    class Meta:
+
+    class Meta:  # noqa
         model = Attribute
 
     name = factory.Sequence(
@@ -34,7 +36,8 @@ class AttributeFactory(DjangoModelFactory):
 
 class CountryFactory(DjangoModelFactory):
     """Factory class for Country model."""
-    class Meta:
+
+    class Meta:  # noqa
         model = Country
 
     name = factory.Faker('country')
@@ -49,7 +52,8 @@ class CountryFactory(DjangoModelFactory):
 
 class StationFactory(DjangoModelFactory):
     """Factory class for Station model."""
-    class Meta:
+
+    class Meta:  # noqa
         model = Station
 
     name = factory.Sequence(
@@ -64,7 +68,8 @@ class StationFactory(DjangoModelFactory):
 
 class MeasurementFactory(DjangoModelFactory):
     """Factory class for Measurement model."""
-    class Meta:
+
+    class Meta:  # noqa
         model = Measurement
 
     station = factory.SubFactory(StationFactory)

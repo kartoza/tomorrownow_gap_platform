@@ -19,7 +19,7 @@ from gap.factories import (
 
 
 class ProviderCRUDTest(TestCase):
-    """Provider test case"""
+    """Provider test case."""
 
     def test_create_provider(self):
         """Test create provider object."""
@@ -51,7 +51,7 @@ class ProviderCRUDTest(TestCase):
 
 
 class AttributeCRUDTest(TestCase):
-    """Attribute test case"""
+    """Attribute test case."""
 
     def test_create_attribute(self):
         """Test create attribute object."""
@@ -83,7 +83,7 @@ class AttributeCRUDTest(TestCase):
 
 
 class CountryCRUDTest(TestCase):
-    """Country test case"""
+    """Country test case."""
 
     def test_create_country(self):
         """Test create country object."""
@@ -115,7 +115,7 @@ class CountryCRUDTest(TestCase):
 
 
 class StationCRUDTest(TestCase):
-    """Station test case"""
+    """Station test case."""
 
     def test_create_station(self):
         """Test create station object."""
@@ -147,7 +147,7 @@ class StationCRUDTest(TestCase):
 
 
 class MeasurementCRUDTest(TestCase):
-    """Measurement test case"""
+    """Measurement test case."""
 
     def test_create_measurement(self):
         """Test create measurement object."""
