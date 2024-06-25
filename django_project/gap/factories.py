@@ -1,4 +1,9 @@
-# ground_observations/factories.py
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Factory classes for Models
+"""
 import factory
 from factory.django import DjangoModelFactory
 from gap.models import (
@@ -8,6 +13,7 @@ from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
 
 class ProviderFactory(DjangoModelFactory):
+    """Factory class for Provider model."""
     class Meta:
         model = Provider
 
@@ -16,6 +22,7 @@ class ProviderFactory(DjangoModelFactory):
 
 
 class AttributeFactory(DjangoModelFactory):
+    """Factory class for Attribute model."""
     class Meta:
         model = Attribute
 
@@ -26,6 +33,7 @@ class AttributeFactory(DjangoModelFactory):
 
 
 class CountryFactory(DjangoModelFactory):
+    """Factory class for Country model."""
     class Meta:
         model = Country
 
@@ -40,6 +48,7 @@ class CountryFactory(DjangoModelFactory):
 
 
 class StationFactory(DjangoModelFactory):
+    """Factory class for Station model."""
     class Meta:
         model = Station
 
@@ -54,6 +63,7 @@ class StationFactory(DjangoModelFactory):
 
 
 class MeasurementFactory(DjangoModelFactory):
+    """Factory class for Measurement model."""
     class Meta:
         model = Measurement
 

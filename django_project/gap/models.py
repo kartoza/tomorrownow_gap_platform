@@ -12,11 +12,13 @@ from core.models.general import Definition
 
 class Provider(Definition):
     """Model representing a data provider."""
+
     pass
 
 
 class Attribute(Definition):
     """Model representing an attribute of a measurement."""
+
     pass
 
 
@@ -29,6 +31,7 @@ class Country(Definition):
         geometry (Polygon):
             MultiPolygonField geometry representing the country boundaries.
     """
+
     iso_a3 = models.CharField(
         unique=True,
         max_length=255
