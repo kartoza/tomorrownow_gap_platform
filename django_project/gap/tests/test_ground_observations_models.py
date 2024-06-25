@@ -10,6 +10,7 @@ from gap.factories import (
     MeasurementFactory
 )
 
+
 class ProviderCRUDTest(TestCase):
     """Provider test case"""
 
@@ -147,4 +148,5 @@ class MeasurementCRUDTest(TestCase):
         measurement = MeasurementFactory()
         measurement_id = measurement.id
         measurement.delete()
-        self.assertFalse(Measurement.objects.filter(id=measurement_id).exists())
+        self.assertFalse(
+            Measurement.objects.filter(id=measurement_id).exists())
