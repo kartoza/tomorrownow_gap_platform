@@ -93,5 +93,22 @@ jobs:
       #          path: playwright/ci-test/playwright-report/
       #          retention-days: 30
 
-      - name: Test backend
-        run: make dev-test
+      - name: Run Coverage test
+        working-directory: deployment
+        run: |
+          cat << EOF | docker-compose exec -T dev bash
+          python manage.py collectstatic --noinput --verbosity 0
+          export DJANGO_SETTINGS_MODULE=core.settings.dev && coverage run manage.py test && coverage xml
+          EOF
+          docker cp tomorrownow_gap_dev_1:/home/web/django_project/coverage.xml ../coverage.xml
+      - name: Show Coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: orgoro/coverage@v3
+        with:
+          coverageFile: coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
