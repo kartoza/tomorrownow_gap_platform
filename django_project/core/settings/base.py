@@ -3,7 +3,9 @@
 
 import os
 
-from .utils import absolute_path
+from .utils import absolute_path, ensure_secret_key_file
+
+ensure_secret_key_file()
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -122,7 +124,7 @@ INSTALLED_APPS = (
     'django.contrib.sitemaps',
     'django.contrib.staticfiles',
     'django.contrib.gis',
-    'django.contrib.messages',
+    'django.contrib.messages'
 )
 
 SITE_ID = 1
@@ -143,9 +145,4 @@ CACHES = {
 LOGIN_URL = '/account/login/'
 LOGIN_REDIRECT_URL = '/'
 
-try:
-    SECRET_KEY = os.environ['SECRET_KEY']
-    if SECRET_KEY in ['', "''"]:
-        raise Exception('SECRET_KEY is required in env.')
-except KeyError:
-    raise Exception('SECRET_KEY is required in env.')
+from .secret import SECRET_KEY  # noqa

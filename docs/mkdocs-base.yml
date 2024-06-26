@@ -40,3 +40,7 @@ nav:
   - Home:
       - index.md
       - quick_installation.md
+  - Developers:
+      - developer/index.md
+      - Documentation:
+          - "Data model": developer/documentation/data-model.md
