@@ -65,7 +65,10 @@ jobs:
           cd ../
           make dev
           make wait-db
-          make dev-entrypoint
+          make sleep
+          make migrate
+          make npm-install
+          make build-react
           make dev-runserver
           make dev-load-demo-data
           make sleep
@@ -100,7 +103,7 @@ jobs:
           python manage.py collectstatic --noinput --verbosity 0
           export DJANGO_SETTINGS_MODULE=core.settings.dev && coverage run manage.py test && coverage xml
           EOF
-          docker cp tomorrownow_gap_dev_1:/home/web/django_project/coverage.xml ../coverage.xml
+          docker cp dev:/home/web/django_project/coverage.xml ../coverage.xml
       - name: Show Coverage
         if: ${{ github.event_name == 'pull_request' }}
         uses: orgoro/coverage@v3
