@@ -7,7 +7,12 @@ Tomorrow Now GAP.
 import factory
 from factory.django import DjangoModelFactory
 from gap.models import (
-    Provider, Attribute, Country, Station, Measurement
+    Provider,
+    Attribute,
+    Country,
+    Station,
+    Measurement,
+    ObservationType
 )
 from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
@@ -30,6 +35,18 @@ class AttributeFactory(DjangoModelFactory):
 
     name = factory.Sequence(
         lambda n: f'attribute-{n}'
+    )
+    description = factory.Faker('text')
+
+
+class ObservationTypeFactory(DjangoModelFactory):
+    """Factory class for ObservationType model."""
+
+    class Meta:  # noqa
+        model = ObservationType
+
+    name = factory.Sequence(
+        lambda n: f'observation-type-{n}'
     )
     description = factory.Faker('text')
 
@@ -63,7 +80,7 @@ class StationFactory(DjangoModelFactory):
     geometry = factory.LazyFunction(lambda: Point(0, 0))
     provider = factory.SubFactory(ProviderFactory)
     description = factory.Faker('text')
-    type = 'Ground Observation'
+    observation_type = factory.SubFactory(ObservationTypeFactory)
 
 
 class MeasurementFactory(DjangoModelFactory):

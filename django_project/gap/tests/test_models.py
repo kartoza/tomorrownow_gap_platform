@@ -7,14 +7,20 @@ Tomorrow Now GAP.
 
 from django.test import TestCase
 from gap.models import (
-    Provider, Attribute, Country, Station, Measurement
+    Provider,
+    Attribute,
+    Country,
+    Station,
+    Measurement,
+    ObservationType
 )
 from gap.factories import (
     ProviderFactory,
     AttributeFactory,
     CountryFactory,
     StationFactory,
-    MeasurementFactory
+    MeasurementFactory,
+    ObservationTypeFactory
 )
 
 
@@ -80,6 +86,40 @@ class AttributeCRUDTest(TestCase):
         attribute_id = attribute.id
         attribute.delete()
         self.assertFalse(Attribute.objects.filter(id=attribute_id).exists())
+
+
+class ObservationTypeCRUDTest(TestCase):
+    """Attribute test case."""
+
+    def test_create_observation_type(self):
+        """Test create observation type object."""
+        observation_type = ObservationTypeFactory()
+        self.assertIsInstance(observation_type, ObservationType)
+        self.assertTrue(
+            ObservationType.objects.filter(id=observation_type.id).exists())
+
+    def test_read_observation_type(self):
+        """Test read observation_type object."""
+        observation_type = ObservationTypeFactory()
+        fetched_type = ObservationType.objects.get(id=observation_type.id)
+        self.assertEqual(observation_type, fetched_type)
+
+    def test_update_observation_type(self):
+        """Test update observation_type object."""
+        observation_type = ObservationTypeFactory()
+        new_name = "Updated Type Name"
+        observation_type.name = new_name
+        observation_type.save()
+        updated_type = ObservationType.objects.get(id=observation_type.id)
+        self.assertEqual(updated_type.name, new_name)
+
+    def test_delete_observation_type(self):
+        """Test delete observation_type object."""
+        observation_type = ObservationTypeFactory()
+        observation_type_id = observation_type.id
+        observation_type.delete()
+        self.assertFalse(
+            ObservationType.objects.filter(id=observation_type_id).exists())
 
 
 class CountryCRUDTest(TestCase):

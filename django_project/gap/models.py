@@ -22,6 +22,12 @@ class Attribute(Definition):
     pass
 
 
+class ObservationType(Definition):
+    """Model representing an observation type."""
+
+    pass
+
+
 class Country(Definition):
     """Model representing a country.
 
@@ -70,9 +76,8 @@ class Station(Definition):
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
     )
-    type = models.CharField(
-        max_length=255,
-        help_text="Type of the station, e.g. Ground Observation"
+    observation_type = models.ForeignKey(
+        ObservationType, on_delete=models.CASCADE
     )
 
 
