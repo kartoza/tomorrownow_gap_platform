@@ -57,6 +57,27 @@ dev-test:
 	@docker-compose exec -T dev python manage.py collectstatic --noinput
 	@docker-compose exec -T dev python manage.py test --keepdb --noinput
 
+npm-install:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Install frontend dependencies"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} exec -T dev npm --prefix /home/web/django_project/frontend install
+
+migrate:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running migration"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} exec -T dev python manage.py migrate
+
+build-react:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Execute webpack build command"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} exec -T dev npm --prefix /home/web/django_project/frontend run build
+
 serve:
 	@echo
 	@echo "------------------------------------------------------------------"
