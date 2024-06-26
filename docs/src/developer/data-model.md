@@ -7,12 +7,12 @@ some_url: https://github.com/kartoza/tomorrownow_gap.git
 copyright: Copyright 2024, Kartoza
 contact:
 license: This program is free software; you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
-context_id: 
+#context_id: 1234
 ---
 
 # Data model diagram
 
 ## Ground observations
 
-![database design](./img/ground-observations-database-design-1.png)
+![database design](./diagram/ground-observations-database-design-1.png)
 
