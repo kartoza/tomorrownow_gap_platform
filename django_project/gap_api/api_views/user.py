@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: User APIs
 """
 
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -29,5 +28,12 @@ class UserInfo(APIView):
         }
     )
     def get(self, request, *args, **kwargs):
+        """GET method to fetch user info.
+
+        :param request: API Request
+        :type request: rest_framework.request.Request
+        :return: API response
+        :rtype: rest_framework.response.Response
+        """
         return Response(
             status=200, data=UserInfoSerializer(request.user).data)

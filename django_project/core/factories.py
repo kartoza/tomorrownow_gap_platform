@@ -18,6 +18,10 @@ class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
     """Base meta factory class."""
 
     def __call__(cls, *args, **kwargs) -> T:
+        """Override the default Factory() syntax to call the default strategy.
+
+        Returns an instance of the associated class.
+        """
         return super().__call__(*args, **kwargs)
 
 
@@ -26,6 +30,7 @@ class BaseFactory(Generic[T], factory.django.DjangoModelFactory):
 
     @classmethod
     def create(cls, **kwargs) -> T:
+        """Create an instance of the model, and save it to the database."""
         return super().create(**kwargs)
 
 
