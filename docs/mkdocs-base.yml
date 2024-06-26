@@ -43,4 +43,4 @@ nav:
   - Developers:
       - developer/index.md
       - Documentation:
-          - "Data model": developer/documentation/data-model.md
+          - "Data model": developer/data-model.md

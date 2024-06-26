@@ -10,5 +10,9 @@ license: This program is free software; you can redistribute it and/or modify it
 #context_id: 1234
 ---
 
-# Documentation for developers
+# Data model diagram
+
+## Ground observations
+
+![database design](./diagram/ground-observations-database-design-1.png)
 
