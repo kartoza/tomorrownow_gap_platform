@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 from django.contrib.gis.db import models
+from django.contrib.gis.geos import Point
 
 from core.models.common import Definition
 
@@ -52,6 +53,14 @@ class Country(Definition):
         verbose_name_plural = 'countries'
         ordering = ['name']
 
+    @staticmethod
+    def get_countries_by_point(point: Point):
+        """Get country by point."""
+
+        return Country.objects.filter(
+            geometry__contains=point
+        )
+
 
 class Station(Definition):
     """Model representing a ground observation station.
@@ -60,6 +69,7 @@ class Station(Definition):
 
     Attributes:
         name (str): Name of the station.
+        code (str): Code of the station.
         country (ForeignKey):
             Foreign key referencing the Country model based on country_ISO_A3.
         geometry (Point):
@@ -68,6 +78,9 @@ class Station(Definition):
             Foreign key referencing the Provider model based on provider_id.
     """
 
+    code = models.CharField(
+        max_length=512
+    )
     country = models.ForeignKey(
         Country, on_delete=models.CASCADE
     )
