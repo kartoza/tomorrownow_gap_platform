@@ -3,11 +3,14 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 
 urlpatterns = [
-    path('', include('frontend.urls')),
+    re_path(
+        r'^api/', include(('gap_api.urls', 'api'), namespace='api')
+    ),
     path('admin/', admin.site.urls),
+    path('', include('frontend.urls')),
 ]
 
 if settings.DEBUG:

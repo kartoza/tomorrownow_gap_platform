@@ -31,12 +31,12 @@ x-common-django:
 
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - SENTRY_DSN=${SENTRY_DSN:-}
-    - SECRET_KEY=SECRET_KEY
     # s3 variable
     - S3_AWS_ACCESS_KEY_ID={S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
     - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
     - S3_AWS_ENDPOINT=${S3_AWS_ENDPOINT}
     - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
+    - INITIAL_FIXTURES=${INITIAL_FIXTURES:-}
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
@@ -105,7 +105,7 @@ services:
 
   dev:
     <<: *default-common-django
-    entrypoint: []
+    entrypoint: [ ]
     volumes:
       - static-data:/home/web/static
       - media-data:/home/web/media
