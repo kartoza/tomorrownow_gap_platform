@@ -13,4 +13,4 @@ class GAPConfig(AppConfig):
     """App Config for GroundObservations."""
 
     name = 'gap'
-    verbose_name = _('Ground Observations')
+    verbose_name = _('Global Access Platform')

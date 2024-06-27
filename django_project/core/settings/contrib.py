@@ -14,10 +14,9 @@ INSTALLED_APPS = INSTALLED_APPS + (
     'webpack_loader',
     'guardian',
     'django_cleanup.apps.CleanupConfig',
-    'django_celery_beat',
-    'django_celery_results',
-    'drf_yasg',
+    'drf_yasg'
 )
+
 WEBPACK_LOADER = {
     'DEFAULT': {
         'BUNDLE_DIR_NAME': 'frontend/',  # must end with slash

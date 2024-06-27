@@ -49,7 +49,8 @@ class Country(Definition):
     )
 
     class Meta:  # noqa
-        verbose_name_plural = "countries"
+        verbose_name_plural = 'countries'
+        ordering = ['name']
 
 
 class Station(Definition):

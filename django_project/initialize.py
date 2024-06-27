@@ -70,17 +70,12 @@ except get_user_model().DoesNotExist:
 #########################################################
 # 4. Loading fixtures
 #########################################################
-
-print("-----------------------------------------------------")
-print("4. Loading fixtures")
-
-# Disable fixtures loading in prod by including environment variable:
-#  INITIAL_FIXTURES=False
-
 _load_initial_fixtures = ast.literal_eval(
     os.getenv('INITIAL_FIXTURES', 'False')
 )
 if _load_initial_fixtures:
+    print("-----------------------------------------------------")
+    print("4. Loading fixtures")
     call_command('load_fixtures')
 
 #########################################################
