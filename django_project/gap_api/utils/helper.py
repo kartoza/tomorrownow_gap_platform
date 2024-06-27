@@ -12,7 +12,7 @@ from drf_yasg import openapi
 class ApiTag:
     """Class contains API Tags."""
 
-    USER = '01-user'
+    USER = 'User'
 
 
 # COMMON MANUAL PARAMETERS

@@ -29,12 +29,9 @@ class UserInfo(APIView):
         }
     )
     def get(self, request, *args, **kwargs):
-        """GET method to fetch user info.
+        """Login user info.
 
-        :param request: API Request
-        :type request: rest_framework.request.Request
-        :return: API response
-        :rtype: rest_framework.response.Response
+        Return current login user information.
         """
         return Response(
             status=200, data=UserInfoSerializer(request.user).data
