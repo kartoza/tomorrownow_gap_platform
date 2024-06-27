@@ -14,29 +14,33 @@ services:
   worker:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     volumes:
       - ../:/home/web/project
+      - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
 
   celery_beat:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     volumes:
       - ../:/home/web/project
+      - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
 
   dev:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     entrypoint: []
@@ -44,27 +48,32 @@ services:
       - ../:/home/web/project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
     links:
       - db
       - worker
 
   django:
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     volumes:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
 
   minio:
     volumes:
       - ./volumes/minio_data:/data
 
   hyrax:
+    entrypoint: [ "/custom_entrypoint.sh" ]
     volumes:
       - ./volumes/hyrax_data:/usr/share/hyrax
+      - ./hyrax/site.conf:/etc/bes/site.conf:ro
+      - ./hyrax/entrypoint.sh:/custom_entrypoint.sh
     links:
       - minio
       - dev

@@ -71,6 +71,10 @@ services:
   django:
     <<: *default-common-django
     command: 'uwsgi --ini /uwsgi.conf'
+    volumes:
+      - static-data:/home/web/static
+      - media-data:/home/web/media
+      - hyrax-data:/home/web/opendap
     links:
       - db
       - worker
@@ -79,6 +83,8 @@ services:
     <<: *default-common-django
     entrypoint: [ ]
     command: 'celery -A core worker -l info'
+    volumes:
+      - hyrax-data:/home/web/opendap
     links:
       - db
       - redis
@@ -109,6 +115,7 @@ services:
     volumes:
       - static-data:/home/web/static
       - media-data:/home/web/media
+      - hyrax-data:/home/web/opendap
     links:
       - db
       - redis
