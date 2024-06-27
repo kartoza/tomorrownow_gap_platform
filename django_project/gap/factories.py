@@ -87,6 +87,9 @@ class StationFactory(
     name = factory.Sequence(
         lambda n: f'station-{n}'
     )
+    code = factory.Sequence(
+        lambda n: f'code-{n}'
+    )
     country = factory.SubFactory(CountryFactory)
     geometry = factory.LazyFunction(lambda: Point(0, 0))
     provider = factory.SubFactory(ProviderFactory)

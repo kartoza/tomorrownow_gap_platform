@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 from django.contrib import admin
 
 from .models import (
-    Attribute, Country, Provider, Measurement, Station
+    Attribute, Country, Provider, Measurement, Station, IngestorSession
 )
 
 
@@ -61,3 +61,13 @@ class StationAdmin(admin.ModelAdmin):
     )
     list_filter = ('provider', 'country')
     search_fields = ('code', 'name')
+
+
+@admin.register(IngestorSession)
+class IngestorSessionAdmin(admin.ModelAdmin):
+    """IngestorSession admin."""
+
+    list_display = (
+        'run_at', 'status', 'end_at', 'ingestor_type'
+    )
+    list_filter = ('ingestor_type', 'status')
