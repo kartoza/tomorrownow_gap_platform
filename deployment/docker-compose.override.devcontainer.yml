@@ -58,3 +58,14 @@ services:
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
 
+  minio:
+    volumes:
+      - ./volumes/minio_data:/data
+
+  hyrax:
+    volumes:
+      - ./volumes/hyrax_data:/usr/share/hyrax
+    links:
+      - minio
+      - dev
+      - worker

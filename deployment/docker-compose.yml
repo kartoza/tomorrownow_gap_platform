@@ -8,6 +8,8 @@ volumes:
   nginx-cache:
   backups-data:
   data-volume:
+  minio-data:
+  hyrax-data:
 
 x-common-django:
   &default-common-django
@@ -30,6 +32,11 @@ x-common-django:
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - SENTRY_DSN=${SENTRY_DSN:-}
     - SECRET_KEY=SECRET_KEY
+    # s3 variable
+    - S3_AWS_ACCESS_KEY_ID={S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+    - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+    - S3_AWS_ENDPOINT=${S3_AWS_ENDPOINT}
+    - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
@@ -105,3 +112,25 @@ services:
     links:
       - db
       - redis
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
+    command: minio server /data --console-address ":9001"
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      MINIO_ROOT_PASSWORD: ${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      MINIO_HTTP_TRACE: /opt/bitnami/minio/log/minio.log
+    volumes:
+      - minio-data:/data
+    restart: always
+
+  hyrax:
+    image: opendap/hyrax:1.17.0-122
+    ports:
+      - "8181:8080"
+    volumes:
+      - hyrax-data:/usr/share/hyrax
+    restart: always
