@@ -10,6 +10,8 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
+    """Command to load fixtures."""
+
     help = 'Generate country geometry'
 
     def handle(self, *args, **options):
