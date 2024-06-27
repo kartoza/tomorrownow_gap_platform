@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 from django.contrib.gis.db import models
 
-from core.models.general import Definition
+from core.models.common import Definition
 
 
 class Provider(Definition):

@@ -5,10 +5,10 @@ Tomorrow Now GAP.
 .. note:: Core factories.
 """
 
-import factory
 from typing import Generic, TypeVar
-from django.contrib.auth import get_user_model
 
+import factory
+from django.contrib.auth import get_user_model
 
 T = TypeVar('T')
 User = get_user_model()
@@ -34,8 +34,9 @@ class BaseFactory(Generic[T], factory.django.DjangoModelFactory):
         return super().create(**kwargs)
 
 
-class UserF(BaseFactory[User],
-            metaclass=BaseMetaFactory[User]):
+class UserF(
+    BaseFactory[User], metaclass=BaseMetaFactory[User]
+):
     """Factory class for User."""
 
     class Meta:  # noqa

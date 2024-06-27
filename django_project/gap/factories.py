@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 import factory
 from django.contrib.gis.geos import Point, MultiPolygon, Polygon
+
 from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
     Provider,
@@ -17,8 +18,9 @@ from gap.models import (
 )
 
 
-class ProviderFactory(BaseFactory[Provider],
-                      metaclass=BaseMetaFactory[Provider]):
+class ProviderFactory(
+    BaseFactory[Provider], metaclass=BaseMetaFactory[Provider]
+):
     """Factory class for Provider model."""
 
     class Meta:  # noqa
@@ -28,8 +30,9 @@ class ProviderFactory(BaseFactory[Provider],
     description = factory.Faker('text')
 
 
-class AttributeFactory(BaseFactory[Attribute],
-                       metaclass=BaseMetaFactory[Attribute]):
+class AttributeFactory(
+    BaseFactory[Attribute], metaclass=BaseMetaFactory[Attribute]
+):
     """Factory class for Attribute model."""
 
     class Meta:  # noqa
@@ -41,8 +44,9 @@ class AttributeFactory(BaseFactory[Attribute],
     description = factory.Faker('text')
 
 
-class ObservationTypeFactory(BaseFactory[ObservationType],
-                             metaclass=BaseMetaFactory[ObservationType]):
+class ObservationTypeFactory(
+    BaseFactory[ObservationType], metaclass=BaseMetaFactory[ObservationType]
+):
     """Factory class for ObservationType model."""
 
     class Meta:  # noqa
@@ -54,8 +58,9 @@ class ObservationTypeFactory(BaseFactory[ObservationType],
     description = factory.Faker('text')
 
 
-class CountryFactory(BaseFactory[Country],
-                     metaclass=BaseMetaFactory[Country]):
+class CountryFactory(
+    BaseFactory[Country], metaclass=BaseMetaFactory[Country]
+):
     """Factory class for Country model."""
 
     class Meta:  # noqa
@@ -71,8 +76,9 @@ class CountryFactory(BaseFactory[Country],
     description = factory.Faker('text')
 
 
-class StationFactory(BaseFactory[Station],
-                     metaclass=BaseMetaFactory[Station]):
+class StationFactory(
+    BaseFactory[Station], metaclass=BaseMetaFactory[Station]
+):
     """Factory class for Station model."""
 
     class Meta:  # noqa
@@ -88,8 +94,9 @@ class StationFactory(BaseFactory[Station],
     observation_type = factory.SubFactory(ObservationTypeFactory)
 
 
-class MeasurementFactory(BaseFactory[Measurement],
-                         metaclass=BaseMetaFactory[Measurement]):
+class MeasurementFactory(
+    BaseFactory[Measurement], metaclass=BaseMetaFactory[Measurement]
+):
     """Factory class for Measurement model."""
 
     class Meta:  # noqa

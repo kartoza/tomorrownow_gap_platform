@@ -9,9 +9,10 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.serializers.user import UserInfoSerializer
-from gap_api.utils.api_helper import USER_API_TAG
+from gap_api.utils.helper import ApiTag
 
 
 class UserInfo(APIView):
@@ -21,7 +22,7 @@ class UserInfo(APIView):
 
     @swagger_auto_schema(
         operation_id='user-info',
-        tags=[USER_API_TAG],
+        tags=[ApiTag.USER],
         responses={
             200: UserInfoSerializer,
             400: APIErrorSerializer
@@ -36,4 +37,5 @@ class UserInfo(APIView):
         :rtype: rest_framework.response.Response
         """
         return Response(
-            status=200, data=UserInfoSerializer(request.user).data)
+            status=200, data=UserInfoSerializer(request.user).data
+        )
