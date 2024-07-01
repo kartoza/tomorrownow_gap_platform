@@ -55,3 +55,6 @@ class Station(Definition):
     observation_type = models.ForeignKey(
         ObservationType, on_delete=models.CASCADE
     )
+
+    class Meta:  # noqa
+        unique_together = ('code', 'provider')

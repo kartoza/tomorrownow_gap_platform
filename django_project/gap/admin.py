@@ -46,7 +46,7 @@ class MeasurementAdmin(admin.ModelAdmin):
     """Measurement admin."""
 
     list_display = (
-        'station', 'attribute', 'date', 'value'
+        'station', 'attribute', 'time', 'value'
     )
     list_filter = ('station', 'attribute')
     search_fields = ('name',)
