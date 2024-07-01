@@ -79,10 +79,13 @@ GRAPPELLI_ADMIN_TITLE = ''
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'core.wsgi.application'
-
-# import SECRET_KEY into current namespace
-# noinspection PyUnresolvedReferences
-from core.settings.secret import SECRET_KEY  # noqa
+try:
+    SECRET_KEY = os.environ['SECRET_KEY']
+except KeyError:
+    # import SECRET_KEY into current namespace if no SECRET_KEY provided
+    # on env
+    # noinspection PyUnresolvedReferences
+    from core.settings.secret import SECRET_KEY  # noqa
 
 TEMPLATES = [
     {
