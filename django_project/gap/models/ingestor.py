@@ -69,9 +69,14 @@ class IngestorSession(models.Model):
 
     def save(self, *args, **kwargs):
         """Override ingestor save."""
+        from gap.tasks.ingestor import run_ingestor_session  # noqa
         created = self.pk is None
         super(IngestorSession, self).save(*args, **kwargs)
         if created:
+            # TODO:
+            #  Fix this line on test
+            #  This is still calling celery
+            # run_ingestor_session.delay(self.id)
             self.run()
 
     def _run(self):

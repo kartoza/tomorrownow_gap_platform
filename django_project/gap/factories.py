@@ -107,5 +107,5 @@ class MeasurementFactory(
 
     station = factory.SubFactory(StationFactory)
     attribute = factory.SubFactory(AttributeFactory)
-    date = factory.Faker('date')
+    time = factory.Faker('date_time')
     value = factory.Faker('pyfloat')
