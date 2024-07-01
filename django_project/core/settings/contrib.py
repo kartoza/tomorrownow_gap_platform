@@ -14,6 +14,8 @@ INSTALLED_APPS = INSTALLED_APPS + (
     'webpack_loader',
     'guardian',
     'django_cleanup.apps.CleanupConfig',
+    'django_celery_beat',
+    'django_celery_results',
     'drf_yasg'
 )
 
