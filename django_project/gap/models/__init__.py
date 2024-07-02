@@ -9,3 +9,4 @@ from gap.models.common import *
 from gap.models.ingestor import *
 from gap.models.measurement import *
 from gap.models.station import *
+from gap.models.netcdf import *
