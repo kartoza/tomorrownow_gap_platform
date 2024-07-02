@@ -8,8 +8,8 @@ volumes:
   nginx-cache:
   backups-data:
   data-volume:
-  minio-data:
   hyrax-data:
+  redis-data:
 
 x-common-django:
   &default-common-django
@@ -47,6 +47,8 @@ services:
     image: bitnami/redis:7.0.2
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis-data:/bitnami/redis/data
 
   db:
     image: kartoza/postgis:14-3.3
@@ -108,31 +110,6 @@ services:
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
-
-  dev:
-    <<: *default-common-django
-    entrypoint: [ ]
-    volumes:
-      - static-data:/home/web/static
-      - media-data:/home/web/media
-      - hyrax-data:/home/web/opendap
-    links:
-      - db
-      - redis
-
-  minio:
-    image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
-    command: minio server /data --console-address ":9001"
-    ports:
-      - "9010:9000"
-      - "9011:9001"
-    environment:
-      MINIO_ROOT_USER: ${S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-      MINIO_ROOT_PASSWORD: ${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
-      MINIO_HTTP_TRACE: /opt/bitnami/minio/log/minio.log
-    volumes:
-      - minio-data:/data
-    restart: always
 
   hyrax:
     image: opendap/hyrax:1.17.0-122

@@ -71,6 +71,11 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=redis_password
       - SECRET_KEY=SECRET_KEY
+      # s3 variable
+      - S3_AWS_ACCESS_KEY_ID={S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      - S3_AWS_ENDPOINT=${S3_AWS_ENDPOINT}
+      - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
     ports:
       # for django test server
       - "5000:8080"
@@ -79,5 +84,31 @@ services:
     links:
       - db
       - redis
+      - worker
       - celery_beat
     entrypoint: [ ]
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
+    command: minio server /data --console-address ":9001"
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      MINIO_ROOT_PASSWORD: ${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      MINIO_HTTP_TRACE: /opt/bitnami/minio/log/minio.log
+    volumes:
+      - ./volumes/minio_data:/data
+    restart: always
+  
+  hyrax:
+    entrypoint: [ "/custom_entrypoint.sh" ]
+    volumes:
+      - ./volumes/hyrax_data:/usr/share/hyrax
+      - ./hyrax/site.conf:/etc/bes/site.conf:ro
+      - ./hyrax/entrypoint.sh:/custom_entrypoint.sh
+    links:
+      - minio
+      - dev
+      - worker
