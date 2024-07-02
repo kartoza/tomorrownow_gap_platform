@@ -4,7 +4,6 @@ Tomorrow Now GAP.
 
 .. note:: Unit tests for Tahmo Ingestor.
 """
-
 import os
 
 from django.contrib.gis.gdal import DataSource
@@ -41,6 +40,7 @@ class TahmoIngestorTest(TestCase):
     def test_no_file(self):
         """Test create provider object."""
         session = IngestorSession.objects.create()
+        session.refresh_from_db()
         self.assertEqual(session.notes, FileNotFoundException().message)
         self.assertEqual(session.status, IngestorSessionStatus.FAILED)
 
@@ -55,6 +55,7 @@ class TahmoIngestorTest(TestCase):
         session = IngestorSession.objects.create(
             file=SimpleUploadedFile(_file.name, _file.read())
         )
+        session.refresh_from_db()
         session.delete()
         self.assertEqual(session.notes, None)
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)

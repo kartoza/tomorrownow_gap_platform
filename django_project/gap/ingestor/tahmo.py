@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import csv
+import json
 import os
 import shutil
 from datetime import datetime, timezone
@@ -95,8 +96,14 @@ class TahmoIngestor:
                                         'observation_type': self.obs_type,
                                     }
                                 )
-                            except KeyError:
-                                pass
+                            except KeyError as e:
+                                raise Exception(
+                                    json.dumps({
+                                        'filename': filename,
+                                        'data': data,
+                                        'error': f'{e}'
+                                    })
+                                )
                 except UnicodeDecodeError:
                     continue
 
@@ -121,12 +128,15 @@ class TahmoIngestor:
                         date_time.replace(second=0)
                         for key, value in data.items():  # noqa
                             try:
-                                _value = float(value)
+                                attr_var = TAHMO_VARIABLES[key]
+                            except KeyError:
+                                continue
+                            try:
                                 attribute, _ = Attribute.objects.get_or_create(
-                                    name=TAHMO_VARIABLES[key].name
+                                    name=attr_var.name
                                 )
                                 try:
-                                    unit = TAHMO_VARIABLES[key].unit
+                                    unit = attr_var.unit
                                 except KeyError:
                                     unit = None
                                 measure, _ = Measurement.objects.get_or_create(
@@ -135,11 +145,17 @@ class TahmoIngestor:
                                     time=date_time,
                                     defaults={
                                         'unit': unit,
-                                        'value': _value
+                                        'value': float(value)
                                     }
                                 )
-                            except (KeyError, ValueError):
-                                pass
+                            except (KeyError, ValueError) as e:
+                                raise Exception(
+                                    json.dumps({
+                                        'filename': filename,
+                                        'data': data,
+                                        'error': f'{e}'
+                                    })
+                                )
                 except Station.DoesNotExist:
                     pass
 
