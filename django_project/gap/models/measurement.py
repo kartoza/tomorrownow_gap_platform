@@ -27,7 +27,7 @@ class Measurement(models.Model):
         attribute (ForeignKey):
             Foreign key referencing the Attribute model based on attribute_id.
         unit (str): Unit of measurement.
-        time (dateTime): Time of the measurement.
+        date_time (dateTime): Time of the measurement.
         value (float): Value of the measurement.
     """
 
@@ -40,11 +40,11 @@ class Measurement(models.Model):
     unit = models.CharField(
         max_length=512, null=True, blank=True
     )
-    time = models.DateTimeField()
+    date_time = models.DateTimeField()
     value = models.FloatField()
 
     def __str__(self):
-        return f'{self.time} - {self.value}'
+        return f'{self.date_time} - {self.value}'
 
     class Meta:  # noqa
-        unique_together = ('station', 'attribute', 'time')
+        unique_together = ('station', 'attribute', 'date_time')

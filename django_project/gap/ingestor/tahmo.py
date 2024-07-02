@@ -142,7 +142,7 @@ class TahmoIngestor:
                                 measure, _ = Measurement.objects.get_or_create(
                                     station=station,
                                     attribute=attribute,
-                                    time=date_time,
+                                    date_time=date_time,
                                     defaults={
                                         'unit': unit,
                                         'value': float(value)
