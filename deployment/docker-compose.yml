@@ -8,6 +8,7 @@ volumes:
   nginx-cache:
   backups-data:
   data-volume:
+  redis-data:
 
 x-common-django:
   &default-common-django
@@ -40,6 +41,8 @@ services:
     image: bitnami/redis:7.0.2
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis-data:/bitnami/redis/data
 
   db:
     image: kartoza/postgis:14-3.3
@@ -95,13 +98,3 @@ services:
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
-
-  dev:
-    <<: *default-common-django
-    entrypoint: [ ]
-    volumes:
-      - static-data:/home/web/static
-      - media-data:/home/web/media
-    links:
-      - db
-      - redis

@@ -87,6 +87,9 @@ class StationFactory(
     name = factory.Sequence(
         lambda n: f'station-{n}'
     )
+    code = factory.Sequence(
+        lambda n: f'code-{n}'
+    )
     country = factory.SubFactory(CountryFactory)
     geometry = factory.LazyFunction(lambda: Point(0, 0))
     provider = factory.SubFactory(ProviderFactory)
@@ -104,5 +107,5 @@ class MeasurementFactory(
 
     station = factory.SubFactory(StationFactory)
     attribute = factory.SubFactory(AttributeFactory)
-    date = factory.Faker('date')
+    date_time = factory.Faker('date_time')
     value = factory.Faker('pyfloat')
