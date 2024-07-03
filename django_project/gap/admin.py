@@ -78,9 +78,7 @@ class IngestorSessionAdmin(admin.ModelAdmin):
 class NetCDFProviderMetadataAdmin(admin.ModelAdmin):
     """NetCDFProviderMetadata admin."""
 
-    list_display = (
-        'provider'
-    )
+    list_display = ('provider',)
 
 
 @admin.register(NetCDFProviderAttribute)
@@ -90,7 +88,7 @@ class NetCDFProviderAttributeAdmin(admin.ModelAdmin):
     list_display = (
         'provider', 'attribute', 'observation_type', 'unit'
     )
-    list_filter = ('provider', 'observation_type')
+    list_filter = ('provider', 'observation_type',)
 
 
 @admin.register(NetCDFFile)
@@ -100,4 +98,4 @@ class NetCDFFileAdmin(admin.ModelAdmin):
     list_display = (
         'name', 'provider', 'start_date_time', 'end_date_time', 'created_on'
     )
-    list_filter = ('provider')
+    list_filter = ('provider',)
