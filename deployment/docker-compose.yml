@@ -32,7 +32,7 @@ x-common-django:
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - SENTRY_DSN=${SENTRY_DSN:-}
     # s3 variable
-    - AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-minio_tomorrownow}
     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
     - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
     - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}

@@ -114,7 +114,7 @@ class NetCDFAttributeValue:
 
     @classmethod
     def from_provider(cls, attribute: NetCDFProviderAttribute, raw_value):
-        """Factory method to create NetCDFAttributeValue based on provider.
+        """Create NetCDFAttributeValue based on provider.
 
         :param attribute: Attribute that has provider
         :type attribute: NetCDFProviderAttribute
@@ -133,8 +133,7 @@ class NetCDFAttributeValue:
                 f'Unsupported provider name: {attribute.provider.name}')
 
     def get_value(self):
-        """Base method to parse the raw value of NetCDF Data.
-        """
+        """Parse the raw value of NetCDF Data."""
         pass
 
 
@@ -164,7 +163,7 @@ class SalientAttributeValue(NetCDFAttributeValue):
         super().__init__(attribute, raw_value)
 
     def _convert_to_dict(self, array):
-        """Convert NumPy array to python dict
+        """Convert NumPy array to python dict.
 
         :param array: NetCDF Data
         :type array: NumPy array

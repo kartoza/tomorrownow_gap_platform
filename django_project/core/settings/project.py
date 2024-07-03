@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Project level settings.
 """
 import os  # noqa
+from boto3.s3.transfer import TransferConfig
 
 from .contrib import *  # noqa
 from .utils import absolute_path
@@ -40,4 +41,11 @@ TEMPLATES[0]['DIRS'] += [
 
 # Hyrax Base URL
 OPENDAP_BASE_URL = 'http://hyrax:8080/opendap/'
-OPENDAP_FILE_CACHE_DIR = '/home/web/media/hyrax_data'
+OPENDAP_FILE_CACHE_DIR = '/home/web/opendap'
+
+MB = 1024 ** 2
+AWS_TRANSFER_CONFIG = TransferConfig(
+    multipart_chunksize=512 * MB,
+    use_threads=True,
+    max_concurrency=10
+)

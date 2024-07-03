@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import os
+import boto3
 from django.contrib.gis.db import models
 from django.conf import settings
 from django.dispatch import receiver
@@ -122,7 +123,26 @@ class NetCDFFile(models.Model):
 
         If DMR++ file is not available, then store the original file.
         """
-        pass
+        remote_file_path = None
+        if self.has_dmrpp:
+            self.local_path = f'{self.name}.dmrpp'
+            remote_file_path = self.dmrpp_path
+        else:
+            self.local_path = self.name
+            remote_file_path = self.name
+        full_path = self.cached_file_path
+        if os.path.exists(full_path):
+            return
+        dir_path = os.path.dirname(full_path)
+        os.makedirs(dir_path, exist_ok=True)
+        boto3_client = boto3.client('s3')
+        boto3_client.download_file(
+            os.environ.get('S3_AWS_BUCKET_NAME'),
+            remote_file_path,
+            full_path,
+            Config=settings.AWS_TRANSFER_CONFIG
+        )
+        self.save(update_fields=['local_path'])
 
 
 @receiver(models.signals.post_delete, sender=NetCDFFile)
