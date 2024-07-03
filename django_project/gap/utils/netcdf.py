@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 from django.contrib.gis.geos import Point
-from pydap.model import StructureType
+from pydap.model import StructureType, BaseType
 from pydap.client import open_url
 
 from gap.models.measurement import Attribute
@@ -112,7 +112,11 @@ def _get_attrib_value(attr_data, attr_name: str, idx_lat: int, idx_lon: int):
     """
     dimensions = _find_dimension(attr_data, attr_name)
     indices = _find_lat_lon_indices(dimensions, idx_lat, idx_lon)
-    return _slice_along_axes(attr_data[attr_name], indices)
+    if isinstance(attr_data, BaseType):
+        arr_data = attr_data
+    else:
+        arr_data = attr_data[attr_name]
+    return _slice_along_axes(arr_data, indices)
 
 
 def read_value(netcdf: NetCDFFile, attribute: Attribute, point: Point):
