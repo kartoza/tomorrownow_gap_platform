@@ -8,6 +8,8 @@ Tomorrow Now GAP.
 from django.contrib.gis.geos import Point
 from pydap.model import StructureType, BaseType
 from pydap.client import open_url
+import numpy as np
+import pandas as pd
 
 from gap.models.measurement import Attribute
 from gap.models.netcdf import (
@@ -15,6 +17,164 @@ from gap.models.netcdf import (
     NetCDFProviderAttribute,
     NetCDFFile
 )
+
+
+class NetCDFProvider:
+    """Class contains NetCDF Provider."""
+
+    CBAM = 'CBAM'
+    SALIENT = 'Salient'
+
+
+class NetCDFVariable:
+    """Contains Variable from NetCDF File."""
+
+    def __init__(self, name, desc, unit=None) -> None:
+        self.name = name
+        self.desc = desc
+        self.unit = unit
+
+
+CBAM_VARIABLES = {
+    'total_evapotranspiration_flux': NetCDFVariable(
+        'Total Evapotranspiration Flux',
+        'Total Evapotranspiration flux with respect to '
+        'grass cover (0000:2300)', 'mm'
+    ),
+    'max_total_temperature': NetCDFVariable(
+        'Max Total Temperature',
+        'Maximum temperature (0000:2300)', 'Deg C'
+    ),
+    'max_night_temperature': NetCDFVariable(
+        'Max Night Temperature',
+        'Maximum night-time temperature (1900:0500)', 'Deg C'
+    ),
+    'average_solar_irradiance': NetCDFVariable(
+        'Average Solar Irradiance',
+        'Average hourly solar irradiance reaching the surface (0600:1800)',
+        'MJ/sqm'
+    ),
+    'total_solar_irradiance': NetCDFVariable(
+        'Total Solar Irradiance',
+        'Total solar irradiance reaching the surface (0000:2300)', 'MJ/sqm'
+    ),
+    'min_night_temperature': NetCDFVariable(
+        'Min Night Temperature',
+        'Minimum night-time temperature (1900:0500)', 'Deg C'
+    ),
+    'max_day_temperature': NetCDFVariable(
+        'Max Day Temperature',
+        'Maximum day-time temperature (0600:1800)', 'Deg C'
+    ),
+    'total_rainfall': NetCDFVariable(
+        'Total Rainfall',
+        'Total rainfall (0000:2300)', 'mm'
+    ),
+    'min_day_temperature': NetCDFVariable(
+        'Min Day Temperature',
+        'Minumum day-time temperature (0600:1800)', 'Deg C'
+    ),
+    'min_total_temperature': NetCDFVariable(
+        'Min Total Temperature',
+        'Minumum temperature (0000:2300)', 'Deg C'
+    ),
+}
+
+
+SALIENT_VARIABLES = {
+    'precip_clim': NetCDFVariable(
+        'Precipitation Climatology', None, 'mm day-1'
+    ),
+    'temp_clim': NetCDFVariable(
+        'Temperature Climatology', None, 'Deg C'
+    ),
+    'precip_anom': NetCDFVariable(
+        'Precipitation Anomaly', None, 'mm day-1'
+    ),
+    'temp_anom': NetCDFVariable(
+        'Temperature Anomaly', None, 'Deg C'
+    ),
+    'precip': NetCDFVariable(
+        'Precipitation', None, 'mm day-1'
+    ),
+    'temp': NetCDFVariable(
+        'Temperature', None, 'Deg C'
+    ),
+}
+
+
+class NetCDFAttributeValue:
+
+    def __init__(self, attribute: NetCDFProviderAttribute, raw_value) -> None:
+        self.attribute = attribute
+        self.raw_value = raw_value
+
+    @classmethod
+    def from_provider(cls, attribute: NetCDFProviderAttribute, raw_value):
+        if attribute.provider.name == 'CBAM':
+            return CBAMAttributeValue(attribute, raw_value)
+        elif attribute.provider.name == 'Salient':
+            return SalientAttributeValue(attribute, raw_value)
+        else:
+            raise TypeError(
+                f'Unsupported provider name: {attribute.provider.name}')
+
+    def get_value(self):
+        pass
+
+
+class CBAMAttributeValue(NetCDFAttributeValue):
+
+    def __init__(self, attribute: NetCDFProviderAttribute, raw_value) -> None:
+        super().__init__(attribute, raw_value)
+
+    def get_value(self):
+        """Get value from CBAM attribute.
+
+        :return: Attribute value
+        :rtype: float
+        """
+        return self.raw_value[0][0][0].data
+
+
+class SalientAttributeValue(NetCDFAttributeValue):
+
+    GRID_ATTRIBUTES = ['precip_clim', 'temp_clim']
+
+    def __init__(self, attribute: NetCDFProviderAttribute, raw_value) -> None:
+        super().__init__(attribute, raw_value)
+
+    def _convert_to_json(self, array):
+        m, n, r = array.shape
+        out_arr = np.column_stack(
+            (np.repeat(np.arange(m), n), array.reshape(m * n, -1)))
+        df = pd.DataFrame(out_arr)
+        df = df.to_dict(orient='dict')
+        return df[1]
+
+    def _get_grid_value(self):
+        return self._convert_to_json(self.raw_value)
+
+    def _get_ensemble_values(self):
+        # dimension would be ('ensemble', 'forecast_day', 'lat', 'lon')
+        ensemble_size = self.raw_value.shape[0]
+        results = {}
+        for i in range(ensemble_size):
+            ensemble_data = self.raw_value[i, :, :, :].data
+            results[i] = self._convert_to_json(ensemble_data)
+        return results
+
+    def get_value(self):
+        """Get value from Salient attribute.
+
+        precip_clim and temp_clim will return Dict<forecast_day, value>.
+
+        :return: Attribute value
+        :rtype: dict
+        """
+        if self.attribute.variable_name in self.GRID_ATTRIBUTES:
+            return self._get_grid_value()
+        return self._get_ensemble_values()
 
 
 def _find_dimension(attr_data, attr_name: str) -> tuple[str, ...]:
@@ -35,7 +195,8 @@ def _find_dimension(attr_data, attr_name: str) -> tuple[str, ...]:
     return attrib.dimensions
 
 
-def _find_idx_lat_lon(value: float, base_min: float, inc: float, max: int) -> int:
+def _find_idx_lat_lon(
+        value: float, base_min: float, inc: float, max: int) -> int:
     """Find index of lat/lon value.
 
     :param value: The value of lat/lon
@@ -76,7 +237,8 @@ def _slice_along_axes(array, indices):
     return array[tuple(slices)]
 
 
-def _find_lat_lon_indices(dimensions: tuple[str, ...], idx_lat: int, idx_lon: int):
+def _find_lat_lon_indices(
+        dimensions: tuple[str, ...], idx_lat: int, idx_lon: int):
     """Find lat and lon indices from dimensions tuple.
 
     :param dimensions: Dimensions of attribute data
@@ -119,7 +281,9 @@ def _get_attrib_value(attr_data, attr_name: str, idx_lat: int, idx_lon: int):
     return _slice_along_axes(arr_data, indices)
 
 
-def read_value(netcdf: NetCDFFile, attribute: Attribute, point: Point):
+def read_value(
+        netcdf: NetCDFFile, attribute: Attribute,
+        point: Point) -> NetCDFAttributeValue:
     """Read attribute value from netcdf file for given point.
 
     :param netcdf: NetCDF File object
@@ -128,15 +292,17 @@ def read_value(netcdf: NetCDFFile, attribute: Attribute, point: Point):
     :type attribute: Attribute
     :param point: Location to be queried
     :type point: Point
+    :return: Attribute value
+    :rtype: NetCDFAttributeValue
     """
     netcdf_metadata = NetCDFProviderMetadata.objects.get(
         provider=netcdf.provider
     )
     metadata = netcdf_metadata.metadata
-    attribute_name = NetCDFProviderAttribute.objects.get(
+    netcdf_attribute = NetCDFProviderAttribute.objects.get(
         provider=netcdf.provider,
         attribute=attribute
-    ).variable_name
+    )
     idx_lat = _find_idx_lat_lon(
         point.y,
         metadata['lat']['min'],
@@ -150,5 +316,28 @@ def read_value(netcdf: NetCDFFile, attribute: Attribute, point: Point):
         metadata['lon']['size']
     )
     dataset = open_url(netcdf.opendap_url)
-    attr_data = dataset[attribute_name]
-    return _get_attrib_value(attr_data, attribute_name, idx_lat, idx_lon)
+    attr_data = dataset[netcdf_attribute.variable_name]
+    raw_value = _get_attrib_value(
+        attr_data, netcdf_attribute.variable_name, idx_lat, idx_lon)
+    return NetCDFAttributeValue.from_provider(
+        netcdf_attribute, raw_value
+    )
+
+
+def check_netcdf_variables(attribute: Attribute) -> str:
+    """Check whether variable belongs to CBAM/Salient Provider.
+
+    :param attribute: attribute object
+    :type attribute: Attribute
+    :return: CBAM/Salient or None
+    :rtype: str
+    """
+    find_in_cbam = [
+        x for x in CBAM_VARIABLES.values() if x.name == attribute.name]
+    if len(find_in_cbam) > 0:
+        return NetCDFProvider.CBAM
+    find_in_salient = [
+        x for x in SALIENT_VARIABLES.values() if x.name == attribute.name]
+    if len(find_in_salient) > 0:
+        return NetCDFProvider.SALIENT
+    return None

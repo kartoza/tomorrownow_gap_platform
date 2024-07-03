@@ -86,7 +86,8 @@ class NetCDFProviderAttributeAdmin(admin.ModelAdmin):
     """NetCDFProviderAttribute admin."""
 
     list_display = (
-        'provider', 'attribute', 'observation_type', 'unit'
+        'provider', 'attribute', 'observation_type',
+        'variable_name', 'unit'
     )
     list_filter = ('provider', 'observation_type',)
 

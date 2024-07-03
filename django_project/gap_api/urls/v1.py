@@ -10,6 +10,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, authentication
 
 from gap_api.api_views.user import UserInfo
+from gap_api.api_views.measurement import MeasurementAPI
 from gap_api.urls.schema import CustomSchemaGenerator
 
 schema_view_v1 = get_schema_view(
@@ -46,6 +47,15 @@ user_urls = [
     ),
 ]
 
+# MEASUREMENT API
+measurement_urls = [
+    path(
+        'measurement/',
+        MeasurementAPI.as_view(),
+        name='get-measurement'
+    ),
+]
+
 urlpatterns = [
     re_path(
         r'^docs/$',
@@ -54,3 +64,4 @@ urlpatterns = [
     ),
 ]
 urlpatterns += user_urls
+urlpatterns += measurement_urls
