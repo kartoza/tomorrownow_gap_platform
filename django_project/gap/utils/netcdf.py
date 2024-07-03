@@ -30,6 +30,7 @@ class NetCDFVariable:
     """Contains Variable from NetCDF File."""
 
     def __init__(self, name, desc, unit=None) -> None:
+        """Initialize NetCDFVariable object."""
         self.name = name
         self.desc = desc
         self.unit = unit
@@ -104,13 +105,25 @@ SALIENT_VARIABLES = {
 
 
 class NetCDFAttributeValue:
+    """Base class for parsing value from NetCDF."""
 
     def __init__(self, attribute: NetCDFProviderAttribute, raw_value) -> None:
+        """Initialize the class with attribute and raw_value."""
         self.attribute = attribute
         self.raw_value = raw_value
 
     @classmethod
     def from_provider(cls, attribute: NetCDFProviderAttribute, raw_value):
+        """Factory method to create NetCDFAttributeValue based on provider.
+
+        :param attribute: Attribute that has provider
+        :type attribute: NetCDFProviderAttribute
+        :param raw_value: NetCDF Data
+        :type raw_value: any
+        :raises TypeError: Raises when provider is not CBAM/Salient
+        :return: Returns either CBAMAttributeValue or SalientAttributeValue
+        :rtype: NetCDFProviderAttribute
+        """
         if attribute.provider.name == 'CBAM':
             return CBAMAttributeValue(attribute, raw_value)
         elif attribute.provider.name == 'Salient':
@@ -120,12 +133,16 @@ class NetCDFAttributeValue:
                 f'Unsupported provider name: {attribute.provider.name}')
 
     def get_value(self):
+        """Base method to parse the raw value of NetCDF Data.
+        """
         pass
 
 
 class CBAMAttributeValue(NetCDFAttributeValue):
+    """Handle parsing NetCDF Data for CBAM Provider."""
 
     def __init__(self, attribute: NetCDFProviderAttribute, raw_value) -> None:
+        """Initialize CBAMAttributeValue object."""
         super().__init__(attribute, raw_value)
 
     def get_value(self):
@@ -138,13 +155,22 @@ class CBAMAttributeValue(NetCDFAttributeValue):
 
 
 class SalientAttributeValue(NetCDFAttributeValue):
+    """Handle parsing NetCDF Data for Salient Provider."""
 
     GRID_ATTRIBUTES = ['precip_clim', 'temp_clim']
 
     def __init__(self, attribute: NetCDFProviderAttribute, raw_value) -> None:
+        """Initialize SalientAttributeValue object."""
         super().__init__(attribute, raw_value)
 
-    def _convert_to_json(self, array):
+    def _convert_to_dict(self, array):
+        """Convert NumPy array to python dict
+
+        :param array: NetCDF Data
+        :type array: NumPy array
+        :return: dictionary representation from NumPy array
+        :rtype: dict
+        """
         m, n, r = array.shape
         out_arr = np.column_stack(
             (np.repeat(np.arange(m), n), array.reshape(m * n, -1)))
@@ -153,21 +179,33 @@ class SalientAttributeValue(NetCDFAttributeValue):
         return df[1]
 
     def _get_grid_value(self):
-        return self._convert_to_json(self.raw_value)
+        """Convert raw_value (GridType).
+
+        :return: dictionary representation from NumPy array
+        :rtype: dict
+        """
+        return self._convert_to_dict(self.raw_value)
 
     def _get_ensemble_values(self):
+        """Convert Ensemble Structure Data.
+
+        :return: Dict<ensemble, Dict<forecast_day, value>>
+        :rtype: dict
+        """
         # dimension would be ('ensemble', 'forecast_day', 'lat', 'lon')
         ensemble_size = self.raw_value.shape[0]
         results = {}
         for i in range(ensemble_size):
             ensemble_data = self.raw_value[i, :, :, :].data
-            results[i] = self._convert_to_json(ensemble_data)
+            results[i] = self._convert_to_dict(ensemble_data)
         return results
 
     def get_value(self):
         """Get value from Salient attribute.
 
         precip_clim and temp_clim will return Dict<forecast_day, value>.
+        Otherwise, this method will return Dict<ensemble, dict>
+        which ensemble is 1-50.
 
         :return: Attribute value
         :rtype: dict
