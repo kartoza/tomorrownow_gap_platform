@@ -139,6 +139,11 @@ class TahmoIngestor:
                                     unit = attr_var.unit
                                 except KeyError:
                                     unit = None
+
+                                # Skip empty one
+                                if value == '':
+                                    continue
+
                                 measure, _ = Measurement.objects.get_or_create(
                                     station=station,
                                     attribute=attribute,
