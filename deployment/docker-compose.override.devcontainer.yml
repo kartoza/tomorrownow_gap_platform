@@ -58,9 +58,9 @@ services:
       - SENTRY_DSN=${SENTRY_DSN:-}
       - SECRET_KEY=SECRET_KEY
       # s3 variable
-      - S3_AWS_ACCESS_KEY_ID={S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-      - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
-      - S3_AWS_ENDPOINT=${S3_AWS_ENDPOINT}
+      - AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
       - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
     volumes:
       - ../:/home/web/project
@@ -78,8 +78,8 @@ services:
       - "9010:9000"
       - "9011:9001"
     environment:
-      MINIO_ROOT_USER: ${S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-      MINIO_ROOT_PASSWORD: ${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
       MINIO_HTTP_TRACE: /opt/bitnami/minio/log/minio.log
     volumes:
       - ./volumes/minio_data:/data

@@ -32,9 +32,9 @@ x-common-django:
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - SENTRY_DSN=${SENTRY_DSN:-}
     # s3 variable
-    - S3_AWS_ACCESS_KEY_ID={S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-    - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
-    - S3_AWS_ENDPOINT=${S3_AWS_ENDPOINT}
+    - AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+    - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
     - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
     - INITIAL_FIXTURES=${INITIAL_FIXTURES:-}
   volumes:
@@ -116,9 +116,9 @@ services:
     ports:
       - "8181:8080"
     environment:
-      - S3_AWS_ACCESS_KEY_ID=${S3_AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-      - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
-      - S3_AWS_ENDPOINT=${S3_AWS_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
       - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
     volumes:
       - hyrax-data:/usr/share/hyrax

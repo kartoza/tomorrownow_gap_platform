@@ -7,11 +7,11 @@ if [ -f "$file" ] ; then
 fi
 
 touch "$file"
-echo "tomorrownow = url:${S3_AWS_ENDPOINT}${S3_AWS_BUCKET_NAME}/" >> "$file"
-echo "tomorrownow += id:${S3_AWS_ACCESS_KEY_ID}" >> "$file"
-echo "tomorrownow += key:${S3_AWS_SECRET_ACCESS_KEY}" >> "$file"
+echo "tomorrownow = url:${AWS_ENDPOINT_URL}${S3_AWS_BUCKET_NAME}/" >> "$file"
+echo "tomorrownow += id:${AWS_ACCESS_KEY_ID}" >> "$file"
+echo "tomorrownow += key:${AWS_SECRET_ACCESS_KEY}" >> "$file"
 echo "tomorrownow += region:us-east-1" >> "$file"
-echo "tomorrownow += bucket:${S3_AWS_ENDPOINT}" >> "$file"
+echo "tomorrownow += bucket:${AWS_ENDPOINT_URL}" >> "$file"
 
 chmod 600 "$file"
 chown bes:bes "$file"
