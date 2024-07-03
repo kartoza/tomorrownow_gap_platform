@@ -12,18 +12,21 @@ from pydap.client import open_url
 from gap.models.measurement import Attribute
 from gap.models.netcdf import (
     NetCDFProviderMetadata,
+    NetCDFProviderAttribute,
     NetCDFFile
 )
 
 
 def _find_dimension(attr_data, attr_name: str) -> tuple[str, ...]:
-    """_summary_
+    """Find dimension of data.
 
-    :param attr_data: _description_
-    :type attr_data: _type_
-    :param attr_name: _description_
+    E.g. ('forecast_day', 'lat', 'lon')
+
+    :param attr_data: attribute data
+    :type attr_data: PyDap StructureType or GridType
+    :param attr_name: attribute name
     :type attr_name: str
-    :return: _description_
+    :return: Dimension of data
     :rtype: tuple[str, ...]
     """
     attrib = attr_data
@@ -33,17 +36,17 @@ def _find_dimension(attr_data, attr_name: str) -> tuple[str, ...]:
 
 
 def _find_idx_lat_lon(value: float, base_min: float, inc: float, max: int) -> int:
-    """_summary_
+    """Find index of lat/lon value.
 
-    :param value: _description_
+    :param value: The value of lat/lon
     :type value: float
-    :param base_min: _description_
+    :param base_min: Minimum value of lat/lon
     :type base_min: float
-    :param inc: _description_
+    :param inc: Increment value of lat/lon
     :type inc: float
-    :param max: _description_
+    :param max: Maximum value of lat/lon
     :type max: int
-    :return: _description_
+    :return: Index of lat/lon
     :rtype: int
     """
     if value < base_min:
@@ -53,14 +56,16 @@ def _find_idx_lat_lon(value: float, base_min: float, inc: float, max: int) -> in
 
 
 def _slice_along_axes(array, indices):
-    """_summary_
+    """Slice multidimensional array using axes and indices.
 
-    :param array: _description_
-    :type array: _type_
-    :param indices: _description_
-    :type indices: _type_
-    :return: _description_
-    :rtype: _type_
+    E.g. 3D Array (date, lat, lon) -> array[:, idx_lat, idx_lon]
+
+    :param array: NumPy Array
+    :type array: NumPy Array
+    :param indices: Key pair of axis and index
+    :type indices: dict
+    :return: Sliced data
+    :rtype: NumPy Array
     """
     slices = [slice(None)] * array.ndim  # Create a list of slices
 
@@ -72,16 +77,16 @@ def _slice_along_axes(array, indices):
 
 
 def _find_lat_lon_indices(dimensions: tuple[str, ...], idx_lat: int, idx_lon: int):
-    """_summary_
+    """Find lat and lon indices from dimensions tuple.
 
-    :param dimensions: _description_
+    :param dimensions: Dimensions of attribute data
     :type dimensions: tuple[str, ...]
-    :param idx_lat: _description_
+    :param idx_lat: index of latitude
     :type idx_lat: int
-    :param idx_lon: _description_
+    :param idx_lon: index of longitude
     :type idx_lon: int
-    :return: _description_
-    :rtype: _type_
+    :return: Key pair of axis and index
+    :rtype: dict
     """
     axe_lat = dimensions.index('lat')
     axe_lon = dimensions.index('lon')
@@ -92,18 +97,18 @@ def _find_lat_lon_indices(dimensions: tuple[str, ...], idx_lat: int, idx_lon: in
 
 
 def _get_attrib_value(attr_data, attr_name: str, idx_lat: int, idx_lon: int):
-    """_summary_
+    """Get value of attribute for given lat and lon indices.
 
-    :param attr_data: _description_
-    :type attr_data: _type_
-    :param attr_name: _description_
+    :param attr_data: attribute data from a dataset
+    :type attr_data: PyDap StructureType or GridType
+    :param attr_name: attribute name
     :type attr_name: str
-    :param idx_lat: _description_
+    :param idx_lat: index of latitude
     :type idx_lat: int
-    :param idx_lon: _description_
+    :param idx_lon: index of longitude
     :type idx_lon: int
-    :return: _description_
-    :rtype: _type_
+    :return: data
+    :rtype: Numpy array
     """
     dimensions = _find_dimension(attr_data, attr_name)
     indices = _find_lat_lon_indices(dimensions, idx_lat, idx_lon)
@@ -111,19 +116,23 @@ def _get_attrib_value(attr_data, attr_name: str, idx_lat: int, idx_lon: int):
 
 
 def read_value(netcdf: NetCDFFile, attribute: Attribute, point: Point):
-    """_summary_
+    """Read attribute value from netcdf file for given point.
 
-    :param netcdf: _description_
+    :param netcdf: NetCDF File object
     :type netcdf: NetCDFFile
-    :param attribute: _description_
+    :param attribute: attribute to be queried
     :type attribute: Attribute
-    :param point: _description_
+    :param point: Location to be queried
     :type point: Point
     """
     netcdf_metadata = NetCDFProviderMetadata.objects.get(
         provider=netcdf.provider
     )
     metadata = netcdf_metadata.metadata
+    attribute_name = NetCDFProviderAttribute.objects.get(
+        provider=netcdf.provider,
+        attribute=attribute
+    ).variable_name
     idx_lat = _find_idx_lat_lon(
         point.y,
         metadata['lat']['min'],
@@ -137,5 +146,5 @@ def read_value(netcdf: NetCDFFile, attribute: Attribute, point: Point):
         metadata['lon']['size']
     )
     dataset = open_url(netcdf.opendap_url)
-    attr_data = dataset[attribute.name]
-    return _get_attrib_value(attr_data, attribute.name, idx_lat, idx_lon)
+    attr_data = dataset[attribute_name]
+    return _get_attrib_value(attr_data, attribute_name, idx_lat, idx_lon)

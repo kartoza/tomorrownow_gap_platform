@@ -40,7 +40,14 @@ class NetCDFProviderAttribute(models.Model):
     unit = models.CharField(
         max_length=512, null=True, blank=True
     )
-    other_definitions = models.JSONField(default=dict)
+    variable_name = models.CharField(
+        max_length=512
+    )
+    other_definitions = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True
+    )
 
 
 class NetCDFFile(models.Model):
