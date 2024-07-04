@@ -14,3 +14,7 @@ class GAPConfig(AppConfig):
 
     name = 'gap'
     verbose_name = _('Global Access Platform')
+
+    def ready(self):
+        from gap.tasks.netcdf_sync import netcdf_s3_sync  # noqa
+        pass
