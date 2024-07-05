@@ -8,7 +8,7 @@ from django.contrib import admin
 
 from .models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
-    NetCDFProviderMetadata, NetCDFProviderAttribute, NetCDFFile
+    Dataset, DatasetAttribute, NetCDFFile
 )
 
 
@@ -17,7 +17,7 @@ class AttributeAdmin(admin.ModelAdmin):
     """Attribute admin."""
 
     list_display = (
-        'name', 'description'
+        'name', 'description', 'variable_name', 'unit',
     )
     search_fields = ('name',)
 
@@ -42,14 +42,32 @@ class ProviderAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+@admin.register(Dataset)
+class DatasetAdmin(admin.ModelAdmin):
+    """Dataset admin."""
+
+    list_display = (
+        'name', 'provider', 'type', 'time_step', 'store_type',
+    )
+
+
+@admin.register(DatasetAttribute)
+class DatasetAttributeAdmin(admin.ModelAdmin):
+    """DatasetAttribute admin."""
+
+    list_display = (
+        'dataset', 'attribute', 'source', 'source_unit',
+    )
+
+
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
     """Measurement admin."""
 
     list_display = (
-        'station', 'attribute', 'date_time', 'value'
+        'station', 'dataset_attribute', 'date_time', 'value'
     )
-    list_filter = ('station', 'attribute')
+    list_filter = ('station',)
     search_fields = ('name',)
 
 
@@ -74,29 +92,11 @@ class IngestorSessionAdmin(admin.ModelAdmin):
     list_filter = ('ingestor_type', 'status')
 
 
-@admin.register(NetCDFProviderMetadata)
-class NetCDFProviderMetadataAdmin(admin.ModelAdmin):
-    """NetCDFProviderMetadata admin."""
-
-    list_display = ('provider',)
-
-
-@admin.register(NetCDFProviderAttribute)
-class NetCDFProviderAttributeAdmin(admin.ModelAdmin):
-    """NetCDFProviderAttribute admin."""
-
-    list_display = (
-        'provider', 'attribute', 'observation_type',
-        'variable_name', 'unit'
-    )
-    list_filter = ('provider', 'observation_type',)
-
-
 @admin.register(NetCDFFile)
 class NetCDFFileAdmin(admin.ModelAdmin):
     """NetCDFFile admin."""
 
     list_display = (
-        'name', 'provider', 'start_date_time', 'end_date_time', 'created_on'
+        'name', 'dataset', 'start_date_time', 'end_date_time', 'created_on'
     )
-    list_filter = ('provider',)
+    list_filter = ('dataset',)

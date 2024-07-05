@@ -16,5 +16,6 @@ class GAPConfig(AppConfig):
     verbose_name = _('Global Access Platform')
 
     def ready(self):
+        """App ready handler."""
         from gap.tasks.netcdf_sync import netcdf_s3_sync  # noqa
         pass
