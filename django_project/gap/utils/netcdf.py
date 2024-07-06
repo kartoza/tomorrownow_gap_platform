@@ -5,6 +5,21 @@ Tomorrow Now GAP.
 .. note:: Helper for reading NetCDF File
 """
 
+import os
+from typing import List
+from datetime import datetime, timedelta
+from django.contrib.gis.geos import Point
+import numpy as np
+import xarray as xr
+from xarray.core.dataset import Dataset as xrDataset
+import fsspec
+
+from gap.models import (
+    Dataset,
+    DatasetAttribute,
+    NetCDFFile
+)
+
 
 class NetCDFProvider:
     """Class contains NetCDF Provider."""
@@ -89,3 +104,342 @@ SALIENT_VARIABLES = {
         'Temperature', None, 'Deg C'
     ),
 }
+
+
+def daterange_inc(start_date: datetime, end_date: datetime):
+    """Iterate through start_date and end_date (inclusive).
+
+    :param start_date: start date
+    :type start_date: date
+    :param end_date: end date inclusive
+    :type end_date: date
+    :yield: iteration date
+    :rtype: date
+    """
+    days = int((end_date - start_date).days)
+    for n in range(days + 1):
+        yield start_date + timedelta(n)
+
+
+class DatasetTimelineValue:
+    """Class representing data value for given datetime."""
+
+    def __init__(self, datetime: np.datetime64, values: dict) -> None:
+        """Initialize DatasetTimelineValue object.
+
+        :param datetime: datetime of data
+        :type datetime: np.datetime64
+        :param values: Dictionary of variable and its value
+        :type values: dict
+        """
+        self.datetime = datetime
+        self.values = values
+
+    def to_dict(self):
+        """Convert into dict.
+
+        :return: Dictionary of datetime and values
+        :rtype: dict
+        """
+        return {
+            'datetime': np.datetime_as_string(self.datetime, timezone='UTC'),
+            'values': self.values
+        }
+
+
+class DatasetReaderValue:
+    """Class representing all values from reader."""
+
+    def __init__(
+            self, metadata: dict,
+            results: List[DatasetTimelineValue]) -> None:
+        """Initialize DatasetReaderValue object.
+
+        :param metadata: Dictionary of metadata
+        :type metadata: dict
+        :param results: Data value list
+        :type results: List[DatasetTimelineValue]
+        """
+        self.metadata = metadata
+        self.results = results
+
+    def to_dict(self):
+        """Convert into dict.
+
+        :return: Dictionary of metadata and data
+        :rtype: dict
+        """
+        return {
+            'metadata': self.metadata,
+            'data': [result.to_dict() for result in self.results]
+        }
+
+
+class BaseNetCDFReader:
+    """Base class for NetCDF File Reader."""
+
+    date_variable = 'date'
+
+    def __init__(
+            self, dataset: Dataset, attributes: List[DatasetAttribute],
+            point: Point, start_date: datetime, end_date: datetime) -> None:
+        """Initialize BaseNetCDFReader class.
+
+        :param dataset: Dataset for reading
+        :type dataset: Dataset
+        :param attributes: List of attributes to be queried
+        :type attributes: List[DatasetAttribute]
+        :param point: Location to be queried
+        :type point: Point
+        :param start_date: Start date time filter
+        :type start_date: datetime
+        :param end_date: End date time filter
+        :type end_date: datetime
+        """
+        self.dataset = dataset
+        self.attributes = attributes
+        self.point = point
+        self.start_date = start_date
+        self.end_date = end_date
+        self.xrDatasets = []
+
+    def add_attribute(self, attribute: DatasetAttribute):
+        """Add a new attribuute to be read.
+
+        :param attribute: Dataset Attribute
+        :type attribute: DatasetAttribute
+        """
+        is_existing = [a for a in self.attributes if a.id == attribute.id]
+        if len(is_existing) == 0:
+            self.attributes.append(attribute)
+
+    def setupNetCDFReader(self):
+        """Initialize s3fs."""
+        self.bucket_name = os.environ.get('S3_AWS_BUCKET_NAME')
+        endpoint_url = os.environ.get('AWS_ENDPOINT_URL')
+        self.fs = fsspec.filesystem(
+            's3', client_kwargs=dict(endpoint_url=endpoint_url)
+        )
+
+    def open_dataset(self, netcdf_file: NetCDFFile) -> xrDataset:
+        """Open a NetCDFFile using xArray.
+
+        :param netcdf_file: NetCDF from a dataset
+        :type netcdf_file: NetCDFFile
+        :return: xArray Dataset object
+        :rtype: xrDataset
+        """
+        netcdf_url = f's3://{self.bucket_name}/{netcdf_file.name}'
+        return xr.open_dataset(self.fs.open(netcdf_url))
+
+    def read_variables(self, dataset: xrDataset) -> xrDataset:
+        """Read data from list variable with filter from given Point.
+
+        :param dataset: xArray Dataset object
+        :type dataset: xrDataset
+        :return: filtered xArray Dataset object
+        :rtype: xrDataset
+        """
+        variables = [a.source for a in self.attributes]
+        variables.append(self.date_variable)
+        return dataset[variables].sel(
+            lat=self.point.y, lon=self.point.x, method='nearest')
+
+    def get_data_values(self) -> DatasetReaderValue:
+        """Fetch data values from list of xArray Dataset object.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        pass
+
+    def read_historical_data(self):
+        """Read historical data from dataset."""
+        pass
+
+    def read_forecast_data(self):
+        """Read forecast data from dataset."""
+        pass
+
+    @classmethod
+    def from_dataset(cls, dataset: Dataset):
+        """Create a new Reader from given dataset.
+
+        :param dataset: Dataset to be read
+        :type dataset: Dataset
+        :raises TypeError: if provider is neither CBAM or Salient
+        :return: Reader Class Type
+        :rtype: CBAMNetCDFReader|SalientNetCDFReader
+        """
+        if dataset.provider.name == NetCDFProvider.CBAM:
+            return CBAMNetCDFReader
+        elif dataset.provider.name == NetCDFProvider.SALIENT:
+            return SalientNetCDFReader
+        else:
+            raise TypeError(
+                f'Unsupported provider name: {dataset.provider.name}'
+            )
+
+
+class CBAMNetCDFReader(BaseNetCDFReader):
+    """Class to read NetCDF file from CBAM provider."""
+
+    def __init__(
+            self, dataset: Dataset, attributes: List[DatasetAttribute],
+            point: Point, start_date: datetime, end_date: datetime) -> None:
+        """Initialize CBAMNetCDFReader class.
+
+        :param dataset: Dataset for reading
+        :type dataset: Dataset
+        :param attributes: List of attributes to be queried
+        :type attributes: List[DatasetAttribute]
+        :param point: Location to be queried
+        :type point: Point
+        :param start_date: Start date time filter
+        :type start_date: datetime
+        :param end_date: End date time filter
+        :type end_date: datetime
+        """
+        super().__init__(dataset, attributes, point, start_date, end_date)
+
+    def read_historical_data(self):
+        """Read historical data from dataset."""
+        self.setupNetCDFReader()
+        self.xrDatasets = []
+        for filter_date in daterange_inc(self.start_date, self.end_date):
+            netcdf_file = NetCDFFile.objects.filter(
+                dataset=self.dataset,
+                start_date_time__gte=filter_date,
+                end_date_time__lte=filter_date
+            ).first()
+            if netcdf_file is None:
+                continue
+            ds = self.open_dataset(netcdf_file)
+            val = self.read_variables(ds)
+            self.xrDatasets.append(val)
+
+    def read_forecast_data(self):
+        """Read forecast data from dataset."""
+        raise NotImplementedError(
+            'CBAM does not have forecast data implementation!')
+
+    def get_data_values(self) -> DatasetReaderValue:
+        """Fetch data values from list of xArray Dataset object.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        results = []
+        val = xr.combine_nested(
+            self.xrDatasets, concat_dim=[self.date_variable])
+        for dt_idx, dt in enumerate(val[self.date_variable].values):
+            value_data = {}
+            for attribute in self.attributes:
+                value_data[attribute.attribute.variable_name] = (
+                    val[attribute.source].values[dt_idx]
+                )
+            results.append(DatasetTimelineValue(
+                dt,
+                value_data
+            ))
+        metadata = {
+            'dataset': self.dataset.name,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat()
+        }
+        return DatasetReaderValue(metadata, results)
+
+
+class SalientNetCDFReader(BaseNetCDFReader):
+    """Class to read NetCDF file from Salient provider."""
+
+    date_variable = 'forecast_day'
+
+    def __init__(
+            self, dataset: Dataset, attributes: List[DatasetAttribute],
+            point: Point, start_date: datetime, end_date: datetime) -> None:
+        """Initialize CBAMNetCDFReader class.
+
+        :param dataset: Dataset for reading
+        :type dataset: Dataset
+        :param attributes: List of attributes to be queried
+        :type attributes: List[DatasetAttribute]
+        :param point: Location to be queried
+        :type point: Point
+        :param start_date: Start date time filter
+        :type start_date: datetime
+        :param end_date: End date time filter
+        :type end_date: datetime
+        """
+        super().__init__(dataset, attributes, point, start_date, end_date)
+
+    def read_historical_data(self):
+        """Read historical data from dataset."""
+        raise NotImplementedError(
+            'Salient does not have historical data implementation!')
+
+    def read_forecast_data(self):
+        """Read forecast data from dataset."""
+        self.setupNetCDFReader()
+        self.xrDatasets = []
+        netcdf_file = NetCDFFile.objects.filter(
+            dataset=self.dataset
+        ).order_by('id').last()
+        if netcdf_file is None:
+            return
+        ds = self.open_dataset(netcdf_file)
+        val = self.read_variables(ds)
+        self.xrDatasets.append(val)
+
+    def read_variables(self, dataset: xrDataset) -> xrDataset:
+        """Read data from list variable with filter from given Point.
+
+        :param dataset: xArray Dataset object
+        :type dataset: xrDataset
+        :return: filtered xArray Dataset object
+        :rtype: xrDataset
+        """
+        start_dt = np.datetime64(self.start_date)
+        end_dt = np.datetime64(self.end_date)
+        variables = [a.source for a in self.attributes]
+        variables.append(self.date_variable)
+        val = dataset[variables].sel(
+            lat=self.point.y, lon=self.point.x,
+            method='nearest'
+        ).where(
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt),
+            drop=True
+        )
+        return val
+
+    def get_data_values(self) -> DatasetReaderValue:
+        """Fetch data values from list of xArray Dataset object.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        # forecast will always use latest dataset
+        val = self.xrDatasets[0]
+        results = []
+        for dt_idx, dt in enumerate(val[self.date_variable].values):
+            value_data = {}
+            for attribute in self.attributes:
+                if 'ensemble' in val[attribute.source].dims:
+                    value_data[attribute.attribute.variable_name] = (
+                        val[attribute.source].values[:, dt_idx]
+                    )
+                else:
+                    value_data[attribute.attribute.variable_name] = (
+                        val[attribute.source].values[dt_idx]
+                    )
+            results.append(DatasetTimelineValue(
+                dt,
+                value_data
+            ))
+        metadata = {
+            'dataset': self.dataset.name,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat()
+        }
+        return DatasetReaderValue(metadata, results)
