@@ -43,25 +43,9 @@ services:
       context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
-    entrypoint: [ ]
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-core.settings.dev}
-      - DATABASE_NAME=${DATABASE_NAME:-django}
-      - DATABASE_USERNAME=${DATABASE_USERNAME:-docker}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-docker}
-      - DATABASE_HOST=${DATABASE_HOST:-db}
-      - DATABASE_PORT=${DATABASE_PORT:-5432}
-      - REDIS_HOST=${REDIS_HOST:-redis}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_password}
-
-      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
-      - SENTRY_DSN=${SENTRY_DSN:-}
-      - SECRET_KEY=SECRET_KEY
-      # s3 variable
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
+    entrypoint: []
+    env_file:
+      - .env
     volumes:
       - ../:/home/web/project
       - ./volumes/static:/home/web/static

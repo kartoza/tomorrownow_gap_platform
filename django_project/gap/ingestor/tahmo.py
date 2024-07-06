@@ -158,6 +158,10 @@ class TahmoIngestor:
                             except KeyError:
                                 continue
                             try:
+                                # Skip empty one
+                                if value == '':
+                                    continue
+
                                 measure, _ = Measurement.objects.get_or_create(
                                     station=station,
                                     dataset_attribute=attr_var.dataset_attr,
