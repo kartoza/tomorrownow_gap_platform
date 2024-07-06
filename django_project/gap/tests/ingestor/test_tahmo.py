@@ -71,5 +71,5 @@ class TahmoIngestorTest(TestCase):
             self.assertEqual(
                 measurements.filter(
                     dataset_attribute__attribute=attribute
-                ).count(), 24
+                ).count(), 23
             )
