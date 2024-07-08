@@ -66,3 +66,17 @@ services:
       - worker
       - celery_beat
     entrypoint: [ ]
+
+  plumber:
+    build:
+      context: ../
+      dockerfile: deployment/plumber/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ../django_project:/home/web/django_project
+      - ./volumes/plumber_data:/home/web/plumber_data
+      - ./volumes/media:/home/web/media
+    links:
+      - db
+      - redis

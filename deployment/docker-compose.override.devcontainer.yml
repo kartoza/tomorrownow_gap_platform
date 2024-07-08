@@ -49,6 +49,7 @@ services:
     links:
       - db
       - worker
+      - plumber
 
   django:
     build:
@@ -60,3 +61,17 @@ services:
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
 
+  plumber:
+    build:
+      context: ../
+      dockerfile: deployment/plumber/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ../:/home/web/project
+      - ../django_project:/home/web/django_project
+      - ./volumes/plumber_data:/home/web/plumber_data
+      - ./volumes/media:/home/web/media
+    links:
+      - db
+      - redis

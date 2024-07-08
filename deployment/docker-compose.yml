@@ -9,6 +9,7 @@ volumes:
   backups-data:
   data-volume:
   redis-data:
+  plumber-data:
 
 x-common-django:
   &default-common-django
@@ -18,6 +19,7 @@ x-common-django:
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
+    - plumber-data:/home/web/plumber_data
   restart: on-failure
 
 services:
@@ -54,6 +56,7 @@ services:
     links:
       - db
       - worker
+      - plumber
 
   worker:
     <<: *default-common-django
@@ -63,6 +66,7 @@ services:
       - db
       - redis
       - celery_beat
+      - plumber
 
   celery_beat:
     <<: *default-common-django
@@ -82,3 +86,16 @@ services:
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
+
+  plumber:
+    build:
+      context: ../
+      dockerfile: deployment/plumber/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - plumber-data:/home/web/plumber_data
+      - media-data:/home/web/media
+    links:
+      - db
+      - redis
