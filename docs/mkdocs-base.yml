@@ -44,3 +44,4 @@ nav:
       - developer/index.md
       - Documentation:
           - "Data model": developer/data-model.md
+          - "Hyrax Configuration": developer/hyrax-config.md
