@@ -289,7 +289,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
             point: Point, start_date: datetime, end_date: datetime) -> None:
         """Initialize CBAMNetCDFReader class.
 
-        :param dataset: Dataset for reading
+        :param dataset: Dataset from CBAM provider
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
@@ -360,7 +360,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
             point: Point, start_date: datetime, end_date: datetime) -> None:
         """Initialize CBAMNetCDFReader class.
 
-        :param dataset: Dataset for reading
+        :param dataset: Dataset from Salient provider
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
