@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import os
+from typing import Tuple
 from celery.utils.log import get_task_logger
 from datetime import datetime
 import s3fs
@@ -33,7 +34,7 @@ from gap.utils.netcdf import (
 logger = get_task_logger(__name__)
 
 
-def initialize_provider(provider_name: str) -> Provider:
+def initialize_provider(provider_name: str) -> Tuple[Provider, Dataset]:
     """Initialize provider object for NetCDF.
 
     :param provider_name: provider name
@@ -41,7 +42,7 @@ def initialize_provider(provider_name: str) -> Provider:
     :param metadata: provider metadata
     :type metadata: dict
     :return: provider and dataset object
-    :rtype: Tuple<Provider, Dataset>
+    :rtype: Tuple[Provider, Dataset]
     """
     provider, _ = Provider.objects.get_or_create(name=provider_name)
     if provider.name == NetCDFProvider.CBAM:

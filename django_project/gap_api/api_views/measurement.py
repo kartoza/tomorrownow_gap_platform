@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 from typing import Dict, List
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
@@ -23,21 +23,6 @@ from gap.models import (
 from gap.utils.netcdf import BaseNetCDFReader, DatasetReaderValue
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
-
-
-def daterange_inc(start_date: date, end_date: date):
-    """Iterate through start_date and end_date (inclusive).
-
-    :param start_date: start date
-    :type start_date: date
-    :param end_date: end date inclusive
-    :type end_date: date
-    :yield: iteration date
-    :rtype: date
-    """
-    days = int((end_date - start_date).days)
-    for n in range(days + 1):
-        yield start_date + timedelta(n)
 
 
 class BaseMeasurementAPI(APIView):

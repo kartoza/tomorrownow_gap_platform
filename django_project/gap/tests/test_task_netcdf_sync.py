@@ -5,127 +5,88 @@ Tomorrow Now GAP.
 .. note:: Unit tests for NetCDF sync task.
 """
 
-import unittest
+from django.test import TestCase
 from unittest.mock import patch, MagicMock
 
 from gap.models import (
     DatasetType,
     DatasetTimeStep,
-    DatasetStore
+    DatasetStore,
+    Unit,
+    Attribute,
+    DatasetAttribute,
+    NetCDFFile
 )
-from gap.utils.netcdf import NetCDFVariable, CBAM_VARIABLES, SALIENT_VARIABLES
+from gap.utils.netcdf import (
+    NetCDFProvider, NetCDFVariable, CBAM_VARIABLES, SALIENT_VARIABLES
+)
 from gap.tasks.netcdf_sync import (
     initialize_provider,
     initialize_provider_variables,
     sync_by_dataset,
     netcdf_s3_sync
 )
+from gap.factories import (
+    ProviderFactory,
+    DatasetFactory,
+    NetCDFFileFactory
+)
 
 
-class TestInitializeProvider(unittest.TestCase):
+class TestInitializeProvider(TestCase):
     """Unit test for initialize_provider functions."""
 
-    @patch('gap.models.Provider.objects.get_or_create')
-    @patch('gap.models.Dataset.objects.get_or_create')
-    def test_initialize_provider_cbam(
-        self, mock_get_or_create_dataset, mock_get_or_create_provider):
+    def test_initialize_provider_cbam(self):
         """Test initialize CBAM provider."""
-        provider_mock = MagicMock()
-        provider_mock.name = 'CBAM'
-        mock_get_or_create_provider.return_value = (provider_mock, False)
-        dataset_mock = MagicMock()
-        mock_get_or_create_dataset.return_value = (dataset_mock, False)
-
         provider, dataset = initialize_provider('CBAM')
 
         self.assertEqual(provider.name, 'CBAM')
-        mock_get_or_create_provider.assert_called_with(name='CBAM')
-        mock_get_or_create_dataset.assert_called_with(
-            name='CBAM',
-            provider=provider,
-            defaults={
-                'type': DatasetType.CLIMATE_REANALYSIS,
-                'time_step': DatasetTimeStep.DAILY,
-                'store_type': DatasetStore.NETCDF
-            }
-        )
+        self.assertEqual(dataset.name, 'CBAM')
+        self.assertEqual(dataset.type, DatasetType.CLIMATE_REANALYSIS)
+        self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
+        self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
 
-    @patch('gap.models.Provider.objects.get_or_create')
-    @patch('gap.models.Dataset.objects.get_or_create')
-    def test_initialize_provider_salient(
-        self, mock_get_or_create_dataset, mock_get_or_create_provider):
+    def test_initialize_provider_salient(self):
         """Test initialize salient provider."""
-        provider_mock = MagicMock()
-        provider_mock.name = 'Salient'
-        mock_get_or_create_provider.return_value = (provider_mock, False)
-        dataset_mock = MagicMock()
-        mock_get_or_create_dataset.return_value = (dataset_mock, False)
-
         provider, dataset = initialize_provider('Salient')
 
         self.assertEqual(provider.name, 'Salient')
-        mock_get_or_create_provider.assert_called_with(name='Salient')
-        mock_get_or_create_dataset.assert_called_with(
-            name='Salient',
-            provider=provider,
-            defaults={
-                'type': DatasetType.SEASONAL_FORECAST,
-                'time_step': DatasetTimeStep.DAILY,
-                'store_type': DatasetStore.NETCDF
-            }
-        )
+        self.assertEqual(dataset.name, 'Salient')
+        self.assertEqual(dataset.type, DatasetType.SEASONAL_FORECAST)
+        self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
+        self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
 
 
-class TestInitializeProviderVariables(unittest.TestCase):
+class TestInitializeProviderVariables(TestCase):
     """Unit test for initialize_provider_variables function."""
 
-    @patch('gap.models.Unit.objects.get_or_create')
-    @patch('gap.models.Attribute.objects.get_or_create')
-    @patch('gap.models.DatasetAttribute.objects.get_or_create')
-    def test_initialize_provider_variables(
-        self, mock_get_or_create_dataset_attr, mock_get_or_create_attr,
-        mock_get_or_create_unit):
+    def test_initialize_provider_variables(self):
         """Test initialize_provider_variables function."""
-        dataset_mock = MagicMock()
+        dataset = DatasetFactory(name=NetCDFProvider.CBAM)
         variables = {
             'temperature': NetCDFVariable(
                 'Temperature', 'Temperature in Celsius', 'Celsius')
         }
-
-        unit_mock = MagicMock()
-        mock_get_or_create_unit.return_value = (unit_mock, False)
-        attr_mock = MagicMock()
-        mock_get_or_create_attr.return_value = (attr_mock, False)
-
-        initialize_provider_variables(dataset_mock, variables)
-
-        mock_get_or_create_unit.assert_called_with(name='Celsius')
-        mock_get_or_create_attr.assert_called_with(
+        initialize_provider_variables(dataset, variables)
+        self.assertTrue(Unit.objects.filter(name='Celsius').exists())
+        self.assertTrue(Attribute.objects.filter(
             name='Temperature',
-            unit=unit_mock,
-            variable_name='temperature',
-            defaults={
-                'description': 'Temperature in Celsius'
-            }
-        )
-        mock_get_or_create_dataset_attr.assert_called_with(
-            dataset=dataset_mock,
-            attribute=attr_mock,
+            unit__name='Celsius'
+        ).exists())
+        self.assertTrue(DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__name='Temperature',
             source='temperature',
-            source_unit=unit_mock
-        )
+            source_unit__name='Celsius'
+        ).exists())
 
 
-class TestSyncByDataset(unittest.TestCase):
+class TestSyncByDataset(TestCase):
     """Unit test for sync_by_dataset function."""
 
     @patch('gap.tasks.netcdf_sync.s3fs.S3FileSystem')
-    @patch('gap.models.NetCDFFile.objects.filter')
-    @patch('gap.models.NetCDFFile.objects.create')
     @patch('gap.tasks.netcdf_sync.os.environ.get')
-    def test_sync_by_dataset(
-        self, mock_get_env, mock_create_netcdf_file, mock_filter_netcdf_file,
-        mock_s3fs):
+    def test_sync_by_dataset(self, mock_get_env, mock_s3fs):
         """Test sync_by_dataset function."""
         mock_get_env.side_effect = (
             lambda key: 'test_bucket' if
@@ -134,20 +95,41 @@ class TestSyncByDataset(unittest.TestCase):
         mock_fs = MagicMock()
         mock_s3fs.return_value = mock_fs
         mock_fs.walk.return_value = [
-            ('s3://test_bucket/cbam', [], ['2023-01-01.nc'])
+            ('test_bucket/cbam', [], ['2023-01-01.nc']),
+            ('test_bucket/cbam', [], ['2023-01-02.nc']),
+            ('test_bucket/cbam/dmrpp', [], ['2023-01-01.nc.dmrpp'])
         ]
-        mock_filter_netcdf_file.return_value.exists.return_value = False
-        dataset_mock = MagicMock()
-        dataset_mock.provider.name = 'cbam'
-
-        sync_by_dataset(dataset_mock)
-
+        provider = ProviderFactory.create(name=NetCDFProvider.CBAM)
+        dataset = DatasetFactory.create(provider=provider)
+        # add existing NetCDF File
+        NetCDFFileFactory.create(
+            dataset=dataset,
+            name='cbam/2023-01-02.nc'
+        )
+        sync_by_dataset(dataset)
         mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
-        mock_filter_netcdf_file.assert_called()
-        mock_create_netcdf_file.assert_called()
+        self.assertEqual(
+            NetCDFFile.objects.filter(
+                dataset=dataset,
+                name='cbam/2023-01-02.nc'
+            ).count(),
+            1
+        )
+        self.assertFalse(
+            NetCDFFile.objects.filter(
+                dataset=dataset,
+                name='cbam/dmrpp/2023-01-01.nc.dmrpp'
+            ).exists()
+        )
+        self.assertTrue(
+            NetCDFFile.objects.filter(
+                dataset=dataset,
+                name='cbam/2023-01-01.nc'
+            ).exists()
+        )
 
 
-class TestNetCDFSyncTask(unittest.TestCase):
+class TestNetCDFSyncTask(TestCase):
     """Unit test for netcdf_s3_sync function."""
 
     @patch('gap.tasks.netcdf_sync.initialize_provider')

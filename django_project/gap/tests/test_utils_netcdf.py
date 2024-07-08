@@ -5,10 +5,11 @@ Tomorrow Now GAP.
 .. note:: Unit tests for NetCDF Utilities.
 """
 
-import unittest
+from django.test import TestCase
 from datetime import datetime
 import numpy as np
-from unittest.mock import Mock, patch
+from django.contrib.gis.geos import Point
+from unittest.mock import Mock, MagicMock, patch
 
 from gap.utils.netcdf import (
     NetCDFProvider,
@@ -19,9 +20,15 @@ from gap.utils.netcdf import (
     CBAMNetCDFReader,
     SalientNetCDFReader
 )
+from gap.factories import (
+    ProviderFactory,
+    DatasetFactory,
+    DatasetAttributeFactory,
+    AttributeFactory
+)
 
 
-class TestNetCDFProvider(unittest.TestCase):
+class TestNetCDFProvider(TestCase):
     """Unit test for NetCDFProvider class."""
 
     def test_constants(self):
@@ -30,7 +37,7 @@ class TestNetCDFProvider(unittest.TestCase):
         self.assertEqual(NetCDFProvider.SALIENT, 'Salient')
 
 
-class TestDaterangeInc(unittest.TestCase):
+class TestDaterangeInc(TestCase):
     """Unit test for daterange_inc function."""
 
     def test_daterange(self):
@@ -46,7 +53,7 @@ class TestDaterangeInc(unittest.TestCase):
         self.assertEqual(result_dates, expected_dates)
 
 
-class TestDatasetTimelineValue(unittest.TestCase):
+class TestDatasetTimelineValue(TestCase):
     """Unit test for class DatasetTimelineValue."""
 
     def test_to_dict(self):
@@ -61,7 +68,7 @@ class TestDatasetTimelineValue(unittest.TestCase):
         self.assertEqual(dtv.to_dict(), expected_dict)
 
 
-class TestDatasetReaderValue(unittest.TestCase):
+class TestDatasetReaderValue(TestCase):
     """Unit test for class DatasetReaderValue."""
 
     def test_to_dict(self):
@@ -79,8 +86,32 @@ class TestDatasetReaderValue(unittest.TestCase):
         self.assertEqual(drv.to_dict(), expected_dict)
 
 
-class TestBaseNetCDFReader(unittest.TestCase):
+class TestBaseNetCDFReader(TestCase):
     """Unit test for class BaseNetCDFReader."""
+
+    def test_add_attribute(self):
+        """Test adding a new attribute to Reader."""
+        reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
+        self.assertEqual(len(reader.attributes), 0)
+        reader.add_attribute(DatasetAttributeFactory.create())
+        self.assertEqual(len(reader.attributes), 1)
+
+    def test_read_variables(self):
+        """Test reading variables."""
+        dataset = DatasetFactory.create(name=NetCDFProvider.CBAM)
+        attribute = AttributeFactory.create(
+            name='Temperature', variable_name='temperature')
+        dataset_attr = DatasetAttributeFactory(
+            dataset=dataset, attribute=attribute)
+        reader = BaseNetCDFReader(
+            dataset, [dataset_attr], Point(x=29.125, y=-2.215),
+            Mock(), Mock())
+        xrArray = MagicMock()
+        xrArray.sel.return_value = []
+        xrDataset = MagicMock()
+        xrDataset.__getitem__.return_value = xrArray
+        result = reader.read_variables(xrDataset)
+        self.assertEqual(result, [])
 
     @patch('os.environ.get')
     @patch('fsspec.filesystem')
@@ -107,8 +138,23 @@ class TestBaseNetCDFReader(unittest.TestCase):
         reader.open_dataset(netcdf_file)
         mock_open_dataset.assert_called_once()
 
+    def test_from_dataset(self):
+        """Test for creating NetCDFReader from dataset."""
+        dataset1 = DatasetFactory.create(
+            provider=ProviderFactory(name=NetCDFProvider.CBAM))
+        reader = BaseNetCDFReader.from_dataset(dataset1)
+        self.assertEqual(reader, CBAMNetCDFReader)
+        dataset2 = DatasetFactory.create(
+            provider=ProviderFactory(name=NetCDFProvider.SALIENT))
+        reader = BaseNetCDFReader.from_dataset(dataset2)
+        self.assertEqual(reader, SalientNetCDFReader)
+        # invalid type
+        dataset3 = DatasetFactory.create()
+        with self.assertRaises(TypeError):
+            BaseNetCDFReader.from_dataset(dataset3)
 
-class TestCBAMNetCDFReader(unittest.TestCase):
+
+class TestCBAMNetCDFReader(TestCase):
     """Unit test for CBAM NetCDFReader class."""
 
     @patch('gap.utils.netcdf.daterange_inc',
@@ -140,7 +186,7 @@ class TestCBAMNetCDFReader(unittest.TestCase):
             reader.read_forecast_data()
 
 
-class TestSalientNetCDFReader(unittest.TestCase):
+class TestSalientNetCDFReader(TestCase):
     """Unit test for Salient NetCDFReader class."""
 
     def test_read_historical_data_not_implemented(self):
