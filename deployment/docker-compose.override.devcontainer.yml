@@ -14,29 +14,33 @@ services:
   worker:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     volumes:
       - ../:/home/web/project
+      - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
 
   celery_beat:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     volumes:
       - ../:/home/web/project
+      - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
 
   dev:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ../
+      context: ${PWD}
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     entrypoint: []
@@ -46,17 +50,32 @@ services:
       - ../:/home/web/project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/hyrax_data:/home/web/opendap
     links:
       - db
       - worker
 
-  django:
-    build:
-      context: ../
-      dockerfile: deployment/docker/Dockerfile
-      target: vscode
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
+    command: minio server /data --console-address ":9001"
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minio_tomorrownow}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
+      MINIO_HTTP_TRACE: /opt/bitnami/minio/log/minio.log
     volumes:
-      - ../django_project:/home/web/django_project
-      - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
+      - ./volumes/minio_data:/data
+    restart: always
 
+  hyrax:
+    entrypoint: [ "/custom_entrypoint.sh" ]
+    volumes:
+      - ./volumes/hyrax_data:/usr/share/hyrax
+      - ./hyrax/site.conf:/etc/bes/site.conf:ro
+      - ./hyrax/entrypoint.sh:/custom_entrypoint.sh
+    links:
+      - minio
+      - dev
+      - worker

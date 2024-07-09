@@ -41,3 +41,15 @@ class Country(Definition):
         return Country.objects.filter(
             geometry__contains=point
         )
+
+
+class Provider(Definition):
+    """Model representing a data provider."""
+
+    pass
+
+
+class Unit(Definition):
+    """Model representing an unit of a measurement."""
+
+    pass

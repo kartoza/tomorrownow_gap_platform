@@ -37,3 +37,7 @@ INSTALLED_APPS = INSTALLED_APPS + (
 TEMPLATES[0]['DIRS'] += [
     absolute_path('frontend', 'templates'),
 ]
+
+# Hyrax Base URL
+OPENDAP_BASE_URL = 'http://hyrax:8080/opendap/'
+OPENDAP_FILE_CACHE_DIR = '/home/web/opendap'

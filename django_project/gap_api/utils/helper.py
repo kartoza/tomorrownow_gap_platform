@@ -13,6 +13,7 @@ class ApiTag:
     """Class contains API Tags."""
 
     USER = 'User'
+    Measurement = 'Measurement'
 
 
 # COMMON MANUAL PARAMETERS

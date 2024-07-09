@@ -7,7 +7,8 @@ Tomorrow Now GAP.
 from django.contrib import admin
 
 from .models import (
-    Attribute, Country, Provider, Measurement, Station, IngestorSession
+    Attribute, Country, Provider, Measurement, Station, IngestorSession,
+    Dataset, DatasetAttribute, NetCDFFile
 )
 
 
@@ -16,7 +17,7 @@ class AttributeAdmin(admin.ModelAdmin):
     """Attribute admin."""
 
     list_display = (
-        'name', 'description'
+        'name', 'description', 'variable_name', 'unit',
     )
     search_fields = ('name',)
 
@@ -41,14 +42,32 @@ class ProviderAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+@admin.register(Dataset)
+class DatasetAdmin(admin.ModelAdmin):
+    """Dataset admin."""
+
+    list_display = (
+        'name', 'provider', 'type', 'time_step', 'store_type',
+    )
+
+
+@admin.register(DatasetAttribute)
+class DatasetAttributeAdmin(admin.ModelAdmin):
+    """DatasetAttribute admin."""
+
+    list_display = (
+        'dataset', 'attribute', 'source', 'source_unit',
+    )
+
+
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
     """Measurement admin."""
 
     list_display = (
-        'station', 'attribute', 'date_time', 'value'
+        'station', 'dataset_attribute', 'date_time', 'value'
     )
-    list_filter = ('station', 'attribute')
+    list_filter = ('station',)
     search_fields = ('name',)
 
 
@@ -71,3 +90,13 @@ class IngestorSessionAdmin(admin.ModelAdmin):
         'run_at', 'status', 'end_at', 'ingestor_type'
     )
     list_filter = ('ingestor_type', 'status')
+
+
+@admin.register(NetCDFFile)
+class NetCDFFileAdmin(admin.ModelAdmin):
+    """NetCDFFile admin."""
+
+    list_display = (
+        'name', 'dataset', 'start_date_time', 'end_date_time', 'created_on'
+    )
+    list_filter = ('dataset',)

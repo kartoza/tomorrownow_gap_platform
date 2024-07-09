@@ -17,7 +17,8 @@ from django.contrib.gis.geos import Point
 from gap.ingestor.exceptions import FileNotFoundException
 from gap.models import (
     Provider, Station, ObservationType, Country, IngestorSession,
-    Attribute, Measurement
+    Attribute, Measurement, Dataset, DatasetType, DatasetTimeStep,
+    DatasetStore, DatasetAttribute, Unit
 )
 
 
@@ -28,12 +29,14 @@ class TahmoVariable:
         """Initialize the Tahmo variable."""
         self.name = name
         self.unit = unit
+        self.dataset_attr = None
 
 
 TAHMO_VARIABLES = {
-    'ap': TahmoVariable('Atmospheric pressure'),
+    # TODO: check if pressure is really in atm and humidity in g/m3
+    'ap': TahmoVariable('Atmospheric pressure', 'atm'),
     'pr': TahmoVariable('Precipitation', 'mm'),
-    'rh': TahmoVariable('Relative humidity'),
+    'rh': TahmoVariable('Relative humidity', 'g/m3'),
     'ra': TahmoVariable('Shortwave radiation', 'W/m2'),
     'te': TahmoVariable('Surface air temperature', '°C'),
     'wd': TahmoVariable('Wind direction', 'Degrees from North'),
@@ -55,6 +58,29 @@ class TahmoIngestor:
         self.obs_type, _ = ObservationType.objects.get_or_create(
             name='Ground Observations'
         )
+        self.dataset, _ = Dataset.objects.get_or_create(
+            name='Tahmo',
+            provider=self.provider,
+            type=DatasetType.GROUND_OBSERVATIONAL,
+            time_step=DatasetTimeStep.DAILY,
+            store_type=DatasetStore.TABLE
+        )
+        for key, variable in TAHMO_VARIABLES.items():
+            unit, _ = Unit.objects.get_or_create(
+                name=variable.unit
+            )
+            # TODO: perhaps we should use fixture to load the attributes
+            attribute, _ = Attribute.objects.get_or_create(
+                name=variable.name,
+                variable_name=variable.name.lower().replace(' ', '_'),
+                unit=unit
+            )
+            variable.dataset_attr, _ = DatasetAttribute.objects.get_or_create(
+                dataset=self.dataset,
+                attribute=attribute,
+                source=key,
+                source_unit=unit
+            )
 
     def _run(self, dir_path):
         """Run the ingestor."""
@@ -132,24 +158,15 @@ class TahmoIngestor:
                             except KeyError:
                                 continue
                             try:
-                                attribute, _ = Attribute.objects.get_or_create(
-                                    name=attr_var.name
-                                )
-                                try:
-                                    unit = attr_var.unit
-                                except KeyError:
-                                    unit = None
-
                                 # Skip empty one
                                 if value == '':
                                     continue
 
                                 measure, _ = Measurement.objects.get_or_create(
                                     station=station,
-                                    attribute=attribute,
+                                    dataset_attribute=attr_var.dataset_attr,
                                     date_time=date_time,
                                     defaults={
-                                        'unit': unit,
                                         'value': float(value)
                                     }
                                 )
@@ -179,5 +196,8 @@ class TahmoIngestor:
             self._run(dir_path)
             shutil.rmtree(dir_path)
         except Exception as e:
+            import traceback
+            print(e)
+            print(traceback.format_exc())
             shutil.rmtree(dir_path)
             raise Exception(e)

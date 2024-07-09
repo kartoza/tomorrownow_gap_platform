@@ -8,13 +8,41 @@ Tomorrow Now GAP.
 from django.contrib.gis.db import models
 
 from core.models.common import Definition
+from gap.models.common import Unit
 from gap.models.station import Station
+from gap.models.dataset import Dataset
 
 
 class Attribute(Definition):
     """Model representing an attribute of a measurement."""
 
-    pass
+    variable_name = models.CharField(
+        max_length=512
+    )
+    unit = models.ForeignKey(
+        Unit, on_delete=models.CASCADE
+    )
+
+
+class DatasetAttribute(models.Model):
+    """Model representing attribute that a dataset has."""
+
+    dataset = models.ForeignKey(
+        Dataset, on_delete=models.CASCADE
+    )
+    attribute = models.ForeignKey(
+        Attribute, on_delete=models.CASCADE
+    )
+    source = models.CharField(
+        max_length=512,
+        help_text='Variable name in the source'
+    )
+    source_unit = models.ForeignKey(
+        Unit, on_delete=models.CASCADE
+    )
+
+    def __str__(self) -> str:
+        return f'{self.attribute} - {self.dataset}'
 
 
 class Measurement(models.Model):
@@ -24,9 +52,9 @@ class Measurement(models.Model):
     Attributes:
         station (ForeignKey):
             Foreign key referencing the Station model based on station_id.
-        attribute (ForeignKey):
-            Foreign key referencing the Attribute model based on attribute_id.
-        unit (str): Unit of measurement.
+        dataset_attribute (ForeignKey):
+            Foreign key referencing the DatasetAttribute model based on
+            dataset_attribute_id.
         date_time (dateTime): Time of the measurement.
         value (float): Value of the measurement.
     """
@@ -34,11 +62,8 @@ class Measurement(models.Model):
     station = models.ForeignKey(
         Station, on_delete=models.CASCADE
     )
-    attribute = models.ForeignKey(
-        Attribute, on_delete=models.CASCADE
-    )
-    unit = models.CharField(
-        max_length=512, null=True, blank=True
+    dataset_attribute = models.ForeignKey(
+        DatasetAttribute, on_delete=models.CASCADE
     )
     date_time = models.DateTimeField()
     value = models.FloatField()
@@ -47,4 +72,4 @@ class Measurement(models.Model):
         return f'{self.date_time} - {self.value}'
 
     class Meta:  # noqa
-        unique_together = ('station', 'attribute', 'date_time')
+        unique_together = ('station', 'dataset_attribute', 'date_time')
