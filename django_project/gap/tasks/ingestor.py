@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Tasks.
+.. note:: Ingestor Tasks.
 """
 
 from celery.utils.log import get_task_logger

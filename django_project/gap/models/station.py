@@ -9,13 +9,7 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point  # noqa
 
 from core.models.common import Definition
-from gap.models.common import Country
-
-
-class Provider(Definition):
-    """Model representing a data provider."""
-
-    pass
+from gap.models.common import Country, Provider
 
 
 class ObservationType(Definition):

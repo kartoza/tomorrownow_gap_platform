@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 # set the default Django settings module for the 'celery' program.
 # this is also used in manage.py
@@ -30,3 +31,11 @@ app.conf.broker_url = BASE_REDIS_URL
 
 # this allows you to schedule items in the Django admin.
 app.conf.beat_scheduler = 'django_celery_beat.schedulers.DatabaseScheduler'
+
+# Task cron job schedules
+app.conf.beat_schedule = {
+    'netcdf-s3-sync': {
+        'task': 'netcdf_s3_sync',
+        'schedule': crontab(minute='0', hour='1'),  # Run everyday at 1am
+    }
+}

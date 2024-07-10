@@ -69,5 +69,7 @@ class TahmoIngestorTest(TestCase):
         ).measurement_set.all()
         for attribute in Attribute.objects.all():
             self.assertEqual(
-                measurements.filter(attribute=attribute).count(), 23
+                measurements.filter(
+                    dataset_attribute__attribute=attribute
+                ).count(), 23
             )

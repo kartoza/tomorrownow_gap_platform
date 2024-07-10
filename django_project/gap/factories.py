@@ -9,12 +9,19 @@ from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
 from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
+    Dataset,
     Provider,
+    Unit,
     Attribute,
+    DatasetAttribute,
     Country,
     Station,
     Measurement,
-    ObservationType
+    ObservationType,
+    DatasetType,
+    DatasetTimeStep,
+    DatasetStore,
+    NetCDFFile
 )
 
 
@@ -30,6 +37,36 @@ class ProviderFactory(
     description = factory.Faker('text')
 
 
+class DatasetFactory(
+    BaseFactory[Dataset], metaclass=BaseMetaFactory[Dataset]
+):
+    """Factory class for Dataset model."""
+
+    class Meta:  # noqa
+        model = Dataset
+
+    name = factory.Faker('company')
+    description = factory.Faker('text')
+    type = DatasetType.CLIMATE_REANALYSIS
+    time_step = DatasetTimeStep.DAILY
+    store_type = DatasetStore.TABLE
+    provider = factory.SubFactory(ProviderFactory)
+
+
+class UnitFactory(
+    BaseFactory[Unit], metaclass=BaseMetaFactory[Unit]
+):
+    """Factory class for Unitdel."""
+
+    class Meta:  # noqa
+        model = Unit
+
+    name = factory.Sequence(
+        lambda n: f'unit-{n}'
+    )
+    description = factory.Faker('text')
+
+
 class AttributeFactory(
     BaseFactory[Attribute], metaclass=BaseMetaFactory[Attribute]
 ):
@@ -42,6 +79,26 @@ class AttributeFactory(
         lambda n: f'attribute-{n}'
     )
     description = factory.Faker('text')
+    variable_name = factory.Sequence(
+        lambda n: f'var-{n}'
+    )
+    unit = factory.SubFactory(UnitFactory)
+
+
+class DatasetAttributeFactory(
+    BaseFactory[DatasetAttribute], metaclass=BaseMetaFactory[DatasetAttribute]
+):
+    """Factory class for DatasetAttribute model."""
+
+    class Meta:  # noqa
+        model = DatasetAttribute
+
+    dataset = factory.SubFactory(DatasetFactory)
+    attribute = factory.SubFactory(AttributeFactory)
+    source = factory.Sequence(
+        lambda n: f'attribute-{n}'
+    )
+    source_unit = factory.SubFactory(UnitFactory)
 
 
 class ObservationTypeFactory(
@@ -106,6 +163,21 @@ class MeasurementFactory(
         model = Measurement
 
     station = factory.SubFactory(StationFactory)
-    attribute = factory.SubFactory(AttributeFactory)
+    dataset_attribute = factory.SubFactory(DatasetAttributeFactory)
     date_time = factory.Faker('date_time')
     value = factory.Faker('pyfloat')
+
+
+class NetCDFFileFactory(
+    BaseFactory[NetCDFFile], metaclass=BaseMetaFactory[NetCDFFile]
+):
+    """Factory class for NetCDFFile model."""
+
+    class Meta:  # noqa
+        model = NetCDFFile
+
+    name = factory.Faker('text')
+    dataset = factory.SubFactory(DatasetFactory)
+    start_date_time = factory.Faker('date_time')
+    end_date_time = factory.Faker('date_time')
+    created_on = factory.Faker('date_time')
