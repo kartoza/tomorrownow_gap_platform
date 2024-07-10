@@ -85,46 +85,52 @@ class TestSyncByDataset(TestCase):
     """Unit test for sync_by_dataset function."""
 
     @patch('gap.tasks.netcdf_sync.s3fs.S3FileSystem')
-    @patch('gap.tasks.netcdf_sync.os.environ.get')
-    def test_sync_by_dataset(self, mock_get_env, mock_s3fs):
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
+    def test_sync_by_dataset(self, mock_get_s3_kwargs, mock_get_s3_env, mock_s3fs):
         """Test sync_by_dataset function."""
-        mock_get_env.side_effect = (
-            lambda key: 'test_bucket' if
-            key == 'S3_AWS_BUCKET_NAME' else 'test_endpoint'
-        )
+        mock_get_s3_env.return_value = {
+            'AWS_DIR_PREFIX': 'cbam',
+            'AWS_ENDPOINT_URL': 'test_endpoint',
+            'AWS_BUCKET_NAME': 'test_bucket'
+        }
+        mock_get_s3_kwargs = {}
         mock_fs = MagicMock()
         mock_s3fs.return_value = mock_fs
         mock_fs.walk.return_value = [
             ('test_bucket/cbam', [], ['2023-01-01.nc']),
             ('test_bucket/cbam', [], ['2023-01-02.nc']),
-            ('test_bucket/cbam/dmrpp', [], ['2023-01-01.nc.dmrpp'])
+            ('test_bucket/cbam/dmrpp', [], ['2023-01-01.nc.dmrpp']),
+            ('test_bucket/cbam/2023', [], ['2023-02-01.nc']),
         ]
         provider = ProviderFactory.create(name=NetCDFProvider.CBAM)
         dataset = DatasetFactory.create(provider=provider)
         # add existing NetCDF File
         NetCDFFileFactory.create(
             dataset=dataset,
-            name='cbam/2023-01-02.nc'
+            name='2023-01-02.nc'
         )
         sync_by_dataset(dataset)
         mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
         self.assertEqual(
             NetCDFFile.objects.filter(
-                dataset=dataset,
-                name='cbam/2023-01-02.nc'
+                dataset=dataset, name='2023-01-02.nc'
             ).count(),
             1
         )
         self.assertFalse(
             NetCDFFile.objects.filter(
-                dataset=dataset,
-                name='cbam/dmrpp/2023-01-01.nc.dmrpp'
+                dataset=dataset, name='dmrpp/2023-01-01.nc.dmrpp'
             ).exists()
         )
         self.assertTrue(
             NetCDFFile.objects.filter(
-                dataset=dataset,
-                name='cbam/2023-01-01.nc'
+                dataset=dataset, name='2023-01-01.nc'
+            ).exists()
+        )
+        self.assertTrue(
+            NetCDFFile.objects.filter(
+                dataset=dataset, name='2023/2023-02-01.nc'
             ).exists()
         )
 
