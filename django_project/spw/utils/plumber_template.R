@@ -4,6 +4,7 @@ library(tidyverse)
 library(tidygam)
 library(mgcv)
 library(ggpubr)
+library(zoo)
 
 #* @plumber
 function(pr) {

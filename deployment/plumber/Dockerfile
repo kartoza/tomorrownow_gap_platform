@@ -18,7 +18,7 @@ RUN apt-get install -y --no-install-recommends \
     libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
 
 # install R packages
-RUN install2.r --error tidyverse tidygam mgcv ggpubr classInt
+RUN install2.r --error tidyverse tidygam mgcv ggpubr classInt zoo
 
 # Install pip packages
 ADD deployment/docker/requirements.txt /requirements.txt
