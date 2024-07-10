@@ -87,14 +87,14 @@ class TestSyncByDataset(TestCase):
     @patch('gap.tasks.netcdf_sync.s3fs.S3FileSystem')
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
-    def test_sync_by_dataset(self, mock_get_s3_kwargs, mock_get_s3_env, mock_s3fs):
+    def test_sync_by_dataset(
+        self, mock_get_s3_kwargs, mock_get_s3_env, mock_s3fs):
         """Test sync_by_dataset function."""
         mock_get_s3_env.return_value = {
             'AWS_DIR_PREFIX': 'cbam',
             'AWS_ENDPOINT_URL': 'test_endpoint',
             'AWS_BUCKET_NAME': 'test_bucket'
         }
-        mock_get_s3_kwargs = {}
         mock_fs = MagicMock()
         mock_s3fs.return_value = mock_fs
         mock_fs.walk.return_value = [
