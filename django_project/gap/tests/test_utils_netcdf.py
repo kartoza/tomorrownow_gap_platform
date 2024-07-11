@@ -116,26 +116,36 @@ class TestBaseNetCDFReader(TestCase):
         result = reader.read_variables(xrDataset)
         self.assertEqual(result, [])
 
-    @patch('os.environ.get')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
     @patch('fsspec.filesystem')
-    def test_setupNetCDFReader(self, mock_filesystem, mock_get):
+    def test_setupNetCDFReader(
+        self, mock_filesystem, mock_get_s3_vars, mock_get_s3_kwargs):
         """Test for setup NetCDFReader class."""
-        mock_get.side_effect = (
-            lambda key: 'test_bucket' if
-            key == 'S3_AWS_BUCKET_NAME' else 'test_endpoint'
-        )
+        mock_get_s3_kwargs.return_value = {
+            'endpoint_url': 'test_endpoint'
+        }
+        mock_get_s3_vars.return_value = {
+            'AWS_ACCESS_KEY_ID': 'test_key_id',
+            'AWS_SECRET_ACCESS_KEY': 'test_key_secret',
+        }
         reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
-        reader.setupNetCDFReader()
-        self.assertEqual(reader.bucket_name, 'test_bucket')
+        reader.setup_netcdf_reader()
         mock_filesystem.assert_called_once_with(
-            's3', client_kwargs=dict(endpoint_url='test_endpoint'))
+            's3',
+            key='test_key_id',
+            secret='test_key_secret',
+            client_kwargs=dict(endpoint_url='test_endpoint'))
 
     @patch('xarray.open_dataset')
     def test_open_dataset(self, mock_open_dataset):
         """Test for opening a dataset."""
         reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
-        reader.bucket_name = 'test_bucket'
         reader.fs = Mock()
+        reader.s3 = {
+            'AWS_DIR_PREFIX': '',
+            'AWS_BUCKET_NAME': 'test_bucket'
+        }
         netcdf_file = Mock()
         netcdf_file.name = 'test_file.nc'
         reader.open_dataset(netcdf_file)

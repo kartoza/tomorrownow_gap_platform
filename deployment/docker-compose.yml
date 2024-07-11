@@ -8,7 +8,6 @@ volumes:
   nginx-cache:
   backups-data:
   data-volume:
-  hyrax-data:
   redis-data:
   plumber-data:
 
@@ -57,7 +56,6 @@ services:
     volumes:
       - static-data:/home/web/static
       - media-data:/home/web/media
-      - hyrax-data:/home/web/opendap
     links:
       - db
       - worker
@@ -67,8 +65,6 @@ services:
     <<: *default-common-django
     entrypoint: [ ]
     command: 'celery -A core worker -l info'
-    volumes:
-      - hyrax-data:/home/web/opendap
     links:
       - db
       - redis
@@ -106,16 +102,3 @@ services:
     links:
       - db
       - redis
-
-  hyrax:
-    image: opendap/hyrax:1.17.0-122
-    ports:
-      - "8181:8080"
-    environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-minio_tomorrownow}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minio_tomorrownow}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - S3_AWS_BUCKET_NAME=${S3_AWS_BUCKET_NAME:-tomorrownow}
-    volumes:
-      - hyrax-data:/usr/share/hyrax
-    restart: always

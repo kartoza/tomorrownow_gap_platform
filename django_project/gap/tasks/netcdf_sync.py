@@ -9,6 +9,7 @@ import os
 from typing import Tuple
 from celery.utils.log import get_task_logger
 from datetime import datetime
+import pytz
 import s3fs
 from django.utils import timezone
 
@@ -95,33 +96,52 @@ def sync_by_dataset(dataset: Dataset):
     :param provider: dataset object
     :type provider: Dataset
     """
-    directory_path = f'{dataset.provider.name.lower()}'
-    fs = s3fs.S3FileSystem(client_kwargs={
-        'endpoint_url': os.environ.get('AWS_ENDPOINT_URL')
-    })
-    bucket_name = os.environ.get('S3_AWS_BUCKET_NAME')
+    s3_variables = NetCDFProvider.get_s3_variables(dataset.provider)
+    directory_path = s3_variables.get('AWS_DIR_PREFIX')
+    fs = s3fs.S3FileSystem(
+        key=s3_variables.get('AWS_ACCESS_KEY_ID'),
+        secret=s3_variables.get('AWS_SECRET_ACCESS_KEY'),
+        client_kwargs=NetCDFProvider.get_s3_client_kwargs(dataset.provider)
+    )
+    logger.info(f'Check NETCDF Files by dataset {dataset.name}')
+    bucket_name = s3_variables.get('AWS_BUCKET_NAME')
     count = 0
     for dirpath, dirnames, filenames in \
         fs.walk(f's3://{bucket_name}/{directory_path}'):
         for filename in filenames:
-            if not dirpath.endswith(directory_path):
+            if not filename.endswith('.nc'):
                 continue
-            cleaned_dir = dirpath.replace(f'{bucket_name}/', '')
-            file_path = f'{cleaned_dir}/{filename}'
+            cleaned_dir = dirpath.replace(
+                f'{bucket_name}/{directory_path}', '')
+            if cleaned_dir:
+                file_path = (
+                    f'{cleaned_dir}{filename}' if
+                    cleaned_dir.endswith('/') else
+                    f'{cleaned_dir}/{filename}'
+                )
+            else:
+                file_path = filename
+            if file_path.startswith('/'):
+                file_path = file_path[1:]
             if NetCDFFile.objects.filter(name=file_path).exists():
                 continue
             netcdf_filename = os.path.split(file_path)[1]
-            date_str = netcdf_filename.split('.')[0]
+            file_date = datetime.strptime(
+                netcdf_filename.split('.')[0], '%Y-%m-%d')
+            start_datetime = datetime(
+                file_date.year, file_date.month, file_date.day,
+                0, 0, 0, tzinfo=pytz.UTC
+            )
             NetCDFFile.objects.create(
                 name=file_path,
                 dataset=dataset,
-                start_date_time=datetime.strptime(date_str, '%Y-%m-%d'),
-                end_date_time=datetime.strptime(date_str, '%Y-%m-%d'),
+                start_date_time=start_datetime,
+                end_date_time=start_datetime,
                 created_on=timezone.now()
             )
             count += 1
     if count > 0:
-        logger.info(f'Added new NetCDFFile: {count}')
+        logger.info(f'{dataset.name} - Added new NetCDFFile: {count}')
 
 
 @app.task(name="netcdf_s3_sync")
