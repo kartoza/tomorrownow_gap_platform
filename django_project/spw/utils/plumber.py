@@ -120,7 +120,7 @@ def execute_spw_model(
     """
     request_url = f'http://plumber:{PLUMBER_PORT}/spw/generic'
     data = {
-        'filepath': data_filepath,
+        'data_filename': data_filepath,
         'lat': lat,
         'lon': lon,
         'place_name': place_name if place_name else 'Default'
