@@ -7,7 +7,7 @@
       "../deployment/docker-compose.override.devcontainer.yml"
     ],
     "service": "dev",
-    "runServices": ["db", "minio", "hyrax", "redis", "celery_beat", "worker", "dev"],
+    "runServices": ["db", "minio", "redis", "celery_beat", "worker", "dev"],
     "workspaceFolder": "/home/web/project",
     "runArgs": [
       "--env-file",
