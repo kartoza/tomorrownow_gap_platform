@@ -78,6 +78,8 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/plumber_data:/home/web/plumber_data
       - ./volumes/media:/home/web/media
+    ports:
+      - "8282:8282"
     links:
       - db
       - redis
