@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 from typing import Dict, List
+import pytz
 from datetime import date, datetime, time
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -94,11 +95,11 @@ class BaseMeasurementAPI(APIView):
         location = self._get_location_filter()
         start_dt = datetime.combine(
             self._get_date_filter('start_date'),
-            time.min
+            time.min, tzinfo=pytz.UTC
         )
         end_dt = datetime.combine(
             self._get_date_filter('end_date'),
-            time.min
+            time.min, tzinfo=pytz.UTC
         )
         data = {}
         if location is None:

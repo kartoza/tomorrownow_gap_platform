@@ -15,6 +15,7 @@ from xarray.core.dataset import Dataset as xrDataset
 import fsspec
 
 from gap.models import (
+    Provider,
     Dataset,
     DatasetAttribute,
     NetCDFFile
@@ -26,6 +27,45 @@ class NetCDFProvider:
 
     CBAM = 'CBAM'
     SALIENT = 'Salient'
+
+    @classmethod
+    def get_s3_variables(cls, provider: Provider):
+        """Get s3 variables for data access.
+
+        :param provider: NetCDF Data Provider
+        :type provider: Provider
+        :return: Dict<Key, Value> of AWS Credentials
+        :rtype: dict
+        """
+        prefix = provider.name.upper()
+        keys = [
+            'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+            'AWS_ENDPOINT_URL', 'AWS_BUCKET_NAME',
+            'AWS_DIR_PREFIX', 'AWS_REGION_NAME'
+        ]
+        results = {}
+        for key in keys:
+            results[key] = os.environ.get(f'{prefix}_{key}', '')
+        return results
+
+    @classmethod
+    def get_s3_client_kwargs(cls, provider: Provider):
+        """Get s3 client_kwargs for s3fs initialization.
+
+        :param provider: NetCDF Data Provider
+        :type provider: Provider
+        :return: Dict of endpoint_url or region_name
+        :rtype: dict
+        """
+        prefix = provider.name.upper()
+        client_kwargs = {}
+        if os.environ.get(f'{prefix}_AWS_ENDPOINT_URL', ''):
+            client_kwargs['endpoint_url'] = os.environ.get(
+                f'{prefix}_AWS_ENDPOINT_URL', '')
+        if os.environ.get(f'{prefix}_AWS_REGION_NAME', ''):
+            client_kwargs['region_name'] = os.environ.get(
+                f'{prefix}_AWS_REGION_NAME', '')
+        return client_kwargs
 
 
 class NetCDFVariable:
@@ -213,12 +253,16 @@ class BaseNetCDFReader:
         if len(is_existing) == 0:
             self.attributes.append(attribute)
 
-    def setupNetCDFReader(self):
+    def setup_netcdf_reader(self):
         """Initialize s3fs."""
-        self.bucket_name = os.environ.get('S3_AWS_BUCKET_NAME')
-        endpoint_url = os.environ.get('AWS_ENDPOINT_URL')
+        self.s3 = NetCDFProvider.get_s3_variables(self.dataset.provider)
         self.fs = fsspec.filesystem(
-            's3', client_kwargs=dict(endpoint_url=endpoint_url)
+            's3',
+            key=self.s3.get('AWS_ACCESS_KEY_ID'),
+            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            client_kwargs=(
+                NetCDFProvider.get_s3_client_kwargs(self.dataset.provider)
+            )
         )
 
     def open_dataset(self, netcdf_file: NetCDFFile) -> xrDataset:
@@ -229,7 +273,12 @@ class BaseNetCDFReader:
         :return: xArray Dataset object
         :rtype: xrDataset
         """
-        netcdf_url = f's3://{self.bucket_name}/{netcdf_file.name}'
+        prefix = self.s3['AWS_DIR_PREFIX']
+        bucket_name = self.s3['AWS_BUCKET_NAME']
+        netcdf_url = f's3://{bucket_name}/{prefix}'
+        if not netcdf_url.endswith('/'):
+            netcdf_url += '/'
+        netcdf_url += f'{netcdf_file.name}'
         return xr.open_dataset(self.fs.open(netcdf_url))
 
     def read_variables(self, dataset: xrDataset) -> xrDataset:
@@ -304,7 +353,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
 
     def read_historical_data(self):
         """Read historical data from dataset."""
-        self.setupNetCDFReader()
+        self.setup_netcdf_reader()
         self.xrDatasets = []
         for filter_date in daterange_inc(self.start_date, self.end_date):
             netcdf_file = NetCDFFile.objects.filter(
@@ -380,7 +429,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
 
     def read_forecast_data(self):
         """Read forecast data from dataset."""
-        self.setupNetCDFReader()
+        self.setup_netcdf_reader()
         self.xrDatasets = []
         netcdf_file = NetCDFFile.objects.filter(
             dataset=self.dataset
