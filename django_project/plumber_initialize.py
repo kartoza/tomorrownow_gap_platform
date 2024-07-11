@@ -1,6 +1,4 @@
-"""
-This script initializes
-"""
+"""This script initializes plumber service."""
 
 #########################################################
 # Setting up the  context
@@ -10,11 +8,12 @@ This script initializes
 # Imports
 #########################################################
 import django
-django.setup()
-
 from django.db import connection
 from django.db.utils import OperationalError
 import time
+
+
+django.setup()
 
 #########################################################
 # 1. Waiting for PostgreSQL

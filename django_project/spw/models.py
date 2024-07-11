@@ -1,5 +1,13 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Models for SPW R code
+"""
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
 
 
 User = get_user_model()
@@ -9,7 +17,7 @@ class RModel(models.Model):
     """Model that stores R code."""
 
     name = models.CharField(max_length=256)
-    version = models.IntegerField()
+    version = models.FloatField()
     code = models.TextField()
     notes = models.TextField(
         null=True,
@@ -55,4 +63,25 @@ class RModelOutput(models.Model):
         )
     )
     variable_name = models.CharField(max_length=100)
-    
+
+
+@receiver(post_save, sender=RModel)
+def rmodel_post_create(sender, instance: RModel,
+                       created, *args, **kwargs):
+    """Restart plumber process when a RModel is created."""
+    from spw.tasks import (
+        start_plumber_process
+    )
+    if instance.code and instance.id:
+        start_plumber_process.apply_async(queue='plumber')
+
+
+@receiver(post_delete, sender=RModel)
+def rmodel_post_delete(sender, instance: RModel,
+                       *args, **kwargs):
+    """Restart plumber process when a RModel is deleted."""
+    from spw.tasks import (
+        start_plumber_process
+    )
+    # respawn Plumber API
+    start_plumber_process.apply_async(queue='plumber')

@@ -1,3 +1,9 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Plumber functions.
+"""
 import logging
 import traceback
 import os
@@ -8,10 +14,12 @@ import requests
 from uuid import uuid4
 
 from core.settings.utils import absolute_path
+from spw.models import RModel, RModelOutput
 from spw.utils.process import (
     write_pidfile,
     kill_process_by_pid
 )
+
 
 logger = logging.getLogger(__name__)
 PLUMBER_PORT = os.getenv('PLUMBER_PORT', 8282)
@@ -94,11 +102,28 @@ def kill_r_plumber_process():
     kill_process_by_pid(pid_path)
 
 
-def execute_spw_model(data_filepath):
-    api_name = f'api_spw'
-    request_url = f'http://plumber:{PLUMBER_PORT}/statistical/{api_name}'
+def execute_spw_model(
+        data_filepath: str, lat: float = 0.0, lon: float = 0.0,
+        place_name: str = None):
+    """Execute SPW model given the data_filepath.
+
+    :param data_filepath: CSV file path containing the data.
+    :type data_filepath: str
+    :param lat: Latitude of data query
+    :type lat: float
+    :param lon: Longitude of data query
+    :type lon: float
+    :param place_name: Place name (optional)
+    :type place_name: str
+    :return: dictionary of spw model output
+    :rtype: dict
+    """
+    request_url = f'http://plumber:{PLUMBER_PORT}/spw/generic'
     data = {
-        'filepath': data_filepath
+        'filepath': data_filepath,
+        'lat': lat,
+        'lon': lon,
+        'place_name': place_name if place_name else 'Default'
     }
     response = requests.post(request_url, data=data)
     content_type = response.headers['Content-Type']
@@ -117,7 +142,7 @@ def execute_spw_model(data_filepath):
 
 
 def write_plumber_file(file_path = None):
-    """Write R codes to plumber.R"""
+    """Write R codes to plumber.R."""
     r_file_path = file_path if file_path else os.path.join(
         '/home/web/plumber_data',
         'plumber.R'
@@ -127,7 +152,35 @@ def write_plumber_file(file_path = None):
     )
     with open(template_file, 'r') as f:
         lines = f.readlines()
-    # TODO: write SPW R Code here
+    model = RModel.objects.order_by('-version').first()
+    if model:
+        lines.append('\n')
+        lines.append('#* Generic Model\n')
+        lines.append('#* @post /spw/generic\n')
+
+        lines.append('function(data_filename, lat, lon, place_name) {\n')
+        lines.append(f'  metadata <- list(version={model.version}, '
+                     'lat=lat, lon=lon, place_name=place_name, '
+                     'generated_on=format(Sys.time(), '
+                     '"%Y-%m-%d %H:%M:%S %Z"))\n')
+        lines.append('  time_start <- Sys.time()\n')
+        code_lines = model.code.splitlines()
+        for code in code_lines:
+            lines.append(f'  {code}\n')
+        lines.append('  metadata[\'total_execution_time\'] '
+                     '<- Sys.time() - time_start\n')
+        # add output
+        model_outputs = RModelOutput.objects.filter(
+            model=model
+        )
+        output_list = ['metadata=metadata']
+        for output in model_outputs:
+            output_list.append(f'{output.type}={output.variable_name}')
+        output_list_str = ','.join(output_list)
+        lines.append(
+            f'  list({output_list_str})\n'
+        )
+        lines.append('}\n')
     with open(r_file_path, 'w') as f:
         for line in lines:
             f.write(line)

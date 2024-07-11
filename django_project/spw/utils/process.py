@@ -1,4 +1,9 @@
-"""Utilities function for process management."""
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Process management functions.
+"""
 import os
 import logging
 from signal import SIGKILL
@@ -14,13 +19,13 @@ def write_pidfile(pid, pidfile_path):
 
 
 def read_pid_from_pidfile(pidfile_path):
-    """ Read the PID recorded in the named PID file.
+    """Read the PID recorded in the named PID file.
 
-        Read and return the numeric PID recorded as text in the named
-        PID file. If the PID file cannot be read, or if the content is
-        not a valid PID, return ``None``.
+    Read and return the numeric PID recorded as text in the named
+    PID file. If the PID file cannot be read, or if the content is
+    not a valid PID, return ``None``.
 
-        """
+    """
     pid = None
     try:
         pidfile = open(pidfile_path, 'r')
@@ -48,7 +53,7 @@ def read_pid_from_pidfile(pidfile_path):
 
 
 def kill_process_by_pid(pidfile_path):
-    """Kill process by PID. """
+    """Kill process by PID."""
     plumber_pid = read_pid_from_pidfile(pidfile_path)
     logger.info(f'Killing pid {plumber_pid}')
     if plumber_pid:
