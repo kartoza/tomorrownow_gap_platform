@@ -22,7 +22,6 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
-      - ./volumes/hyrax_data:/home/web/opendap
 
   celery_beat:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
@@ -35,7 +34,6 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
-      - ./volumes/hyrax_data:/home/web/opendap
 
   dev:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
@@ -50,7 +48,6 @@ services:
       - ../:/home/web/project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
-      - ./volumes/hyrax_data:/home/web/opendap
     links:
       - db
       - worker
@@ -68,14 +65,3 @@ services:
     volumes:
       - ./volumes/minio_data:/data
     restart: always
-
-  hyrax:
-    entrypoint: [ "/custom_entrypoint.sh" ]
-    volumes:
-      - ./volumes/hyrax_data:/usr/share/hyrax
-      - ./hyrax/site.conf:/etc/bes/site.conf:ro
-      - ./hyrax/entrypoint.sh:/custom_entrypoint.sh
-    links:
-      - minio
-      - dev
-      - worker
