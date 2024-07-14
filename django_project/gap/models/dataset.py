@@ -11,14 +11,23 @@ from core.models.common import Definition
 from gap.models.common import Provider
 
 
-class DatasetType:
+class CastType:
+    """Cast type."""
+
+    HISTORICAL = 'historical'
+    FORECAST = 'forecast'
+
+
+class DatasetType(Definition):
     """Dataset type."""
 
-    CLIMATE_REANALYSIS = 'Climate Reanalysis'
-    SHORT_TERM_FORECAST = 'Short-term Forecast'
-    SEASONAL_FORECAST = 'Seasonal Forecast'
-    GROUND_OBSERVATIONAL = 'Ground Observational'
-    AIRBORNE_OBSERVATIONAL = 'Airborne Observational'
+    type = models.CharField(
+        choices=(
+            (CastType.HISTORICAL, CastType.HISTORICAL),
+            (CastType.FORECAST, CastType.FORECAST),
+        ),
+        max_length=512
+    )
 
 
 class DatasetStore:
@@ -42,21 +51,8 @@ class Dataset(Definition):
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
     )
-    type = models.CharField(
-        choices=(
-            (DatasetType.CLIMATE_REANALYSIS, DatasetType.CLIMATE_REANALYSIS),
-            (DatasetType.SHORT_TERM_FORECAST, DatasetType.SHORT_TERM_FORECAST),
-            (DatasetType.SEASONAL_FORECAST, DatasetType.SEASONAL_FORECAST),
-            (
-                DatasetType.GROUND_OBSERVATIONAL,
-                DatasetType.GROUND_OBSERVATIONAL
-            ),
-            (
-                DatasetType.AIRBORNE_OBSERVATIONAL,
-                DatasetType.AIRBORNE_OBSERVATIONAL
-            ),
-        ),
-        max_length=512
+    type = models.ForeignKey(
+        DatasetType, on_delete=models.CASCADE
     )
     time_step = models.CharField(
         choices=(

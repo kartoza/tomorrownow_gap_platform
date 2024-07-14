@@ -9,6 +9,8 @@ from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
 from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
+    CastType,
+    DatasetType,
     Dataset,
     Provider,
     Unit,
@@ -18,7 +20,6 @@ from gap.models import (
     Station,
     Measurement,
     ObservationType,
-    DatasetType,
     DatasetTimeStep,
     DatasetStore,
     NetCDFFile
@@ -37,6 +38,19 @@ class ProviderFactory(
     description = factory.Faker('text')
 
 
+class DatasetTypeFactory(
+    BaseFactory[DatasetType], metaclass=BaseMetaFactory[DatasetType]
+):
+    """Factory class for DatasetType model."""
+
+    class Meta:  # noqa
+        model = DatasetType
+
+    name = factory.Faker('company')
+    description = factory.Faker('text')
+    type = CastType.HISTORICAL
+
+
 class DatasetFactory(
     BaseFactory[Dataset], metaclass=BaseMetaFactory[Dataset]
 ):
@@ -47,7 +61,7 @@ class DatasetFactory(
 
     name = factory.Faker('company')
     description = factory.Faker('text')
-    type = DatasetType.CLIMATE_REANALYSIS
+    type = factory.SubFactory(DatasetTypeFactory)
     time_step = DatasetTimeStep.DAILY
     store_type = DatasetStore.TABLE
     provider = factory.SubFactory(ProviderFactory)

@@ -5,7 +5,7 @@ Tomorrow Now GAP.
 .. note:: Measurement APIs
 """
 
-from typing import Dict, List
+from typing import Dict
 import pytz
 from datetime import date, datetime, time
 from drf_yasg.utils import swagger_auto_schema
@@ -19,7 +19,7 @@ from gap.models import (
     Attribute,
     DatasetAttribute,
     DatasetStore,
-    DatasetType
+    CastType
 )
 from gap.utils.netcdf import BaseNetCDFReader, DatasetReaderValue
 from gap_api.serializers.common import APIErrorSerializer
@@ -67,13 +67,13 @@ class BaseMeasurementAPI(APIView):
             return None
         return Point(x=float(lon), y=float(lat))
 
-    def _get_dataset_types(self) -> List[DatasetType]:
-        """Get dataset types that the API will query.
+    def _get_cast_type(self) -> str:
+        """Get dataset cast types that the API will query.
 
-        :return: List of DatasetType
-        :rtype: List[DatasetType]
+        :return: Historical or Forecast
+        :rtype: str
         """
-        return []
+        return CastType.HISTORICAL
 
     def _read_data(self, reader: BaseNetCDFReader) -> DatasetReaderValue:
         """Read data from given reader.
@@ -106,7 +106,7 @@ class BaseMeasurementAPI(APIView):
             return data
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
-            dataset__type__in=self._get_dataset_types()
+            dataset__type__name=self._get_cast_type()
         )
         dataset_dict: Dict[int, BaseNetCDFReader] = {}
         for da in dataset_attributes:
@@ -126,14 +126,6 @@ class HistoricalAPI(BaseMeasurementAPI):
     """Fetch historical by attribute and date range."""
 
     permission_classes = [IsAuthenticated]
-
-    def _get_dataset_types(self) -> List[DatasetType]:
-        """Get dataset types that the API will query.
-
-        :return: List of DatasetType
-        :rtype: List[DatasetType]
-        """
-        return [DatasetType.CLIMATE_REANALYSIS]
 
     def _read_data(self, reader: BaseNetCDFReader) -> DatasetReaderValue:
         """Read hitorical data from given reader.
@@ -199,14 +191,13 @@ class ForecastAPI(BaseMeasurementAPI):
 
     permission_classes = [IsAuthenticated]
 
-    def _get_dataset_types(self) -> List[DatasetType]:
-        """Get dataset types that the API will query.
+    def _get_cast_type(self) -> str:
+        """Get dataset cast type that the API will query.
 
-        :return: List of DatasetType
-        :rtype: List[DatasetType]
+        :return: Forecast
+        :rtype: str
         """
-        return [DatasetType.SEASONAL_FORECAST,
-                DatasetType.SHORT_TERM_FORECAST]
+        return CastType.FORECAST
 
     def _read_data(self, reader: BaseNetCDFReader) -> DatasetReaderValue:
         """Read forecast data from given reader.

@@ -8,7 +8,7 @@ from django.contrib import admin
 
 from .models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
-    Dataset, DatasetAttribute, NetCDFFile
+    Dataset, DatasetAttribute, NetCDFFile, DatasetType
 )
 
 
@@ -40,6 +40,15 @@ class ProviderAdmin(admin.ModelAdmin):
         'name', 'description'
     )
     search_fields = ('name',)
+
+
+@admin.register(DatasetType)
+class DatasetTypeAdmin(admin.ModelAdmin):
+    """DatasetType admin."""
+
+    list_display = (
+        'name', 'type'
+    )
 
 
 @admin.register(Dataset)

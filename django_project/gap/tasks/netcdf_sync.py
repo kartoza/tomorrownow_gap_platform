@@ -23,7 +23,8 @@ from gap.models import (
     DatasetStore,
     DatasetTimeStep,
     DatasetType,
-    Unit
+    Unit,
+    CastType
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
@@ -47,14 +48,24 @@ def initialize_provider(provider_name: str) -> Tuple[Provider, Dataset]:
     """
     provider, _ = Provider.objects.get_or_create(name=provider_name)
     if provider.name == NetCDFProvider.CBAM:
-        dataset_type = DatasetType.CLIMATE_REANALYSIS
+        dataset_type, _ = DatasetType.objects.get_or_create(
+            name='Climate Reanalysis',
+            defaults={
+                'type': CastType.HISTORICAL
+            }
+        )
     else:
-        dataset_type = DatasetType.SEASONAL_FORECAST
+        dataset_type, _ = DatasetType.objects.get_or_create(
+            name='Seasonal Forecast',
+            defaults={
+                'type': CastType.FORECAST
+            }
+        )
     dataset, _ = Dataset.objects.get_or_create(
-        name=provider.name,
+        name=f'{provider.name} {dataset_type.name}',
         provider=provider,
+        type=dataset_type,
         defaults={
-            'type': dataset_type,
             'time_step': DatasetTimeStep.DAILY,
             'store_type': DatasetStore.NETCDF
         }
