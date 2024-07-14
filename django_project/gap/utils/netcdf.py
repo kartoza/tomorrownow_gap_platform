@@ -253,6 +253,20 @@ class BaseNetCDFReader:
         if len(is_existing) == 0:
             self.attributes.append(attribute)
 
+    def get_attributes_metadata(self) -> dict:
+        """Get attributes metadata (unit and desc).
+
+        :return: Dictionary of attribute and its metadata
+        :rtype: dict
+        """
+        results = {}
+        for attrib in self.attributes:
+            results[attrib.attribute.variable_name] = {
+                'units': attrib.attribute.unit.name,
+                'longname': attrib.attribute.name
+            }
+        return results
+
     def setup_netcdf_reader(self):
         """Initialize s3fs."""
         self.s3 = NetCDFProvider.get_s3_variables(self.dataset.provider)
@@ -392,7 +406,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
                 value_data
             ))
         metadata = {
-            'dataset': self.dataset.name,
+            'dataset': [self.dataset.name],
             'start_date': self.start_date.isoformat(),
             'end_date': self.end_date.isoformat()
         }
@@ -487,7 +501,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
                 value_data
             ))
         metadata = {
-            'dataset': self.dataset.name,
+            'dataset': [self.dataset.name],
             'start_date': self.start_date.isoformat(),
             'end_date': self.end_date.isoformat()
         }

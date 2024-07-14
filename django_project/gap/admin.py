@@ -77,6 +77,7 @@ class DatasetAttributeAdmin(admin.ModelAdmin):
     list_display = (
         'dataset', 'attribute', 'source', 'source_unit',
     )
+    list_filter = ('dataset',)
 
 
 @admin.register(Measurement)

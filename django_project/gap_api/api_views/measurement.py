@@ -106,7 +106,7 @@ class BaseMeasurementAPI(APIView):
             return data
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
-            dataset__type__name=self._get_cast_type()
+            dataset__type__type=self._get_cast_type()
         )
         dataset_dict: Dict[int, BaseNetCDFReader] = {}
         for da in dataset_attributes:
@@ -117,8 +117,23 @@ class BaseMeasurementAPI(APIView):
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
         for reader in dataset_dict.values():
-            values = self._read_data(reader)
-            data.update(values.to_dict())
+            values = self._read_data(reader).to_dict()
+            if 'metadata' in data:
+                data['metadata']['dataset'].extend(
+                    reader.dataset.name)
+                data['metadata']['attributes'].update(
+                    reader.get_attributes_metadata())
+            else:
+                data['metadata'] = values['metadata']
+                data['metadata']['attributes'] = (
+                    reader.get_attributes_metadata()
+                )
+            if 'data' in data:
+                data['data'][reader.dataset.name] = values['data']
+            else:
+                data['data'] = {
+                    reader.dataset.name: values['data']
+                }
         return data
 
 
