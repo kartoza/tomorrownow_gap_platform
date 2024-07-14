@@ -86,11 +86,11 @@ CBAM_VARIABLES = {
     ),
     'max_total_temperature': NetCDFVariable(
         'Max Total Temperature',
-        'Maximum temperature (0000:2300)', 'Deg C'
+        'Maximum temperature (0000:2300)', '°C'
     ),
     'max_night_temperature': NetCDFVariable(
         'Max Night Temperature',
-        'Maximum night-time temperature (1900:0500)', 'Deg C'
+        'Maximum night-time temperature (1900:0500)', '°C'
     ),
     'average_solar_irradiance': NetCDFVariable(
         'Average Solar Irradiance',
@@ -103,11 +103,11 @@ CBAM_VARIABLES = {
     ),
     'min_night_temperature': NetCDFVariable(
         'Min Night Temperature',
-        'Minimum night-time temperature (1900:0500)', 'Deg C'
+        'Minimum night-time temperature (1900:0500)', '°C'
     ),
     'max_day_temperature': NetCDFVariable(
         'Max Day Temperature',
-        'Maximum day-time temperature (0600:1800)', 'Deg C'
+        'Maximum day-time temperature (0600:1800)', '°C'
     ),
     'total_rainfall': NetCDFVariable(
         'Total Rainfall',
@@ -115,11 +115,11 @@ CBAM_VARIABLES = {
     ),
     'min_day_temperature': NetCDFVariable(
         'Min Day Temperature',
-        'Minumum day-time temperature (0600:1800)', 'Deg C'
+        'Minumum day-time temperature (0600:1800)', '°C'
     ),
     'min_total_temperature': NetCDFVariable(
         'Min Total Temperature',
-        'Minumum temperature (0000:2300)', 'Deg C'
+        'Minumum temperature (0000:2300)', '°C'
     ),
 }
 
@@ -129,19 +129,19 @@ SALIENT_VARIABLES = {
         'Precipitation Climatology', None, 'mm day-1'
     ),
     'temp_clim': NetCDFVariable(
-        'Temperature Climatology', None, 'Deg C'
+        'Temperature Climatology', None, '°C'
     ),
     'precip_anom': NetCDFVariable(
         'Precipitation Anomaly', None, 'mm day-1'
     ),
     'temp_anom': NetCDFVariable(
-        'Temperature Anomaly', None, 'Deg C'
+        'Temperature Anomaly', None, '°C'
     ),
     'precip': NetCDFVariable(
         'Precipitation', None, 'mm day-1'
     ),
     'temp': NetCDFVariable(
-        'Temperature', None, 'Deg C'
+        'Temperature', None, '°C'
     ),
 }
 

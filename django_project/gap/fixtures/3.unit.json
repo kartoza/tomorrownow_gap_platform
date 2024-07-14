@@ -1,0 +1,74 @@
+[
+{
+    "model": "gap.unit",
+    "pk": 1,
+    "fields": {
+        "name": "mm",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 3,
+    "fields": {
+        "name": "MJ/sqm",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 4,
+    "fields": {
+        "name": "mm day-1",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 5,
+    "fields": {
+        "name": "atm",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 6,
+    "fields": {
+        "name": "g/m3",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 7,
+    "fields": {
+        "name": "W/m2",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 8,
+    "fields": {
+        "name": "°C",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 9,
+    "fields": {
+        "name": "Degrees from North",
+        "description": null
+    }
+},
+{
+    "model": "gap.unit",
+    "pk": 10,
+    "fields": {
+        "name": "m/s",
+        "description": null
+    }
+}
+]

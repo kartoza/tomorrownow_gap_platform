@@ -8,8 +8,18 @@ from django.contrib import admin
 
 from .models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
-    Dataset, DatasetAttribute, NetCDFFile, DatasetType
+    Dataset, DatasetAttribute, NetCDFFile, DatasetType, Unit
 )
+
+
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    """Unit admin."""
+
+    list_display = (
+        'name', 'description'
+    )
+    search_fields = ('name',)
 
 
 @admin.register(Attribute)
