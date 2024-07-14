@@ -13,14 +13,19 @@ from django.contrib.gis.geos import Point
 from unittest.mock import Mock, MagicMock, patch
 
 from core.settings.utils import absolute_path
+from gap.utils.reader import (
+    DatasetTimelineValue,
+    DatasetReaderValue
+)
 from gap.utils.netcdf import (
     NetCDFProvider,
     daterange_inc,
-    DatasetTimelineValue,
-    DatasetReaderValue,
     BaseNetCDFReader,
+)
+from gap.providers import (
     CBAMNetCDFReader,
-    SalientNetCDFReader
+    SalientNetCDFReader,
+    get_reader_from_dataset
 )
 from gap.factories import (
     ProviderFactory,
@@ -155,16 +160,16 @@ class TestBaseNetCDFReader(TestCase):
         """Test for creating NetCDFReader from dataset."""
         dataset1 = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.CBAM))
-        reader = BaseNetCDFReader.from_dataset(dataset1)
+        reader = get_reader_from_dataset(dataset1)
         self.assertEqual(reader, CBAMNetCDFReader)
         dataset2 = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.SALIENT))
-        reader = BaseNetCDFReader.from_dataset(dataset2)
+        reader = get_reader_from_dataset(dataset2)
         self.assertEqual(reader, SalientNetCDFReader)
         # invalid type
         dataset3 = DatasetFactory.create()
         with self.assertRaises(TypeError):
-            BaseNetCDFReader.from_dataset(dataset3)
+            get_reader_from_dataset(dataset3)
 
 
 class TestCBAMNetCDFReader(TestCase):

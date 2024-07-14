@@ -18,12 +18,12 @@ from django.contrib.gis.geos import Point
 from gap.models import (
     Attribute,
     DatasetAttribute,
-    DatasetStore,
     CastType
 )
-from gap.utils.netcdf import BaseNetCDFReader, DatasetReaderValue
+from gap.utils.reader import DatasetReaderValue, BaseDatasetReader
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
+from gap.providers import get_reader_from_dataset
 
 
 class BaseMeasurementAPI(APIView):
@@ -65,7 +65,7 @@ class BaseMeasurementAPI(APIView):
         lat = self.request.GET.get('lat', None)
         if lon is None or lat is None:
             return None
-        return Point(x=float(lon), y=float(lat))
+        return Point(x=float(lon), y=float(lat), srid=4326)
 
     def _get_cast_type(self) -> str:
         """Get dataset cast types that the API will query.
@@ -75,7 +75,7 @@ class BaseMeasurementAPI(APIView):
         """
         return CastType.HISTORICAL
 
-    def _read_data(self, reader: BaseNetCDFReader) -> DatasetReaderValue:
+    def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
         """Read data from given reader.
 
         :param reader: NetCDF File Reader
@@ -99,7 +99,7 @@ class BaseMeasurementAPI(APIView):
         )
         end_dt = datetime.combine(
             self._get_date_filter('end_date'),
-            time.min, tzinfo=pytz.UTC
+            time.max, tzinfo=pytz.UTC
         )
         data = {}
         if location is None:
@@ -108,18 +108,18 @@ class BaseMeasurementAPI(APIView):
             attribute__in=attributes,
             dataset__type__type=self._get_cast_type()
         )
-        dataset_dict: Dict[int, BaseNetCDFReader] = {}
+        dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
             if da.dataset.id in dataset_dict:
                 dataset_dict[da.dataset.id].add_attribute(da)
-            elif da.dataset.store_type == DatasetStore.NETCDF:
-                reader = BaseNetCDFReader.from_dataset(da.dataset)
+            else:
+                reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
         for reader in dataset_dict.values():
             values = self._read_data(reader).to_dict()
             if 'metadata' in data:
-                data['metadata']['dataset'].extend(
+                data['metadata']['dataset'].append(
                     reader.dataset.name)
                 data['metadata']['attributes'].update(
                     reader.get_attributes_metadata())
@@ -142,7 +142,7 @@ class HistoricalAPI(BaseMeasurementAPI):
 
     permission_classes = [IsAuthenticated]
 
-    def _read_data(self, reader: BaseNetCDFReader) -> DatasetReaderValue:
+    def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
         """Read hitorical data from given reader.
 
         :param reader: NetCDF File Reader
@@ -214,7 +214,7 @@ class ForecastAPI(BaseMeasurementAPI):
         """
         return CastType.FORECAST
 
-    def _read_data(self, reader: BaseNetCDFReader) -> DatasetReaderValue:
+    def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
         """Read forecast data from given reader.
 
         :param reader: NetCDF File Reader

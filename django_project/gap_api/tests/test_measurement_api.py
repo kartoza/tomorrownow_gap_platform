@@ -55,7 +55,6 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(response.data, {})
 
 
-
 class ForecastAPITest(CommonMeasurementAPITest):
     """Forecast api test case."""
 

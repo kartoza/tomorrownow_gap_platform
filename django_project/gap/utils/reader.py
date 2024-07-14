@@ -1,0 +1,145 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Helper for reading dataset
+"""
+
+from typing import Union, List
+import numpy as np
+from datetime import datetime
+from django.contrib.gis.geos import Point
+
+from gap.models import (
+    Dataset,
+    DatasetAttribute
+)
+
+
+class DatasetTimelineValue:
+    """Class representing data value for given datetime."""
+
+    def __init__(
+            self, datetime: Union[np.datetime64, datetime],
+            values: dict) -> None:
+        """Initialize DatasetTimelineValue object.
+
+        :param datetime: datetime of data
+        :type datetime: np.datetime64 or datetime
+        :param values: Dictionary of variable and its value
+        :type values: dict
+        """
+        self.datetime = datetime
+        self.values = values
+
+    def _datetime_as_str(self):
+        """Convert datetime object to string."""
+        if isinstance(self.datetime, np.datetime64):
+            return np.datetime_as_string(
+                self.datetime, unit='s', timezone='UTC')
+        return self.datetime.isoformat(timespec='seconds')
+
+    def to_dict(self):
+        """Convert into dict.
+
+        :return: Dictionary of datetime and values
+        :rtype: dict
+        """
+        return {
+            'datetime': self._datetime_as_str(),
+            'values': self.values
+        }
+
+
+class DatasetReaderValue:
+    """Class representing all values from reader."""
+
+    def __init__(
+            self, metadata: dict,
+            results: List[DatasetTimelineValue]) -> None:
+        """Initialize DatasetReaderValue object.
+
+        :param metadata: Dictionary of metadata
+        :type metadata: dict
+        :param results: Data value list
+        :type results: List[DatasetTimelineValue]
+        """
+        self.metadata = metadata
+        self.results = results
+
+    def to_dict(self):
+        """Convert into dict.
+
+        :return: Dictionary of metadata and data
+        :rtype: dict
+        """
+        return {
+            'metadata': self.metadata,
+            'data': [result.to_dict() for result in self.results]
+        }
+
+
+class BaseDatasetReader:
+    """Base class for Dataset Reader."""
+
+    def __init__(
+            self, dataset: Dataset, attributes: List[DatasetAttribute],
+            point: Point, start_date: datetime, end_date: datetime) -> None:
+        """Initialize BaseDatasetReader class.
+
+        :param dataset: Dataset for reading
+        :type dataset: Dataset
+        :param attributes: List of attributes to be queried
+        :type attributes: List[DatasetAttribute]
+        :param point: Location to be queried
+        :type point: Point
+        :param start_date: Start date time filter
+        :type start_date: datetime
+        :param end_date: End date time filter
+        :type end_date: datetime
+        """
+        self.dataset = dataset
+        self.attributes = attributes
+        self.point = point
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def add_attribute(self, attribute: DatasetAttribute):
+        """Add a new attribuute to be read.
+
+        :param attribute: Dataset Attribute
+        :type attribute: DatasetAttribute
+        """
+        is_existing = [a for a in self.attributes if a.id == attribute.id]
+        if len(is_existing) == 0:
+            self.attributes.append(attribute)
+
+    def get_attributes_metadata(self) -> dict:
+        """Get attributes metadata (unit and desc).
+
+        :return: Dictionary of attribute and its metadata
+        :rtype: dict
+        """
+        results = {}
+        for attrib in self.attributes:
+            results[attrib.attribute.variable_name] = {
+                'units': attrib.attribute.unit.name,
+                'longname': attrib.attribute.name
+            }
+        return results
+
+    def get_data_values(self) -> DatasetReaderValue:
+        """Fetch data values from list of xArray Dataset object.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        pass
+
+    def read_historical_data(self):
+        """Read historical data from dataset."""
+        pass
+
+    def read_forecast_data(self):
+        """Read forecast data from dataset."""
+        pass
