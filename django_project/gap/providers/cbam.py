@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from typing import List
 from datetime import datetime
 from django.contrib.gis.geos import Point
+import numpy as np
 import xarray as xr
 
 from gap.models import (
@@ -45,11 +46,17 @@ class CBAMNetCDFReader(BaseNetCDFReader):
         """
         super().__init__(dataset, attributes, point, start_date, end_date)
 
-    def read_historical_data(self):
-        """Read historical data from dataset."""
+    def read_historical_data(self, start_date: datetime, end_date: datetime):
+        """Read historical data from dataset.
+
+        :param start_date: start date for reading historical data
+        :type start_date: datetime
+        :param end_date:  end date for reading historical data
+        :type end_date: datetime
+        """
         self.setup_netcdf_reader()
         self.xrDatasets = []
-        for filter_date in daterange_inc(self.start_date, self.end_date):
+        for filter_date in daterange_inc(start_date, end_date):
             netcdf_file = NetCDFFile.objects.filter(
                 dataset=self.dataset,
                 start_date_time__gte=filter_date,
@@ -61,11 +68,6 @@ class CBAMNetCDFReader(BaseNetCDFReader):
             val = self.read_variables(ds)
             self.xrDatasets.append(val)
 
-    def read_forecast_data(self):
-        """Read forecast data from dataset."""
-        raise NotImplementedError(
-            'CBAM does not have forecast data implementation!')
-
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from list of xArray Dataset object.
 
@@ -73,21 +75,24 @@ class CBAMNetCDFReader(BaseNetCDFReader):
         :rtype: DatasetReaderValue
         """
         results = []
-        val = xr.combine_nested(
-            self.xrDatasets, concat_dim=[self.date_variable])
-        for dt_idx, dt in enumerate(val[self.date_variable].values):
-            value_data = {}
-            for attribute in self.attributes:
-                value_data[attribute.attribute.variable_name] = (
-                    val[attribute.source].values[dt_idx]
-                )
-            results.append(DatasetTimelineValue(
-                dt,
-                value_data
-            ))
         metadata = {
             'dataset': [self.dataset.name],
             'start_date': self.start_date.isoformat(),
             'end_date': self.end_date.isoformat()
         }
+        if len(self.xrDatasets) == 0:
+            return DatasetReaderValue(metadata, results)
+        val = xr.combine_nested(
+            self.xrDatasets, concat_dim=[self.date_variable])
+        for dt_idx, dt in enumerate(val[self.date_variable].values):
+            value_data = {}
+            for attribute in self.attributes:
+                v = val[attribute.source].values[dt_idx]
+                value_data[attribute.attribute.variable_name] = (
+                    v if not np.isnan(v) else None
+                )
+            results.append(DatasetTimelineValue(
+                dt,
+                value_data
+            ))
         return DatasetReaderValue(metadata, results)

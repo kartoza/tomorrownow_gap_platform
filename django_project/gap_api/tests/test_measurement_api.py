@@ -8,7 +8,7 @@ Tomorrow Now GAP.
 from django.urls import reverse
 
 from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
-from gap_api.api_views.measurement import HistoricalAPI, ForecastAPI
+from gap_api.api_views.measurement import MeasurementAPI
 
 
 class CommonMeasurementAPITest(BaseAPIViewTest):
@@ -48,7 +48,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
 
     def test_read_historical_data_empty(self):
         """Test read historical data that returns empty."""
-        view = HistoricalAPI.as_view()
+        view = MeasurementAPI.as_view()
         request = self._get_measurement_request()
         response = view(request)
         self.assertEqual(response.status_code, 200)
@@ -60,7 +60,7 @@ class ForecastAPITest(CommonMeasurementAPITest):
 
     def test_read_forecast_data_empty(self):
         """Test read forecast data that returns empty."""
-        view = ForecastAPI.as_view()
+        view = MeasurementAPI.as_view()
         request = self._get_measurement_request()
         response = view(request)
         self.assertEqual(response.status_code, 200)

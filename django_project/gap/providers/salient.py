@@ -46,13 +46,14 @@ class SalientNetCDFReader(BaseNetCDFReader):
         """
         super().__init__(dataset, attributes, point, start_date, end_date)
 
-    def read_historical_data(self):
-        """Read historical data from dataset."""
-        raise NotImplementedError(
-            'Salient does not have historical data implementation!')
+    def read_forecast_data(self, start_date: datetime, end_date: datetime):
+        """Read forecast data from dataset.
 
-    def read_forecast_data(self):
-        """Read forecast data from dataset."""
+        :param start_date: start date for reading forecast data
+        :type start_date: datetime
+        :param end_date:  end date for reading forecast data
+        :type end_date: datetime
+        """
         self.setup_netcdf_reader()
         self.xrDatasets = []
         netcdf_file = NetCDFFile.objects.filter(
@@ -61,19 +62,25 @@ class SalientNetCDFReader(BaseNetCDFReader):
         if netcdf_file is None:
             return
         ds = self.open_dataset(netcdf_file)
-        val = self.read_variables(ds)
+        val = self.read_variables(ds, start_date, end_date)
         self.xrDatasets.append(val)
 
-    def read_variables(self, dataset: xrDataset) -> xrDataset:
+    def read_variables(
+            self, dataset: xrDataset, start_date: datetime = None,
+            end_date: datetime = None) -> xrDataset:
         """Read data from list variable with filter from given Point.
 
         :param dataset: xArray Dataset object
         :type dataset: xrDataset
+        :param start_date: start date for reading forecast data
+        :type start_date: datetime
+        :param end_date:  end date for reading forecast data
+        :type end_date: datetime
         :return: filtered xArray Dataset object
         :rtype: xrDataset
         """
-        start_dt = np.datetime64(self.start_date)
-        end_dt = np.datetime64(self.end_date)
+        start_dt = np.datetime64(start_date)
+        end_dt = np.datetime64(end_date)
         variables = [a.source for a in self.attributes]
         variables.append(self.date_variable)
         val = dataset[variables].sel(
@@ -92,9 +99,16 @@ class SalientNetCDFReader(BaseNetCDFReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
+        results = []
+        metadata = {
+            'dataset': [self.dataset.name],
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat()
+        }
+        if len(self.xrDatasets) == 0:
+            return DatasetReaderValue(metadata, results)
         # forecast will always use latest dataset
         val = self.xrDatasets[0]
-        results = []
         for dt_idx, dt in enumerate(val[self.date_variable].values):
             value_data = {}
             for attribute in self.attributes:
@@ -103,16 +117,12 @@ class SalientNetCDFReader(BaseNetCDFReader):
                         val[attribute.source].values[:, dt_idx]
                     )
                 else:
+                    v = val[attribute.source].values[dt_idx]
                     value_data[attribute.attribute.variable_name] = (
-                        val[attribute.source].values[dt_idx]
+                        v if not np.isnan(v) else None
                     )
             results.append(DatasetTimelineValue(
                 dt,
                 value_data
             ))
-        metadata = {
-            'dataset': [self.dataset.name],
-            'start_date': self.start_date.isoformat(),
-            'end_date': self.end_date.isoformat()
-        }
         return DatasetReaderValue(metadata, results)

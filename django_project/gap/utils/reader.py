@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from typing import Union, List
 import numpy as np
 from datetime import datetime
+import pytz
 from django.contrib.gis.geos import Point
 
 from gap.models import (
@@ -128,6 +129,23 @@ class BaseDatasetReader:
             }
         return results
 
+    def read(self):
+        """Read values from dataset."""
+        today = datetime.now(tz=pytz.UTC)
+        if self.start_date < today:
+            self.read_historical_data(
+                self.start_date,
+                self.end_date if self.end_date < today else today
+            )
+            if self.end_date > today:
+                self.read_forecast_data(
+                    today, self.end_date
+                )
+        else:
+            self.read_forecast_data(
+                self.start_date, self.end_date
+            )
+
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from list of xArray Dataset object.
 
@@ -136,10 +154,23 @@ class BaseDatasetReader:
         """
         pass
 
-    def read_historical_data(self):
-        """Read historical data from dataset."""
+
+    def read_historical_data(self, start_date: datetime, end_date: datetime):
+        """Read historical data from dataset.
+
+        :param start_date: start date for reading historical data
+        :type start_date: datetime
+        :param end_date:  end date for reading historical data
+        :type end_date: datetime
+        """
         pass
 
-    def read_forecast_data(self):
-        """Read forecast data from dataset."""
+    def read_forecast_data(self, start_date: datetime, end_date: datetime):
+        """Read forecast data from dataset.
+
+        :param start_date: start date for reading forecast data
+        :type start_date: datetime
+        :param end_date:  end date for reading forecast data
+        :type end_date: datetime
+        """
         pass

@@ -215,7 +215,9 @@ class BaseNetCDFReader(BaseDatasetReader):
         netcdf_url += f'{netcdf_file.name}'
         return xr.open_dataset(self.fs.open(netcdf_url))
 
-    def read_variables(self, dataset: xrDataset) -> xrDataset:
+    def read_variables(
+            self, dataset: xrDataset, start_date: datetime = None,
+            end_date: datetime = None) -> xrDataset:
         """Read data from list variable with filter from given Point.
 
         :param dataset: xArray Dataset object

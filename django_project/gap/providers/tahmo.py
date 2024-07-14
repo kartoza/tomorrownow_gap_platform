@@ -45,8 +45,14 @@ class TahmoDatasetReader(BaseDatasetReader):
         super().__init__(dataset, attributes, point, start_date, end_date)
         self.results = []
 
-    def read_historical_data(self):
-        """Read historical data from dataset."""
+    def read_historical_data(self, start_date: datetime, end_date: datetime):
+        """Read historical data from dataset.
+
+        :param start_date: start date for reading historical data
+        :type start_date: datetime
+        :param end_date:  end date for reading historical data
+        :type end_date: datetime
+        """
         nearest_station = Station.objects.annotate(
             distance=Distance('geometry', self.point)
         ).filter(
@@ -57,8 +63,8 @@ class TahmoDatasetReader(BaseDatasetReader):
         measurements = Measurement.objects.select_related(
             'dataset_attribute', 'dataset_attribute__attribute'
         ).filter(
-            date_time__gte=self.start_date,
-            date_time__lte=self.end_date,
+            date_time__gte=start_date,
+            date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
             station=nearest_station
         ).order_by('date_time')
@@ -77,11 +83,6 @@ class TahmoDatasetReader(BaseDatasetReader):
             ] = measurement.value
         self.results.append(
             DatasetTimelineValue(curr_dt, measurement_dict))
-
-    def read_forecast_data(self):
-        """Read forecast data from dataset."""
-        raise NotImplementedError(
-            'Tahmo does not have forecast data implementation!')
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch results.
