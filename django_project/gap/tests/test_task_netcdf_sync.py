@@ -9,13 +9,13 @@ from django.test import TestCase
 from unittest.mock import patch, MagicMock
 
 from gap.models import (
-    DatasetType,
     DatasetTimeStep,
     DatasetStore,
     Unit,
     Attribute,
     DatasetAttribute,
-    NetCDFFile
+    NetCDFFile,
+    CastType
 )
 from gap.utils.netcdf import (
     NetCDFProvider, NetCDFVariable, CBAM_VARIABLES, SALIENT_VARIABLES
@@ -41,8 +41,9 @@ class TestInitializeProvider(TestCase):
         provider, dataset = initialize_provider('CBAM')
 
         self.assertEqual(provider.name, 'CBAM')
-        self.assertEqual(dataset.name, 'CBAM')
-        self.assertEqual(dataset.type, DatasetType.CLIMATE_REANALYSIS)
+        self.assertEqual(dataset.name, 'CBAM Climate Reanalysis')
+        self.assertEqual(dataset.type.name, 'Climate Reanalysis')
+        self.assertEqual(dataset.type.type, CastType.HISTORICAL)
         self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
         self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
 
@@ -51,8 +52,9 @@ class TestInitializeProvider(TestCase):
         provider, dataset = initialize_provider('Salient')
 
         self.assertEqual(provider.name, 'Salient')
-        self.assertEqual(dataset.name, 'Salient')
-        self.assertEqual(dataset.type, DatasetType.SEASONAL_FORECAST)
+        self.assertEqual(dataset.name, 'Salient Seasonal Forecast')
+        self.assertEqual(dataset.type.name, 'Seasonal Forecast')
+        self.assertEqual(dataset.type.type, CastType.FORECAST)
         self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
         self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
 
