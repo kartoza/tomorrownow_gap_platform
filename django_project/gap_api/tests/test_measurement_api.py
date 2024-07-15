@@ -30,12 +30,9 @@ class MockDatasetReader(BaseDatasetReader):
                  end_date: datetime) -> None:
         """Initialize MockDatasetReader class."""
         super().__init__(dataset, attributes, point, start_date, end_date)
-        self.mocked_data = None
 
     def get_data_values(self) -> DatasetReaderValue:
         """Override data values with a mock object."""
-        if self.mocked_data:
-            return self.mocked_data
         return DatasetReaderValue(
             {
                 'dataset': [self.dataset.name]
@@ -51,7 +48,7 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
 
     def _get_measurement_request(
             self, lat=-2.215, lon=29.125, attributes='max_total_temperature',
-            start_dt='2024-04-01', end_dt='2024-04-04'):
+            start_dt='2024-04-01', end_dt='2024-04-04', providers=None):
         """Get request for Measurement API.
 
         :param lat: latitude, defaults to -2.215
@@ -68,10 +65,14 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         :return: Request object
         :rtype: WSGIRequest
         """
-        request = self.factory.get(
-            reverse('api:v1:get-measurement') +
+        request_params = (
             f'?lat={lat}&lon={lon}&attributes={attributes}'
             f'&start_date={start_dt}&end_date={end_dt}'
+        )
+        if providers:
+            request_params = request_params + f'&providers={providers}'
+        request = self.factory.get(
+            reverse('api:v1:get-measurement') + request_params
         )
         request.user = self.superuser
         request.resolver_match = FakeResolverMatchV1
@@ -117,6 +118,14 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertIn('values', results[0])
         self.assertIn('test', results[0]['values'])
         self.assertEqual(100, results[0]['values']['test'])
+        # with providers
+        request = self._get_measurement_request(
+            attributes=','.join(attribs),
+            providers='test_empty'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {})
 
 
 class ForecastAPITest(CommonMeasurementAPITest):

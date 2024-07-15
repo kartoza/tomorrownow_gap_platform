@@ -147,7 +147,7 @@ class BaseDatasetReader:
             )
 
     def get_data_values(self) -> DatasetReaderValue:
-        """Fetch data values from list of xArray Dataset object.
+        """Fetch data values from dataset.
 
         :return: Data Value.
         :rtype: DatasetReaderValue

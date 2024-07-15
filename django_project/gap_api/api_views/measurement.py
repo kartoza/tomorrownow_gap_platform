@@ -13,6 +13,7 @@ from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models.functions import Lower
 from django.contrib.gis.geos import Point
 
 from gap.models import (
@@ -67,11 +68,22 @@ class MeasurementAPI(APIView):
             return None
         return Point(x=float(lon), y=float(lat), srid=4326)
 
+    def _get_provider_filter(self):
+        """_summary_
+
+        :param dataset_attributes: _description_
+        :type dataset_attributes: _type_
+        """
+        providers = self.request.GET.get('providers', None)
+        if providers is None:
+            return None
+        return providers.lower().split(',')
+
     def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
         """Read data from given reader.
 
-        :param reader: NetCDF File Reader
-        :type reader: BaseNetCDFReader
+        :param reader: Dataset Reader
+        :type reader: BaseDatasetReader
         :return: data value
         :rtype: DatasetReaderValue
         """
@@ -79,7 +91,7 @@ class MeasurementAPI(APIView):
         return reader.get_data_values()
 
     def get_response_data(self):
-        """Read data from NetCDF File.
+        """Read data from dataset.
 
         :return: Dictionary of metadata and data
         :rtype: dict
@@ -100,6 +112,13 @@ class MeasurementAPI(APIView):
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes
         )
+        provider_filter = self._get_provider_filter()
+        if provider_filter:
+            dataset_attributes = dataset_attributes.annotate(
+                provider_name=Lower('dataset__provider__name')
+            ).filter(
+                provider_name__in=provider_filter
+            )
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
             if da.dataset.id in dataset_dict:
@@ -155,6 +174,11 @@ class MeasurementAPI(APIView):
                 'lon', openapi.IN_QUERY,
                 description='Longitude',
                 type=openapi.TYPE_NUMBER
+            ),
+            openapi.Parameter(
+                'providers', openapi.IN_QUERY,
+                description='List of provider name',
+                type=openapi.TYPE_STRING
             )
         ],
         responses={
