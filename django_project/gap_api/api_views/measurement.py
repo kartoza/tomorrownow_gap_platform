@@ -69,10 +69,10 @@ class MeasurementAPI(APIView):
         return Point(x=float(lon), y=float(lat), srid=4326)
 
     def _get_provider_filter(self):
-        """_summary_
+        """Get provider name filter in the request parameters.
 
-        :param dataset_attributes: _description_
-        :type dataset_attributes: _type_
+        :return: List of provider name lowercase
+        :rtype: List[str]
         """
         providers = self.request.GET.get('providers', None)
         if providers is None:
