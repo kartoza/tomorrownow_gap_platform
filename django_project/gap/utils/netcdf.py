@@ -20,7 +20,9 @@ from gap.models import (
     NetCDFFile
 )
 from gap.utils.reader import (
-    BaseDatasetReader
+    LocationInputType,
+    BaseDatasetReader,
+    DatasetReaderInput
 )
 
 
@@ -170,21 +172,23 @@ class BaseNetCDFReader(BaseDatasetReader):
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
-            point: Point, start_date: datetime, end_date: datetime) -> None:
+            location_input: DatasetReaderInput,
+            start_date: datetime, end_date: datetime) -> None:
         """Initialize BaseNetCDFReader class.
 
         :param dataset: Dataset for reading
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
-        :param point: Location to be queried
-        :type point: Point
+        :param location_input: Location to be queried
+        :type location_input: DatasetReaderInput
         :param start_date: Start date time filter
         :type start_date: datetime
         :param end_date: End date time filter
         :type end_date: datetime
         """
-        super().__init__(dataset, attributes, point, start_date, end_date)
+        super().__init__(
+            dataset, attributes, location_input, start_date, end_date)
         self.xrDatasets = []
 
     def setup_netcdf_reader(self):
@@ -227,5 +231,34 @@ class BaseNetCDFReader(BaseDatasetReader):
         """
         variables = [a.source for a in self.attributes]
         variables.append(self.date_variable)
-        return dataset[variables].sel(
-            lat=self.point.y, lon=self.point.x, method='nearest')
+        if self.location_input.get_input_type() == LocationInputType.POINT:
+            return dataset[variables].sel(
+                lat=self.location_input.points[0].y,
+                lon=self.location_input.points[0].x, method='nearest')
+        lat_min = self.location_input.points[0].y
+        lat_max = self.location_input.points[1].y
+        lon_min = self.location_input.points[0].x
+        lon_max = self.location_input.points[1].x
+        # output results is in two dimensional array
+        return dataset[variables].where(
+            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
+            (dataset.lon >= lon_min) & (dataset.lon <= lon_max), drop=True)
+
+    def find_locations(self, val: xrDataset) -> List[Point]:
+        """Find locations from dataset.
+
+        :param val: dataset to be read
+        :type val: xrDataset
+        :return: points
+        :rtype: List[Point]
+        """
+        locations = None
+        if self.location_input.get_input_type() != LocationInputType.BBOX:
+            return locations, 1, 1
+        locations = []
+        lat_values = val['lat'].values
+        lon_values = val['lon'].values
+        for lat in lat_values:
+            for lon in lon_values:
+                locations.append(Point(x=float(lon), y=float(lat)))
+        return locations, len(lat_values), len(lon_values)

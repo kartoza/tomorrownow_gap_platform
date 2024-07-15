@@ -5,7 +5,7 @@ Tomorrow Now GAP.
 .. note:: Helper for reading dataset
 """
 
-from typing import Union, List
+from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
@@ -80,20 +80,80 @@ class DatasetReaderValue:
         }
 
 
+class LocationDatasetReaderValue(DatasetReaderValue):
+    """Class representing data values for multiple locations."""
+
+    def __init__(
+            self, metadata: dict,
+            results: Dict[Point, List[DatasetTimelineValue]]) -> None:
+        """Initialize LocationDatasetReaderValue."""
+        super().__init__(metadata, [])
+        self.results = results
+
+    def to_dict(self):
+        """Convert into dict.
+
+        :return: Dictionary of metadata and data
+        :rtype: dict
+        """
+        location_data = []
+        for location, values in self.results.items():
+            location_data.append({
+                'lat': location.y,
+                'lon': location.x,
+                'data': [result.to_dict() for result in values]
+            })
+        return {
+            'metadata': self.metadata,
+            'data': location_data
+        }
+
+
+class LocationInputType:
+    """Class for data input type."""
+
+    POINT = 'point'
+    BBOX = 'bbox'
+
+
+class DatasetReaderInput:
+    """Class to store the dataset reader input.
+
+    Input type: Point, bbox
+    TODO: list of points, polygon
+    """
+
+    def __init__(self, points: List[Point], is_bbox: bool = False):
+        """Initialize DatasetReaderInput class."""
+        self.points = points
+        self.is_bbox = is_bbox
+
+    def get_input_type(self) -> str:
+        """Get input type.
+
+        :return: LocationInputType
+        :rtype: str
+        """
+        if len(self.points) == 2 and self.is_bbox:
+            return LocationInputType.BBOX
+        return LocationInputType.POINT
+
+
 class BaseDatasetReader:
     """Base class for Dataset Reader."""
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
-            point: Point, start_date: datetime, end_date: datetime) -> None:
+            location_input: DatasetReaderInput,
+            start_date: datetime, end_date: datetime) -> None:
         """Initialize BaseDatasetReader class.
 
         :param dataset: Dataset for reading
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
-        :param point: Location to be queried
-        :type point: Point
+        :param location_input: Location to be queried
+        :type location_input: DatasetReaderInput
         :param start_date: Start date time filter
         :type start_date: datetime
         :param end_date: End date time filter
@@ -101,7 +161,7 @@ class BaseDatasetReader:
         """
         self.dataset = dataset
         self.attributes = attributes
-        self.point = point
+        self.location_input = location_input
         self.start_date = start_date
         self.end_date = end_date
 

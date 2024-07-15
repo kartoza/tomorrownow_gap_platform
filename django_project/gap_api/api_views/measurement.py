@@ -20,7 +20,11 @@ from gap.models import (
     Attribute,
     DatasetAttribute
 )
-from gap.utils.reader import DatasetReaderValue, BaseDatasetReader
+from gap.utils.reader import (
+    DatasetReaderInput,
+    DatasetReaderValue,
+    BaseDatasetReader
+)
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
 from gap.providers import get_reader_from_dataset
@@ -56,17 +60,27 @@ class MeasurementAPI(APIView):
             datetime.strptime(date_str, self.date_format).date()
         )
 
-    def _get_location_filter(self):
+    def _get_location_filter(self) -> DatasetReaderInput:
         """Get location from lon and lat in the request parameters.
 
         :return: Location to be queried
-        :rtype: Point
+        :rtype: DatasetReaderInput
         """
         lon = self.request.GET.get('lon', None)
         lat = self.request.GET.get('lat', None)
-        if lon is None or lat is None:
-            return None
-        return Point(x=float(lon), y=float(lat), srid=4326)
+        if lon is not None and lat is not None:
+            return DatasetReaderInput(
+                [Point(x=float(lon), y=float(lat), srid=4326)])
+        # (xmin, ymin, xmax, ymax)
+        bbox = self.request.GET.get('bbox', None)
+        if bbox is not None:
+            number_list = [float(a) for a in bbox.split(',')]
+            return DatasetReaderInput(
+                [
+                    Point(x=number_list[0], y=number_list[1], srid=4326),
+                    Point(x=number_list[2], y=number_list[3], srid=4326)
+                ], is_bbox=True)
+        return None
 
     def _get_provider_filter(self):
         """Get provider name filter in the request parameters.
@@ -178,6 +192,11 @@ class MeasurementAPI(APIView):
             openapi.Parameter(
                 'providers', openapi.IN_QUERY,
                 description='List of provider name',
+                type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                'bbox', openapi.IN_QUERY,
+                description='Bounding box: xmin, ymin, xmax, ymax',
                 type=openapi.TYPE_STRING
             )
         ],

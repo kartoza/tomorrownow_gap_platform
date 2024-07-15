@@ -7,7 +7,6 @@ Tomorrow Now GAP.
 
 from typing import List
 from datetime import datetime
-from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 
 from gap.models import (
@@ -17,6 +16,7 @@ from gap.models import (
     Measurement
 )
 from gap.utils.reader import (
+    DatasetReaderInput,
     DatasetTimelineValue,
     DatasetReaderValue,
     BaseDatasetReader
@@ -28,21 +28,23 @@ class TahmoDatasetReader(BaseDatasetReader):
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
-            point: Point, start_date: datetime, end_date: datetime) -> None:
+            location_input: DatasetReaderInput, start_date: datetime,
+            end_date: datetime) -> None:
         """Initialize TahmoDatasetReader class.
 
         :param dataset: Dataset from Tahmo provider
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
-        :param point: Location to be queried
-        :type point: Point
+        :param location_input: Location to be queried
+        :type location_input: DatasetReaderInput
         :param start_date: Start date time filter
         :type start_date: datetime
         :param end_date: End date time filter
         :type end_date: datetime
         """
-        super().__init__(dataset, attributes, point, start_date, end_date)
+        super().__init__(
+            dataset, attributes, location_input, start_date, end_date)
         self.results = []
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
@@ -54,7 +56,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         :type end_date: datetime
         """
         nearest_station = Station.objects.annotate(
-            distance=Distance('geometry', self.point)
+            distance=Distance('geometry', self.location_input.points[0])
         ).filter(
             provider=self.dataset.provider
         ).order_by('distance').first()
