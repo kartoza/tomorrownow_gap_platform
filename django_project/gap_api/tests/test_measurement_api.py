@@ -7,7 +7,6 @@ Tomorrow Now GAP.
 
 from datetime import datetime
 from typing import List
-from django.contrib.gis.geos import Point
 from django.urls import reverse
 from unittest.mock import patch
 
@@ -30,7 +29,8 @@ class MockDatasetReader(BaseDatasetReader):
                  location_input: DatasetReaderInput, start_date: datetime,
                  end_date: datetime) -> None:
         """Initialize MockDatasetReader class."""
-        super().__init__(dataset, attributes, location_input, start_date, end_date)
+        super().__init__(
+            dataset, attributes, location_input, start_date, end_date)
 
     def get_data_values(self) -> DatasetReaderValue:
         """Override data values with a mock object."""
