@@ -15,7 +15,8 @@ from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
 from django_project.gap.models import DatasetAttribute
 from django_project.gap.utils.reader import (
     DatasetReaderValue,
-    DatasetTimelineValue
+    DatasetTimelineValue,
+    DatasetReaderInput
 )
 from gap_api.api_views.measurement import MeasurementAPI
 from gap.utils.reader import BaseDatasetReader
@@ -26,17 +27,15 @@ class MockDatasetReader(BaseDatasetReader):
     """Class to mock a dataset reader."""
 
     def __init__(self, dataset, attributes: List[DatasetAttribute],
-                 point: Point, start_date: datetime,
+                 location_input: DatasetReaderInput, start_date: datetime,
                  end_date: datetime) -> None:
         """Initialize MockDatasetReader class."""
-        super().__init__(dataset, attributes, point, start_date, end_date)
+        super().__init__(dataset, attributes, location_input, start_date, end_date)
 
     def get_data_values(self) -> DatasetReaderValue:
         """Override data values with a mock object."""
         return DatasetReaderValue(
-            {
-                'dataset': [self.dataset.name]
-            },
+            self.location_input.point,
             [DatasetTimelineValue(self.start_date, {
                 'test': 100
             })]
@@ -88,7 +87,8 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         request = self._get_measurement_request()
         response = view(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {})
+        self.assertIn('metadata', response.data)
+        self.assertEqual(response.data['results'], [])
 
     @patch('gap_api.api_views.measurement.get_reader_from_dataset')
     def test_read_historical_data(self, mocked_reader):
@@ -110,14 +110,13 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(response.status_code, 200)
         mocked_reader.assert_called_once_with(attribute1.dataset)
         self.assertIn('metadata', response.data)
-        self.assertIn('data', response.data)
-        response_data = response.data['data']
-        self.assertIn(attribute1.dataset.name, response_data)
-        results = response_data[attribute1.dataset.name]
+        self.assertIn('results', response.data)
+        results = response.data['results']
         self.assertEqual(len(results), 1)
-        self.assertIn('values', results[0])
-        self.assertIn('test', results[0]['values'])
-        self.assertEqual(100, results[0]['values']['test'])
+        result_data = results[0]['data']
+        self.assertIn('values', result_data[0])
+        self.assertIn('test', result_data[0]['values'])
+        self.assertEqual(100, result_data[0]['values']['test'])
         # with providers
         request = self._get_measurement_request(
             attributes=','.join(attribs),
@@ -125,7 +124,9 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         )
         response = view(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {})
+        self.assertIn('metadata', response.data)
+        self.assertIn('results', response.data)
+        self.assertEqual(response.data['results'], [])
 
 
 class ForecastAPITest(CommonMeasurementAPITest):
@@ -137,4 +138,5 @@ class ForecastAPITest(CommonMeasurementAPITest):
         request = self._get_measurement_request()
         response = view(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {})
+        self.assertIn('metadata', response.data)
+        self.assertEqual(response.data['results'], [])
