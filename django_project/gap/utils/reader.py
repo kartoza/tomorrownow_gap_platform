@@ -10,7 +10,9 @@ from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
-from django.contrib.gis.geos import Point, MultiPolygon, GeometryCollection
+from django.contrib.gis.geos import (
+    Point, MultiPolygon, GeometryCollection, MultiPoint
+)
 
 from gap.models import (
     Dataset,
@@ -154,6 +156,33 @@ class DatasetReaderInput:
             Point(x=point.x, y=point.y, srid=4326) for
             point in self.geom_collection
         ]
+
+    @classmethod
+    def from_point(cls, point: Point):
+        """Create input from single point.
+
+        :param point: single point
+        :type point: Point
+        :return: DatasetReaderInput with POINT type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPoint([point]), LocationInputType.POINT)
+
+    @classmethod
+    def from_bbox(cls, bbox_list: List[float]):
+        """Create input from bbox (xmin, ymin, xmax, ymax).
+
+        :param bbox_list: (xmin, ymin, xmax, ymax)
+        :type bbox_list: List[float]
+        :return: DatasetReaderInput with BBOX type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPoint([
+                Point(x=bbox_list[0], y=bbox_list[1], srid=4326),
+                Point(x=bbox_list[2], y=bbox_list[3], srid=4326)
+            ]), LocationInputType.BBOX)
 
 
 class BaseDatasetReader:

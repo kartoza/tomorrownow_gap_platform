@@ -115,20 +115,13 @@ class MeasurementAPI(APIView):
         lon = self.request.GET.get('lon', None)
         lat = self.request.GET.get('lat', None)
         if lon is not None and lat is not None:
-            return DatasetReaderInput(
-                MultiPoint(
-                    [Point(x=float(lon), y=float(lat), srid=4326)]
-                ), LocationInputType.POINT
-            )
+            return DatasetReaderInput.from_point(
+                Point(x=float(lon), y=float(lat), srid=4326))
         # (xmin, ymin, xmax, ymax)
         bbox = self.request.GET.get('bbox', None)
         if bbox is not None:
             number_list = [float(a) for a in bbox.split(',')]
-            return DatasetReaderInput(
-                MultiPoint([
-                    Point(x=number_list[0], y=number_list[1], srid=4326),
-                    Point(x=number_list[2], y=number_list[3], srid=4326)
-                ]), LocationInputType.BBOX)
+            return DatasetReaderInput.from_bbox(number_list)
         return None
 
     def _get_provider_filter(self):

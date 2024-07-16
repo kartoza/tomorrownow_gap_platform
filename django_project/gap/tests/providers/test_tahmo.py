@@ -20,6 +20,7 @@ from gap.factories import (
     StationFactory,
     MeasurementFactory
 )
+from gap.utils.reader import DatasetReaderInput
 
 
 class TestTahmoReader(TestCase):
@@ -50,7 +51,8 @@ class TestTahmoReader(TestCase):
             value=100
         )
         reader = TahmoDatasetReader(
-            dataset, [dataset_attr], p, dt, dt)
+            dataset, [dataset_attr], DatasetReaderInput.from_point(p),
+            dt, dt)
         reader.read_historical_data(dt, dt)
         data_value = reader.get_data_values()
         self.assertEqual(len(data_value.results), 1)

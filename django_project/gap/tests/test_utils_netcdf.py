@@ -5,15 +5,21 @@ Tomorrow Now GAP.
 .. note:: Unit tests for NetCDF Utilities.
 """
 
+import json
 from django.test import TestCase
 from datetime import datetime
 import numpy as np
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import (
+    Point, GeometryCollection, Polygon, MultiPolygon
+)
 from unittest.mock import Mock, MagicMock, patch
 
 from gap.utils.reader import (
     DatasetTimelineValue,
-    DatasetReaderValue
+    DatasetReaderValue,
+    LocationDatasetReaderValue,
+    DatasetReaderInput,
+    LocationInputType
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
@@ -61,34 +67,143 @@ class TestDaterangeInc(TestCase):
 class TestDatasetTimelineValue(TestCase):
     """Unit test for class DatasetTimelineValue."""
 
-    def test_to_dict(self):
-        """Test convert to dict."""
-        dt = np.datetime64('2023-01-01T00:00:00')
-        values = {'temperature': 20.5}
+    def test_to_dict_with_datetime(self):
+        """Test to_dict with python datetime object."""
+        dt = datetime(2023, 7, 16, 12, 0, 0)
+        values = {"temperature": 25}
         dtv = DatasetTimelineValue(dt, values)
-        expected_dict = {
-            'datetime': np.str_('2023-01-01T00:00:00Z'),
+        expected = {
+            'datetime': '2023-07-16T12:00:00',
             'values': values
         }
-        self.assertEqual(dtv.to_dict(), expected_dict)
+        self.assertEqual(dtv.to_dict(), expected)
+
+    def test_to_dict_with_np_datetime64(self):
+        """Test to_dict with numpy datetime64 object."""
+        dt = np.datetime64('2023-07-16T12:00:00')
+        values = {"temperature": 25}
+        dtv = DatasetTimelineValue(dt, values)
+        expected = {
+            'datetime': np.datetime_as_string(dt, unit='s', timezone='UTC'),
+            'values': values
+        }
+        self.assertEqual(dtv.to_dict(), expected)
+
+    def test_to_dict_with_none_datetime(self):
+        """Test to_dict with empty datetime."""
+        dtv = DatasetTimelineValue(None, {"temperature": 25})
+        expected = {
+            'datetime': '',
+            'values': {"temperature": 25}
+        }
+        self.assertEqual(dtv.to_dict(), expected)
 
 
 class TestDatasetReaderValue(TestCase):
     """Unit test for class DatasetReaderValue."""
 
-    def test_to_dict(self):
-        """Test convert to dict."""
-        metadata = {'source': 'test'}
-        dtv1 = DatasetTimelineValue(
-            np.datetime64('2023-01-01T00:00:00'), {'temp': 20.5})
-        dtv2 = DatasetTimelineValue(
-            np.datetime64('2023-01-02T00:00:00'), {'temp': 21.0})
-        drv = DatasetReaderValue(metadata, [dtv1, dtv2])
-        expected_dict = {
-            'metadata': metadata,
-            'data': [dtv1.to_dict(), dtv2.to_dict()]
+    def test_to_dict_with_location(self):
+        """Test to_dict with location."""
+        location = Point(1, 1)
+        dtv = DatasetTimelineValue(
+            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25})
+        drv = DatasetReaderValue(location, [dtv])
+        expected = {
+            'geometry': json.loads(location.json),
+            'data': [dtv.to_dict()]
         }
-        self.assertEqual(drv.to_dict(), expected_dict)
+        self.assertEqual(drv.to_dict(), expected)
+
+    def test_to_dict_with_none_location(self):
+        """Test to_dict with empty location."""
+        drv = DatasetReaderValue(None, [])
+        expected = {}
+        self.assertEqual(drv.to_dict(), expected)
+
+
+class TestLocationDatasetReaderValue(TestCase):
+    """Unit test for LocationDatasetReaderValue class."""
+
+    def test_to_dict(self):
+        """Test to_dict method returrning dictionary."""
+        location1 = Point(1, 1)
+        location2 = Point(2, 2)
+        dtv1 = DatasetTimelineValue(
+            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25})
+        dtv2 = DatasetTimelineValue(
+            datetime(2023, 7, 16, 13, 0, 0), {"temperature": 26})
+        results = {location1: [dtv1], location2: [dtv2]}
+        ldrv = LocationDatasetReaderValue(results)
+        expected = [
+            DatasetReaderValue(location1, [dtv1]).to_dict(),
+            DatasetReaderValue(location2, [dtv2]).to_dict()
+        ]
+        self.assertEqual(ldrv.to_dict(), expected)
+
+
+class TestDatasetReaderInput(TestCase):
+    """Unit test for DatasetReaderInput class."""
+
+    def test_point(self):
+        """Test get property point."""
+        geom_collection = GeometryCollection(Point(1, 1))
+        dri = DatasetReaderInput(geom_collection, LocationInputType.POINT)
+        self.assertEqual(dri.point, Point(1, 1, srid=4326))
+
+    def test_polygon(self):
+        """Test get property polygon."""
+        polygon = MultiPolygon(Polygon(((0, 0), (1, 0), (1, 1), (0, 0))))
+        geom_collection = GeometryCollection(polygon)
+        dri = DatasetReaderInput(geom_collection, LocationInputType.POLYGON)
+        self.assertEqual(dri.polygon, geom_collection)
+
+    def test_points(self):
+        """Test get property points."""
+        points = [Point(1, 1), Point(2, 2)]
+        geom_collection = GeometryCollection(*points)
+        dri = DatasetReaderInput(
+            geom_collection, LocationInputType.LIST_OF_POINT)
+        self.assertEqual(
+            dri.points, [Point(1, 1, srid=4326), Point(2, 2, srid=4326)])
+
+    def test_from_point(self):
+        """Test create object from point."""
+        point = Point(1, 1, srid=4326)
+        dri = DatasetReaderInput.from_point(point)
+        self.assertEqual(dri.type, LocationInputType.POINT)
+        self.assertEqual(dri.point, point)
+
+    def test_from_bbox(self):
+        """Test create object from bbox."""
+        bbox_list = [1.0, 1.0, 2.0, 2.0]
+        dri = DatasetReaderInput.from_bbox(bbox_list)
+        self.assertEqual(dri.type, LocationInputType.BBOX)
+        expected_points = [
+            Point(x=bbox_list[0], y=bbox_list[1], srid=4326),
+            Point(x=bbox_list[2], y=bbox_list[3], srid=4326)
+        ]
+        self.assertEqual(dri.points, expected_points)
+
+    def test_invalid_point_access(self):
+        """Test get property point with invalid type."""
+        geom_collection = GeometryCollection(Point(1, 1))
+        dri = DatasetReaderInput(geom_collection, LocationInputType.BBOX)
+        with self.assertRaises(TypeError):
+            _ = dri.point
+
+    def test_invalid_polygon_access(self):
+        """Test get property polygon with invalid type."""
+        geom_collection = GeometryCollection(Point(1, 1))
+        dri = DatasetReaderInput(geom_collection, LocationInputType.POINT)
+        with self.assertRaises(TypeError):
+            _ = dri.polygon
+
+    def test_invalid_points_access(self):
+        """Test get property points with invalid type."""
+        geom_collection = GeometryCollection(Point(1, 1))
+        dri = DatasetReaderInput(geom_collection, LocationInputType.POINT)
+        with self.assertRaises(TypeError):
+            _ = dri.points
 
 
 class TestBaseNetCDFReader(TestCase):
@@ -101,6 +216,21 @@ class TestBaseNetCDFReader(TestCase):
         reader.add_attribute(DatasetAttributeFactory.create())
         self.assertEqual(len(reader.attributes), 1)
 
+    def test_get_attributes_metadata(self):
+        """Test get attributes metadata dict."""
+        attrib = DatasetAttributeFactory.create()
+        attrib.attribute.variable_name = 'temperature'
+        attrib.attribute.unit.name = 'C'
+        attrib.attribute.name = 'Temperature'
+        reader = BaseNetCDFReader(Mock(), [attrib], Mock(), Mock(), Mock())
+        expected = {
+            'temperature': {
+                'units': 'C',
+                'longname': 'Temperature'
+            }
+        }
+        self.assertEqual(reader.get_attributes_metadata(), expected)
+
     def test_read_variables(self):
         """Test reading variables."""
         dataset = DatasetFactory.create(name=NetCDFProvider.CBAM)
@@ -109,7 +239,8 @@ class TestBaseNetCDFReader(TestCase):
         dataset_attr = DatasetAttributeFactory(
             dataset=dataset, attribute=attribute)
         reader = BaseNetCDFReader(
-            dataset, [dataset_attr], Point(x=29.125, y=-2.215),
+            dataset, [dataset_attr],
+            DatasetReaderInput.from_point(Point(x=29.125, y=-2.215)),
             Mock(), Mock())
         xrArray = MagicMock()
         xrArray.sel.return_value = []

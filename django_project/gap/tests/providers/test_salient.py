@@ -12,6 +12,7 @@ from django.contrib.gis.geos import Point
 from unittest.mock import Mock, patch
 
 from core.settings.utils import absolute_path
+from gap.utils.reader import DatasetReaderInput
 from gap.utils.netcdf import (
     NetCDFProvider,
 )
@@ -84,7 +85,8 @@ class TestSalientNetCDFReader(TestCase):
                 xr.open_dataset(file_path)
             )
             reader = SalientNetCDFReader(
-                dataset, [dataset_attr1, dataset_attr2], p, dt1, dt2)
+                dataset, [dataset_attr1, dataset_attr2],
+                DatasetReaderInput.from_point(p), dt1, dt2)
             reader.read_forecast_data(dt1, dt2)
             self.assertEqual(len(reader.xrDatasets), 1)
             data_value = reader.get_data_values()

@@ -12,6 +12,7 @@ from django.contrib.gis.geos import Point
 from unittest.mock import Mock, patch
 
 from core.settings.utils import absolute_path
+from gap.utils.reader import DatasetReaderInput
 from gap.utils.netcdf import (
     NetCDFProvider,
 )
@@ -73,7 +74,9 @@ class TestCBAMNetCDFReader(TestCase):
             mock_open.return_value = (
                 xr.open_dataset(file_path)
             )
-            reader = CBAMNetCDFReader(dataset, [dataset_attr], p, dt, dt)
+            reader = CBAMNetCDFReader(
+                dataset, [dataset_attr], DatasetReaderInput.from_point(p),
+                dt, dt)
             reader.read_historical_data(dt, dt)
             mock_open.assert_called_once()
             self.assertEqual(len(reader.xrDatasets), 1)
