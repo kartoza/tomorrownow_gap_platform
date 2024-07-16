@@ -6,12 +6,16 @@ Tomorrow Now GAP.
 """
 
 import os
+import json
 from typing import List
 from datetime import datetime, timedelta
 from django.contrib.gis.geos import Point
+import numpy as np
 import xarray as xr
+import regionmask
 from xarray.core.dataset import Dataset as xrDataset
 import fsspec
+from shapely.geometry import shape
 
 from gap.models import (
     Provider,
@@ -219,6 +223,58 @@ class BaseNetCDFReader(BaseDatasetReader):
         netcdf_url += f'{netcdf_file.name}'
         return xr.open_dataset(self.fs.open(netcdf_url))
 
+    def _read_variables_by_point(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        point = self.location_input.point
+        return dataset[variables].sel(
+            lat=point.y,
+            lon=point.x, method='nearest')
+
+    def _read_variables_by_bbox(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        points = self.location_input.points
+        lat_min = points[0].y
+        lat_max = points[1].y
+        lon_min = points[0].x
+        lon_max = points[1].x
+        # output results is in two dimensional array
+        return dataset[variables].where(
+            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
+            (dataset.lon >= lon_min) & (dataset.lon <= lon_max), drop=True)
+
+    def _read_variables_by_polygon(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        # Convert the Django GIS Polygon to a format compatible with shapely
+        shapely_multipolygon = shape(json.loads(self.location_input.polygon.geojson))
+
+        # Create a mask using regionmask from the shapely polygon
+        mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
+        # Mask the dataset
+        return dataset[variables].where(mask == 0, drop=True)
+
+    def _read_variables_by_points(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        # use the first variable to get its dimension
+        # use the 0 index for it's date variable
+        mask = np.zeros_like(dataset[variables[0]][0], dtype=bool)
+        # Iterate through the points and update the mask
+        for lon, lat in self.location_input.points:
+            # Find nearest lat and lon indices
+            lat_idx = np.abs(dataset['lat'] - lat).argmin()
+            lon_idx = np.abs(dataset['lon'] - lon).argmin()
+            mask[lat_idx, lon_idx] = True
+        mask_da = xr.DataArray(mask, coords={'lat': dataset['lat'], 'lon': dataset['lon']}, dims=['lat', 'lon'])
+        # Apply the mask to the dataset
+        return dataset[variables].where(mask_da, drop=True)
+
     def read_variables(
             self, dataset: xrDataset, start_date: datetime = None,
             end_date: datetime = None) -> xrDataset:
@@ -229,20 +285,17 @@ class BaseNetCDFReader(BaseDatasetReader):
         :return: filtered xArray Dataset object
         :rtype: xrDataset
         """
+        start_dt = np.datetime64(start_date, 'ns')
+        end_dt = np.datetime64(end_date, 'ns')
         variables = [a.source for a in self.attributes]
         variables.append(self.date_variable)
-        if self.location_input.get_input_type() == LocationInputType.POINT:
-            return dataset[variables].sel(
-                lat=self.location_input.points[0].y,
-                lon=self.location_input.points[0].x, method='nearest')
-        lat_min = self.location_input.points[0].y
-        lat_max = self.location_input.points[1].y
-        lon_min = self.location_input.points[0].x
-        lon_max = self.location_input.points[1].x
-        # output results is in two dimensional array
-        return dataset[variables].where(
-            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
-            (dataset.lon >= lon_min) & (dataset.lon <= lon_max), drop=True)
+        if self.location_input.type == LocationInputType.BBOX:
+            return self._read_variables_by_bbox(dataset, variables, start_dt, end_dt)
+        elif self.location_input.type == LocationInputType.POLYGON:
+            return self._read_variables_by_polygon(dataset, variables, start_dt, end_dt)
+        elif self.location_input.type == LocationInputType.LIST_OF_POINT:
+            return self._read_variables_by_points(dataset, variables, start_dt, end_dt)
+        return self._read_variables_by_point(dataset, variables, start_dt, end_dt)
 
     def find_locations(self, val: xrDataset) -> List[Point]:
         """Find locations from dataset.
@@ -253,7 +306,7 @@ class BaseNetCDFReader(BaseDatasetReader):
         :rtype: List[Point]
         """
         locations = None
-        if self.location_input.get_input_type() != LocationInputType.BBOX:
+        if self.location_input.type == LocationInputType.POINT:
             return locations, 1, 1
         locations = []
         lat_values = val['lat'].values

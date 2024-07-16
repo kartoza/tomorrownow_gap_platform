@@ -9,7 +9,7 @@ from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, Polygon, MultiPolygon, GeometryCollection
 
 from gap.models import (
     Dataset,
@@ -35,6 +35,8 @@ class DatasetTimelineValue:
 
     def _datetime_as_str(self):
         """Convert datetime object to string."""
+        if self.datetime is None:
+            return ''
         if isinstance(self.datetime, np.datetime64):
             return np.datetime_as_string(
                 self.datetime, unit='s', timezone='UTC')
@@ -114,29 +116,39 @@ class LocationInputType:
 
     POINT = 'point'
     BBOX = 'bbox'
+    POLYGON = 'polygon'
+    LIST_OF_POINT = 'list_of_point'
 
 
 class DatasetReaderInput:
     """Class to store the dataset reader input.
 
-    Input type: Point, bbox
-    TODO: list of points, polygon
+    Input type: Point, bbox, polygon, list of point
+    TODO: list of points
     """
 
-    def __init__(self, points: List[Point], is_bbox: bool = False):
+    def __init__(self, geom_collection: GeometryCollection, type: str):
         """Initialize DatasetReaderInput class."""
-        self.points = points
-        self.is_bbox = is_bbox
+        self.geom_collection = geom_collection
+        self.type = type
 
-    def get_input_type(self) -> str:
-        """Get input type.
+    @property
+    def point(self) -> Point:
+        if self.type != LocationInputType.POINT:
+            raise TypeError('Location input type is not bbox/point!')
+        return self.geom_collection[0]
 
-        :return: LocationInputType
-        :rtype: str
-        """
-        if len(self.points) == 2 and self.is_bbox:
-            return LocationInputType.BBOX
-        return LocationInputType.POINT
+    @property
+    def polygon(self) -> MultiPolygon:
+        if self.type != LocationInputType.POLYGON:
+            raise TypeError('Location input type is not polygon!')
+        return self.geom_collection
+
+    @property
+    def points(self) -> List[Point]:
+        if self.type not in [LocationInputType.BBOX, LocationInputType.LIST_OF_POINT]:
+            raise TypeError('Location input type is not bbox/point!')
+        return [point for point in self.geom_collection]
 
 
 class BaseDatasetReader:

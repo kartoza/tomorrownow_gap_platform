@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 from typing import List
 from datetime import datetime
+from django.contrib.gis.geos import Polygon
 from django.contrib.gis.db.models.functions import Distance
 
 from gap.models import (
@@ -16,6 +17,7 @@ from gap.models import (
     Measurement
 )
 from gap.utils.reader import (
+    LocationInputType,
     DatasetReaderInput,
     DatasetTimelineValue,
     DatasetReaderValue,
@@ -47,6 +49,38 @@ class TahmoDatasetReader(BaseDatasetReader):
             dataset, attributes, location_input, start_date, end_date)
         self.results = []
 
+    def _find_nearest_station_by_point(self):
+        qs = Station.objects.annotate(
+            distance=Distance('geometry', self.location_input.point)
+        ).filter(
+            provider=self.dataset.provider
+        ).order_by('distance').first()
+        if qs is None:
+            return None
+        return [qs]
+
+    def _find_nearest_station_by_bbox(self):
+        points = self.location_input.points
+        polygon = Polygon.from_bbox((points[0].x, points[0].y, points[1].x, points[1].y))
+        qs = Station.objects.filter(
+            geometry__within=polygon
+        ).order_by('id')
+        if not qs.exists():
+            return None
+        return qs
+
+    def _find_nearest_station_by_polygon(self):
+        qs = Station.objects.filter(
+            geometry__within=self.location_input.polygon
+        ).order_by('id')
+        if not qs.exists():
+            return None
+        return qs
+
+    def _find_nearest_station_by_points(self):
+        # points = self.location_input.points
+        return None
+
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
 
@@ -55,12 +89,16 @@ class TahmoDatasetReader(BaseDatasetReader):
         :param end_date:  end date for reading historical data
         :type end_date: datetime
         """
-        nearest_station = Station.objects.annotate(
-            distance=Distance('geometry', self.location_input.points[0])
-        ).filter(
-            provider=self.dataset.provider
-        ).order_by('distance').first()
-        if nearest_station is None:
+        nearest_stations = None
+        if self.location_input.type == LocationInputType.POINT:
+            nearest_stations = self._find_nearest_station_by_point()
+        elif self.location_input.type == LocationInputType.POLYGON:
+            nearest_stations = self._find_nearest_station_by_polygon()
+        elif self.location_input.type == LocationInputType.LIST_OF_POINT:
+            nearest_stations = self._find_nearest_station_by_points()
+        elif self.location_input.type == LocationInputType.BBOX:
+            nearest_stations = self._find_nearest_station_by_bbox()
+        if nearest_stations is None:
             return
         measurements = Measurement.objects.select_related(
             'dataset_attribute', 'dataset_attribute__attribute'
@@ -68,7 +106,7 @@ class TahmoDatasetReader(BaseDatasetReader):
             date_time__gte=start_date,
             date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
-            station=nearest_station
+            station__in=nearest_stations
         ).order_by('date_time')
         curr_dt = None
         measurement_dict = {}

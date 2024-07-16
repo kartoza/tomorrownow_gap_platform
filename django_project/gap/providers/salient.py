@@ -5,11 +5,15 @@ Tomorrow Now GAP.
 .. note:: CBAM Data Reader
 """
 
+import json
 from typing import List
 from datetime import datetime
 from django.contrib.gis.geos import Point
 import numpy as np
+import regionmask
+import xarray as xr
 from xarray.core.dataset import Dataset as xrDataset
+from shapely.geometry import shape
 
 from gap.models import (
     Dataset,
@@ -73,48 +77,74 @@ class SalientNetCDFReader(BaseNetCDFReader):
         val = self.read_variables(ds, start_date, end_date)
         self.xrDatasets.append(val)
 
-    def read_variables(
-            self, dataset: xrDataset, start_date: datetime = None,
-            end_date: datetime = None) -> xrDataset:
-        """Read data from list variable with filter from given Point.
+    def _read_variables_by_point(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        point = self.location_input.point
+        return dataset[variables].sel(
+            lat=point.y,
+            lon=point.x, method='nearest').where(
+                (dataset[self.date_variable] >= start_dt) &
+                (dataset[self.date_variable] <= end_dt),
+                drop=True
+            )
 
-        :param dataset: xArray Dataset object
-        :type dataset: xrDataset
-        :param start_date: start date for reading forecast data
-        :type start_date: datetime
-        :param end_date:  end date for reading forecast data
-        :type end_date: datetime
-        :return: filtered xArray Dataset object
-        :rtype: xrDataset
-        """
-        start_dt = np.datetime64(start_date)
-        end_dt = np.datetime64(end_date)
-        variables = [a.source for a in self.attributes]
-        variables.append(self.date_variable)
-        val = None
-        if self.location_input.get_input_type() == LocationInputType.POINT:
-            val = dataset[variables].sel(
-                lat=self.location_input.points[0].y,
-                lon=self.location_input.points[0].x,
-                method='nearest'
-            ).where(
-                (dataset[self.date_variable] >= start_dt) &
-                (dataset[self.date_variable] <= end_dt),
-                drop=True
-            )
-        elif self.location_input.get_input_type() == LocationInputType.BBOX:
-            lat_min = self.location_input.points[0].y
-            lat_max = self.location_input.points[1].y
-            lon_min = self.location_input.points[0].x
-            lon_max = self.location_input.points[1].x
-            val = dataset[variables].where(
-                (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
-                (dataset.lon >= lon_min) & (dataset.lon <= lon_max) &
-                (dataset[self.date_variable] >= start_dt) &
-                (dataset[self.date_variable] <= end_dt),
-                drop=True
-            )
-        return val
+    def _read_variables_by_bbox(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        points = self.location_input.points
+        lat_min = points[0].y
+        lat_max = points[1].y
+        lon_min = points[0].x
+        lon_max = points[1].x
+        # output results is in two dimensional array
+        return dataset[variables].where(
+            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
+            (dataset.lon >= lon_min) & (dataset.lon <= lon_max) &
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt), drop=True)
+
+    def _read_variables_by_polygon(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        # Convert the Django GIS Polygon to a format compatible with shapely
+        shapely_multipolygon = shape(json.loads(self.location_input.polygon.geojson))
+
+        # Create a mask using regionmask from the shapely polygon
+        mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
+        # Mask the dataset
+        return dataset[variables].where(
+            (mask == 0) &
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt), drop=True)
+
+    def _read_variables_by_points(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        var_dims = dataset[variables[0]].dims
+        # use the first variable to get its dimension
+        if 'ensemble' in var_dims:
+            # use 0 idx ensemble and 0 idx forecast_day
+            mask = np.zeros_like(dataset[variables[0]][0][0], dtype=bool)
+        else:
+            # use the 0 index for it's date variable
+            mask = np.zeros_like(dataset[variables[0]][0], dtype=bool)
+        # Iterate through the points and update the mask
+        for lon, lat in self.location_input.points:
+            # Find nearest lat and lon indices
+            lat_idx = np.abs(dataset['lat'] - lat).argmin()
+            lon_idx = np.abs(dataset['lon'] - lon).argmin()
+            mask[lat_idx, lon_idx] = True
+        mask_da = xr.DataArray(mask, coords={'lat': dataset['lat'], 'lon': dataset['lon']}, dims=['lat', 'lon'])
+        # Apply the mask to the dataset
+        return dataset[variables].where(
+            (mask_da) &
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt), drop=True)
 
     def _get_data_values_from_single_location(
             self, metadata: dict, val: xrDataset) -> DatasetReaderValue:
@@ -171,7 +201,6 @@ class SalientNetCDFReader(BaseNetCDFReader):
                 for idx_lon in range(lon_dim):
                     value_data = {}
                     for attribute in self.attributes:
-                        print(val[attribute.source].dims)
                         if 'ensemble' in val[attribute.source].dims:
                             value_data[attribute.attribute.variable_name] = (
                                 val[attribute.source].values[
@@ -214,7 +243,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
         # forecast will always use latest dataset
         val = self.xrDatasets[0]
         locations, lat_dim, lon_dim = self.find_locations(val)
-        if locations and len(locations) > 1:
+        if self.location_input.type != LocationInputType.POINT:
             return self._get_data_values_from_multiple_locations(
                 metadata, val, locations, lat_dim, lon_dim
             )

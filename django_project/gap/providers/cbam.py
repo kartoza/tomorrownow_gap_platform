@@ -17,8 +17,8 @@ from gap.models import (
     DatasetAttribute,
     NetCDFFile
 )
-
 from gap.utils.reader import (
+    LocationInputType,
     DatasetReaderInput,
     DatasetTimelineValue,
     DatasetReaderValue,
@@ -162,7 +162,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
         val = xr.combine_nested(
             self.xrDatasets, concat_dim=[self.date_variable])
         locations, lat_dim, lon_dim = self.find_locations(val)
-        if locations and len(locations) > 1:
+        if self.location_input.type != LocationInputType.POINT:
             return self._get_data_values_from_multiple_locations(
                 metadata, val, locations, lat_dim, lon_dim
             )
