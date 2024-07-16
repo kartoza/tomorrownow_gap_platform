@@ -182,24 +182,22 @@ class MeasurementAPI(APIView):
                 reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
+        data = {
+            'metadata': {
+                'start_date': start_dt.isoformat(timespec='seconds'),
+                'end_date': end_dt.isoformat(timespec='seconds'),
+                'dataset': []
+            },
+            'results': []
+        }
         for reader in dataset_dict.values():
+            data['metadata']['dataset'].append({
+                'provider': reader.dataset.provider.name,
+                'attributes': reader.get_attributes_metadata()
+            })
             values = self._read_data(reader).to_dict()
-            if 'metadata' in data:
-                data['metadata']['dataset'].append(
-                    reader.dataset.name)
-                data['metadata']['attributes'].update(
-                    reader.get_attributes_metadata())
-            else:
-                data['metadata'] = values['metadata']
-                data['metadata']['attributes'] = (
-                    reader.get_attributes_metadata()
-                )
-            if 'data' in data:
-                data['data'][reader.dataset.name] = values['data']
-            else:
-                data['data'] = {
-                    reader.dataset.name: values['data']
-                }
+            if values:
+                data['results'].append(values)
         return data
 
     @swagger_auto_schema(

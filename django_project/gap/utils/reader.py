@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Helper for reading dataset
 """
 
+import json
 from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
@@ -58,16 +59,15 @@ class DatasetReaderValue:
     """Class representing all values from reader."""
 
     def __init__(
-            self, metadata: dict,
-            results: List[DatasetTimelineValue]) -> None:
+            self, location: Point, results: List[DatasetTimelineValue]) -> None:
         """Initialize DatasetReaderValue object.
 
-        :param metadata: Dictionary of metadata
-        :type metadata: dict
+        :param location: point to the observed station/grid cell
+        :type location: Point
         :param results: Data value list
         :type results: List[DatasetTimelineValue]
         """
-        self.metadata = metadata
+        self.location = location
         self.results = results
 
     def to_dict(self):
@@ -76,8 +76,10 @@ class DatasetReaderValue:
         :return: Dictionary of metadata and data
         :rtype: dict
         """
+        if self.location is None:
+            return {}
         return {
-            'metadata': self.metadata,
+            'geometry': json.loads(self.location.json),
             'data': [result.to_dict() for result in self.results]
         }
 
@@ -86,10 +88,9 @@ class LocationDatasetReaderValue(DatasetReaderValue):
     """Class representing data values for multiple locations."""
 
     def __init__(
-            self, metadata: dict,
-            results: Dict[Point, List[DatasetTimelineValue]]) -> None:
+            self, results: Dict[Point, List[DatasetTimelineValue]]) -> None:
         """Initialize LocationDatasetReaderValue."""
-        super().__init__(metadata, [])
+        super().__init__(None, [])
         self.results = results
 
     def to_dict(self):
@@ -100,15 +101,9 @@ class LocationDatasetReaderValue(DatasetReaderValue):
         """
         location_data = []
         for location, values in self.results.items():
-            location_data.append({
-                'lat': location.y,
-                'lon': location.x,
-                'data': [result.to_dict() for result in values]
-            })
-        return {
-            'metadata': self.metadata,
-            'data': location_data
-        }
+            val = DatasetReaderValue(location, values)
+            location_data.append(val.to_dict())
+        return location_data
 
 
 class LocationInputType:

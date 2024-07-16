@@ -77,11 +77,11 @@ class CBAMNetCDFReader(BaseNetCDFReader):
             self.xrDatasets.append(val)
 
     def _get_data_values_from_single_location(
-            self, metadata: dict, val: xrDataset) -> DatasetReaderValue:
+            self, point: Point, val: xrDataset) -> DatasetReaderValue:
         """Read data values from xrDataset.
 
-        :param metadata: Dict of metadata
-        :type metadata: dict
+        :param point: grid cell from the query
+        :type point: Point
         :param val: dataset to be read
         :type val: xrDataset
         :return: Data Values
@@ -99,15 +99,13 @@ class CBAMNetCDFReader(BaseNetCDFReader):
                 dt,
                 value_data
             ))
-        return DatasetReaderValue(metadata, results)
+        return DatasetReaderValue(point, results)
 
     def _get_data_values_from_multiple_locations(
-            self, metadata: dict, val: xrDataset, locations: List[Point],
+            self, val: xrDataset, locations: List[Point],
             lat_dim: int, lon_dim: int) -> DatasetReaderValue:
         """Read data values from xrDataset from list of locations.
 
-        :param metadata: dict of metadata
-        :type metadata: dict
         :param val: dataset to be read
         :type val: xrDataset
         :param locations: list of location
@@ -143,7 +141,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
                             value_data
                         )]
                     idx_lat_lon += 1
-        return LocationDatasetReaderValue(metadata, results)
+        return LocationDatasetReaderValue(results)
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from list of xArray Dataset object.
@@ -151,19 +149,13 @@ class CBAMNetCDFReader(BaseNetCDFReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        results = []
-        metadata = {
-            'dataset': [self.dataset.name],
-            'start_date': self.start_date.isoformat(),
-            'end_date': self.end_date.isoformat()
-        }
         if len(self.xrDatasets) == 0:
-            return DatasetReaderValue(metadata, results)
+            return DatasetReaderValue(None, [])
         val = xr.combine_nested(
             self.xrDatasets, concat_dim=[self.date_variable])
         locations, lat_dim, lon_dim = self.find_locations(val)
         if self.location_input.type != LocationInputType.POINT:
             return self._get_data_values_from_multiple_locations(
-                metadata, val, locations, lat_dim, lon_dim
+                val, locations, lat_dim, lon_dim
             )
-        return self._get_data_values_from_single_location(metadata, val)
+        return self._get_data_values_from_single_location(locations[0], val)

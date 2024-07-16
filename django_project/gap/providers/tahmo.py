@@ -48,6 +48,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         super().__init__(
             dataset, attributes, location_input, start_date, end_date)
         self.results = []
+        self.locations = []
 
     def _find_nearest_station_by_point(self, point: Point = None):
         p = point
@@ -132,6 +133,7 @@ class TahmoDatasetReader(BaseDatasetReader):
             measurement_dict[
                 measurement.dataset_attribute.attribute.variable_name
             ] = measurement.value
+        self.locations = [s.geometry for s in nearest_stations]
         self.results.append(
             DatasetTimelineValue(curr_dt, measurement_dict))
 
@@ -141,9 +143,4 @@ class TahmoDatasetReader(BaseDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        metadata = {
-            'dataset': [self.dataset.name],
-            'start_date': self.start_date.isoformat(),
-            'end_date': self.end_date.isoformat()
-        }
-        return DatasetReaderValue(metadata, self.results)
+        return DatasetReaderValue(self.locations[0], self.results)

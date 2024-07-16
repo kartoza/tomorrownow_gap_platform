@@ -147,11 +147,11 @@ class SalientNetCDFReader(BaseNetCDFReader):
             (dataset[self.date_variable] <= end_dt), drop=True)
 
     def _get_data_values_from_single_location(
-            self, metadata: dict, val: xrDataset) -> DatasetReaderValue:
+            self, location: Point, val: xrDataset) -> DatasetReaderValue:
         """Read data values from xrDataset.
 
-        :param metadata: Dict of metadata
-        :type metadata: dict
+        :param location: grid cell from query
+        :type location: Point
         :param val: dataset to be read
         :type val: xrDataset
         :return: Data Values
@@ -174,15 +174,13 @@ class SalientNetCDFReader(BaseNetCDFReader):
                 dt,
                 value_data
             ))
-        return DatasetReaderValue(metadata, results)
+        return DatasetReaderValue(location, results)
 
     def _get_data_values_from_multiple_locations(
-            self, metadata: dict, val: xrDataset, locations: List[Point],
+            self, val: xrDataset, locations: List[Point],
             lat_dim: int, lon_dim: int) -> DatasetReaderValue:
         """Read data values from xrDataset from list of locations.
 
-        :param metadata: dict of metadata
-        :type metadata: dict
         :param val: dataset to be read
         :type val: xrDataset
         :param locations: list of location
@@ -224,7 +222,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
                             value_data
                         )]
                     idx_lat_lon += 1
-        return LocationDatasetReaderValue(metadata, results)
+        return LocationDatasetReaderValue(results)
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from list of xArray Dataset object.
@@ -232,19 +230,13 @@ class SalientNetCDFReader(BaseNetCDFReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        results = []
-        metadata = {
-            'dataset': [self.dataset.name],
-            'start_date': self.start_date.isoformat(),
-            'end_date': self.end_date.isoformat()
-        }
         if len(self.xrDatasets) == 0:
-            return DatasetReaderValue(metadata, results)
+            return DatasetReaderValue(None, [])
         # forecast will always use latest dataset
         val = self.xrDatasets[0]
         locations, lat_dim, lon_dim = self.find_locations(val)
         if self.location_input.type != LocationInputType.POINT:
             return self._get_data_values_from_multiple_locations(
-                metadata, val, locations, lat_dim, lon_dim
+                val, locations, lat_dim, lon_dim
             )
-        return self._get_data_values_from_single_location(metadata, val)
+        return self._get_data_values_from_single_location(locations[0], val)

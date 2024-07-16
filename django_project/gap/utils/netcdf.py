@@ -305,12 +305,11 @@ class BaseNetCDFReader(BaseDatasetReader):
         :return: points
         :rtype: List[Point]
         """
-        locations = None
-        if self.location_input.type == LocationInputType.POINT:
-            return locations, 1, 1
         locations = []
         lat_values = val['lat'].values
         lon_values = val['lon'].values
+        if lat_values.ndim == 0 and lon_values.ndim == 0:
+            return [Point(x=float(lon_values), y=float(lat_values))], 1, 1
         for lat in lat_values:
             for lon in lon_values:
                 locations.append(Point(x=float(lon), y=float(lat)))
