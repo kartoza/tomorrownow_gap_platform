@@ -65,7 +65,8 @@ class TahmoDatasetReader(BaseDatasetReader):
 
     def _find_nearest_station_by_bbox(self):
         points = self.location_input.points
-        polygon = Polygon.from_bbox((points[0].x, points[0].y, points[1].x, points[1].y))
+        polygon = Polygon.from_bbox(
+            (points[0].x, points[0].y, points[1].x, points[1].y))
         qs = Station.objects.filter(
             geometry__within=polygon
         ).order_by('id')
@@ -161,5 +162,5 @@ class TahmoDatasetReader(BaseDatasetReader):
         """
         if len(self.results.keys()) == 1:
             key = list(self.results.keys())[0]
-            return DatasetReaderValue(key, self.results[key])    
+            return DatasetReaderValue(key, self.results[key])
         return LocationDatasetReaderValue(self.results)

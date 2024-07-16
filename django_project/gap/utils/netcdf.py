@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 import os
 import json
+import logging
 from typing import List
 from datetime import datetime, timedelta
 from django.contrib.gis.geos import Point
@@ -28,6 +29,9 @@ from gap.utils.reader import (
     BaseDatasetReader,
     DatasetReaderInput
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class NetCDFProvider:
@@ -251,7 +255,8 @@ class BaseNetCDFReader(BaseDatasetReader):
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
         # Convert the Django GIS Polygon to a format compatible with shapely
-        shapely_multipolygon = shape(json.loads(self.location_input.polygon.geojson))
+        shapely_multipolygon = shape(
+            json.loads(self.location_input.polygon.geojson))
 
         # Create a mask using regionmask from the shapely polygon
         mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
@@ -271,7 +276,13 @@ class BaseNetCDFReader(BaseDatasetReader):
             lat_idx = np.abs(dataset['lat'] - lat).argmin()
             lon_idx = np.abs(dataset['lon'] - lon).argmin()
             mask[lat_idx, lon_idx] = True
-        mask_da = xr.DataArray(mask, coords={'lat': dataset['lat'], 'lon': dataset['lon']}, dims=['lat', 'lon'])
+        mask_da = xr.DataArray(
+            mask,
+            coords={
+                'lat': dataset['lat'], 'lon': dataset['lon']
+            },
+            dims=['lat', 'lon']
+        )
         # Apply the mask to the dataset
         return dataset[variables].where(mask_da, drop=True)
 
@@ -289,13 +300,28 @@ class BaseNetCDFReader(BaseDatasetReader):
         end_dt = np.datetime64(end_date, 'ns')
         variables = [a.source for a in self.attributes]
         variables.append(self.date_variable)
-        if self.location_input.type == LocationInputType.BBOX:
-            return self._read_variables_by_bbox(dataset, variables, start_dt, end_dt)
-        elif self.location_input.type == LocationInputType.POLYGON:
-            return self._read_variables_by_polygon(dataset, variables, start_dt, end_dt)
-        elif self.location_input.type == LocationInputType.LIST_OF_POINT:
-            return self._read_variables_by_points(dataset, variables, start_dt, end_dt)
-        return self._read_variables_by_point(dataset, variables, start_dt, end_dt)
+        result: xrDataset = None
+        try:
+            if self.location_input.type == LocationInputType.BBOX:
+                result = self._read_variables_by_bbox(
+                    dataset, variables, start_dt, end_dt)
+            elif self.location_input.type == LocationInputType.POLYGON:
+                result = self._read_variables_by_polygon(
+                    dataset, variables, start_dt, end_dt)
+            elif self.location_input.type == LocationInputType.LIST_OF_POINT:
+                result = self._read_variables_by_points(
+                    dataset, variables, start_dt, end_dt)
+            else:
+                result = self._read_variables_by_point(
+                    dataset, variables, start_dt, end_dt)
+        except Exception as ex:
+            logger.error(
+                'Failed to read_variables from '
+                f'netcdf dataset {self.dataset.provider.name} '
+                f'date {start_date} - {end_date} with vars: {variables}'
+            )
+            logger.error(ex)
+        return result
 
     def find_locations(self, val: xrDataset) -> List[Point]:
         """Find locations from dataset.

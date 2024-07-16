@@ -15,7 +15,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models.functions import Lower
-from django.contrib.gis.geos import GEOSGeometry, Point, MultiPoint, MultiPolygon
+from django.contrib.gis.geos import (
+    GEOSGeometry,
+    Point,
+    MultiPoint,
+    MultiPolygon
+)
 
 from gap.models import (
     Attribute,
@@ -111,7 +116,10 @@ class MeasurementAPI(APIView):
         lat = self.request.GET.get('lat', None)
         if lon is not None and lat is not None:
             return DatasetReaderInput(
-                MultiPoint([Point(x=float(lon), y=float(lat), srid=4326)]), LocationInputType.POINT)
+                MultiPoint(
+                    [Point(x=float(lon), y=float(lat), srid=4326)]
+                ), LocationInputType.POINT
+            )
         # (xmin, ymin, xmax, ymax)
         bbox = self.request.GET.get('bbox', None)
         if bbox is not None:

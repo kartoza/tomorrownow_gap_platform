@@ -73,7 +73,9 @@ class CBAMNetCDFReader(BaseNetCDFReader):
             if netcdf_file is None:
                 continue
             ds = self.open_dataset(netcdf_file)
-            val = self.read_variables(ds)
+            val = self.read_variables(ds, filter_date, filter_date)
+            if val is None:
+                continue
             self.xrDatasets.append(val)
 
     def _get_data_values_from_single_location(

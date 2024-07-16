@@ -75,6 +75,8 @@ class SalientNetCDFReader(BaseNetCDFReader):
             return
         ds = self.open_dataset(netcdf_file)
         val = self.read_variables(ds, start_date, end_date)
+        if val is None:
+            return
         self.xrDatasets.append(val)
 
     def _read_variables_by_point(
@@ -88,7 +90,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
                 (dataset[self.date_variable] >= start_dt) &
                 (dataset[self.date_variable] <= end_dt),
                 drop=True
-            )
+        )
 
     def _read_variables_by_bbox(
             self, dataset: xrDataset, variables: List[str],
@@ -111,7 +113,8 @@ class SalientNetCDFReader(BaseNetCDFReader):
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
         # Convert the Django GIS Polygon to a format compatible with shapely
-        shapely_multipolygon = shape(json.loads(self.location_input.polygon.geojson))
+        shapely_multipolygon = shape(
+            json.loads(self.location_input.polygon.geojson))
 
         # Create a mask using regionmask from the shapely polygon
         mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
@@ -139,7 +142,12 @@ class SalientNetCDFReader(BaseNetCDFReader):
             lat_idx = np.abs(dataset['lat'] - lat).argmin()
             lon_idx = np.abs(dataset['lon'] - lon).argmin()
             mask[lat_idx, lon_idx] = True
-        mask_da = xr.DataArray(mask, coords={'lat': dataset['lat'], 'lon': dataset['lon']}, dims=['lat', 'lon'])
+        mask_da = xr.DataArray(
+            mask,
+            coords={
+                'lat': dataset['lat'], 'lon': dataset['lon']
+            }, dims=['lat', 'lon']
+        )
         # Apply the mask to the dataset
         return dataset[variables].where(
             (mask_da) &

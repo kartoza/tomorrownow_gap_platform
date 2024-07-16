@@ -10,7 +10,7 @@ from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
-from django.contrib.gis.geos import Point, Polygon, MultiPolygon, GeometryCollection
+from django.contrib.gis.geos import Point, MultiPolygon, GeometryCollection
 
 from gap.models import (
     Dataset,
@@ -59,7 +59,8 @@ class DatasetReaderValue:
     """Class representing all values from reader."""
 
     def __init__(
-            self, location: Point, results: List[DatasetTimelineValue]) -> None:
+            self, location: Point,
+            results: List[DatasetTimelineValue]) -> None:
         """Initialize DatasetReaderValue object.
 
         :param location: point to the observed station/grid cell
@@ -119,7 +120,6 @@ class DatasetReaderInput:
     """Class to store the dataset reader input.
 
     Input type: Point, bbox, polygon, list of point
-    TODO: list of points
     """
 
     def __init__(self, geom_collection: GeometryCollection, type: str):
@@ -129,21 +129,31 @@ class DatasetReaderInput:
 
     @property
     def point(self) -> Point:
+        """Get single point from input."""
         if self.type != LocationInputType.POINT:
             raise TypeError('Location input type is not bbox/point!')
-        return Point(x=self.geom_collection[0].x, y=self.geom_collection[0].y, srid=4326)
+        return Point(
+            x=self.geom_collection[0].x,
+            y=self.geom_collection[0].y, srid=4326)
 
     @property
     def polygon(self) -> MultiPolygon:
+        """Get MultiPolygon object from input."""
         if self.type != LocationInputType.POLYGON:
             raise TypeError('Location input type is not polygon!')
         return self.geom_collection
 
     @property
     def points(self) -> List[Point]:
-        if self.type not in [LocationInputType.BBOX, LocationInputType.LIST_OF_POINT]:
+        """Get list of point from input."""
+        if self.type not in [
+            LocationInputType.BBOX, LocationInputType.LIST_OF_POINT
+        ]:
             raise TypeError('Location input type is not bbox/point!')
-        return [Point(x=point.x, y=point.y, srid=4326) for point in self.geom_collection]
+        return [
+            Point(x=point.x, y=point.y, srid=4326) for
+            point in self.geom_collection
+        ]
 
 
 class BaseDatasetReader:
