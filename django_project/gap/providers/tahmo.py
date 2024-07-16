@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 from typing import List
 from datetime import datetime
-from django.contrib.gis.geos import Polygon
+from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
 
 from gap.models import (
@@ -49,9 +49,12 @@ class TahmoDatasetReader(BaseDatasetReader):
             dataset, attributes, location_input, start_date, end_date)
         self.results = []
 
-    def _find_nearest_station_by_point(self):
+    def _find_nearest_station_by_point(self, point: Point = None):
+        p = point
+        if p is None:
+            p = self.location_input.point
         qs = Station.objects.annotate(
-            distance=Distance('geometry', self.location_input.point)
+            distance=Distance('geometry', p)
         ).filter(
             provider=self.dataset.provider
         ).order_by('distance').first()
@@ -78,8 +81,16 @@ class TahmoDatasetReader(BaseDatasetReader):
         return qs
 
     def _find_nearest_station_by_points(self):
-        # points = self.location_input.points
-        return None
+        points = self.location_input.points
+        results = {}
+        for point in points:
+            rs = self._find_nearest_station_by_point(point)
+            if rs is None:
+                continue
+            if rs[0].id in results:
+                continue
+            results[rs[0].id] = rs[0]
+        return results.values()
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.

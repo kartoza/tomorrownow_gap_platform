@@ -136,7 +136,7 @@ class DatasetReaderInput:
     def point(self) -> Point:
         if self.type != LocationInputType.POINT:
             raise TypeError('Location input type is not bbox/point!')
-        return self.geom_collection[0]
+        return Point(x=self.geom_collection[0].x, y=self.geom_collection[0].y, srid=4326)
 
     @property
     def polygon(self) -> MultiPolygon:
@@ -148,7 +148,7 @@ class DatasetReaderInput:
     def points(self) -> List[Point]:
         if self.type not in [LocationInputType.BBOX, LocationInputType.LIST_OF_POINT]:
             raise TypeError('Location input type is not bbox/point!')
-        return [point for point in self.geom_collection]
+        return [Point(x=point.x, y=point.y, srid=4326) for point in self.geom_collection]
 
 
 class BaseDatasetReader:
