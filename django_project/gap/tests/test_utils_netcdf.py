@@ -5,15 +5,19 @@ Tomorrow Now GAP.
 .. note:: Unit tests for NetCDF Utilities.
 """
 
+import os
 import json
 from django.test import TestCase
 from datetime import datetime
 import numpy as np
+import xarray as xr
 from django.contrib.gis.geos import (
-    Point, GeometryCollection, Polygon, MultiPolygon
+    Point, GeometryCollection, Polygon, MultiPolygon,
+    MultiPoint
 )
 from unittest.mock import Mock, MagicMock, patch
 
+from gap.models import Provider, Dataset, DatasetAttribute
 from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
@@ -42,10 +46,56 @@ from gap.factories import (
 class TestNetCDFProvider(TestCase):
     """Unit test for NetCDFProvider class."""
 
+    def setUp(self):
+        """Set test for NetCDFProvider class."""
+        self.provider = Provider(name='CBAM')
+        self.env_vars = {
+            'CBAM_AWS_ACCESS_KEY_ID': 'test_key',
+            'CBAM_AWS_SECRET_ACCESS_KEY': 'test_secret',
+            'CBAM_AWS_ENDPOINT_URL': 'https://test.endpoint',
+            'CBAM_AWS_BUCKET_NAME': 'test_bucket',
+            'CBAM_AWS_DIR_PREFIX': 'test_prefix',
+            'CBAM_AWS_REGION_NAME': 'test_region'
+        }
+
     def test_constants(self):
         """Test for correct constants."""
         self.assertEqual(NetCDFProvider.CBAM, 'CBAM')
         self.assertEqual(NetCDFProvider.SALIENT, 'Salient')
+
+    @patch.dict(os.environ, {
+        'CBAM_AWS_ACCESS_KEY_ID': 'test_key',
+        'CBAM_AWS_SECRET_ACCESS_KEY': 'test_secret',
+        'CBAM_AWS_ENDPOINT_URL': 'https://test.endpoint',
+        'CBAM_AWS_BUCKET_NAME': 'test_bucket',
+        'CBAM_AWS_DIR_PREFIX': 'test_prefix',
+        'CBAM_AWS_REGION_NAME': 'test_region'
+    })
+    def test_get_s3_variables(self):
+        """Test get_s3_variables method."""
+        expected = {
+            'AWS_ACCESS_KEY_ID': 'test_key',
+            'AWS_SECRET_ACCESS_KEY': 'test_secret',
+            'AWS_ENDPOINT_URL': 'https://test.endpoint',
+            'AWS_BUCKET_NAME': 'test_bucket',
+            'AWS_DIR_PREFIX': 'test_prefix',
+            'AWS_REGION_NAME': 'test_region'
+        }
+        self.assertEqual(
+            NetCDFProvider.get_s3_variables(self.provider), expected)
+
+    @patch.dict(os.environ, {
+        'CBAM_AWS_ENDPOINT_URL': 'https://test.endpoint',
+        'CBAM_AWS_REGION_NAME': 'test_region'
+    })
+    def test_get_s3_client_kwargs(self):
+        """Test for get_s3_client_kwargs."""
+        expected = {
+            'endpoint_url': 'https://test.endpoint',
+            'region_name': 'test_region'
+        }
+        self.assertEqual(
+            NetCDFProvider.get_s3_client_kwargs(self.provider), expected)
 
 
 class TestDaterangeInc(TestCase):
@@ -209,6 +259,22 @@ class TestDatasetReaderInput(TestCase):
 class TestBaseNetCDFReader(TestCase):
     """Unit test for class BaseNetCDFReader."""
 
+    def setUp(self):
+        """Set test for BaseNetCDFReader."""
+        self.provider = Provider(name='CBAM')
+        self.dataset = Dataset(provider=self.provider)
+        self.attributes = [DatasetAttribute(source='var1'),
+                           DatasetAttribute(source='var2')]
+        self.location_input = DatasetReaderInput.from_point(
+            Point(1.0, 2.0)
+        )
+        self.start_date = datetime(2020, 1, 1)
+        self.end_date = datetime(2020, 1, 31)
+        self.reader = BaseNetCDFReader(
+            self.dataset, self.attributes, self.location_input,
+            self.start_date, self.end_date
+        )
+
     def test_add_attribute(self):
         """Test adding a new attribute to Reader."""
         reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
@@ -252,7 +318,7 @@ class TestBaseNetCDFReader(TestCase):
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
     @patch('fsspec.filesystem')
-    def test_setupNetCDFReader(
+    def test_setup_netcdf_reader(
         self, mock_filesystem, mock_get_s3_vars, mock_get_s3_kwargs):
         """Test for setup NetCDFReader class."""
         mock_get_s3_kwargs.return_value = {
@@ -298,3 +364,157 @@ class TestBaseNetCDFReader(TestCase):
         dataset3 = DatasetFactory.create()
         with self.assertRaises(TypeError):
             get_reader_from_dataset(dataset3)
+
+    def test_read_variables_by_point(self):
+        """Test read variables xarray by point."""
+        # Prepare a mock dataset
+        data = np.random.rand(2, 10, 10)
+        lats = np.linspace(-90, 90, 10)
+        lons = np.linspace(-180, 180, 10)
+        times = np.array(['2020-01-01', '2020-01-02'], dtype='datetime64')
+        dataset = xr.Dataset(
+            {'var1': (['time', 'lat', 'lon'], data),
+             'var2': (['time', 'lat', 'lon'], data)},
+            coords={'time': times, 'lat': lats, 'lon': lons}
+        )
+        result = self.reader._read_variables_by_point(
+            dataset, ['var1', 'var2'],
+            np.datetime64(self.start_date), np.datetime64(self.end_date)
+        )
+        self.assertIsInstance(result, xr.Dataset)
+
+    def test_read_variables_by_bbox(self):
+        """Test read variables xarray by bbox."""
+        data = np.random.rand(2, 10, 10)
+        lats = np.linspace(-90, 90, 10)
+        lons = np.linspace(-180, 180, 10)
+        times = np.array(['2020-01-01', '2020-01-02'], dtype='datetime64')
+        dataset = xr.Dataset(
+            {'var1': (['time', 'lat', 'lon'], data),
+             'var2': (['time', 'lat', 'lon'], data)},
+            coords={'time': times, 'lat': lats, 'lon': lons}
+        )
+        self.reader.location_input = DatasetReaderInput.from_bbox(
+            [-180, -90, 180, 90])
+        result = self.reader._read_variables_by_bbox(
+            dataset, ['var1', 'var2'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
+        self.assertIsInstance(result, xr.Dataset)
+
+    def test_read_variables_by_points(self):
+        """Test read variables xarray by points."""
+        data = np.random.rand(2, 10, 10)
+        lats = np.linspace(-90, 90, 10)
+        lons = np.linspace(-180, 180, 10)
+        times = np.array(['2020-01-01', '2020-01-02'], dtype='datetime64')
+        dataset = xr.Dataset(
+            {'var1': (['time', 'lat', 'lon'], data),
+             'var2': (['time', 'lat', 'lon'], data)},
+            coords={'time': times, 'lat': lats, 'lon': lons}
+        )
+        self.reader.location_input.type = LocationInputType.LIST_OF_POINT
+        self.reader.location_input.geom_collection = MultiPoint(
+            [Point(0, 0), Point(10, 10)])
+        result = self.reader._read_variables_by_points(
+            dataset, ['var1', 'var2'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
+        self.assertIsInstance(result, xr.Dataset)
+
+    def test_find_locations(self):
+        """Test find locations method."""
+        data = np.random.rand(10, 10)
+        lats = np.linspace(-90, 90, 10)
+        lons = np.linspace(-180, 180, 10)
+        dataset = xr.Dataset(
+            {'var1': (['lat', 'lon'], data)},
+            coords={'lat': lats, 'lon': lons}
+        )
+        locations, lat_len, lon_len = self.reader.find_locations(dataset)
+        self.assertEqual(len(locations), 100)
+        self.assertEqual(lat_len, 10)
+        self.assertEqual(lon_len, 10)
+
+    @patch.object(BaseNetCDFReader, '_read_variables_by_point')
+    @patch.object(BaseNetCDFReader, '_read_variables_by_bbox')
+    @patch.object(BaseNetCDFReader, '_read_variables_by_polygon')
+    @patch.object(BaseNetCDFReader, '_read_variables_by_points')
+    def test_read_variables_several_cases(
+        self, mock_read_by_points, mock_read_by_polygon,
+        mock_read_by_bbox, mock_read_by_point):
+        """Test several cases in read_variables function."""
+        data = np.random.rand(2, 10, 10)
+        lats = np.linspace(-90, 90, 10)
+        lons = np.linspace(-180, 180, 10)
+        times = np.array(['2020-01-01', '2020-01-02'], dtype='datetime64')
+        dataset = xr.Dataset(
+            {'var1': (['time', 'lat', 'lon'], data),
+             'var2': (['time', 'lat', 'lon'], data)},
+            coords={'time': times, 'lat': lats, 'lon': lons}
+        )
+
+        # Mock results
+        mock_read_by_point.return_value = dataset
+        mock_read_by_bbox.return_value = dataset
+        mock_read_by_polygon.return_value = dataset
+        mock_read_by_points.return_value = dataset
+
+        # Test POINT input
+        self.reader.location_input.type = LocationInputType.POINT
+        result = self.reader.read_variables(
+            dataset, self.start_date, self.end_date)
+        self.assertIsInstance(result, xr.Dataset)
+        mock_read_by_point.assert_called_once_with(
+            dataset, ['var1', 'var2', 'date'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
+
+        # Test BBOX input
+        self.reader.location_input = DatasetReaderInput.from_bbox(
+            [-180, -90, 180, 90])
+        result = self.reader.read_variables(
+            dataset, self.start_date, self.end_date)
+        self.assertIsInstance(result, xr.Dataset)
+        mock_read_by_bbox.assert_called_once_with(
+            dataset, ['var1', 'var2', 'date'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
+
+        # Test POLYGON input
+        self.reader.location_input.type = LocationInputType.POLYGON
+        polygon = Polygon(((0, 0), (0, 10), (10, 10), (10, 0), (0, 0)))
+        self.reader.location_input.geom_collection = MultiPolygon(polygon)
+        result = self.reader.read_variables(
+            dataset, self.start_date, self.end_date)
+        self.assertIsInstance(result, xr.Dataset)
+        mock_read_by_polygon.assert_called_once_with(
+            dataset, ['var1', 'var2', 'date'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
+
+        # Test LIST_OF_POINT input
+        self.reader.location_input.type = LocationInputType.LIST_OF_POINT
+        points = [Point(0, 0), Point(10, 10)]
+        self.reader.location_input.geom_collection = GeometryCollection(
+            *points)
+        result = self.reader.read_variables(
+            dataset, self.start_date, self.end_date)
+        self.assertIsInstance(result, xr.Dataset)
+        mock_read_by_points.assert_called_once_with(
+            dataset, ['var1', 'var2', 'date'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
+
+        # Test exception handling
+        mock_read_by_bbox.reset_mock()
+        mock_read_by_bbox.side_effect = Exception('Unexpected error')
+        self.reader.location_input = DatasetReaderInput.from_bbox(
+            [-180, -90, 180, 90])
+        result = self.reader.read_variables(
+            dataset, self.start_date, self.end_date)
+        self.assertIsNone(result)
+        mock_read_by_bbox.assert_called_once_with(
+            dataset, ['var1', 'var2', 'date'], np.datetime64(self.start_date),
+            np.datetime64(self.end_date)
+        )
