@@ -5,11 +5,14 @@ Tomorrow Now GAP.
 .. note:: Helper for reading dataset
 """
 
-from typing import Union, List
+import json
+from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import (
+    Point, MultiPolygon, GeometryCollection, MultiPoint
+)
 
 from gap.models import (
     Dataset,
@@ -35,6 +38,8 @@ class DatasetTimelineValue:
 
     def _datetime_as_str(self):
         """Convert datetime object to string."""
+        if self.datetime is None:
+            return ''
         if isinstance(self.datetime, np.datetime64):
             return np.datetime_as_string(
                 self.datetime, unit='s', timezone='UTC')
@@ -56,16 +61,16 @@ class DatasetReaderValue:
     """Class representing all values from reader."""
 
     def __init__(
-            self, metadata: dict,
+            self, location: Point,
             results: List[DatasetTimelineValue]) -> None:
         """Initialize DatasetReaderValue object.
 
-        :param metadata: Dictionary of metadata
-        :type metadata: dict
+        :param location: point to the observed station/grid cell
+        :type location: Point
         :param results: Data value list
         :type results: List[DatasetTimelineValue]
         """
-        self.metadata = metadata
+        self.location = location
         self.results = results
 
     def to_dict(self):
@@ -74,10 +79,110 @@ class DatasetReaderValue:
         :return: Dictionary of metadata and data
         :rtype: dict
         """
+        if self.location is None:
+            return {}
         return {
-            'metadata': self.metadata,
+            'geometry': json.loads(self.location.json),
             'data': [result.to_dict() for result in self.results]
         }
+
+
+class LocationDatasetReaderValue(DatasetReaderValue):
+    """Class representing data values for multiple locations."""
+
+    def __init__(
+            self, results: Dict[Point, List[DatasetTimelineValue]]) -> None:
+        """Initialize LocationDatasetReaderValue."""
+        super().__init__(None, [])
+        self.results = results
+
+    def to_dict(self):
+        """Convert into dict.
+
+        :return: Dictionary of metadata and data
+        :rtype: dict
+        """
+        location_data = []
+        for location, values in self.results.items():
+            val = DatasetReaderValue(location, values)
+            location_data.append(val.to_dict())
+        return location_data
+
+
+class LocationInputType:
+    """Class for data input type."""
+
+    POINT = 'point'
+    BBOX = 'bbox'
+    POLYGON = 'polygon'
+    LIST_OF_POINT = 'list_of_point'
+
+
+class DatasetReaderInput:
+    """Class to store the dataset reader input.
+
+    Input type: Point, bbox, polygon, list of point
+    """
+
+    def __init__(self, geom_collection: GeometryCollection, type: str):
+        """Initialize DatasetReaderInput class."""
+        self.geom_collection = geom_collection
+        self.type = type
+
+    @property
+    def point(self) -> Point:
+        """Get single point from input."""
+        if self.type != LocationInputType.POINT:
+            raise TypeError('Location input type is not bbox/point!')
+        return Point(
+            x=self.geom_collection[0].x,
+            y=self.geom_collection[0].y, srid=4326)
+
+    @property
+    def polygon(self) -> MultiPolygon:
+        """Get MultiPolygon object from input."""
+        if self.type != LocationInputType.POLYGON:
+            raise TypeError('Location input type is not polygon!')
+        return self.geom_collection
+
+    @property
+    def points(self) -> List[Point]:
+        """Get list of point from input."""
+        if self.type not in [
+            LocationInputType.BBOX, LocationInputType.LIST_OF_POINT
+        ]:
+            raise TypeError('Location input type is not bbox/point!')
+        return [
+            Point(x=point.x, y=point.y, srid=4326) for
+            point in self.geom_collection
+        ]
+
+    @classmethod
+    def from_point(cls, point: Point):
+        """Create input from single point.
+
+        :param point: single point
+        :type point: Point
+        :return: DatasetReaderInput with POINT type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPoint([point]), LocationInputType.POINT)
+
+    @classmethod
+    def from_bbox(cls, bbox_list: List[float]):
+        """Create input from bbox (xmin, ymin, xmax, ymax).
+
+        :param bbox_list: (xmin, ymin, xmax, ymax)
+        :type bbox_list: List[float]
+        :return: DatasetReaderInput with BBOX type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPoint([
+                Point(x=bbox_list[0], y=bbox_list[1], srid=4326),
+                Point(x=bbox_list[2], y=bbox_list[3], srid=4326)
+            ]), LocationInputType.BBOX)
 
 
 class BaseDatasetReader:
@@ -85,15 +190,16 @@ class BaseDatasetReader:
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
-            point: Point, start_date: datetime, end_date: datetime) -> None:
+            location_input: DatasetReaderInput,
+            start_date: datetime, end_date: datetime) -> None:
         """Initialize BaseDatasetReader class.
 
         :param dataset: Dataset for reading
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
-        :param point: Location to be queried
-        :type point: Point
+        :param location_input: Location to be queried
+        :type location_input: DatasetReaderInput
         :param start_date: Start date time filter
         :type start_date: datetime
         :param end_date: End date time filter
@@ -101,7 +207,7 @@ class BaseDatasetReader:
         """
         self.dataset = dataset
         self.attributes = attributes
-        self.point = point
+        self.location_input = location_input
         self.start_date = start_date
         self.end_date = end_date
 

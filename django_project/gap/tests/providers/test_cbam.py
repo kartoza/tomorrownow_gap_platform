@@ -12,6 +12,7 @@ from django.contrib.gis.geos import Point
 from unittest.mock import Mock, patch
 
 from core.settings.utils import absolute_path
+from gap.utils.reader import DatasetReaderInput
 from gap.utils.netcdf import (
     NetCDFProvider,
 )
@@ -23,16 +24,29 @@ from gap.factories import (
     DatasetFactory,
     DatasetAttributeFactory,
     AttributeFactory,
-    NetCDFFileFactory
+    DataSourceFileFactory
 )
 
 
 class TestCBAMNetCDFReader(TestCase):
     """Unit test for CBAM NetCDFReader class."""
 
+    def setUp(self) -> None:
+        """Set test class."""
+        self.dataset = DatasetFactory.create(
+            provider=ProviderFactory(name=NetCDFProvider.CBAM))
+        self.attribute = AttributeFactory.create(
+            name='Max Total Temperature',
+            variable_name='max_total_temperature')
+        self.dataset_attr = DatasetAttributeFactory.create(
+            dataset=self.dataset,
+            attribute=self.attribute,
+            source='max_total_temperature'
+        )
+
     @patch('gap.utils.netcdf.daterange_inc',
            return_value=[datetime(2023, 1, 1)])
-    @patch('gap.models.NetCDFFile.objects.filter')
+    @patch('gap.models.DataSourceFile.objects.filter')
     def test_read_historical_data_empty(
         self, mock_filter, mock_daterange_inc):
         """Test for reading historical data that returns empty."""
@@ -49,20 +63,10 @@ class TestCBAMNetCDFReader(TestCase):
 
     def test_read_historical_data(self):
         """Test for reading historical data from CBAM sample."""
-        dataset = DatasetFactory.create(
-            provider=ProviderFactory(name=NetCDFProvider.CBAM))
-        attribute = AttributeFactory.create(
-            name='Max Total Temperature',
-            variable_name='max_total_temperature')
-        dataset_attr = DatasetAttributeFactory.create(
-            dataset=dataset,
-            attribute=attribute,
-            source='max_total_temperature'
-        )
         dt = datetime(2019, 11, 1, 0, 0, 0)
         p = Point(x=26.97, y=-12.56)
-        NetCDFFileFactory.create(
-            dataset=dataset,
+        DataSourceFileFactory.create(
+            dataset=self.dataset,
             start_date_time=dt,
             end_date_time=dt
         )
@@ -73,7 +77,10 @@ class TestCBAMNetCDFReader(TestCase):
             mock_open.return_value = (
                 xr.open_dataset(file_path)
             )
-            reader = CBAMNetCDFReader(dataset, [dataset_attr], p, dt, dt)
+            reader = CBAMNetCDFReader(
+                self.dataset, [self.dataset_attr],
+                DatasetReaderInput.from_point(p),
+                dt, dt)
             reader.read_historical_data(dt, dt)
             mock_open.assert_called_once()
             self.assertEqual(len(reader.xrDatasets), 1)
@@ -82,3 +89,44 @@ class TestCBAMNetCDFReader(TestCase):
             self.assertEqual(
                 data_value.results[0].values['max_total_temperature'],
                 33.371735)
+
+    def test_get_data_values_from_multiple_locations(self):
+        """Test get data values from several locations."""
+        dt = datetime(2019, 11, 1, 0, 0, 0)
+        p = Point(x=26.97, y=-12.56)
+        attr1 = DatasetAttributeFactory.create(
+            dataset=self.dataset,
+            source='var1'
+        )
+        attr2 = DatasetAttributeFactory.create(
+            dataset=self.dataset,
+            source='var2'
+        )
+        reader = CBAMNetCDFReader(
+            self.dataset, [attr1, attr2],
+            DatasetReaderInput.from_point(p),
+            dt, dt)
+        date_variable = 'time'
+        date_values = [datetime(2020, 1, 1), datetime(2020, 1, 2)]
+        data_var1 = [[[10, 20], [30, 40]], [[50, 60], [70, 80]]]
+        data_var2 = [[[90, 100], [110, 120]], [[130, 140], [150, 160]]]
+
+        val = xr.Dataset(
+            {
+                'var1': (['time', 'lat', 'lon'], data_var1),
+                'var2': (['time', 'lat', 'lon'], data_var2)
+            },
+            coords={'time': date_values, 'lat': [0, 1], 'lon': [0, 1]}
+        )
+
+        locations = [Point(0, 0), Point(1, 1), Point(0, 1), Point(1, 0)]
+
+        reader.date_variable = date_variable
+        result = reader._get_data_values_from_multiple_locations(
+            val, locations, 2, 2)
+        self.assertIn(locations[0], result.results)
+        self.assertIn(locations[1], result.results)
+        self.assertIn(locations[2], result.results)
+        self.assertIn(locations[3], result.results)
+        data = result.results[locations[3]]
+        self.assertEqual(len(data), 2)

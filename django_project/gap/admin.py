@@ -8,7 +8,7 @@ from django.contrib import admin
 
 from .models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
-    Dataset, DatasetAttribute, NetCDFFile, DatasetType, Unit
+    Dataset, DatasetAttribute, DataSourceFile, DatasetType, Unit
 )
 
 
@@ -112,11 +112,12 @@ class IngestorSessionAdmin(admin.ModelAdmin):
     list_filter = ('ingestor_type', 'status')
 
 
-@admin.register(NetCDFFile)
-class NetCDFFileAdmin(admin.ModelAdmin):
-    """NetCDFFile admin."""
+@admin.register(DataSourceFile)
+class DataSourceFileAdmin(admin.ModelAdmin):
+    """DataSourceFile admin."""
 
     list_display = (
-        'name', 'dataset', 'start_date_time', 'end_date_time', 'created_on'
+        'name', 'dataset', 'format', 'start_date_time',
+        'end_date_time', 'created_on'
     )
     list_filter = ('dataset',)
