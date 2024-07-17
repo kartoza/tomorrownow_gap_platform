@@ -114,7 +114,7 @@ class TahmoIngestor:
                                 )
                         progress.status = IngestorSessionStatus.SUCCESS
                         progress.save()
-                except UnicodeDecodeError as e:
+                except UnicodeDecodeError:
                     continue
 
         # INGEST MEASUREMENTS
@@ -229,6 +229,5 @@ class TahmoIngestor:
             self._run(dir_path)
             shutil.rmtree(dir_path)
         except Exception as e:
-            import traceback
             shutil.rmtree(dir_path)
             raise Exception(e)

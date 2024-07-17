@@ -18,6 +18,7 @@ from gap.models.station import Station, Country
 
 class TahmoIngestorTest(TestCase):
     """Tahmo ingestor test case."""
+
     fixtures = [
         '2.provider.json',
         '3.observation_type.json',

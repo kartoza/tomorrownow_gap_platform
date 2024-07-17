@@ -71,7 +71,12 @@ class Dataset(Definition):
         ),
         max_length=512
     )
-    is_internal_use = models.BooleanField(default=False)
+    is_internal_use = models.BooleanField(
+        default=False,
+        help_text=(
+            'Indicates whether this dataset is internal use.'
+        ),
+    )
 
 
 class DataSourceFile(models.Model):
