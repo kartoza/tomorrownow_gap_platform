@@ -15,7 +15,7 @@ from xarray.core.dataset import Dataset as xrDataset
 from gap.models import (
     Dataset,
     DatasetAttribute,
-    NetCDFFile
+    DataSourceFile
 )
 from gap.utils.reader import (
     LocationInputType,
@@ -65,7 +65,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
         self.setup_netcdf_reader()
         self.xrDatasets = []
         for filter_date in daterange_inc(start_date, end_date):
-            netcdf_file = NetCDFFile.objects.filter(
+            netcdf_file = DataSourceFile.objects.filter(
                 dataset=self.dataset,
                 start_date_time__gte=filter_date,
                 end_date_time__lte=filter_date

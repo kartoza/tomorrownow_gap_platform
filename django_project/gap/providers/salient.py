@@ -18,7 +18,7 @@ from shapely.geometry import shape
 from gap.models import (
     Dataset,
     DatasetAttribute,
-    NetCDFFile
+    DataSourceFile
 )
 
 from gap.utils.reader import (
@@ -68,7 +68,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
         """
         self.setup_netcdf_reader()
         self.xrDatasets = []
-        netcdf_file = NetCDFFile.objects.filter(
+        netcdf_file = DataSourceFile.objects.filter(
             dataset=self.dataset
         ).order_by('id').last()
         if netcdf_file is None:

@@ -14,7 +14,7 @@ from gap.models import (
     Unit,
     Attribute,
     DatasetAttribute,
-    NetCDFFile,
+    DataSourceFile,
     CastType
 )
 from gap.utils.netcdf import (
@@ -29,7 +29,7 @@ from gap.tasks.netcdf_sync import (
 from gap.factories import (
     ProviderFactory,
     DatasetFactory,
-    NetCDFFileFactory
+    DataSourceFileFactory
 )
 
 
@@ -108,30 +108,30 @@ class TestSyncByDataset(TestCase):
         provider = ProviderFactory.create(name=NetCDFProvider.CBAM)
         dataset = DatasetFactory.create(provider=provider)
         # add existing NetCDF File
-        NetCDFFileFactory.create(
+        DataSourceFileFactory.create(
             dataset=dataset,
             name='2023-01-02.nc'
         )
         sync_by_dataset(dataset)
         mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
         self.assertEqual(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='2023-01-02.nc'
             ).count(),
             1
         )
         self.assertFalse(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='dmrpp/2023-01-01.nc.dmrpp'
             ).exists()
         )
         self.assertTrue(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='2023-01-01.nc'
             ).exists()
         )
         self.assertTrue(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='2023/2023-02-01.nc'
             ).exists()
         )

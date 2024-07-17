@@ -22,7 +22,7 @@ from gap.models import (
     Provider,
     Dataset,
     DatasetAttribute,
-    NetCDFFile
+    DataSourceFile
 )
 from gap.utils.reader import (
     LocationInputType,
@@ -211,11 +211,11 @@ class BaseNetCDFReader(BaseDatasetReader):
             )
         )
 
-    def open_dataset(self, netcdf_file: NetCDFFile) -> xrDataset:
+    def open_dataset(self, netcdf_file: DataSourceFile) -> xrDataset:
         """Open a NetCDFFile using xArray.
 
         :param netcdf_file: NetCDF from a dataset
-        :type netcdf_file: NetCDFFile
+        :type netcdf_file: DataSourceFile
         :return: xArray Dataset object
         :rtype: xrDataset
         """

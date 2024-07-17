@@ -22,7 +22,7 @@ from gap.models import (
     ObservationType,
     DatasetTimeStep,
     DatasetStore,
-    NetCDFFile
+    DataSourceFile
 )
 
 
@@ -182,16 +182,17 @@ class MeasurementFactory(
     value = factory.Faker('pyfloat')
 
 
-class NetCDFFileFactory(
-    BaseFactory[NetCDFFile], metaclass=BaseMetaFactory[NetCDFFile]
+class DataSourceFileFactory(
+    BaseFactory[DataSourceFile], metaclass=BaseMetaFactory[DataSourceFile]
 ):
-    """Factory class for NetCDFFile model."""
+    """Factory class for DataSourceFile model."""
 
     class Meta:  # noqa
-        model = NetCDFFile
+        model = DataSourceFile
 
     name = factory.Faker('text')
     dataset = factory.SubFactory(DatasetFactory)
     start_date_time = factory.Faker('date_time')
     end_date_time = factory.Faker('date_time')
     created_on = factory.Faker('date_time')
+    format = DatasetStore.NETCDF

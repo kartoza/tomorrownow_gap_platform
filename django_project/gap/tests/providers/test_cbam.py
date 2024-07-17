@@ -24,7 +24,7 @@ from gap.factories import (
     DatasetFactory,
     DatasetAttributeFactory,
     AttributeFactory,
-    NetCDFFileFactory
+    DataSourceFileFactory
 )
 
 
@@ -33,7 +33,7 @@ class TestCBAMNetCDFReader(TestCase):
 
     @patch('gap.utils.netcdf.daterange_inc',
            return_value=[datetime(2023, 1, 1)])
-    @patch('gap.models.NetCDFFile.objects.filter')
+    @patch('gap.models.DataSourceFile.objects.filter')
     def test_read_historical_data_empty(
         self, mock_filter, mock_daterange_inc):
         """Test for reading historical data that returns empty."""
@@ -62,7 +62,7 @@ class TestCBAMNetCDFReader(TestCase):
         )
         dt = datetime(2019, 11, 1, 0, 0, 0)
         p = Point(x=26.97, y=-12.56)
-        NetCDFFileFactory.create(
+        DataSourceFileFactory.create(
             dataset=dataset,
             start_date_time=dt,
             end_date_time=dt

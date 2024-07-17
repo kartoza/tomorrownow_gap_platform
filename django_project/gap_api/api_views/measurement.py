@@ -166,7 +166,8 @@ class MeasurementAPI(APIView):
         if location is None:
             return data
         dataset_attributes = DatasetAttribute.objects.filter(
-            attribute__in=attributes
+            attribute__in=attributes,
+            dataset__is_internal_use=False
         )
         provider_filter = self._get_provider_filter()
         if provider_filter:

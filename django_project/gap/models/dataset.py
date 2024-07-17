@@ -35,6 +35,7 @@ class DatasetStore:
 
     TABLE = 'TABLE'
     NETCDF = 'NETCDF'
+    ZARR = 'ZARR'
     EXT_API = 'EXT_API'
 
 
@@ -65,7 +66,31 @@ class Dataset(Definition):
         choices=(
             (DatasetStore.TABLE, DatasetStore.TABLE),
             (DatasetStore.NETCDF, DatasetStore.NETCDF),
+            (DatasetStore.ZARR, DatasetStore.ZARR),
             (DatasetStore.EXT_API, DatasetStore.EXT_API),
+        ),
+        max_length=512
+    )
+    is_internal_use = models.BooleanField(default=False)
+
+
+class DataSourceFile(models.Model):
+    """Model representing a datasource file that is stored in S3 Storage."""
+
+    name = models.CharField(
+        max_length=512,
+        help_text="Filename with its path in the object storage (S3)"
+    )
+    dataset = models.ForeignKey(
+        Dataset, on_delete=models.CASCADE
+    )
+    start_date_time = models.DateTimeField()
+    end_date_time = models.DateTimeField()
+    created_on = models.DateTimeField()
+    format = models.CharField(
+        choices=(
+            (DatasetStore.NETCDF, DatasetStore.NETCDF),
+            (DatasetStore.ZARR, DatasetStore.ZARR),
         ),
         max_length=512
     )

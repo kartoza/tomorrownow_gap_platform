@@ -24,14 +24,14 @@ from gap.factories import (
     DatasetFactory,
     DatasetAttributeFactory,
     AttributeFactory,
-    NetCDFFileFactory
+    DataSourceFileFactory
 )
 
 
 class TestSalientNetCDFReader(TestCase):
     """Unit test for Salient NetCDFReader class."""
 
-    @patch('gap.models.NetCDFFile.objects.filter')
+    @patch('gap.models.DataSourceFile.objects.filter')
     @patch('xarray.open_dataset')
     def test_read_forecast_data_empty(self, mock_open_dataset, mock_filter):
         """Test for reading forecast data."""
@@ -72,7 +72,7 @@ class TestSalientNetCDFReader(TestCase):
         dt1 = datetime(2024, 3, 15, 0, 0, 0)
         dt2 = datetime(2024, 3, 17, 0, 0, 0)
         p = Point(x=29.12, y=-2.625)
-        NetCDFFileFactory.create(
+        DataSourceFileFactory.create(
             dataset=dataset,
             start_date_time=dt,
             end_date_time=dt
