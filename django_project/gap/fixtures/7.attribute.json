@@ -3,9 +3,9 @@
     "model": "gap.attribute",
     "pk": 1,
     "fields": {
-      "name": "Atmospheric pressure",
+      "name": "Air Temperature Min",
       "description": null,
-      "variable_name": "atmospheric_pressure",
+      "variable_name": "air_temperature_min",
       "unit": 5
     }
   },
@@ -13,70 +13,60 @@
     "model": "gap.attribute",
     "pk": 2,
     "fields": {
-      "name": "Precipitation",
+      "name": "Air Temperature Max",
       "description": null,
-      "variable_name": "precipitation",
-      "unit": 1
+      "variable_name": "air_temperature_max",
+      "unit": 5
     }
   },
   {
     "model": "gap.attribute",
     "pk": 3,
     "fields": {
-      "name": "Relative humidity",
+      "name": "Air Temperature Average",
       "description": null,
-      "variable_name": "relative_humidity",
-      "unit": 6
+      "variable_name": "air_temperature_average",
+      "unit": 5
     }
   },
   {
     "model": "gap.attribute",
     "pk": 4,
     "fields": {
-      "name": "Shortwave radiation",
+      "name": "Relative Humidity Min",
       "description": null,
-      "variable_name": "shortwave_radiation",
-      "unit": 7
+      "variable_name": "relative_humidity_min",
+      "unit": 6
     }
   },
   {
     "model": "gap.attribute",
     "pk": 5,
     "fields": {
-      "name": "Surface air temperature",
+      "name": "Relative Humidity Max",
       "description": null,
-      "variable_name": "surface_air_temperature",
-      "unit": 8
+      "variable_name": "relative_humidity_max",
+      "unit": 6
     }
   },
   {
     "model": "gap.attribute",
     "pk": 6,
     "fields": {
-      "name": "Wind direction",
+      "name": "Solar radiation",
       "description": null,
-      "variable_name": "wind_direction",
-      "unit": 9
+      "variable_name": "solar_radiation",
+      "unit": 7
     }
   },
   {
     "model": "gap.attribute",
     "pk": 7,
     "fields": {
-      "name": "Wind gust",
+      "name": "Precipitation",
       "description": null,
-      "variable_name": "wind_gust",
-      "unit": 10
-    }
-  },
-  {
-    "model": "gap.attribute",
-    "pk": 8,
-    "fields": {
-      "name": "Wind speed",
-      "description": null,
-      "variable_name": "wind_speed",
-      "unit": 10
+      "variable_name": "precipitation",
+      "unit": 8
     }
   }
 ]

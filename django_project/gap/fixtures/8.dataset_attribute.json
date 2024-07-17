@@ -5,7 +5,7 @@
     "fields": {
       "dataset": 1,
       "attribute": 1,
-      "source": "ap",
+      "source": "te_min",
       "source_unit": 5
     }
   },
@@ -15,8 +15,8 @@
     "fields": {
       "dataset": 1,
       "attribute": 2,
-      "source": "pr",
-      "source_unit": 1
+      "source": "te_max",
+      "source_unit": 5
     }
   },
   {
@@ -25,8 +25,8 @@
     "fields": {
       "dataset": 1,
       "attribute": 3,
-      "source": "rh",
-      "source_unit": 6
+      "source": "te_avg",
+      "source_unit": 5
     }
   },
   {
@@ -35,8 +35,8 @@
     "fields": {
       "dataset": 1,
       "attribute": 4,
-      "source": "ra",
-      "source_unit": 7
+      "source": "rh_min",
+      "source_unit": 6
     }
   },
   {
@@ -45,8 +45,8 @@
     "fields": {
       "dataset": 1,
       "attribute": 5,
-      "source": "te",
-      "source_unit": 8
+      "source": "rh_max",
+      "source_unit": 6
     }
   },
   {
@@ -55,8 +55,8 @@
     "fields": {
       "dataset": 1,
       "attribute": 6,
-      "source": "wd",
-      "source_unit": 9
+      "source": "ra_total",
+      "source_unit": 7
     }
   },
   {
@@ -65,18 +65,8 @@
     "fields": {
       "dataset": 1,
       "attribute": 7,
-      "source": "wg",
-      "source_unit": 10
-    }
-  },
-  {
-    "model": "gap.datasetattribute",
-    "pk": 8,
-    "fields": {
-      "dataset": 1,
-      "attribute": 8,
-      "source": "ws",
-      "source_unit": 10
+      "source": "pr_total",
+      "source_unit": 8
     }
   }
 ]

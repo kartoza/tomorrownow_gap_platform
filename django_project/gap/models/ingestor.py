@@ -95,6 +95,28 @@ class IngestorSession(models.Model):
         self.save()
 
 
+class IngestorSessionProgress(models.Model):
+    """Ingestor Session Progress model."""
+
+    session = models.ForeignKey(
+        IngestorSession, on_delete=models.CASCADE
+    )
+    filename = models.TextField()
+    status = models.CharField(
+        default=IngestorSessionStatus.RUNNING,
+        choices=(
+            (IngestorSessionStatus.RUNNING, IngestorSessionStatus.RUNNING),
+            (IngestorSessionStatus.SUCCESS, IngestorSessionStatus.SUCCESS),
+            (IngestorSessionStatus.FAILED, IngestorSessionStatus.FAILED),
+        ),
+        max_length=512
+    )
+    row_count = models.IntegerField()
+    notes = models.TextField(
+        blank=True, null=True
+    )
+
+
 @receiver(models.signals.post_delete, sender=IngestorSession)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """Delete file from filesystem.

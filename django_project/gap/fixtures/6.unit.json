@@ -27,7 +27,7 @@
     "model": "gap.unit",
     "pk": 5,
     "fields": {
-      "name": "kPa",
+      "name": "°C",
       "description": null
     }
   },
@@ -43,7 +43,7 @@
     "model": "gap.unit",
     "pk": 7,
     "fields": {
-      "name": "W/m2",
+      "name": "Wh/m2",
       "description": null
     }
   },
@@ -51,23 +51,7 @@
     "model": "gap.unit",
     "pk": 8,
     "fields": {
-      "name": "°C",
-      "description": null
-    }
-  },
-  {
-    "model": "gap.unit",
-    "pk": 9,
-    "fields": {
-      "name": "° from north",
-      "description": null
-    }
-  },
-  {
-    "model": "gap.unit",
-    "pk": 10,
-    "fields": {
-      "name": "m/s",
+      "name": "mm/day",
       "description": null
     }
   }

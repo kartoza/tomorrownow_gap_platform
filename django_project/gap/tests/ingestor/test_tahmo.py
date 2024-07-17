@@ -13,7 +13,6 @@ from django.test import TestCase
 
 from gap.ingestor.exceptions import FileNotFoundException
 from gap.models.ingestor import IngestorSession, IngestorSessionStatus
-from gap.models.measurement import Attribute
 from gap.models.station import Station, Country
 
 
@@ -65,6 +64,12 @@ class TahmoIngestorTest(TestCase):
             file=SimpleUploadedFile(_file.name, _file.read())
         )
         session.run()
+        self.assertEqual(
+            session.ingestorsessionprogress_set.filter(
+                session=session,
+                status=IngestorSessionStatus.FAILED
+            ).count(), 0
+        )
         session.delete()
         self.assertEqual(session.notes, None)
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
@@ -72,13 +77,62 @@ class TahmoIngestorTest(TestCase):
         for station in Station.objects.all():
             self.assertEqual(station.country.name, 'Kenya')
             self.assertEqual(station.country.iso_a3, 'KEN')
-
         measurements = Station.objects.get(
-            code='TA00056'
+            code='TA00001'
         ).measurement_set.all()
-        for attribute in Attribute.objects.all():
-            self.assertEqual(
+        self.assertEqual(
+            list(
                 measurements.filter(
-                    dataset_attribute__attribute=attribute
-                ).count(), 23
-            )
+                    dataset_attribute__source='te_min'
+                ).values_list('value', flat=True)
+            ),
+            [14.859377, 17.1, 17.2]
+        )
+        self.assertEqual(
+            list(
+                measurements.filter(
+                    dataset_attribute__source='te_max'
+                ).values_list('value', flat=True)
+            ),
+            [24.111788, 30.9, 24]
+        )
+        self.assertEqual(
+            list(
+                measurements.filter(
+                    dataset_attribute__source='te_avg'
+                ).values_list('value', flat=True)
+            ),
+            [19.1567865, 21.15, 18.47916667]
+        )
+        self.assertEqual(
+            list(
+                measurements.filter(
+                    dataset_attribute__source='rh_min'
+                ).values_list('value', flat=True)
+            ),
+            [0.651, 0.429, 0.682]
+        )
+        self.assertEqual(
+            list(
+                measurements.filter(
+                    dataset_attribute__source='rh_max'
+                ).values_list('value', flat=True)
+            ),
+            [0.995, 1, 1]
+        )
+        self.assertEqual(
+            list(
+                measurements.filter(
+                    dataset_attribute__source='ra_total'
+                ).values_list('value', flat=True)
+            ),
+            [2070.156154, 5973, 1836]
+        )
+        self.assertEqual(
+            list(
+                measurements.filter(
+                    dataset_attribute__source='pr_total'
+                ).values_list('value', flat=True)
+            ),
+            [1.885, 1.7, 15.521]
+        )
