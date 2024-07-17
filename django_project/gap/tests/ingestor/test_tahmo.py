@@ -19,6 +19,15 @@ from gap.models.station import Station, Country
 
 class TahmoIngestorTest(TestCase):
     """Tahmo ingestor test case."""
+    fixtures = [
+        '2.provider.json',
+        '3.observation_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     def setUp(self):
         """Init test case."""

@@ -1,0 +1,82 @@
+[
+  {
+    "model": "gap.attribute",
+    "pk": 1,
+    "fields": {
+      "name": "Atmospheric pressure",
+      "description": null,
+      "variable_name": "atmospheric_pressure",
+      "unit": 5
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 2,
+    "fields": {
+      "name": "Precipitation",
+      "description": null,
+      "variable_name": "precipitation",
+      "unit": 1
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 3,
+    "fields": {
+      "name": "Relative humidity",
+      "description": null,
+      "variable_name": "relative_humidity",
+      "unit": 6
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 4,
+    "fields": {
+      "name": "Shortwave radiation",
+      "description": null,
+      "variable_name": "shortwave_radiation",
+      "unit": 7
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 5,
+    "fields": {
+      "name": "Surface air temperature",
+      "description": null,
+      "variable_name": "surface_air_temperature",
+      "unit": 8
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 6,
+    "fields": {
+      "name": "Wind direction",
+      "description": null,
+      "variable_name": "wind_direction",
+      "unit": 9
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 7,
+    "fields": {
+      "name": "Wind gust",
+      "description": null,
+      "variable_name": "wind_gust",
+      "unit": 10
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 8,
+    "fields": {
+      "name": "Wind speed",
+      "description": null,
+      "variable_name": "wind_speed",
+      "unit": 10
+    }
+  }
+]

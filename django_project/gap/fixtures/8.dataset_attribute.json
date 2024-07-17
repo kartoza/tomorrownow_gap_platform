@@ -1,0 +1,82 @@
+[
+  {
+    "model": "gap.datasetattribute",
+    "pk": 1,
+    "fields": {
+      "dataset": 1,
+      "attribute": 1,
+      "source": "ap",
+      "source_unit": 5
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 2,
+    "fields": {
+      "dataset": 1,
+      "attribute": 2,
+      "source": "pr",
+      "source_unit": 1
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 3,
+    "fields": {
+      "dataset": 1,
+      "attribute": 3,
+      "source": "rh",
+      "source_unit": 6
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 4,
+    "fields": {
+      "dataset": 1,
+      "attribute": 4,
+      "source": "ra",
+      "source_unit": 7
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 5,
+    "fields": {
+      "dataset": 1,
+      "attribute": 5,
+      "source": "te",
+      "source_unit": 8
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 6,
+    "fields": {
+      "dataset": 1,
+      "attribute": 6,
+      "source": "wd",
+      "source_unit": 9
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 7,
+    "fields": {
+      "dataset": 1,
+      "attribute": 7,
+      "source": "wg",
+      "source_unit": 10
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 8,
+    "fields": {
+      "dataset": 1,
+      "attribute": 8,
+      "source": "ws",
+      "source_unit": 10
+    }
+  }
+]

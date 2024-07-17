@@ -1,0 +1,14 @@
+[
+  {
+    "model": "gap.dataset",
+    "pk": 1,
+    "fields": {
+      "name": "Tahmo Ground Observational",
+      "description": null,
+      "provider": 1,
+      "type": 4,
+      "time_step": "DAILY",
+      "store_type": "TABLE"
+    }
+  }
+]

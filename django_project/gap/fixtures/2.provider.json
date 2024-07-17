@@ -1,0 +1,10 @@
+[
+  {
+    "model": "gap.provider",
+    "pk": 1,
+    "fields": {
+      "name": "Tahmo",
+      "description": null
+    }
+  }
+]

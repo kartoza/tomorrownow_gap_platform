@@ -17,8 +17,8 @@ from django.contrib.gis.geos import Point
 from gap.ingestor.exceptions import FileNotFoundException
 from gap.models import (
     Provider, Station, ObservationType, Country, IngestorSession,
-    Attribute, Measurement, Dataset, DatasetType, DatasetTimeStep,
-    DatasetStore, DatasetAttribute, Unit, CastType
+    Measurement, Dataset, DatasetType, DatasetTimeStep,
+    DatasetStore, DatasetAttribute
 )
 
 
@@ -32,19 +32,6 @@ class TahmoVariable:
         self.dataset_attr = None
 
 
-TAHMO_VARIABLES = {
-    # TODO: check if pressure is really in atm and humidity in g/m3
-    'ap': TahmoVariable('Atmospheric pressure', 'atm'),
-    'pr': TahmoVariable('Precipitation', 'mm'),
-    'rh': TahmoVariable('Relative humidity', 'g/m3'),
-    'ra': TahmoVariable('Shortwave radiation', 'W/m2'),
-    'te': TahmoVariable('Surface air temperature', '°C'),
-    'wd': TahmoVariable('Wind direction', 'Degrees from North'),
-    'wg': TahmoVariable('Wind gust', 'm/s'),
-    'ws': TahmoVariable('Wind speed', 'm/s')
-}
-
-
 class TahmoIngestor:
     """Ingestor for tahmo data."""
 
@@ -52,17 +39,14 @@ class TahmoIngestor:
         """Initialize the ingestor."""
         self.session = session
 
-        self.provider, _ = Provider.objects.get_or_create(
+        self.provider = Provider.objects.get(
             name='Tahmo'
         )
-        self.obs_type, _ = ObservationType.objects.get_or_create(
+        self.obs_type = ObservationType.objects.get(
             name='Ground Observations'
         )
-        self.dataset_type, _ = DatasetType.objects.get_or_create(
-            name='Ground Observational',
-            defaults={
-                'type': CastType.HISTORICAL
-            }
+        self.dataset_type = DatasetType.objects.get(
+            name='Ground Observational'
         )
         self.dataset, _ = Dataset.objects.get_or_create(
             name=f'Tahmo {self.dataset_type.name}',
@@ -71,22 +55,6 @@ class TahmoIngestor:
             time_step=DatasetTimeStep.DAILY,
             store_type=DatasetStore.TABLE
         )
-        for key, variable in TAHMO_VARIABLES.items():
-            unit, _ = Unit.objects.get_or_create(
-                name=variable.unit
-            )
-            # TODO: perhaps we should use fixture to load the attributes
-            attribute, _ = Attribute.objects.get_or_create(
-                name=variable.name,
-                variable_name=variable.name.lower().replace(' ', '_'),
-                unit=unit
-            )
-            variable.dataset_attr, _ = DatasetAttribute.objects.get_or_create(
-                dataset=self.dataset,
-                attribute=attribute,
-                source=key,
-                source_unit=unit
-            )
 
     def _run(self, dir_path):
         """Run the ingestor."""
@@ -160,8 +128,11 @@ class TahmoIngestor:
                         date_time.replace(second=0)
                         for key, value in data.items():  # noqa
                             try:
-                                attr_var = TAHMO_VARIABLES[key]
-                            except KeyError:
+                                dataset_attr = DatasetAttribute.objects.get(
+                                    dataset=self.dataset,
+                                    source=key
+                                )
+                            except DatasetAttribute.DoesNotExist:
                                 continue
                             try:
                                 # Skip empty one
@@ -170,7 +141,7 @@ class TahmoIngestor:
 
                                 measure, _ = Measurement.objects.get_or_create(
                                     station=station,
-                                    dataset_attribute=attr_var.dataset_attr,
+                                    dataset_attribute=dataset_attr,
                                     date_time=date_time,
                                     defaults={
                                         'value': float(value)
@@ -203,7 +174,5 @@ class TahmoIngestor:
             shutil.rmtree(dir_path)
         except Exception as e:
             import traceback
-            print(e)
-            print(traceback.format_exc())
             shutil.rmtree(dir_path)
             raise Exception(e)
