@@ -9,13 +9,13 @@ from django.test import TestCase
 from unittest.mock import patch, MagicMock
 
 from gap.models import (
-    DatasetType,
     DatasetTimeStep,
     DatasetStore,
     Unit,
     Attribute,
     DatasetAttribute,
-    NetCDFFile
+    DataSourceFile,
+    CastType
 )
 from gap.utils.netcdf import (
     NetCDFProvider, NetCDFVariable, CBAM_VARIABLES, SALIENT_VARIABLES
@@ -29,7 +29,7 @@ from gap.tasks.netcdf_sync import (
 from gap.factories import (
     ProviderFactory,
     DatasetFactory,
-    NetCDFFileFactory
+    DataSourceFileFactory
 )
 
 
@@ -41,8 +41,9 @@ class TestInitializeProvider(TestCase):
         provider, dataset = initialize_provider('CBAM')
 
         self.assertEqual(provider.name, 'CBAM')
-        self.assertEqual(dataset.name, 'CBAM')
-        self.assertEqual(dataset.type, DatasetType.CLIMATE_REANALYSIS)
+        self.assertEqual(dataset.name, 'CBAM Climate Reanalysis')
+        self.assertEqual(dataset.type.name, 'Climate Reanalysis')
+        self.assertEqual(dataset.type.type, CastType.HISTORICAL)
         self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
         self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
 
@@ -51,8 +52,9 @@ class TestInitializeProvider(TestCase):
         provider, dataset = initialize_provider('Salient')
 
         self.assertEqual(provider.name, 'Salient')
-        self.assertEqual(dataset.name, 'Salient')
-        self.assertEqual(dataset.type, DatasetType.SEASONAL_FORECAST)
+        self.assertEqual(dataset.name, 'Salient Seasonal Forecast')
+        self.assertEqual(dataset.type.name, 'Seasonal Forecast')
+        self.assertEqual(dataset.type.type, CastType.FORECAST)
         self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
         self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
 
@@ -106,30 +108,30 @@ class TestSyncByDataset(TestCase):
         provider = ProviderFactory.create(name=NetCDFProvider.CBAM)
         dataset = DatasetFactory.create(provider=provider)
         # add existing NetCDF File
-        NetCDFFileFactory.create(
+        DataSourceFileFactory.create(
             dataset=dataset,
             name='2023-01-02.nc'
         )
         sync_by_dataset(dataset)
         mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
         self.assertEqual(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='2023-01-02.nc'
             ).count(),
             1
         )
         self.assertFalse(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='dmrpp/2023-01-01.nc.dmrpp'
             ).exists()
         )
         self.assertTrue(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='2023-01-01.nc'
             ).exists()
         )
         self.assertTrue(
-            NetCDFFile.objects.filter(
+            DataSourceFile.objects.filter(
                 dataset=dataset, name='2023/2023-02-01.nc'
             ).exists()
         )

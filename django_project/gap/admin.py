@@ -8,8 +8,18 @@ from django.contrib import admin
 
 from .models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
-    Dataset, DatasetAttribute, NetCDFFile
+    Dataset, DatasetAttribute, DataSourceFile, DatasetType, Unit
 )
+
+
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    """Unit admin."""
+
+    list_display = (
+        'name', 'description'
+    )
+    search_fields = ('name',)
 
 
 @admin.register(Attribute)
@@ -42,6 +52,15 @@ class ProviderAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+@admin.register(DatasetType)
+class DatasetTypeAdmin(admin.ModelAdmin):
+    """DatasetType admin."""
+
+    list_display = (
+        'name', 'type'
+    )
+
+
 @admin.register(Dataset)
 class DatasetAdmin(admin.ModelAdmin):
     """Dataset admin."""
@@ -58,6 +77,7 @@ class DatasetAttributeAdmin(admin.ModelAdmin):
     list_display = (
         'dataset', 'attribute', 'source', 'source_unit',
     )
+    list_filter = ('dataset',)
 
 
 @admin.register(Measurement)
@@ -92,11 +112,12 @@ class IngestorSessionAdmin(admin.ModelAdmin):
     list_filter = ('ingestor_type', 'status')
 
 
-@admin.register(NetCDFFile)
-class NetCDFFileAdmin(admin.ModelAdmin):
-    """NetCDFFile admin."""
+@admin.register(DataSourceFile)
+class DataSourceFileAdmin(admin.ModelAdmin):
+    """DataSourceFile admin."""
 
     list_display = (
-        'name', 'dataset', 'start_date_time', 'end_date_time', 'created_on'
+        'name', 'dataset', 'format', 'start_date_time',
+        'end_date_time', 'created_on'
     )
     list_filter = ('dataset',)

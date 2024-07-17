@@ -9,6 +9,8 @@ from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 
 from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
+    CastType,
+    DatasetType,
     Dataset,
     Provider,
     Unit,
@@ -18,10 +20,9 @@ from gap.models import (
     Station,
     Measurement,
     ObservationType,
-    DatasetType,
     DatasetTimeStep,
     DatasetStore,
-    NetCDFFile
+    DataSourceFile
 )
 
 
@@ -37,6 +38,19 @@ class ProviderFactory(
     description = factory.Faker('text')
 
 
+class DatasetTypeFactory(
+    BaseFactory[DatasetType], metaclass=BaseMetaFactory[DatasetType]
+):
+    """Factory class for DatasetType model."""
+
+    class Meta:  # noqa
+        model = DatasetType
+
+    name = factory.Faker('company')
+    description = factory.Faker('text')
+    type = CastType.HISTORICAL
+
+
 class DatasetFactory(
     BaseFactory[Dataset], metaclass=BaseMetaFactory[Dataset]
 ):
@@ -47,7 +61,7 @@ class DatasetFactory(
 
     name = factory.Faker('company')
     description = factory.Faker('text')
-    type = DatasetType.CLIMATE_REANALYSIS
+    type = factory.SubFactory(DatasetTypeFactory)
     time_step = DatasetTimeStep.DAILY
     store_type = DatasetStore.TABLE
     provider = factory.SubFactory(ProviderFactory)
@@ -168,16 +182,17 @@ class MeasurementFactory(
     value = factory.Faker('pyfloat')
 
 
-class NetCDFFileFactory(
-    BaseFactory[NetCDFFile], metaclass=BaseMetaFactory[NetCDFFile]
+class DataSourceFileFactory(
+    BaseFactory[DataSourceFile], metaclass=BaseMetaFactory[DataSourceFile]
 ):
-    """Factory class for NetCDFFile model."""
+    """Factory class for DataSourceFile model."""
 
     class Meta:  # noqa
-        model = NetCDFFile
+        model = DataSourceFile
 
     name = factory.Faker('text')
     dataset = factory.SubFactory(DatasetFactory)
     start_date_time = factory.Faker('date_time')
     end_date_time = factory.Faker('date_time')
     created_on = factory.Faker('date_time')
+    format = DatasetStore.NETCDF

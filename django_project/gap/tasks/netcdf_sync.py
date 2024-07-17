@@ -17,13 +17,14 @@ from core.celery import app
 from gap.models import (
     Attribute,
     Provider,
-    NetCDFFile,
+    DataSourceFile,
     Dataset,
     DatasetAttribute,
     DatasetStore,
     DatasetTimeStep,
     DatasetType,
-    Unit
+    Unit,
+    CastType
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
@@ -47,14 +48,24 @@ def initialize_provider(provider_name: str) -> Tuple[Provider, Dataset]:
     """
     provider, _ = Provider.objects.get_or_create(name=provider_name)
     if provider.name == NetCDFProvider.CBAM:
-        dataset_type = DatasetType.CLIMATE_REANALYSIS
+        dataset_type, _ = DatasetType.objects.get_or_create(
+            name='Climate Reanalysis',
+            defaults={
+                'type': CastType.HISTORICAL
+            }
+        )
     else:
-        dataset_type = DatasetType.SEASONAL_FORECAST
+        dataset_type, _ = DatasetType.objects.get_or_create(
+            name='Seasonal Forecast',
+            defaults={
+                'type': CastType.FORECAST
+            }
+        )
     dataset, _ = Dataset.objects.get_or_create(
-        name=provider.name,
+        name=f'{provider.name} {dataset_type.name}',
         provider=provider,
+        type=dataset_type,
         defaults={
-            'type': dataset_type,
             'time_step': DatasetTimeStep.DAILY,
             'store_type': DatasetStore.NETCDF
         }
@@ -123,7 +134,12 @@ def sync_by_dataset(dataset: Dataset):
                 file_path = filename
             if file_path.startswith('/'):
                 file_path = file_path[1:]
-            if NetCDFFile.objects.filter(name=file_path).exists():
+            check_exist = DataSourceFile.objects.filter(
+                name=file_path,
+                dataset=dataset,
+                format=DatasetStore.NETCDF
+            ).exists()
+            if check_exist:
                 continue
             netcdf_filename = os.path.split(file_path)[1]
             file_date = datetime.strptime(
@@ -132,12 +148,13 @@ def sync_by_dataset(dataset: Dataset):
                 file_date.year, file_date.month, file_date.day,
                 0, 0, 0, tzinfo=pytz.UTC
             )
-            NetCDFFile.objects.create(
+            DataSourceFile.objects.create(
                 name=file_path,
                 dataset=dataset,
                 start_date_time=start_datetime,
                 end_date_time=start_datetime,
-                created_on=timezone.now()
+                created_on=timezone.now(),
+                format=DatasetStore.NETCDF
             )
             count += 1
     if count > 0:
