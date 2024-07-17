@@ -22,7 +22,11 @@ from gap.factories import (
     StationFactory,
     MeasurementFactory
 )
-from gap.utils.reader import DatasetReaderInput, LocationInputType
+from gap.utils.reader import (
+    DatasetReaderInput,
+    LocationInputType,
+    LocationDatasetReaderValue
+)
 
 
 class TestTahmoReader(TestCase):
@@ -100,3 +104,44 @@ class TestTahmoReader(TestCase):
         self.assertEqual(
             data_value.results[0].values['surface_air_temperature'],
             100)
+
+    def test_read_historical_data_multiple_locations(self):
+        """Test for reading historical data from multiple locations."""
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        dt2 = datetime(2019, 11, 2, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
+        )
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt2,
+            value=200
+        )
+        p = Point(x=28.97, y=-10.56, srid=4326)
+        station2 = StationFactory.create(
+            geometry=p,
+            provider=self.dataset.provider
+        )
+        MeasurementFactory.create(
+            station=station2,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=300
+        )
+        location_input = DatasetReaderInput(
+            MultiPoint([self.station.geometry, p]),
+            LocationInputType.LIST_OF_POINT)
+        reader = TahmoDatasetReader(
+            self.dataset, [self.dataset_attr], location_input, dt1, dt2)
+        reader.read_historical_data(dt1, dt2)
+        data_value = reader.get_data_values()
+        self.assertTrue(isinstance(data_value, LocationDatasetReaderValue))
+        self.assertEqual(len(data_value.results), 2)
+        self.assertIn(p, data_value.results)
+        self.assertIn(self.station.geometry, data_value.results)
+        results = data_value.results[self.station.geometry]
+        self.assertEqual(len(results), 2)
