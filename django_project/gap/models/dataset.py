@@ -74,7 +74,8 @@ class Dataset(Definition):
     is_internal_use = models.BooleanField(
         default=False,
         help_text=(
-            'Indicates whether this dataset is internal use.'
+            'Indicates whether this dataset is internal use, '
+            'not exposed through API.'
         ),
     )
 
