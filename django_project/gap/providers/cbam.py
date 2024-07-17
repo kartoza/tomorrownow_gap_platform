@@ -10,14 +10,20 @@ from datetime import datetime
 from django.contrib.gis.geos import Point
 import numpy as np
 import xarray as xr
+from xarray.core.dataset import Dataset as xrDataset
 
 from gap.models import (
     Dataset,
     DatasetAttribute,
-    NetCDFFile
+    DataSourceFile
 )
-
-from gap.utils.reader import DatasetTimelineValue, DatasetReaderValue
+from gap.utils.reader import (
+    LocationInputType,
+    DatasetReaderInput,
+    DatasetTimelineValue,
+    DatasetReaderValue,
+    LocationDatasetReaderValue
+)
 from gap.utils.netcdf import (
     daterange_inc,
     BaseNetCDFReader
@@ -30,21 +36,23 @@ class CBAMNetCDFReader(BaseNetCDFReader):
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
-            point: Point, start_date: datetime, end_date: datetime) -> None:
+            location_input: DatasetReaderInput, start_date: datetime,
+            end_date: datetime) -> None:
         """Initialize CBAMNetCDFReader class.
 
         :param dataset: Dataset from CBAM provider
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
-        :param point: Location to be queried
-        :type point: Point
+        :param location_input: Location to be queried
+        :type location_input: DatasetReaderInput
         :param start_date: Start date time filter
         :type start_date: datetime
         :param end_date: End date time filter
         :type end_date: datetime
         """
-        super().__init__(dataset, attributes, point, start_date, end_date)
+        super().__init__(
+            dataset, attributes, location_input, start_date, end_date)
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -57,7 +65,7 @@ class CBAMNetCDFReader(BaseNetCDFReader):
         self.setup_netcdf_reader()
         self.xrDatasets = []
         for filter_date in daterange_inc(start_date, end_date):
-            netcdf_file = NetCDFFile.objects.filter(
+            netcdf_file = DataSourceFile.objects.filter(
                 dataset=self.dataset,
                 start_date_time__gte=filter_date,
                 end_date_time__lte=filter_date
@@ -65,25 +73,23 @@ class CBAMNetCDFReader(BaseNetCDFReader):
             if netcdf_file is None:
                 continue
             ds = self.open_dataset(netcdf_file)
-            val = self.read_variables(ds)
+            val = self.read_variables(ds, filter_date, filter_date)
+            if val is None:
+                continue
             self.xrDatasets.append(val)
 
-    def get_data_values(self) -> DatasetReaderValue:
-        """Fetch data values from list of xArray Dataset object.
+    def _get_data_values_from_single_location(
+            self, point: Point, val: xrDataset) -> DatasetReaderValue:
+        """Read data values from xrDataset.
 
-        :return: Data Value.
+        :param point: grid cell from the query
+        :type point: Point
+        :param val: dataset to be read
+        :type val: xrDataset
+        :return: Data Values
         :rtype: DatasetReaderValue
         """
         results = []
-        metadata = {
-            'dataset': [self.dataset.name],
-            'start_date': self.start_date.isoformat(),
-            'end_date': self.end_date.isoformat()
-        }
-        if len(self.xrDatasets) == 0:
-            return DatasetReaderValue(metadata, results)
-        val = xr.combine_nested(
-            self.xrDatasets, concat_dim=[self.date_variable])
         for dt_idx, dt in enumerate(val[self.date_variable].values):
             value_data = {}
             for attribute in self.attributes:
@@ -95,4 +101,63 @@ class CBAMNetCDFReader(BaseNetCDFReader):
                 dt,
                 value_data
             ))
-        return DatasetReaderValue(metadata, results)
+        return DatasetReaderValue(point, results)
+
+    def _get_data_values_from_multiple_locations(
+            self, val: xrDataset, locations: List[Point],
+            lat_dim: int, lon_dim: int) -> DatasetReaderValue:
+        """Read data values from xrDataset from list of locations.
+
+        :param val: dataset to be read
+        :type val: xrDataset
+        :param locations: list of location
+        :type locations: List[Point]
+        :param lat_dim: latitude dimension
+        :type lat_dim: int
+        :param lon_dim: longitude dimension
+        :type lon_dim: int
+        :return: Data Values
+        :rtype: DatasetReaderValue
+        """
+        results = {}
+        for dt_idx, dt in enumerate(val[self.date_variable].values):
+            idx_lat_lon = 0
+            for idx_lat in range(lat_dim):
+                for idx_lon in range(lon_dim):
+                    value_data = {}
+                    for attribute in self.attributes:
+                        v = val[attribute.source].values[
+                            dt_idx, idx_lat, idx_lon]
+                        value_data[attribute.attribute.variable_name] = (
+                            v if not np.isnan(v) else None
+                        )
+                    loc = locations[idx_lat_lon]
+                    if loc in results:
+                        results[loc].append(DatasetTimelineValue(
+                            dt,
+                            value_data
+                        ))
+                    else:
+                        results[loc] = [DatasetTimelineValue(
+                            dt,
+                            value_data
+                        )]
+                    idx_lat_lon += 1
+        return LocationDatasetReaderValue(results)
+
+    def get_data_values(self) -> DatasetReaderValue:
+        """Fetch data values from list of xArray Dataset object.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        if len(self.xrDatasets) == 0:
+            return DatasetReaderValue(None, [])
+        val = xr.combine_nested(
+            self.xrDatasets, concat_dim=[self.date_variable])
+        locations, lat_dim, lon_dim = self.find_locations(val)
+        if self.location_input.type != LocationInputType.POINT:
+            return self._get_data_values_from_multiple_locations(
+                val, locations, lat_dim, lon_dim
+            )
+        return self._get_data_values_from_single_location(locations[0], val)

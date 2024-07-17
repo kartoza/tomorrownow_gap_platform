@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 from typing import Dict
 import pytz
+import json
 from datetime import date, datetime, time
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -14,13 +15,23 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models.functions import Lower
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import (
+    GEOSGeometry,
+    Point,
+    MultiPoint,
+    MultiPolygon
+)
 
 from gap.models import (
     Attribute,
     DatasetAttribute
 )
-from gap.utils.reader import DatasetReaderValue, BaseDatasetReader
+from gap.utils.reader import (
+    LocationInputType,
+    DatasetReaderInput,
+    DatasetReaderValue,
+    BaseDatasetReader
+)
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
 from gap.providers import get_reader_from_dataset
@@ -31,6 +42,27 @@ class MeasurementAPI(APIView):
 
     date_format = '%Y-%m-%d'
     permission_classes = [IsAuthenticated]
+    api_parameters = [
+        openapi.Parameter(
+            'attributes', openapi.IN_QUERY,
+            description='List of attribute name', type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'start_date', openapi.IN_QUERY,
+            description='Start Date',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'end_date', openapi.IN_QUERY,
+            description='End Date',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'providers', openapi.IN_QUERY,
+            description='List of provider name',
+            type=openapi.TYPE_STRING
+        ),
+    ]
 
     def _get_attribute_filter(self):
         """Get list of attributes in the query parameter.
@@ -56,17 +88,41 @@ class MeasurementAPI(APIView):
             datetime.strptime(date_str, self.date_format).date()
         )
 
-    def _get_location_filter(self):
+    def _get_location_filter(self) -> DatasetReaderInput:
         """Get location from lon and lat in the request parameters.
 
         :return: Location to be queried
-        :rtype: Point
+        :rtype: DatasetReaderInput
         """
+        if self.request.method == 'POST':
+            features = self.request.data['features']
+            geom = None
+            point_list = []
+            for geojson in features:
+                geom = GEOSGeometry(
+                    json.dumps(geojson['geometry']), srid=4326
+                )
+                if isinstance(geom, MultiPolygon):
+                    break
+                point_list.append(geom[0])
+            if geom is None:
+                raise TypeError('Unknown geometry type!')
+            if isinstance(geom, MultiPolygon):
+                return DatasetReaderInput(
+                    geom, LocationInputType.POLYGON)
+            return DatasetReaderInput(
+                MultiPoint(point_list), LocationInputType.LIST_OF_POINT)
         lon = self.request.GET.get('lon', None)
         lat = self.request.GET.get('lat', None)
-        if lon is None or lat is None:
-            return None
-        return Point(x=float(lon), y=float(lat), srid=4326)
+        if lon is not None and lat is not None:
+            return DatasetReaderInput.from_point(
+                Point(x=float(lon), y=float(lat), srid=4326))
+        # (xmin, ymin, xmax, ymax)
+        bbox = self.request.GET.get('bbox', None)
+        if bbox is not None:
+            number_list = [float(a) for a in bbox.split(',')]
+            return DatasetReaderInput.from_bbox(number_list)
+        return None
 
     def _get_provider_filter(self):
         """Get provider name filter in the request parameters.
@@ -110,7 +166,8 @@ class MeasurementAPI(APIView):
         if location is None:
             return data
         dataset_attributes = DatasetAttribute.objects.filter(
-            attribute__in=attributes
+            attribute__in=attributes,
+            dataset__is_internal_use=False
         )
         provider_filter = self._get_provider_filter()
         if provider_filter:
@@ -127,44 +184,29 @@ class MeasurementAPI(APIView):
                 reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
+        data = {
+            'metadata': {
+                'start_date': start_dt.isoformat(timespec='seconds'),
+                'end_date': end_dt.isoformat(timespec='seconds'),
+                'dataset': []
+            },
+            'results': []
+        }
         for reader in dataset_dict.values():
+            data['metadata']['dataset'].append({
+                'provider': reader.dataset.provider.name,
+                'attributes': reader.get_attributes_metadata()
+            })
             values = self._read_data(reader).to_dict()
-            if 'metadata' in data:
-                data['metadata']['dataset'].append(
-                    reader.dataset.name)
-                data['metadata']['attributes'].update(
-                    reader.get_attributes_metadata())
-            else:
-                data['metadata'] = values['metadata']
-                data['metadata']['attributes'] = (
-                    reader.get_attributes_metadata()
-                )
-            if 'data' in data:
-                data['data'][reader.dataset.name] = values['data']
-            else:
-                data['data'] = {
-                    reader.dataset.name: values['data']
-                }
+            if values:
+                data['results'].append(values)
         return data
 
     @swagger_auto_schema(
         operation_id='get-measurement',
         tags=[ApiTag.Measurement],
         manual_parameters=[
-            openapi.Parameter(
-                'attributes', openapi.IN_QUERY,
-                description='List of attribute name', type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'start_date', openapi.IN_QUERY,
-                description='Start Date',
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'end_date', openapi.IN_QUERY,
-                description='End Date',
-                type=openapi.TYPE_STRING
-            ),
+            *api_parameters,
             openapi.Parameter(
                 'lat', openapi.IN_QUERY,
                 description='Latitude',
@@ -176,8 +218,8 @@ class MeasurementAPI(APIView):
                 type=openapi.TYPE_NUMBER
             ),
             openapi.Parameter(
-                'providers', openapi.IN_QUERY,
-                description='List of provider name',
+                'bbox', openapi.IN_QUERY,
+                description='Bounding box: xmin, ymin, xmax, ymax',
                 type=openapi.TYPE_STRING
             )
         ],
@@ -194,6 +236,34 @@ class MeasurementAPI(APIView):
     )
     def get(self, request, *args, **kwargs):
         """Fetch measurement data by attributes and date range filter."""
+        return Response(
+            status=200,
+            data=self.get_response_data()
+        )
+
+    @swagger_auto_schema(
+        operation_id='get-measurement-by-polygon',
+        tags=[ApiTag.Measurement],
+        manual_parameters=[
+            *api_parameters
+        ],
+        request_body=openapi.Schema(
+            description='Polygon (SRID 4326) in geojson format',
+            type=openapi.TYPE_STRING
+        ),
+        responses={
+            200: openapi.Schema(
+                description=(
+                    'Measurement data'
+                ),
+                type=openapi.TYPE_OBJECT,
+                properties={}
+            ),
+            400: APIErrorSerializer
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        """Fetch measurement data by polygon."""
         return Response(
             status=200,
             data=self.get_response_data()
