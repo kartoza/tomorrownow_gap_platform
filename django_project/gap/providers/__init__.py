@@ -10,6 +10,10 @@ from gap.utils.netcdf import NetCDFProvider
 from gap.providers.cbam import CBAMNetCDFReader
 from gap.providers.salient import SalientNetCDFReader
 from gap.providers.tahmo import TahmoDatasetReader
+from gap.providers.tio import (
+    TomorrowIODatasetReader,
+    PROVIDER_NAME as TIO_PROVIDER
+)
 
 
 def get_reader_from_dataset(dataset: Dataset):
@@ -27,6 +31,8 @@ def get_reader_from_dataset(dataset: Dataset):
         return SalientNetCDFReader
     elif dataset.provider.name == 'Tahmo':
         return TahmoDatasetReader
+    elif dataset.provider.name == TIO_PROVIDER:
+        return TomorrowIODatasetReader
     else:
         raise TypeError(
             f'Unsupported provider name: {dataset.provider.name}'

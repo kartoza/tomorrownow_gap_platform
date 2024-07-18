@@ -25,6 +25,7 @@ from gap.models import (
     DataSourceFile
 )
 from gap.utils.reader import (
+    DatasetVariable,
     LocationInputType,
     BaseDatasetReader,
     DatasetReaderInput
@@ -80,56 +81,46 @@ class NetCDFProvider:
         return client_kwargs
 
 
-class NetCDFVariable:
-    """Contains Variable from NetCDF File."""
-
-    def __init__(self, name, desc, unit=None) -> None:
-        """Initialize NetCDFVariable object."""
-        self.name = name
-        self.desc = desc
-        self.unit = unit
-
-
 CBAM_VARIABLES = {
-    'total_evapotranspiration_flux': NetCDFVariable(
+    'total_evapotranspiration_flux': DatasetVariable(
         'Total Evapotranspiration Flux',
         'Total Evapotranspiration flux with respect to '
         'grass cover (0000:2300)', 'mm'
     ),
-    'max_total_temperature': NetCDFVariable(
+    'max_total_temperature': DatasetVariable(
         'Max Total Temperature',
         'Maximum temperature (0000:2300)', '°C'
     ),
-    'max_night_temperature': NetCDFVariable(
+    'max_night_temperature': DatasetVariable(
         'Max Night Temperature',
         'Maximum night-time temperature (1900:0500)', '°C'
     ),
-    'average_solar_irradiance': NetCDFVariable(
+    'average_solar_irradiance': DatasetVariable(
         'Average Solar Irradiance',
         'Average hourly solar irradiance reaching the surface (0600:1800)',
         'MJ/sqm'
     ),
-    'total_solar_irradiance': NetCDFVariable(
+    'total_solar_irradiance': DatasetVariable(
         'Total Solar Irradiance',
         'Total solar irradiance reaching the surface (0000:2300)', 'MJ/sqm'
     ),
-    'min_night_temperature': NetCDFVariable(
+    'min_night_temperature': DatasetVariable(
         'Min Night Temperature',
         'Minimum night-time temperature (1900:0500)', '°C'
     ),
-    'max_day_temperature': NetCDFVariable(
+    'max_day_temperature': DatasetVariable(
         'Max Day Temperature',
         'Maximum day-time temperature (0600:1800)', '°C'
     ),
-    'total_rainfall': NetCDFVariable(
+    'total_rainfall': DatasetVariable(
         'Total Rainfall',
         'Total rainfall (0000:2300)', 'mm'
     ),
-    'min_day_temperature': NetCDFVariable(
+    'min_day_temperature': DatasetVariable(
         'Min Day Temperature',
         'Minumum day-time temperature (0600:1800)', '°C'
     ),
-    'min_total_temperature': NetCDFVariable(
+    'min_total_temperature': DatasetVariable(
         'Min Total Temperature',
         'Minumum temperature (0000:2300)', '°C'
     ),
@@ -137,22 +128,22 @@ CBAM_VARIABLES = {
 
 
 SALIENT_VARIABLES = {
-    'precip_clim': NetCDFVariable(
+    'precip_clim': DatasetVariable(
         'Precipitation Climatology', None, 'mm day-1'
     ),
-    'temp_clim': NetCDFVariable(
+    'temp_clim': DatasetVariable(
         'Temperature Climatology', None, '°C'
     ),
-    'precip_anom': NetCDFVariable(
+    'precip_anom': DatasetVariable(
         'Precipitation Anomaly', None, 'mm day-1'
     ),
-    'temp_anom': NetCDFVariable(
+    'temp_anom': DatasetVariable(
         'Temperature Anomaly', None, '°C'
     ),
-    'precip': NetCDFVariable(
+    'precip': DatasetVariable(
         'Precipitation', None, 'mm day-1'
     ),
-    'temp': NetCDFVariable(
+    'temp': DatasetVariable(
         'Temperature', None, '°C'
     ),
 }

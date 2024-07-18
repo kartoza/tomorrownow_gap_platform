@@ -66,7 +66,8 @@ class DatasetAdmin(admin.ModelAdmin):
     """Dataset admin."""
 
     list_display = (
-        'name', 'provider', 'type', 'time_step', 'store_type',
+        'name', 'provider', 'type', 'time_step',
+        'store_type', 'is_internal_use'
     )
 
 

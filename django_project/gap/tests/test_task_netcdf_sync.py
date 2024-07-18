@@ -17,8 +17,9 @@ from gap.models import (
     DataSourceFile,
     CastType
 )
+from gap.utils.reader import DatasetVariable
 from gap.utils.netcdf import (
-    NetCDFProvider, NetCDFVariable, CBAM_VARIABLES, SALIENT_VARIABLES
+    NetCDFProvider, CBAM_VARIABLES, SALIENT_VARIABLES
 )
 from gap.tasks.netcdf_sync import (
     initialize_provider,
@@ -66,7 +67,7 @@ class TestInitializeProviderVariables(TestCase):
         """Test initialize_provider_variables function."""
         dataset = DatasetFactory(name=NetCDFProvider.CBAM)
         variables = {
-            'temperature': NetCDFVariable(
+            'temperature': DatasetVariable(
                 'Temperature', 'Temperature in Celsius', 'Celsius')
         }
         initialize_provider_variables(dataset, variables)
