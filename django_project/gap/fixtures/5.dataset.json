@@ -1,0 +1,41 @@
+[
+  {
+    "model": "gap.dataset",
+    "pk": 1,
+    "fields": {
+      "name": "Tahmo Ground Observational",
+      "description": null,
+      "provider": 1,
+      "type": 4,
+      "time_step": "DAILY",
+      "store_type": "TABLE",
+      "is_internal_use": false
+    }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 2,
+    "fields": {
+      "name": "CBAM Climate Reanalysis",
+      "description": null,
+      "provider": 2,
+      "type": 1,
+      "time_step": "DAILY",
+      "store_type": "NETCDF",
+      "is_internal_use": false
+    }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 3,
+    "fields": {
+      "name": "Salient Seasonal Forecast",
+      "description": null,
+      "provider": 3,
+      "type": 3,
+      "time_step": "DAILY",
+      "store_type": "NETCDF",
+      "is_internal_use": false
+    }
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "model": "gap.observationtype",
+    "pk": 1,
+    "fields": {
+      "name": "Ground Observations",
+      "description": null
+    }
+  }
+]

@@ -1,0 +1,232 @@
+[
+{
+    "model": "gap.datasetattribute",
+    "pk": 1,
+    "fields": {
+        "dataset": 1,
+        "attribute": 1,
+        "source": "te_min",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 2,
+    "fields": {
+        "dataset": 1,
+        "attribute": 2,
+        "source": "te_max",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 3,
+    "fields": {
+        "dataset": 1,
+        "attribute": 3,
+        "source": "te_avg",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 4,
+    "fields": {
+        "dataset": 1,
+        "attribute": 4,
+        "source": "rh_min",
+        "source_unit": 6
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 5,
+    "fields": {
+        "dataset": 1,
+        "attribute": 5,
+        "source": "rh_max",
+        "source_unit": 6
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 6,
+    "fields": {
+        "dataset": 1,
+        "attribute": 6,
+        "source": "ra_total",
+        "source_unit": 7
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 7,
+    "fields": {
+        "dataset": 1,
+        "attribute": 7,
+        "source": "pr_total",
+        "source_unit": 8
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 8,
+    "fields": {
+        "dataset": 2,
+        "attribute": 8,
+        "source": "total_evapotranspiration_flux",
+        "source_unit": 1
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 9,
+    "fields": {
+        "dataset": 2,
+        "attribute": 9,
+        "source": "max_total_temperature",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 10,
+    "fields": {
+        "dataset": 2,
+        "attribute": 10,
+        "source": "max_night_temperature",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 11,
+    "fields": {
+        "dataset": 2,
+        "attribute": 11,
+        "source": "average_solar_irradiance",
+        "source_unit": 3
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 12,
+    "fields": {
+        "dataset": 2,
+        "attribute": 12,
+        "source": "total_solar_irradiance",
+        "source_unit": 3
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 13,
+    "fields": {
+        "dataset": 2,
+        "attribute": 13,
+        "source": "min_night_temperature",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 14,
+    "fields": {
+        "dataset": 2,
+        "attribute": 14,
+        "source": "max_day_temperature",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 15,
+    "fields": {
+        "dataset": 2,
+        "attribute": 15,
+        "source": "total_rainfall",
+        "source_unit": 1
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 16,
+    "fields": {
+        "dataset": 2,
+        "attribute": 16,
+        "source": "min_day_temperature",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 17,
+    "fields": {
+        "dataset": 2,
+        "attribute": 17,
+        "source": "min_total_temperature",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 18,
+    "fields": {
+        "dataset": 3,
+        "attribute": 18,
+        "source": "precip_clim",
+        "source_unit": 4
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 19,
+    "fields": {
+        "dataset": 3,
+        "attribute": 19,
+        "source": "temp_clim",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 20,
+    "fields": {
+        "dataset": 3,
+        "attribute": 20,
+        "source": "precip_anom",
+        "source_unit": 4
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 21,
+    "fields": {
+        "dataset": 3,
+        "attribute": 21,
+        "source": "temp_anom",
+        "source_unit": 5
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 22,
+    "fields": {
+        "dataset": 3,
+        "attribute": 22,
+        "source": "precip",
+        "source_unit": 4
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 23,
+    "fields": {
+        "dataset": 3,
+        "attribute": 23,
+        "source": "temp",
+        "source_unit": 5
+    }
+}
+]

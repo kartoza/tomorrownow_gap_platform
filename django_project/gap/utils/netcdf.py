@@ -25,7 +25,6 @@ from gap.models import (
     DataSourceFile
 )
 from gap.utils.reader import (
-    DatasetVariable,
     LocationInputType,
     BaseDatasetReader,
     DatasetReaderInput
@@ -79,74 +78,6 @@ class NetCDFProvider:
             client_kwargs['region_name'] = os.environ.get(
                 f'{prefix}_AWS_REGION_NAME', '')
         return client_kwargs
-
-
-CBAM_VARIABLES = {
-    'total_evapotranspiration_flux': DatasetVariable(
-        'Total Evapotranspiration Flux',
-        'Total Evapotranspiration flux with respect to '
-        'grass cover (0000:2300)', 'mm'
-    ),
-    'max_total_temperature': DatasetVariable(
-        'Max Total Temperature',
-        'Maximum temperature (0000:2300)', '°C'
-    ),
-    'max_night_temperature': DatasetVariable(
-        'Max Night Temperature',
-        'Maximum night-time temperature (1900:0500)', '°C'
-    ),
-    'average_solar_irradiance': DatasetVariable(
-        'Average Solar Irradiance',
-        'Average hourly solar irradiance reaching the surface (0600:1800)',
-        'MJ/sqm'
-    ),
-    'total_solar_irradiance': DatasetVariable(
-        'Total Solar Irradiance',
-        'Total solar irradiance reaching the surface (0000:2300)', 'MJ/sqm'
-    ),
-    'min_night_temperature': DatasetVariable(
-        'Min Night Temperature',
-        'Minimum night-time temperature (1900:0500)', '°C'
-    ),
-    'max_day_temperature': DatasetVariable(
-        'Max Day Temperature',
-        'Maximum day-time temperature (0600:1800)', '°C'
-    ),
-    'total_rainfall': DatasetVariable(
-        'Total Rainfall',
-        'Total rainfall (0000:2300)', 'mm'
-    ),
-    'min_day_temperature': DatasetVariable(
-        'Min Day Temperature',
-        'Minumum day-time temperature (0600:1800)', '°C'
-    ),
-    'min_total_temperature': DatasetVariable(
-        'Min Total Temperature',
-        'Minumum temperature (0000:2300)', '°C'
-    ),
-}
-
-
-SALIENT_VARIABLES = {
-    'precip_clim': DatasetVariable(
-        'Precipitation Climatology', None, 'mm day-1'
-    ),
-    'temp_clim': DatasetVariable(
-        'Temperature Climatology', None, '°C'
-    ),
-    'precip_anom': DatasetVariable(
-        'Precipitation Anomaly', None, 'mm day-1'
-    ),
-    'temp_anom': DatasetVariable(
-        'Temperature Anomaly', None, '°C'
-    ),
-    'precip': DatasetVariable(
-        'Precipitation', None, 'mm day-1'
-    ),
-    'temp': DatasetVariable(
-        'Temperature', None, '°C'
-    ),
-}
 
 
 def daterange_inc(start_date: datetime, end_date: datetime):

@@ -8,7 +8,8 @@ from django.contrib import admin
 
 from .models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
-    Dataset, DatasetAttribute, DataSourceFile, DatasetType, Unit
+    IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
+    DatasetType, Unit
 )
 
 
@@ -103,6 +104,13 @@ class StationAdmin(admin.ModelAdmin):
     search_fields = ('code', 'name')
 
 
+class IngestorSessionProgressInline(admin.TabularInline):
+    """IngestorSessionProgress inline."""
+
+    model = IngestorSessionProgress
+    extra = 0
+
+
 @admin.register(IngestorSession)
 class IngestorSessionAdmin(admin.ModelAdmin):
     """IngestorSession admin."""
@@ -111,6 +119,7 @@ class IngestorSessionAdmin(admin.ModelAdmin):
         'run_at', 'status', 'end_at', 'ingestor_type'
     )
     list_filter = ('ingestor_type', 'status')
+    inlines = (IngestorSessionProgressInline,)
 
 
 @admin.register(DataSourceFile)

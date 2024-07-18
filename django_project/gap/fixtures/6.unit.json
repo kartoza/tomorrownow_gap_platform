@@ -1,0 +1,58 @@
+[
+  {
+    "model": "gap.unit",
+    "pk": 1,
+    "fields": {
+      "name": "mm",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 3,
+    "fields": {
+      "name": "MJ/sqm",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 4,
+    "fields": {
+      "name": "mm day-1",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 5,
+    "fields": {
+      "name": "°C",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 6,
+    "fields": {
+      "name": "%",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 7,
+    "fields": {
+      "name": "Wh/m2",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 8,
+    "fields": {
+      "name": "mm/day",
+      "description": null
+    }
+  }
+]
