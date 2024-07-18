@@ -102,4 +102,3 @@ services:
     links:
       - db
       - redis
-      - minio
