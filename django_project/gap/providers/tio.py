@@ -215,7 +215,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         # - start_date=end_date
         # - d-7 should be using timelines API
         # - historical/timelines may return the same day,
-        #   choosing to use timelines
+        #   choosing to use historical
         if self._is_ltn_request():
             self._read_ltn_data(
                 self.start_date,
@@ -227,12 +227,15 @@ class TomorrowIODatasetReader(BaseDatasetReader):
                 self.read_historical_data(
                     self.start_date,
                     self.end_date if self.end_date < max_date else
-                    max_date - timedelta(days=1)
+                    max_date
                 )
             if self.end_date >= max_date:
                 # read from forecast data
+                start_dt = self.start_date
+                if max_date > start_dt:
+                    start_dt = max_date + timedelta(days=1)
                 self.read_forecast_data(
-                    max(self.start_date, max_date),
+                    start_dt,
                     self.end_date
                 )
         else:
@@ -338,6 +341,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         if self._is_ltn_request():
             dt_str = interval.get('startDate')
             dt_str = f'{self.start_date.year}-{dt_str}'
+            return datetime.strptime(
+                dt_str, '%Y-%m-%d').replace(tzinfo=pytz.utc)
         return datetime.fromisoformat(dt_str)
 
     def _parse_result(self, result: dict) -> List[DatasetTimelineValue]:

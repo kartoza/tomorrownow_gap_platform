@@ -16,6 +16,7 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/plumber_data:/home/web/plumber_data
 
   worker:
     build:
@@ -25,6 +26,7 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/plumber_data:/home/web/plumber_data
 
   celery_beat:
     build:
@@ -55,6 +57,7 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
       - ./volumes/media:/home/web/media
+      - ./volumes/plumber_data:/home/web/plumber_data
     ports:
       # for django test server
       - "5000:8080"
