@@ -9,20 +9,12 @@ from django.test import TestCase
 from unittest.mock import patch, MagicMock
 
 from gap.models import (
-    DatasetTimeStep,
-    DatasetStore,
-    Unit,
-    Attribute,
-    DatasetAttribute,
-    DataSourceFile,
-    CastType
+    DataSourceFile
 )
 from gap.utils.netcdf import (
-    NetCDFProvider, NetCDFVariable, CBAM_VARIABLES, SALIENT_VARIABLES
+    NetCDFProvider
 )
 from gap.tasks.netcdf_sync import (
-    initialize_provider,
-    initialize_provider_variables,
     sync_by_dataset,
     netcdf_s3_sync
 )
@@ -31,56 +23,6 @@ from gap.factories import (
     DatasetFactory,
     DataSourceFileFactory
 )
-
-
-class TestInitializeProvider(TestCase):
-    """Unit test for initialize_provider functions."""
-
-    def test_initialize_provider_cbam(self):
-        """Test initialize CBAM provider."""
-        provider, dataset = initialize_provider('CBAM')
-
-        self.assertEqual(provider.name, 'CBAM')
-        self.assertEqual(dataset.name, 'CBAM Climate Reanalysis')
-        self.assertEqual(dataset.type.name, 'Climate Reanalysis')
-        self.assertEqual(dataset.type.type, CastType.HISTORICAL)
-        self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
-        self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
-
-    def test_initialize_provider_salient(self):
-        """Test initialize salient provider."""
-        provider, dataset = initialize_provider('Salient')
-
-        self.assertEqual(provider.name, 'Salient')
-        self.assertEqual(dataset.name, 'Salient Seasonal Forecast')
-        self.assertEqual(dataset.type.name, 'Seasonal Forecast')
-        self.assertEqual(dataset.type.type, CastType.FORECAST)
-        self.assertEqual(dataset.time_step, DatasetTimeStep.DAILY)
-        self.assertEqual(dataset.store_type, DatasetStore.NETCDF)
-
-
-class TestInitializeProviderVariables(TestCase):
-    """Unit test for initialize_provider_variables function."""
-
-    def test_initialize_provider_variables(self):
-        """Test initialize_provider_variables function."""
-        dataset = DatasetFactory(name=NetCDFProvider.CBAM)
-        variables = {
-            'temperature': NetCDFVariable(
-                'Temperature', 'Temperature in Celsius', 'Celsius')
-        }
-        initialize_provider_variables(dataset, variables)
-        self.assertTrue(Unit.objects.filter(name='Celsius').exists())
-        self.assertTrue(Attribute.objects.filter(
-            name='Temperature',
-            unit__name='Celsius'
-        ).exists())
-        self.assertTrue(DatasetAttribute.objects.filter(
-            dataset=dataset,
-            attribute__name='Temperature',
-            source='temperature',
-            source_unit__name='Celsius'
-        ).exists())
 
 
 class TestSyncByDataset(TestCase):
@@ -140,29 +82,13 @@ class TestSyncByDataset(TestCase):
 class TestNetCDFSyncTask(TestCase):
     """Unit test for netcdf_s3_sync function."""
 
-    @patch('gap.tasks.netcdf_sync.initialize_provider')
-    @patch('gap.tasks.netcdf_sync.initialize_provider_variables')
     @patch('gap.tasks.netcdf_sync.sync_by_dataset')
     def test_netcdf_s3_sync(
-        self, mock_sync_by_dataset, mock_initialize_provider_variables,
-        mock_initialize_provider):
+        self, mock_sync_by_dataset):
         """Test for netcdf_s3_sync function."""
-        cbam_provider_mock = MagicMock()
-        salient_provider_mock = MagicMock()
         cbam_dataset_mock = MagicMock()
         salient_dataset_mock = MagicMock()
-        mock_initialize_provider.side_effect = [
-            (cbam_provider_mock, cbam_dataset_mock),
-            (salient_provider_mock, salient_dataset_mock)
-        ]
 
         netcdf_s3_sync()
-
-        mock_initialize_provider.assert_any_call('CBAM')
-        mock_initialize_provider.assert_any_call('Salient')
-        mock_initialize_provider_variables.assert_any_call(
-            cbam_dataset_mock, CBAM_VARIABLES)
-        mock_initialize_provider_variables.assert_any_call(
-            salient_dataset_mock, SALIENT_VARIABLES)
         mock_sync_by_dataset.assert_any_call(cbam_dataset_mock)
         mock_sync_by_dataset.assert_any_call(salient_dataset_mock)
