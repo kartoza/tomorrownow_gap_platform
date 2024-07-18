@@ -82,13 +82,19 @@ class TestSyncByDataset(TestCase):
 class TestNetCDFSyncTask(TestCase):
     """Unit test for netcdf_s3_sync function."""
 
+    fixtures = [
+        '2.provider.json',
+        '3.observation_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
     @patch('gap.tasks.netcdf_sync.sync_by_dataset')
     def test_netcdf_s3_sync(
         self, mock_sync_by_dataset):
         """Test for netcdf_s3_sync function."""
-        cbam_dataset_mock = MagicMock()
-        salient_dataset_mock = MagicMock()
-
         netcdf_s3_sync()
-        mock_sync_by_dataset.assert_any_call(cbam_dataset_mock)
-        mock_sync_by_dataset.assert_any_call(salient_dataset_mock)
+        self.assertEqual(mock_sync_by_dataset.call_count, 2)
