@@ -5,9 +5,10 @@ Tomorrow Now GAP.
 .. note:: Test runner.
 """
 
-from core.celery import app as celery_app
 from django.conf import settings
 from django.test.runner import DiscoverRunner
+
+from core.celery import app as celery_app
 
 
 class CustomTestRunner(DiscoverRunner):

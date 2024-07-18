@@ -6,7 +6,6 @@ Tomorrow Now GAP.
 """
 
 import os
-from typing import Tuple
 from celery.utils.log import get_task_logger
 from datetime import datetime
 import pytz
@@ -15,90 +14,16 @@ from django.utils import timezone
 
 from core.celery import app
 from gap.models import (
-    Attribute,
-    Provider,
     DataSourceFile,
     Dataset,
-    DatasetAttribute,
-    DatasetStore,
-    DatasetTimeStep,
-    DatasetType,
-    Unit,
-    CastType
+    DatasetStore
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
-    CBAM_VARIABLES,
-    SALIENT_VARIABLES,
 )
 
 
 logger = get_task_logger(__name__)
-
-
-def initialize_provider(provider_name: str) -> Tuple[Provider, Dataset]:
-    """Initialize provider object for NetCDF.
-
-    :param provider_name: provider name
-    :type provider_name: str
-    :param metadata: provider metadata
-    :type metadata: dict
-    :return: provider and dataset object
-    :rtype: Tuple[Provider, Dataset]
-    """
-    provider, _ = Provider.objects.get_or_create(name=provider_name)
-    if provider.name == NetCDFProvider.CBAM:
-        dataset_type, _ = DatasetType.objects.get_or_create(
-            name='Climate Reanalysis',
-            defaults={
-                'type': CastType.HISTORICAL
-            }
-        )
-    else:
-        dataset_type, _ = DatasetType.objects.get_or_create(
-            name='Seasonal Forecast',
-            defaults={
-                'type': CastType.FORECAST
-            }
-        )
-    dataset, _ = Dataset.objects.get_or_create(
-        name=f'{provider.name} {dataset_type.name}',
-        provider=provider,
-        type=dataset_type,
-        defaults={
-            'time_step': DatasetTimeStep.DAILY,
-            'store_type': DatasetStore.NETCDF
-        }
-    )
-    return provider, dataset
-
-
-def initialize_provider_variables(dataset: Dataset, variables: dict):
-    """Initialize NetCDF Attribute for given dataset.
-
-    :param provider: dataset object
-    :type provider: Dataset
-    :param variables: Variable names
-    :type variables: dict
-    """
-    for key, val in variables.items():
-        unit, _ = Unit.objects.get_or_create(
-            name=val.unit
-        )
-        attr, _ = Attribute.objects.get_or_create(
-            name=val.name,
-            unit=unit,
-            variable_name=key,
-            defaults={
-                'description': val.desc
-            }
-        )
-        DatasetAttribute.objects.get_or_create(
-            dataset=dataset,
-            attribute=attr,
-            source=key,
-            source_unit=unit
-        )
 
 
 def sync_by_dataset(dataset: Dataset):
@@ -164,9 +89,7 @@ def sync_by_dataset(dataset: Dataset):
 @app.task(name="netcdf_s3_sync")
 def netcdf_s3_sync():
     """Sync NetCDF Files from S3 storage."""
-    _, cbam_dataset = initialize_provider(NetCDFProvider.CBAM)
-    _, salient_dataset = initialize_provider(NetCDFProvider.SALIENT)
-    initialize_provider_variables(cbam_dataset, CBAM_VARIABLES)
-    initialize_provider_variables(salient_dataset, SALIENT_VARIABLES)
+    cbam_dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
+    salient_dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
     sync_by_dataset(cbam_dataset)
     sync_by_dataset(salient_dataset)

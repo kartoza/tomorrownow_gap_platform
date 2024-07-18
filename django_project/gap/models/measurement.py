@@ -9,8 +9,8 @@ from django.contrib.gis.db import models
 
 from core.models.common import Definition
 from gap.models.common import Unit
-from gap.models.station import Station
 from gap.models.dataset import Dataset
+from gap.models.station import Station
 
 
 class Attribute(Definition):

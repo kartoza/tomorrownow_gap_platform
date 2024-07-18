@@ -1,0 +1,26 @@
+[
+  {
+    "model": "gap.provider",
+    "pk": 1,
+    "fields": {
+      "name": "Tahmo",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.provider",
+    "pk": 2,
+    "fields": {
+      "name": "CBAM",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.provider",
+    "pk": 3,
+    "fields": {
+      "name": "Salient",
+      "description": null
+    }
+  }
+]

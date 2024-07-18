@@ -16,9 +16,10 @@ from django.contrib.gis.geos import Point
 
 from gap.ingestor.exceptions import FileNotFoundException
 from gap.models import (
-    Provider, Station, ObservationType, Country, IngestorSession,
-    Attribute, Measurement, Dataset, DatasetType, DatasetTimeStep,
-    DatasetStore, DatasetAttribute, Unit, CastType
+    Provider, Station, ObservationType, Country,
+    IngestorSession, IngestorSessionProgress, IngestorSessionStatus,
+    Measurement, Dataset, DatasetType, DatasetTimeStep,
+    DatasetStore, DatasetAttribute
 )
 
 
@@ -32,19 +33,6 @@ class TahmoVariable:
         self.dataset_attr = None
 
 
-TAHMO_VARIABLES = {
-    # TODO: check if pressure is really in atm and humidity in g/m3
-    'ap': TahmoVariable('Atmospheric pressure', 'atm'),
-    'pr': TahmoVariable('Precipitation', 'mm'),
-    'rh': TahmoVariable('Relative humidity', 'g/m3'),
-    'ra': TahmoVariable('Shortwave radiation', 'W/m2'),
-    'te': TahmoVariable('Surface air temperature', '°C'),
-    'wd': TahmoVariable('Wind direction', 'Degrees from North'),
-    'wg': TahmoVariable('Wind gust', 'm/s'),
-    'ws': TahmoVariable('Wind speed', 'm/s')
-}
-
-
 class TahmoIngestor:
     """Ingestor for tahmo data."""
 
@@ -52,17 +40,14 @@ class TahmoIngestor:
         """Initialize the ingestor."""
         self.session = session
 
-        self.provider, _ = Provider.objects.get_or_create(
+        self.provider = Provider.objects.get(
             name='Tahmo'
         )
-        self.obs_type, _ = ObservationType.objects.get_or_create(
+        self.obs_type = ObservationType.objects.get(
             name='Ground Observations'
         )
-        self.dataset_type, _ = DatasetType.objects.get_or_create(
-            name='Ground Observational',
-            defaults={
-                'type': CastType.HISTORICAL
-            }
+        self.dataset_type = DatasetType.objects.get(
+            name='Ground Observational'
         )
         self.dataset, _ = Dataset.objects.get_or_create(
             name=f'Tahmo {self.dataset_type.name}',
@@ -71,22 +56,6 @@ class TahmoIngestor:
             time_step=DatasetTimeStep.DAILY,
             store_type=DatasetStore.TABLE
         )
-        for key, variable in TAHMO_VARIABLES.items():
-            unit, _ = Unit.objects.get_or_create(
-                name=variable.unit
-            )
-            # TODO: perhaps we should use fixture to load the attributes
-            attribute, _ = Attribute.objects.get_or_create(
-                name=variable.name,
-                variable_name=variable.name.lower().replace(' ', '_'),
-                unit=unit
-            )
-            variable.dataset_attr, _ = DatasetAttribute.objects.get_or_create(
-                dataset=self.dataset,
-                attribute=attribute,
-                source=key,
-                source_unit=unit
-            )
 
     def _run(self, dir_path):
         """Run the ingestor."""
@@ -96,16 +65,23 @@ class TahmoIngestor:
         # - latitude
         # - station code
         # - name
+        dataset_attrs_by_key = {}
 
         # INGEST STATIONS
         for (dirpath, dirnames, filenames) in os.walk(dir_path):
             for filename in filenames:
                 try:
-                    reader = csv.DictReader(
-                        open(os.path.join(dirpath, filename), 'r')
-                    )
-                    if 'station' in filename:
-                        for data in reader:
+                    if 'station' in filename.lower():
+                        reader = csv.DictReader(
+                            open(os.path.join(dirpath, filename), 'r')
+                        )
+                        rows = list(reader)
+                        progress = IngestorSessionProgress.objects.create(
+                            session=self.session,
+                            filename=filename,
+                            row_count=len(rows)  # noqa
+                        )
+                        for data in rows:
                             try:
                                 point = Point(
                                     x=float(data['longitude']),
@@ -136,6 +112,8 @@ class TahmoIngestor:
                                         'error': f'{e}'
                                     })
                                 )
+                        progress.status = IngestorSessionStatus.SUCCESS
+                        progress.save()
                 except UnicodeDecodeError:
                     continue
 
@@ -144,37 +122,81 @@ class TahmoIngestor:
             for filename in filenames:
                 code = filename.split('_')[0]
                 try:
+                    if 'station' in filename.lower():
+                        continue
                     station = Station.objects.get(
                         code=code, provider=self.provider
                     )
                     reader = csv.DictReader(
                         open(os.path.join(dirpath, filename), 'r')
                     )
-                    for data in reader:
-                        date = data['']  # noqa
+                    rows = list(reader)
+                    progress = IngestorSessionProgress.objects.create(
+                        session=self.session,
+                        filename=filename,
+                        row_count=len(rows)  # noqa
+                    )
+                    measurements = []
+                    for data in rows:
+                        date = data['Timestamp']  # noqa
                         if not date:
                             continue
-                        date_time = datetime.strptime(
-                            date, '%Y-%m-%d %H:%M'
-                        ).replace(tzinfo=timezone.utc)
+
+                        # Check the datetime
+                        try:
+                            try:
+                                date_time = datetime.strptime(
+                                    date, '%Y-%m-%d'
+                                ).replace(tzinfo=timezone.utc)
+                            except ValueError:
+                                date_time = datetime.strptime(
+                                    date, '%m/%d/%y'
+                                ).replace(tzinfo=timezone.utc)
+
+                        except ValueError as e:
+                            progress.status = IngestorSessionStatus.FAILED
+                            progress.notes = json.dumps({
+                                'filename': filename,
+                                'error': f'{e}'
+                            })
+                            progress.save()
+                            continue
+
                         date_time.replace(second=0)
+
+                        # Save all data
                         for key, value in data.items():  # noqa
                             try:
-                                attr_var = TAHMO_VARIABLES[key]
-                            except KeyError:
-                                continue
-                            try:
+                                # Get the dataset attributes
+                                attr = None
+                                try:
+                                    attr = dataset_attrs_by_key[key]
+                                except KeyError:
+                                    pass
+
+                                if not attr:
+                                    try:
+                                        attr = DatasetAttribute.objects.get(
+                                            dataset=self.dataset,
+                                            source=key
+                                        )
+                                    except DatasetAttribute.DoesNotExist:
+                                        continue
+
+                                dataset_attrs_by_key[key] = attr
+
                                 # Skip empty one
                                 if value == '':
                                     continue
 
-                                measure, _ = Measurement.objects.get_or_create(
-                                    station=station,
-                                    dataset_attribute=attr_var.dataset_attr,
-                                    date_time=date_time,
-                                    defaults={
-                                        'value': float(value)
-                                    }
+                                # Save the measurements
+                                measurements.append(
+                                    Measurement(
+                                        station_id=station.id,
+                                        dataset_attribute=attr,
+                                        date_time=date_time,
+                                        value=float(value)
+                                    )
                                 )
                             except (KeyError, ValueError) as e:
                                 raise Exception(
@@ -184,6 +206,11 @@ class TahmoIngestor:
                                         'error': f'{e}'
                                     })
                                 )
+                    Measurement.objects.bulk_create(
+                        measurements, ignore_conflicts=True
+                    )
+                    progress.status = IngestorSessionStatus.SUCCESS
+                    progress.save()
                 except Station.DoesNotExist:
                     pass
 
@@ -202,8 +229,5 @@ class TahmoIngestor:
             self._run(dir_path)
             shutil.rmtree(dir_path)
         except Exception as e:
-            import traceback
-            print(e)
-            print(traceback.format_exc())
             shutil.rmtree(dir_path)
             raise Exception(e)
