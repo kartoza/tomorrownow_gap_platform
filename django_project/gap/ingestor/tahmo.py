@@ -9,6 +9,8 @@ import csv
 import json
 import os
 import shutil
+import uuid
+import tempfile
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
@@ -220,14 +222,22 @@ class TahmoIngestor:
             raise FileNotFoundException()
 
         # Extract file
-        dir_path = os.path.splitext(self.session.file.path)[0]
-        with ZipFile(self.session.file.path, 'r') as zip_ref:
+        dir_path = f'/tmp/{str(uuid.uuid4())}'
+        os.makedirs(dir_path, exist_ok=True)
+        with self.session.file.open('rb') as zip_file:
+            # Create a NamedTemporaryFile to store the downloaded file
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                tmp_file.write(zip_file.read())
+                tmp_file_path = tmp_file.name
+        with ZipFile(tmp_file_path, 'r') as zip_ref:
             zip_ref.extractall(dir_path)
 
         # Run the ingestion
         try:
             self._run(dir_path)
-            shutil.rmtree(dir_path)
         except Exception as e:
-            shutil.rmtree(dir_path)
             raise Exception(e)
+        finally:
+            shutil.rmtree(dir_path)
+            if tmp_file_path and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)

@@ -55,14 +55,16 @@ STORAGES = {
             "file_overwrite": False,
             "max_memory_size": 300 * MB,  # 300MB
             "transfer_config": AWS_TRANSFER_CONFIG,
-            "endpoint_url": os.environ.get("MINIO_AWS_ENDPOINT_URL"),
+            "endpoint_url": os.environ.get("MINIO_AWS_ENDPOINT_URL")
         },
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        )
     },
 }
 
-STORAGE_DIR_PREFIX = os.environ.get("MINIO_AWS_DIR_PREFIX", "")
+STORAGE_DIR_PREFIX = os.environ.get("MINIO_AWS_DIR_PREFIX", "media")
 if STORAGE_DIR_PREFIX and not STORAGE_DIR_PREFIX.endswith("/"):
     STORAGE_DIR_PREFIX = f"{STORAGE_DIR_PREFIX}/"
