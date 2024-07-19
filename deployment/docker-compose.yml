@@ -2,14 +2,12 @@ version: '3.9'
 
 volumes:
   static-data:
-  media-data:
   conf-data:
   database:
   nginx-cache:
   backups-data:
   data-volume:
   redis-data:
-  plumber-data:
 
 x-common-django:
   &default-common-django
@@ -18,8 +16,6 @@ x-common-django:
     - .env
   volumes:
     - static-data:/home/web/static
-    - media-data:/home/web/media
-    - plumber-data:/home/web/plumber_data
   restart: on-failure
 
 services:
@@ -55,7 +51,6 @@ services:
     command: 'uwsgi --ini /uwsgi.conf'
     volumes:
       - static-data:/home/web/static
-      - media-data:/home/web/media
     links:
       - db
       - worker
@@ -85,7 +80,6 @@ services:
     volumes:
       - conf-data:/etc/nginx/conf.d:ro
       - static-data:/home/web/static
-      - media-data:/home/web/media
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
@@ -96,9 +90,6 @@ services:
       dockerfile: deployment/plumber/Dockerfile
     env_file:
       - .env
-    volumes:
-      - plumber-data:/home/web/plumber_data
-      - media-data:/home/web/media
     links:
       - db
       - redis

@@ -21,8 +21,6 @@ services:
       - ../:/home/web/project
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
-      - ./volumes/plumber_data:/home/web/plumber_data
 
   celery_beat:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
@@ -34,7 +32,6 @@ services:
       - ../:/home/web/project
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
 
   dev:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
@@ -48,8 +45,6 @@ services:
     volumes:
       - ../:/home/web/project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
-      - ./volumes/plumber_data:/home/web/plumber_data
     links:
       - db
       - worker
@@ -78,8 +73,6 @@ services:
     volumes:
       - ../:/home/web/project
       - ../django_project:/home/web/django_project
-      - ./volumes/plumber_data:/home/web/plumber_data
-      - ./volumes/media:/home/web/media
     ports:
       - "8282:8282"
     links:

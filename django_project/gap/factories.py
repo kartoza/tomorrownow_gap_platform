@@ -138,7 +138,7 @@ class CountryFactory(
         model = Country
 
     name = factory.Faker('country')
-    iso_a3 = factory.Faker('country_code')
+    iso_a3 = factory.Faker('text')
     geometry = factory.LazyAttribute(
         lambda _: MultiPolygon(
             Polygon(((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))

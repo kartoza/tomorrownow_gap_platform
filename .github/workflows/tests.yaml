@@ -101,7 +101,7 @@ jobs:
         run: |
           cat << EOF | docker-compose exec -T dev bash
           python manage.py collectstatic --noinput --verbosity 0
-          export DJANGO_SETTINGS_MODULE=core.settings.dev && coverage run manage.py test && coverage xml
+          export DJANGO_SETTINGS_MODULE=core.settings.test && coverage run manage.py test && coverage xml
           EOF
           docker cp dev:/home/web/django_project/coverage.xml ../coverage.xml
       - name: Show Coverage

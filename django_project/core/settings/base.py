@@ -135,9 +135,6 @@ INSTALLED_APPS = (
 )
 
 SITE_ID = 1
-STATICFILES_STORAGE = (
-    'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
-)
 
 CACHES = {
     'default': {
