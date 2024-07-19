@@ -15,7 +15,6 @@ services:
     volumes:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
 
   worker:
     build:
@@ -24,7 +23,6 @@ services:
     volumes:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
 
   celery_beat:
     build:
@@ -33,13 +31,11 @@ services:
     volumes:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
 
   nginx:
     volumes:
       - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
     ports:
       - "${HTTP_PORT:-8888}:80"
     links:
@@ -54,7 +50,6 @@ services:
     volumes:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
-      - ./volumes/media:/home/web/media
     ports:
       # for django test server
       - "5000:8080"
