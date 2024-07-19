@@ -12,6 +12,7 @@ from typing import List
 from datetime import datetime, timedelta
 import pytz
 import requests
+from django.contrib.gis.geos import Point
 
 from gap.models import (
     Provider,
@@ -23,6 +24,7 @@ from gap.models import (
     DatasetStore
 )
 from gap.utils.reader import (
+    LocationInputType,
     DatasetVariable,
     DatasetReaderInput,
     DatasetTimelineValue,
@@ -211,6 +213,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         self.errors = None
         self.warnings = None
         today = datetime.now(tz=pytz.UTC)
+        if self.location_input.type != LocationInputType.POINT:
+            return
         # handles:
         # - start_date=end_date
         # - d-7 should be using timelines API
@@ -250,6 +254,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
+        if self.location_input.type != LocationInputType.POINT:
+            return DatasetReaderValue(Point(x=0, y=0, srid=4326), [])
         if not self.is_success():
             logger.error(f'Tomorrow.io API errors: {len(self.errors)}')
             logger.error(json.dumps(self.errors))
