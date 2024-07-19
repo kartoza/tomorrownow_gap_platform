@@ -11,8 +11,15 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
+from django.conf import settings
+
 
 User = get_user_model()
+
+
+def ingestor_file_path(instance, filename):
+    """Return upload path for Ingestor files."""
+    return f'{settings.STORAGE_DIR_PREFIX}ingestors/{filename}'
 
 
 class IngestorType:
@@ -44,7 +51,7 @@ class IngestorSession(models.Model):
         max_length=512
     )
     file = models.FileField(
-        upload_to='ingestors/',
+        upload_to=ingestor_file_path,
         null=True, blank=True
     )
     status = models.CharField(

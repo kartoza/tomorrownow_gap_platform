@@ -33,6 +33,10 @@ django-celery-results==2.5.0
 # This extension enables you to store the periodic task schedule in the database.
 django-celery-beat==2.5.0
 
+#django storages
+django-storages==1.14.2
+django-storages[s3]
+
 # Python client for Redis database and key-value store
 redis==4.3.4
 

@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 import os  # noqa
 
+from boto3.s3.transfer import TransferConfig
 from .contrib import *  # noqa
 from .utils import absolute_path
 
@@ -37,3 +38,31 @@ INSTALLED_APPS = INSTALLED_APPS + (
 TEMPLATES[0]['DIRS'] += [
     absolute_path('frontend', 'templates'),
 ]
+
+MB = 1024 ** 2
+AWS_TRANSFER_CONFIG = TransferConfig(
+    multipart_chunksize=512 * MB,
+    use_threads=True,
+    max_concurrency=10
+)
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "access_key": os.environ.get("MINIO_AWS_ACCESS_KEY_ID"),
+            "secret_key": os.environ.get("MINIO_AWS_SECRET_ACCESS_KEY"),
+            "bucket_name": os.environ.get("MINIO_AWS_BUCKET_NAME"),
+            "file_overwrite": False,
+            "max_memory_size": 300 * MB,  # 300MB
+            "transfer_config": AWS_TRANSFER_CONFIG,
+            "endpoint_url": os.environ.get("MINIO_AWS_ENDPOINT_URL"),
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+    },
+}
+
+STORAGE_DIR_PREFIX = os.environ.get("MINIO_AWS_DIR_PREFIX", "")
+if STORAGE_DIR_PREFIX and not STORAGE_DIR_PREFIX.endswith("/"):
+    STORAGE_DIR_PREFIX = f"{STORAGE_DIR_PREFIX}/"
