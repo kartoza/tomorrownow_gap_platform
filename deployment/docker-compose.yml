@@ -2,7 +2,6 @@ version: '3.9'
 
 volumes:
   static-data:
-  media-data:
   conf-data:
   database:
   nginx-cache:
@@ -17,7 +16,6 @@ x-common-django:
     - .env
   volumes:
     - static-data:/home/web/static
-    - media-data:/home/web/media
   restart: on-failure
 
 services:
@@ -53,7 +51,6 @@ services:
     command: 'uwsgi --ini /uwsgi.conf'
     volumes:
       - static-data:/home/web/static
-      - media-data:/home/web/media
     links:
       - db
       - worker
@@ -81,7 +78,6 @@ services:
     volumes:
       - conf-data:/etc/nginx/conf.d:ro
       - static-data:/home/web/static
-      - media-data:/home/web/media
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
