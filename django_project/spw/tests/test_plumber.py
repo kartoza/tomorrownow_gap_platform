@@ -107,7 +107,8 @@ class TestPlumberUtils(TestCase):
                 headers={'Content-Type': 'application/json'},
                 status_code=200
             )
-            is_success, response = execute_spw_model(data_filepath, 0.0, 0.0)
+            is_success, response = execute_spw_model(
+                data_filepath, 'test.csv', 0.0, 0.0)
             self.assertTrue(is_success)
             self.assertEqual(response, json_response)
         with requests_mock.Mocker() as m:
@@ -118,7 +119,8 @@ class TestPlumberUtils(TestCase):
                 headers={'Content-Type': 'application/json'},
                 status_code=500
             )
-            is_success, response = execute_spw_model(data_filepath, 0.0, 0.0)
+            is_success, response = execute_spw_model(
+                data_filepath, 'test.csv', 0.0, 0.0)
             self.assertFalse(is_success)
             self.assertEqual('Internal server error', response['error'])
         with requests_mock.Mocker() as m:
@@ -129,7 +131,8 @@ class TestPlumberUtils(TestCase):
                 headers={'Content-Type': 'text/plain'},
                 status_code=500
             )
-            is_success, response = execute_spw_model(data_filepath)
+            is_success, response = execute_spw_model(
+                data_filepath, 'test.csv')
             self.assertFalse(is_success)
             self.assertEqual('Invalid response content type: text/plain',
                              response)

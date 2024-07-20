@@ -8,9 +8,16 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
+from django.contrib.gis.db import models as gis_models
+from django.conf import settings
 
 
 User = get_user_model()
+
+
+def r_model_input_file_path(instance, filename):
+    """Return upload path for R Model input files."""
+    return f'{settings.STORAGE_DIR_PREFIX}r_input/{filename}'
 
 
 class RModel(models.Model):
@@ -85,3 +92,46 @@ def rmodel_post_delete(sender, instance: RModel,
     )
     # respawn Plumber API
     start_plumber_process.apply_async(queue='plumber')
+
+
+class RModelExecutionStatus:
+    """Status of R Model execution."""
+
+    RUNNING = 'RUNNING'
+    SUCCESS = 'SUCCESS'
+    FAILED = 'FAILED'
+
+
+class RModelExecutionLog(models.Model):
+    """Model that stores the execution log."""
+
+    model = models.ForeignKey(RModel, on_delete=models.CASCADE)
+    location_input = gis_models.GeometryField(
+        srid=4326, null=True, blank=True
+    )
+    input_file = models.FileField(
+        upload_to=r_model_input_file_path,
+        null=True, blank=True
+    )
+    output = models.JSONField(
+        default=dict,
+        null=True, blank=True
+    )
+    start_date_time = models.DateTimeField(
+        blank=True, null=True
+    )
+    end_date_time = models.DateTimeField(
+        blank=True, null=True
+    )
+    status = models.CharField(
+        default=RModelExecutionStatus.RUNNING,
+        choices=(
+            (RModelExecutionStatus.RUNNING, RModelExecutionStatus.RUNNING),
+            (RModelExecutionStatus.SUCCESS, RModelExecutionStatus.SUCCESS),
+            (RModelExecutionStatus.FAILED, RModelExecutionStatus.FAILED),
+        ),
+        max_length=512
+    )
+    errors = models.TextField(
+        blank=True, null=True
+    )

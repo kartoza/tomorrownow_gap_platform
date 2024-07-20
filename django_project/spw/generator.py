@@ -6,14 +6,18 @@ Tomorrow Now GAP.
 """
 
 import logging
+import os
 import pytz
 from typing import List
+from types import SimpleNamespace
 from datetime import datetime, timedelta
+from django.utils import timezone
 from django.contrib.gis.geos import Point
 
 from gap.models import Dataset, DatasetAttribute, CastType
 from gap.utils.reader import DatasetReaderInput
 from gap.providers import TomorrowIODatasetReader, TIO_PROVIDER
+from spw.models import RModel, RModelExecutionLog, RModelExecutionStatus
 from spw.utils.plumber import (
     execute_spw_model,
     write_plumber_data,
@@ -48,13 +52,18 @@ class SPWOutput:
     """Class to store the output from SPW model."""
 
     def __init__(
-            self, point: Point, go_no_go: str, ltn_percentage: float,
-            cur_percentage: float) -> None:
+            self, point: Point, input_data: dict) -> None:
         """Initialize the SPWOutput class."""
         self.point = point
-        self.go_no_go = go_no_go
-        self.ltn_percentage = ltn_percentage
-        self.cur_percentage = cur_percentage
+        data = {}
+        for key, val in input_data.items():
+            if key == 'metadata':
+                continue
+            if isinstance(val, list) and len(val) == 1:
+                data[key] = val[0]
+            else:
+                data[key] = val
+        self.data = SimpleNamespace(**data)
 
 
 def calculate_from_point(point: Point) -> SPWOutput:
@@ -88,15 +97,45 @@ def calculate_from_point(point: Point) -> SPWOutput:
                 continue
             row.append(val.get(c, 0))
         rows.append(row)
-    data_file_path = write_plumber_data(COLUMNS, rows)
-    success, data = execute_spw_model(
-        data_file_path, point.y, point.x, 'gap_place')
+    return _execute_spw_model(rows, point)
+
+
+def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
+    """Execute SPW Model and return the output.
+
+    :param rows: Data rows
+    :type rows: List
+    :param point: location input
+    :type point: Point
+    :return: SPW Model output
+    :rtype: SPWOutput
+    """
+    model = RModel.objects.order_by('-version').first()
+    data_file_path = write_plumber_data(COLUMNS, rows, dir_path='/tmp')
+    filename = os.path.basename(data_file_path)
+    execution_log = RModelExecutionLog.objects.create(
+        model=model,
+        location_input=point,
+        start_date_time=timezone.now()
+    )
+    with open(data_file_path, 'rb') as output_file:
+        execution_log.input_file.save(filename, output_file)
     remove_plumber_data(data_file_path)
+    success, data = execute_spw_model(
+        execution_log.input_file.url, filename, point.y, point.x, 'gap_place')
+    if isinstance(data, dict):
+        execution_log.output = data
+    else:
+        execution_log.errors = data
     output = None
     if success:
-        output = SPWOutput(
-            point, data['goNoGo'], data['nearDaysLTNPercent'],
-            data['nearDaysCurPercent'])
+        output = SPWOutput(point, data)
+    execution_log.status = (
+        RModelExecutionStatus.SUCCESS if success else
+        RModelExecutionStatus.FAILED
+    )
+    execution_log.end_date_time = timezone.now()
+    execution_log.save()
     return output
 
 

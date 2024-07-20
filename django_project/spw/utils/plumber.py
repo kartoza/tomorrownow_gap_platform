@@ -103,12 +103,14 @@ def kill_r_plumber_process():
 
 
 def execute_spw_model(
-        data_filepath: str, lat: float = 0.0, lon: float = 0.0,
+        data_url: str, filename: str, lat: float = 0.0, lon: float = 0.0,
         place_name: str = None):
     """Execute SPW model given the data_filepath.
 
-    :param data_filepath: CSV file path containing the data.
-    :type data_filepath: str
+    :param data_url: CSV file URL containing the data.
+    :type data_url: str
+    :param filename: CSV filename
+    :type filename: str
     :param lat: Latitude of data query
     :type lat: float
     :param lon: Longitude of data query
@@ -120,7 +122,8 @@ def execute_spw_model(
     """
     request_url = f'http://plumber:{PLUMBER_PORT}/spw/generic'
     data = {
-        'data_filename': data_filepath,
+        'data_url': data_url,
+        'filename': filename,
         'lat': lat,
         'lon': lon,
         'place_name': place_name if place_name else 'Default'
@@ -158,17 +161,21 @@ def write_plumber_file(file_path = None):
         lines.append('#* Generic Model\n')
         lines.append('#* @post /spw/generic\n')
 
-        lines.append('function(data_filename, lat, lon, place_name) {\n')
+        lines.append('function(data_url, filename, lat, lon, place_name) {\n')
         lines.append(f'  metadata <- list(version={model.version}, '
                      'lat=lat, lon=lon, place_name=place_name, '
                      'generated_on=format(Sys.time(), '
                      '"%Y-%m-%d %H:%M:%S %Z"))\n')
         lines.append('  time_start <- Sys.time()\n')
+        lines.append(
+            '  data_filename <- paste(\'/tmp/\', filename, sep="")\n')
+        lines.append('  download.file(data_url, data_filename)\n')
         code_lines = model.code.splitlines()
         for code in code_lines:
             lines.append(f'  {code}\n')
         lines.append('  metadata[\'total_execution_time\'] '
                      '<- Sys.time() - time_start\n')
+        lines.append('unlink(data_filename)\n')
         # add output
         model_outputs = RModelOutput.objects.filter(
             model=model
