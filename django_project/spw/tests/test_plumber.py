@@ -20,6 +20,7 @@ from spw.utils.plumber import (
     execute_spw_model
 )
 from spw.utils.process import write_pidfile
+from spw.factories import RModelFactory, RModelOutputFactory
 
 
 def mocked_os_kill(self, *args, **kwargs):
@@ -98,7 +99,7 @@ class TestPlumberUtils(TestCase):
 
     def test_execute_spw_model(self):
         """Test execute SPW R Mode."""
-        data_filepath = '/home/web/plumber_data/test.csv'
+        data_filepath = '/tmp/test.csv'
         with requests_mock.Mocker() as m:
             json_response = {'national_trend': 'abcde'}
             m.post(
@@ -139,10 +140,11 @@ class TestPlumberUtils(TestCase):
 
     def test_write_plumber_file(self):
         """Test writing plumber R file."""
-        os.makedirs('/home/web/media/plumber_data', exist_ok=True)
+        r_model = RModelFactory.create()
+        RModelOutputFactory.create(model=r_model)
         r_file_path = write_plumber_file(
             os.path.join(
-                '/home/web/media/plumber_data',
+                '/tmp',
                 'plumber_test.R'
             )
         )
@@ -154,14 +156,13 @@ class TestPlumberUtils(TestCase):
 
     def test_manage_plumber_data(self):
         """Test manage plumber data files."""
-        os.makedirs('/home/web/media/plumber_data', exist_ok=True)
         headers = ['data', 'count_total']
         csv_data = [
             ['abc', 10],
             ['def', 20]
         ]
         file_path = write_plumber_data(
-            headers, csv_data, '/home/web/media/plumber_data')
+            headers, csv_data, '/tmp')
         self.assertTrue(os.path.exists(file_path))
         remove_plumber_data(file_path)
         self.assertFalse(os.path.exists(file_path))
