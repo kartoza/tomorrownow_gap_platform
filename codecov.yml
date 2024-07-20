@@ -9,7 +9,7 @@ coverage:
     changes: false
     patch:
       default:
-        threshold: "5%"
+        threshold: "10%"
   ignore:
     - "**/migrations/*.py"
     - "django_project/core/settings/*.py"

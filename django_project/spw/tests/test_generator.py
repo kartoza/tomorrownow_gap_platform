@@ -22,10 +22,15 @@ from gap.utils.reader import (
 from gap.providers.tio import (
     TomorrowIODatasetReader
 )
+from spw.models import RModelExecutionLog, RModelExecutionStatus
 from spw.generator import (
     SPWOutput,
     _fetch_timelines_data,
-    _fetch_ltn_data
+    _fetch_ltn_data,
+    calculate_from_point
+)
+from spw.factories import (
+    RModelFactory
 )
 
 
@@ -182,3 +187,65 @@ class TestSPWFetchDataFunctions(TestCase):
             }
         }
         self.assertEqual(result, expected_result)
+
+
+class TestSPWGenerator(TestCase):
+    """Test SPW Generator functions."""
+
+    def setUp(self):
+        """Set the test class."""
+        self.dt_now = datetime.now(tz=pytz.UTC).replace(microsecond=0)
+        self.location_input = DatasetReaderInput.from_point(Point(0, 0))
+        self.r_model = RModelFactory.create(name='test')
+
+    @patch('spw.generator.execute_spw_model')
+    @patch('spw.generator._fetch_timelines_data')
+    @patch('spw.generator._fetch_ltn_data')
+    def test_calculate_from_point(
+        self, mock_fetch_ltn_data, mock_fetch_timelines_data,
+        mock_execute_spw_model):
+        """Test calculate_from_point function."""
+        mock_fetch_ltn_data.return_value = {
+            '07-20': {
+                'date': '2023-07-20',
+                'evapotranspirationSum': 10,
+                'rainAccumulationSum': 5,
+                'LTNPET': 8,
+                'LTNPrecip': 3
+            }
+        }
+        mock_fetch_timelines_data.return_value = {
+            '07-20': {
+                'date': '2023-07-20',
+                'evapotranspirationSum': 10,
+                'rainAccumulationSum': 5
+            }
+        }
+        r_data = {
+            'metadata': {
+                'test': 'abcdef'
+            },
+            'goNoGo': ['Do not plant Tier 1a'],
+            'nearDaysLTNPercent': [10.0],
+            'nearDaysCurPercent': [60.0],
+        }
+        mock_execute_spw_model.return_value = (True, r_data)
+
+        output = calculate_from_point(self.location_input.point)
+        mock_fetch_ltn_data.assert_called_once()
+        mock_fetch_timelines_data.assert_called_once()
+        mock_execute_spw_model.assert_called_once()
+        self.assertEqual(output.data.goNoGo, r_data['goNoGo'][0])
+        self.assertEqual(
+            output.data.nearDaysLTNPercent, r_data['nearDaysLTNPercent'][0])
+        self.assertEqual(
+            output.data.nearDaysCurPercent, r_data['nearDaysCurPercent'][0])
+        # find RModelExecutionLog
+        log = RModelExecutionLog.objects.filter(
+            model=self.r_model,
+            location_input=self.location_input.point
+        ).first()
+        self.assertTrue(log)
+        self.assertTrue(log.input_file)
+        self.assertTrue(log.output)
+        self.assertEqual(log.status, RModelExecutionStatus.SUCCESS)
