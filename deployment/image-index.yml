@@ -1,7 +1,7 @@
 images:
-  - name: tomorrownow_gap-django
+  - name: tngap-django
     dockerfile: deployment/docker/Dockerfile
     buildPath: .
-  - name: tomorrownow_gap-plumber
+  - name: tngap-plumber
     dockerfile: deployment/plumber/Dockerfile
     buildPath: .
