@@ -1,0 +1,7 @@
+images:
+  - name: tomorrownow_gap-django
+    dockerfile: deployment/docker/Dockerfile
+    buildPath: .
+  - name: tomorrownow_gap-plumber
+    dockerfile: deployment/plumber/Dockerfile
+    buildPath: .
