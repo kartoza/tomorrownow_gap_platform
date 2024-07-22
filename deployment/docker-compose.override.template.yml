@@ -62,6 +62,18 @@ services:
       - celery_beat
     entrypoint: [ ]
 
+  plumber:
+    build:
+      context: ../
+      dockerfile: deployment/plumber/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ../django_project:/home/web/django_project
+    links:
+      - db
+      - redis
+
   minio:
     image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
     command: minio server /data --console-address ":9001"

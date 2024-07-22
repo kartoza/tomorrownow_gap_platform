@@ -30,7 +30,6 @@ from gap.utils.netcdf import (
 )
 
 
-
 class CBAMNetCDFReader(BaseNetCDFReader):
     """Class to read NetCDF file from CBAM provider."""
 

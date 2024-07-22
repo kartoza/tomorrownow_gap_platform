@@ -80,16 +80,6 @@ class NetCDFProvider:
         return client_kwargs
 
 
-class NetCDFVariable:
-    """Contains Variable from NetCDF File."""
-
-    def __init__(self, name, desc, unit=None) -> None:
-        """Initialize NetCDFVariable object."""
-        self.name = name
-        self.desc = desc
-        self.unit = unit
-
-
 def daterange_inc(start_date: datetime, end_date: datetime):
     """Iterate through start_date and end_date (inclusive).
 

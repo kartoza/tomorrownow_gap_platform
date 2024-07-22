@@ -12,7 +12,11 @@ license: This program is free software; you can redistribute it and/or modify it
 
 # Data model diagram
 
-## Ground observations
+## GAP
 
-![database design](./diagram/ground-observations-database-design-1.png)
+![database design gap](./diagram/ground-observations-database-design-1.png)
+
+## SPW
+
+![database design spw](./diagram/ground-observations-database-design-2.png)
 

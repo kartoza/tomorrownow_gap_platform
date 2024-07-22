@@ -193,12 +193,12 @@ class MeasurementAPI(APIView):
             'results': []
         }
         for reader in dataset_dict.values():
-            data['metadata']['dataset'].append({
-                'provider': reader.dataset.provider.name,
-                'attributes': reader.get_attributes_metadata()
-            })
             values = self._read_data(reader).to_dict()
             if values:
+                data['metadata']['dataset'].append({
+                    'provider': reader.dataset.provider.name,
+                    'attributes': reader.get_attributes_metadata()
+                })
                 data['results'].append(values)
         return data
 
@@ -242,13 +242,15 @@ class MeasurementAPI(APIView):
         )
 
     @swagger_auto_schema(
-        operation_id='get-measurement-by-polygon',
+        operation_id='get-measurement-by-geom',
         tags=[ApiTag.Measurement],
         manual_parameters=[
             *api_parameters
         ],
         request_body=openapi.Schema(
-            description='Polygon (SRID 4326) in geojson format',
+            description=(
+                'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
+            ),
             type=openapi.TYPE_STRING
         ),
         responses={
@@ -263,7 +265,7 @@ class MeasurementAPI(APIView):
         }
     )
     def post(self, request, *args, **kwargs):
-        """Fetch measurement data by polygon."""
+        """Fetch measurement data by polygon/points."""
         return Response(
             status=200,
             data=self.get_response_data()

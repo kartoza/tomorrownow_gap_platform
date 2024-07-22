@@ -54,6 +54,7 @@ services:
     links:
       - db
       - worker
+      - plumber
 
   worker:
     <<: *default-common-django
@@ -63,6 +64,7 @@ services:
       - db
       - redis
       - celery_beat
+      - plumber
 
   celery_beat:
     <<: *default-common-django
@@ -81,3 +83,13 @@ services:
       - nginx-cache:/home/web/nginx_cache
     links:
       - django
+
+  plumber:
+    build:
+      context: ../
+      dockerfile: deployment/plumber/Dockerfile
+    env_file:
+      - .env
+    links:
+      - db
+      - redis

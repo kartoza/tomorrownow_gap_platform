@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: CBAM Data Reader
+.. note:: Tahmo Data Reader
 """
 
 from typing import List

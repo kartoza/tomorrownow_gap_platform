@@ -7,7 +7,7 @@
       "../deployment/docker-compose.override.devcontainer.yml"
     ],
     "service": "dev",
-    "runServices": ["db", "minio", "redis", "celery_beat", "worker", "dev"],
+    "runServices": ["db", "minio", "plumber", "redis", "celery_beat", "worker", "dev"],
     "workspaceFolder": "/home/web/project",
     "runArgs": [
       "--env-file",
@@ -23,7 +23,7 @@
     "shutdownAction": "stopCompose",
     "customizations": {
       "vscode": {
-        "extensions": ["ms-python.python", "ms-azuretools.vscode-docker"],
+        "extensions": ["ms-python.python", "ms-azuretools.vscode-docker", "njpwerner.autodocstring"],
         "settings": {
           "terminal.integrated.shell.linux": "/bin/bash",
           "python.pythonPath": "/usr/local/bin/python",

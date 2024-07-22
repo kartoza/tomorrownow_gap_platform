@@ -15,9 +15,55 @@ from django.contrib.gis.geos import (
 )
 
 from gap.models import (
+    CastType,
+    Attribute,
+    Unit,
     Dataset,
     DatasetAttribute
 )
+
+
+class DatasetVariable:
+    """Contains Variable from a Dataset."""
+
+    def __init__(
+            self, name, desc, unit, attr_var_name=None) -> None:
+        """Initialize variable object.
+
+        :param name: Name of the variable
+        :type name: str
+        :param desc: Description of the variable
+        :type desc: str
+        :param unit: Unit
+        :type unit: str, optional
+        :param attr_var_name: Mapping to attribute name, defaults to None
+        :type attr_var_name: str, optional
+        """
+        self.name = name
+        self.desc = desc
+        self.unit = unit
+        self.attr_var_name = attr_var_name
+
+    def get_gap_attribute(self) -> Attribute:
+        """Get or create a mapping attribute.
+
+        :return: Gap Attribute
+        :rtype: Attribute
+        """
+        if self.attr_var_name is None:
+            return None
+        unit, _ = Unit.objects.get_or_create(
+            name=self.unit
+        )
+        attr, _ = Attribute.objects.get_or_create(
+            variable_name=self.attr_var_name,
+            defaults={
+                'description': self.desc,
+                'name': self.name,
+                'unit': unit,
+            }
+        )
+        return attr
 
 
 class DatasetTimelineValue:
@@ -44,6 +90,23 @@ class DatasetTimelineValue:
             return np.datetime_as_string(
                 self.datetime, unit='s', timezone='UTC')
         return self.datetime.isoformat(timespec='seconds')
+
+    def get_datetime_repr(self, format: str) -> str:
+        """Return the representation of datetime in given format.
+
+        :param format: Format like '%Y-%m-%d'
+        :type format: str
+        :return: String of datetime
+        :rtype: str
+        """
+        dt = self.datetime
+        if isinstance(self.datetime, np.datetime64):
+            timestamp = (
+                (dt - np.datetime64('1970-01-01T00:00:00')) /
+                np.timedelta64(1, 's')
+            )
+            dt = datetime.fromtimestamp(timestamp, tz=pytz.UTC)
+        return dt.strftime(format)
 
     def to_dict(self):
         """Convert into dict.
@@ -238,18 +301,15 @@ class BaseDatasetReader:
     def read(self):
         """Read values from dataset."""
         today = datetime.now(tz=pytz.UTC)
-        if self.start_date < today:
+        if self.dataset.type.type == CastType.HISTORICAL:
             self.read_historical_data(
                 self.start_date,
                 self.end_date if self.end_date < today else today
             )
-            if self.end_date > today:
-                self.read_forecast_data(
-                    today, self.end_date
-                )
-        else:
+        elif self.end_date >= today:
             self.read_forecast_data(
-                self.start_date, self.end_date
+                self.start_date if self.start_date >= today else today,
+                self.end_date
             )
 
     def get_data_values(self) -> DatasetReaderValue:

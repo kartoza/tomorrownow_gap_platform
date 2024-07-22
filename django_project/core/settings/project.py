@@ -32,7 +32,8 @@ INSTALLED_APPS = INSTALLED_APPS + (
     'core',
     'frontend',
     'gap',
-    'gap_api'
+    'gap_api',
+    'spw'
 )
 
 TEMPLATES[0]['DIRS'] += [

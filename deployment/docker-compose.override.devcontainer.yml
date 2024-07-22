@@ -48,6 +48,7 @@ services:
     links:
       - db
       - worker
+      - plumber
 
   minio:
     image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
@@ -62,3 +63,18 @@ services:
     volumes:
       - ./volumes/minio_data:/data
     restart: always
+
+  plumber:
+    build:
+      context: ../
+      dockerfile: deployment/plumber/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ../:/home/web/project
+      - ../django_project:/home/web/django_project
+    ports:
+      - "8282:8282"
+    links:
+      - db
+      - redis
