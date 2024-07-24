@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: CBAM Data Reader
+.. note:: Salient Data Reader
 """
 
 import json
@@ -42,7 +42,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime) -> None:
-        """Initialize CBAMNetCDFReader class.
+        """Initialize SalientNetCDFReader class.
 
         :param dataset: Dataset from Salient provider
         :type dataset: Dataset
