@@ -53,3 +53,9 @@ class Unit(Definition):
     """Model representing an unit of a measurement."""
 
     pass
+
+
+class Crop(Definition):
+    """Model representing crop."""
+
+    pass

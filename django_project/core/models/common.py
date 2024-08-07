@@ -28,3 +28,4 @@ class Definition(models.Model):
 
     class Meta:  # noqa: D106
         abstract = True
+        ordering = ['name']
