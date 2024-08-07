@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: SPW Generator
 """
 
+import csv
 import logging
 import os
 import pytz
@@ -28,7 +29,9 @@ from spw.utils.plumber import (
 logger = logging.getLogger(__name__)
 ATTRIBUTES = [
     'total_evapotranspiration_flux',
-    'total_rainfall'
+    'total_rainfall',
+    'max_total_temperature',
+    'min_total_temperature'
 ]
 COLUMNS = [
     'month_day',
@@ -40,7 +43,9 @@ COLUMNS = [
 ]
 VAR_MAPPING = {
     'total_evapotranspiration_flux': 'evapotranspirationSum',
-    'total_rainfall': 'rainAccumulationSum'
+    'total_rainfall': 'rainAccumulationSum',
+    'max_total_temperature': 'temperatureMax',
+    'min_total_temperature': 'temperatureMin',
 }
 LTN_MAPPING = {
     'total_evapotranspiration_flux': 'LTNPET',
@@ -65,6 +70,52 @@ class SPWOutput:
                 data[key] = val
         self.data = SimpleNamespace(**data)
 
+
+def generate_sample(file_path: str):
+    # read csv lat lon input
+    point_dict = {}
+    with open(file_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                line_count += 1
+                continue
+            place_name = row[0]
+            lat = float(row[1])
+            lon = float(row[2])
+            point_dict[place_name] = Point(y=lat, x=lon)
+            line_count += 1
+    output_rows = []
+    for place_name, point in point_dict.items():
+        output, historical_dict = calculate_from_point(point)
+        row = [
+            place_name, point.y, point.x, output.data.goNoGo
+        ]
+        today = datetime.now(tz=pytz.UTC)
+        for i in range(0, 5):
+            dt_key = (today + timedelta(days=i + 1)).strftime('%m-%d')
+            if dt_key in historical_dict:
+                forecast = historical_dict[dt_key]
+                row.append(forecast['temperatureMin'])
+                row.append(forecast['temperatureMax'])
+                row.append(forecast['rainAccumulationSum'])
+        output_rows.append(row)
+    headers = [
+        'Place Name',
+        'Lat',
+        'Lon',
+        'Suitable Planting Window Signal'
+    ]
+    for i in range(0, 5):
+        headers.append(f'Day {i+1} - Temp (min)')
+        headers.append(f'Day {i+1} - Temp (max)')
+        headers.append(f'Day {i+1} - Precip (daily)')
+    with open('/home/web/project/django_project/sample.csv', 'w', encoding='UTF8') as f:
+        writer = csv.writer(f)
+        # write the header
+        writer.writerow(headers)
+        writer.writerows(output_rows)
 
 def calculate_from_point(point: Point) -> SPWOutput:
     """Calculate SPW from given point.
@@ -97,7 +148,7 @@ def calculate_from_point(point: Point) -> SPWOutput:
                 continue
             row.append(val.get(c, 0))
         rows.append(row)
-    return _execute_spw_model(rows, point)
+    return _execute_spw_model(rows, point), historical_dict
 
 
 def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
