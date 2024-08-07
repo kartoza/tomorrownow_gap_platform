@@ -6,42 +6,42 @@ build:
 	@echo "------------------------------------------------------------------"
 	@echo "Building in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose build
+	@docker compose build
 
 up:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d nginx django
+	@docker compose ${ARGS} up -d nginx django
 
 dev:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in dev mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d dev
+	@docker compose ${ARGS} up -d dev
 
 shell:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling in in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose exec django /bin/bash
+	@docker compose exec django /bin/bash
 
 dev-entrypoint:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} exec -T dev "/home/web/django_project/entrypoint.sh"
+	@docker compose ${ARGS} exec -T dev "/home/web/django_project/entrypoint.sh"
 
 dev-runserver:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Start django runserver in dev container"
 	@echo "------------------------------------------------------------------"
-	@docker-compose $(ARGS) exec -T dev bash -c "nohup python manage.py runserver 0.0.0.0:5000 &"
+	@docker compose $(ARGS) exec -T dev bash -c "nohup python manage.py runserver 0.0.0.0:5000 &"
 
 dev-load-demo-data:
 	@echo
@@ -54,29 +54,29 @@ dev-test:
 	@echo "------------------------------------------------------------------"
 	@echo "Run tests"
 	@echo "------------------------------------------------------------------"
-	@docker-compose exec -T dev python manage.py collectstatic --noinput
-	@docker-compose exec -T dev python manage.py test --keepdb --noinput
+	@docker compose exec -T dev python manage.py collectstatic --noinput
+	@docker compose exec -T dev python manage.py test --keepdb --noinput
 
 npm-install:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Install frontend dependencies"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} exec -T dev npm --prefix /home/web/django_project/frontend install
+	@docker compose ${ARGS} exec -T dev npm --prefix /home/web/django_project/frontend install
 
 migrate:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running migration"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} exec -T dev python manage.py migrate
+	@docker compose ${ARGS} exec -T dev python manage.py migrate
 
 build-react:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Execute webpack build command"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} exec -T dev npm --prefix /home/web/django_project/frontend run build
+	@docker compose ${ARGS} exec -T dev npm --prefix /home/web/django_project/frontend run build
 
 serve:
 	@echo
@@ -90,7 +90,7 @@ down:
 	@echo "------------------------------------------------------------------"
 	@echo "Removing production instance!!! "
 	@echo "------------------------------------------------------------------"
-	@docker-compose down
+	@docker compose down
 
 test-flake:
 	@echo
@@ -106,7 +106,7 @@ wait-db:
 	@echo "------------------------------------------------------------------"
 	@echo "Check database is ready or not"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} exec -T db su - postgres -c "until pg_isready; do sleep 5; done"
+	@docker compose ${ARGS} exec -T db su - postgres -c "until pg_isready; do sleep 5; done"
 
 sleep:
 	@echo
