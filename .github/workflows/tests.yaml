@@ -99,7 +99,7 @@ jobs:
       - name: Run Coverage test
         working-directory: deployment
         run: |
-          cat << EOF | docker-compose exec -T dev bash
+          cat << EOF | docker compose exec -T dev bash
           python manage.py collectstatic --noinput --verbosity 0
           export DJANGO_SETTINGS_MODULE=core.settings.test && coverage run manage.py test && coverage xml
           EOF
