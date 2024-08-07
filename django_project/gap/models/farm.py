@@ -52,5 +52,5 @@ class Farm(models.Model):
         Crop, on_delete=models.CASCADE
     )
     village = models.ForeignKey(
-        Village, on_delete=models.CASCADE
+        Village, on_delete=models.SET_NULL, null=True, blank=True
     )
