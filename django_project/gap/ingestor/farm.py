@@ -21,6 +21,7 @@ HEADER_IDX = 1
 
 class Keys:
     """Keys for the data."""
+
     FARM_ID = 'Farm ID'
     VILLAGE_NAME = 'Village Name'
     GEOMETRY = 'Farm Location (Lat/Long)'
@@ -88,5 +89,3 @@ class FarmIngestor:
             self._run()
         except Exception as e:
             raise Exception(e)
-        finally:
-            pass

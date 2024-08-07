@@ -6,7 +6,6 @@ Tomorrow Now GAP.
 """
 
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
 
 from core.models.common import Definition
 from gap.models.common import Crop, Village
