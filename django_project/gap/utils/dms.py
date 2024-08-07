@@ -6,6 +6,8 @@ Tomorrow Now GAP.
 """
 import re
 
+from django.contrib.gis.geos import Point
+
 
 def dms_to_decimal(
         degrees: int, minutes: int, seconds: float, direction: str
@@ -17,10 +19,10 @@ def dms_to_decimal(
     return decimal
 
 
-def dms_string_to_lat_lon(coord_str: str) -> (float, float):
+def dms_string_to_point(coord_str: str) -> Point:
     """Change dms string to lat/lon.
 
-    :return: tuple of (lat, lon)
+    :return: Point
     """
     pattern = re.compile(
         r'(?P<latitude>\d+°\d+\'\d+(\.\d+)?"[NS]) '
@@ -28,7 +30,7 @@ def dms_string_to_lat_lon(coord_str: str) -> (float, float):
 
     match = pattern.search(coord_str)
     if not match:
-        raise ValueError("Invalid format")
+        raise ValueError("Invalid dms format")
 
     latitude_str = match.group('latitude')
     longitude_str = match.group('longitude')
@@ -44,4 +46,4 @@ def dms_string_to_lat_lon(coord_str: str) -> (float, float):
 
     latitude = parse_dms(latitude_str)
     longitude = parse_dms(longitude_str)
-    return float(f"{latitude:.7f}"), float(f"{longitude:.7f}")
+    return Point(longitude, latitude)

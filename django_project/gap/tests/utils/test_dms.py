@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 from django.test import TestCase
 
-from gap.utils.dms import dms_string_to_lat_lon
+from gap.utils.dms import dms_string_to_point
 
 
 class DMSTest(TestCase):
@@ -16,18 +16,18 @@ class DMSTest(TestCase):
     def test_error(self):
         """Test create when error."""
         with self.assertRaises(ValueError):
-            dms_string_to_lat_lon('This error')
+            dms_string_to_point('This error')
 
     def test_run(self):
         """Test create when run."""
-        latitude, longitude = dms_string_to_lat_lon(
+        point = dms_string_to_point(
             '''33°51'29.8"N 29°18'24.3"E'''
         )
-        self.assertEqual(latitude, 33.8582778)
-        self.assertEqual(longitude, 29.3067500)
+        self.assertEqual(point.y, 33.85827777777778)
+        self.assertEqual(point.x, 29.30675)
 
-        latitude, longitude = dms_string_to_lat_lon(
+        point = dms_string_to_point(
             '''34°3'12.8"S 118°14'54.5"W'''
         )
-        self.assertEqual(latitude, -34.0535556)
-        self.assertEqual(longitude, -118.2484722)
+        self.assertEqual(point.y, -34.053555555555555)
+        self.assertEqual(point.x, -118.24847222222222)

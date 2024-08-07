@@ -23,7 +23,8 @@ from gap.models import (
     ObservationType,
     DatasetTimeStep,
     DatasetStore,
-    DataSourceFile
+    DataSourceFile,
+    Village
 )
 
 
@@ -209,5 +210,19 @@ class CropFactory(
 
     name = factory.Sequence(
         lambda n: f'crop-{n}'
+    )
+    description = factory.Faker('text')
+
+
+class VillageFactory(
+    BaseFactory[Village], metaclass=BaseMetaFactory[Village]
+):
+    """Factory class for Village model."""
+
+    class Meta:  # noqa
+        model = Village
+
+    name = factory.Sequence(
+        lambda n: f'village-{n}'
     )
     description = factory.Faker('text')
