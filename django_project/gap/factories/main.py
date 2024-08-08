@@ -10,6 +10,7 @@ from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
     CastType,
+    Crop,
     DatasetType,
     Dataset,
     Provider,
@@ -22,7 +23,8 @@ from gap.models import (
     ObservationType,
     DatasetTimeStep,
     DatasetStore,
-    DataSourceFile
+    DataSourceFile,
+    Village
 )
 
 
@@ -196,3 +198,31 @@ class DataSourceFileFactory(
     end_date_time = factory.Faker('date_time')
     created_on = factory.Faker('date_time')
     format = DatasetStore.NETCDF
+
+
+class CropFactory(
+    BaseFactory[Crop], metaclass=BaseMetaFactory[Crop]
+):
+    """Factory class for Crop model."""
+
+    class Meta:  # noqa
+        model = Crop
+
+    name = factory.Sequence(
+        lambda n: f'crop-{n}'
+    )
+    description = factory.Faker('text')
+
+
+class VillageFactory(
+    BaseFactory[Village], metaclass=BaseMetaFactory[Village]
+):
+    """Factory class for Village model."""
+
+    class Meta:  # noqa
+        model = Village
+
+    name = factory.Sequence(
+        lambda n: f'village-{n}'
+    )
+    description = factory.Faker('text')
