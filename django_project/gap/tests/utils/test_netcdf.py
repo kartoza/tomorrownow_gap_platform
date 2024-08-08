@@ -27,12 +27,13 @@ from gap.utils.reader import (
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
-    daterange_inc,
     BaseNetCDFReader,
+    daterange_inc,
 )
 from gap.providers import (
     CBAMNetCDFReader,
     SalientNetCDFReader,
+    CBAMZarrReader,
     get_reader_from_dataset
 )
 from gap.factories import (
@@ -259,8 +260,36 @@ class TestDatasetReaderInput(TestCase):
 class TestBaseNetCDFReader(TestCase):
     """Unit test for class BaseNetCDFReader."""
 
+    def test_read_variables_base_functions(self):
+        """Test base functions for reading variables."""
+        attrib = DatasetAttributeFactory.create()
+        attrib.attribute.variable_name = 'temperature'
+        attrib.attribute.unit.name = 'C'
+        attrib.attribute.name = 'Temperature'
+        reader = BaseNetCDFReader(Mock(), [attrib], Mock(), Mock(), Mock())
+        self.assertFalse(
+            reader._read_variables_by_point(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+        self.assertFalse(
+            reader._read_variables_by_bbox(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+        self.assertFalse(
+            reader._read_variables_by_polygon(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+        self.assertFalse(
+            reader._read_variables_by_points(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+
+
+class TestCBAMNetCDFReader(TestCase):
+    """Unit test for class CBAMNetCDFReader."""
+
     def setUp(self):
-        """Set test for BaseNetCDFReader."""
+        """Set test for CBAMNetCDFReader."""
         self.provider = Provider(name='CBAM')
         self.dataset = Dataset(provider=self.provider)
         self.attributes = [DatasetAttribute(source='var1'),
@@ -270,14 +299,14 @@ class TestBaseNetCDFReader(TestCase):
         )
         self.start_date = datetime(2020, 1, 1)
         self.end_date = datetime(2020, 1, 31)
-        self.reader = BaseNetCDFReader(
+        self.reader = CBAMNetCDFReader(
             self.dataset, self.attributes, self.location_input,
             self.start_date, self.end_date
         )
 
     def test_add_attribute(self):
         """Test adding a new attribute to Reader."""
-        reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
+        reader = CBAMNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
         self.assertEqual(len(reader.attributes), 0)
         reader.add_attribute(DatasetAttributeFactory.create())
         self.assertEqual(len(reader.attributes), 1)
@@ -288,7 +317,7 @@ class TestBaseNetCDFReader(TestCase):
         attrib.attribute.variable_name = 'temperature'
         attrib.attribute.unit.name = 'C'
         attrib.attribute.name = 'Temperature'
-        reader = BaseNetCDFReader(Mock(), [attrib], Mock(), Mock(), Mock())
+        reader = CBAMNetCDFReader(Mock(), [attrib], Mock(), Mock(), Mock())
         expected = {
             'temperature': {
                 'units': 'C',
@@ -304,7 +333,7 @@ class TestBaseNetCDFReader(TestCase):
             name='Temperature', variable_name='temperature')
         dataset_attr = DatasetAttributeFactory(
             dataset=dataset, attribute=attribute)
-        reader = BaseNetCDFReader(
+        reader = CBAMNetCDFReader(
             dataset, [dataset_attr],
             DatasetReaderInput.from_point(Point(x=29.125, y=-2.215)),
             Mock(), Mock())
@@ -318,7 +347,7 @@ class TestBaseNetCDFReader(TestCase):
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
     @patch('fsspec.filesystem')
-    def test_setup_netcdf_reader(
+    def test_setup_reader(
         self, mock_filesystem, mock_get_s3_vars, mock_get_s3_kwargs):
         """Test for setup NetCDFReader class."""
         mock_get_s3_kwargs.return_value = {
@@ -328,8 +357,8 @@ class TestBaseNetCDFReader(TestCase):
             'AWS_ACCESS_KEY_ID': 'test_key_id',
             'AWS_SECRET_ACCESS_KEY': 'test_key_secret',
         }
-        reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
-        reader.setup_netcdf_reader()
+        reader = CBAMNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
+        reader.setup_reader()
         mock_filesystem.assert_called_once_with(
             's3',
             key='test_key_id',
@@ -339,7 +368,7 @@ class TestBaseNetCDFReader(TestCase):
     @patch('xarray.open_dataset')
     def test_open_dataset(self, mock_open_dataset):
         """Test for opening a dataset."""
-        reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
+        reader = CBAMNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
         reader.fs = Mock()
         reader.s3 = {
             'AWS_DIR_PREFIX': '',
@@ -355,7 +384,7 @@ class TestBaseNetCDFReader(TestCase):
         dataset1 = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.CBAM))
         reader = get_reader_from_dataset(dataset1)
-        self.assertEqual(reader, CBAMNetCDFReader)
+        self.assertEqual(reader, CBAMZarrReader)
         dataset2 = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.SALIENT))
         reader = get_reader_from_dataset(dataset2)
@@ -436,10 +465,10 @@ class TestBaseNetCDFReader(TestCase):
         self.assertEqual(lat_len, 10)
         self.assertEqual(lon_len, 10)
 
-    @patch.object(BaseNetCDFReader, '_read_variables_by_point')
-    @patch.object(BaseNetCDFReader, '_read_variables_by_bbox')
-    @patch.object(BaseNetCDFReader, '_read_variables_by_polygon')
-    @patch.object(BaseNetCDFReader, '_read_variables_by_points')
+    @patch.object(CBAMNetCDFReader, '_read_variables_by_point')
+    @patch.object(CBAMNetCDFReader, '_read_variables_by_bbox')
+    @patch.object(CBAMNetCDFReader, '_read_variables_by_polygon')
+    @patch.object(CBAMNetCDFReader, '_read_variables_by_points')
     def test_read_variables_several_cases(
         self, mock_read_by_points, mock_read_by_polygon,
         mock_read_by_bbox, mock_read_by_point):

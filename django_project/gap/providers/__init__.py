@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 from gap.models import Dataset
 from gap.utils.netcdf import NetCDFProvider
-from gap.providers.cbam import CBAMNetCDFReader
+from gap.providers.cbam import CBAMZarrReader, CBAMNetCDFReader  # noqa
 from gap.providers.salient import SalientNetCDFReader
 from gap.providers.tahmo import TahmoDatasetReader
 from gap.providers.tio import (
@@ -23,10 +23,10 @@ def get_reader_from_dataset(dataset: Dataset):
     :type dataset: Dataset
     :raises TypeError: if provider is neither CBAM or Salient
     :return: Reader Class Type
-    :rtype: CBAMNetCDFReader|SalientNetCDFReader
+    :rtype: BaseDatasetReader
     """
     if dataset.provider.name == NetCDFProvider.CBAM:
-        return CBAMNetCDFReader
+        return CBAMZarrReader
     elif dataset.provider.name == NetCDFProvider.SALIENT:
         return SalientNetCDFReader
     elif dataset.provider.name == 'Tahmo':

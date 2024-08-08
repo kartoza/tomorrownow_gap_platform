@@ -6,17 +6,14 @@ Tomorrow Now GAP.
 """
 
 import os
-import json
 import logging
 from typing import List
 from datetime import datetime, timedelta
 from django.contrib.gis.geos import Point
 import numpy as np
 import xarray as xr
-import regionmask
 from xarray.core.dataset import Dataset as xrDataset
 import fsspec
-from shapely.geometry import shape
 
 from gap.models import (
     Provider,
@@ -121,7 +118,7 @@ class BaseNetCDFReader(BaseDatasetReader):
             dataset, attributes, location_input, start_date, end_date)
         self.xrDatasets = []
 
-    def setup_netcdf_reader(self):
+    def setup_reader(self):
         """Initialize s3fs."""
         self.s3 = NetCDFProvider.get_s3_variables(self.dataset.provider)
         self.fs = fsspec.filesystem(
@@ -133,11 +130,11 @@ class BaseNetCDFReader(BaseDatasetReader):
             )
         )
 
-    def open_dataset(self, netcdf_file: DataSourceFile) -> xrDataset:
+    def open_dataset(self, source_file: DataSourceFile) -> xrDataset:
         """Open a NetCDFFile using xArray.
 
-        :param netcdf_file: NetCDF from a dataset
-        :type netcdf_file: DataSourceFile
+        :param source_file: NetCDF from a dataset
+        :type source_file: DataSourceFile
         :return: xArray Dataset object
         :rtype: xrDataset
         """
@@ -146,67 +143,32 @@ class BaseNetCDFReader(BaseDatasetReader):
         netcdf_url = f's3://{bucket_name}/{prefix}'
         if not netcdf_url.endswith('/'):
             netcdf_url += '/'
-        netcdf_url += f'{netcdf_file.name}'
+        netcdf_url += f'{source_file.name}'
         return xr.open_dataset(self.fs.open(netcdf_url))
 
     def _read_variables_by_point(
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
-        point = self.location_input.point
-        return dataset[variables].sel(
-            lat=point.y,
-            lon=point.x, method='nearest')
+        return None
 
     def _read_variables_by_bbox(
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
-        points = self.location_input.points
-        lat_min = points[0].y
-        lat_max = points[1].y
-        lon_min = points[0].x
-        lon_max = points[1].x
-        # output results is in two dimensional array
-        return dataset[variables].where(
-            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
-            (dataset.lon >= lon_min) & (dataset.lon <= lon_max), drop=True)
+        return None
 
     def _read_variables_by_polygon(
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
-        # Convert the Django GIS Polygon to a format compatible with shapely
-        shapely_multipolygon = shape(
-            json.loads(self.location_input.polygon.geojson))
-
-        # Create a mask using regionmask from the shapely polygon
-        mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
-        # Mask the dataset
-        return dataset[variables].where(mask == 0, drop=True)
+        return None
 
     def _read_variables_by_points(
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
-        # use the first variable to get its dimension
-        # use the 0 index for it's date variable
-        mask = np.zeros_like(dataset[variables[0]][0], dtype=bool)
-        # Iterate through the points and update the mask
-        for lon, lat in self.location_input.points:
-            # Find nearest lat and lon indices
-            lat_idx = np.abs(dataset['lat'] - lat).argmin()
-            lon_idx = np.abs(dataset['lon'] - lon).argmin()
-            mask[lat_idx, lon_idx] = True
-        mask_da = xr.DataArray(
-            mask,
-            coords={
-                'lat': dataset['lat'], 'lon': dataset['lon']
-            },
-            dims=['lat', 'lon']
-        )
-        # Apply the mask to the dataset
-        return dataset[variables].where(mask_da, drop=True)
+        return None
 
     def read_variables(
             self, dataset: xrDataset, start_date: datetime = None,
