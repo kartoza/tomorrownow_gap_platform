@@ -228,9 +228,136 @@ class CBAMNetCDFReader(BaseNetCDFReader):
 
 
 class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
+    """CBAM Zarr Reader."""
 
-    def __init__(self, dataset: Dataset, attributes: List[DatasetAttribute], location_input: DatasetReaderInput, start_date: datetime, end_date: datetime) -> None:
-        super().__init__(dataset, attributes, location_input, start_date, end_date)
+    def __init__(
+            self, dataset: Dataset, attributes: List[DatasetAttribute],
+            location_input: DatasetReaderInput, start_date: datetime,
+            end_date: datetime) -> None:
+        """Initialize CBAMZarrReader class."""
+        super().__init__(
+            dataset, attributes, location_input, start_date, end_date)
+
+    def _read_variables_by_point(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from single point.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        point = self.location_input.point
+        return dataset[variables].sel(
+            lat=point.y,
+            lon=point.x, method='nearest').where(
+                (dataset[self.date_variable] >= start_dt) &
+                (dataset[self.date_variable] <= end_dt),
+                drop=True
+        )
+
+    def _read_variables_by_bbox(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from BBOX.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        points = self.location_input.points
+        lat_min = points[0].y
+        lat_max = points[1].y
+        lon_min = points[0].x
+        lon_max = points[1].x
+        # output results is in two dimensional array
+        return dataset[variables].where(
+            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
+            (dataset.lon >= lon_min) & (dataset.lon <= lon_max) &
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt), drop=True)
+
+    def _read_variables_by_polygon(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from polygon.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        # Convert the Django GIS Polygon to a format compatible with shapely
+        shapely_multipolygon = shape(
+            json.loads(self.location_input.polygon.geojson))
+
+        # Create a mask using regionmask from the shapely polygon
+        mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
+        # TODO: we should pass the non-NA indices from mask to find_locations
+        # Mask the dataset
+        return dataset[variables].where(
+            (mask == 0) &
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt), drop=True)
+
+    def _read_variables_by_points(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from list of point.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        mask = np.zeros_like(dataset[variables[0]][0], dtype=bool)
+        # Iterate through the points and update the mask
+        for lon, lat in self.location_input.points:
+            # Find nearest lat and lon indices
+            lat_idx = np.abs(dataset['lat'] - lat).argmin()
+            lon_idx = np.abs(dataset['lon'] - lon).argmin()
+            mask[lat_idx, lon_idx] = True
+        mask_da = xr.DataArray(
+            mask,
+            coords={
+                'lat': dataset['lat'], 'lon': dataset['lon']
+            }, dims=['lat', 'lon']
+        )
+        # Apply the mask to the dataset
+        return dataset[variables].where(
+            (mask_da) &
+            (dataset[self.date_variable] >= start_dt) &
+            (dataset[self.date_variable] <= end_dt), drop=True)
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -248,3 +375,7 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
         if zarr_file is None:
             return
         ds = self.open_dataset(zarr_file)
+        val = self.read_variables(ds, start_date, end_date)
+        if val is None:
+            return
+        self.xrDatasets.append(val)

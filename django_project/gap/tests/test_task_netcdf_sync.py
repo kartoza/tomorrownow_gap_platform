@@ -96,5 +96,6 @@ class TestNetCDFSyncTask(TestCase):
     def test_netcdf_s3_sync(
         self, mock_sync_by_dataset):
         """Test for netcdf_s3_sync function."""
+        mock_sync_by_dataset.return_value = 0
         netcdf_s3_sync()
-        self.assertEqual(mock_sync_by_dataset.call_count, 2)
+        self.assertEqual(mock_sync_by_dataset.call_count, 1)

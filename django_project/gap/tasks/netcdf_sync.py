@@ -16,7 +16,9 @@ from core.celery import app
 from gap.models import (
     DataSourceFile,
     Dataset,
-    DatasetStore
+    DatasetStore,
+    IngestorSession,
+    IngestorType
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
@@ -94,4 +96,6 @@ def netcdf_s3_sync():
     total_count = sync_by_dataset(cbam_dataset)
     if total_count > 0:
         # run ingestor to convert into zarr
-        pass
+        IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM
+        )

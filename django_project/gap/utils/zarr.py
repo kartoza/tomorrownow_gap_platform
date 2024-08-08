@@ -6,26 +6,19 @@ Tomorrow Now GAP.
 """
 
 import os
-import json
 import logging
 from typing import List
-from datetime import datetime, timedelta
-from django.contrib.gis.geos import Point
-import numpy as np
+from datetime import datetime
 import xarray as xr
 from xarray.core.dataset import Dataset as xrDataset
 import fsspec
-from shapely.geometry import shape
 
 from gap.models import (
-    Provider,
     Dataset,
     DatasetAttribute,
     DataSourceFile
 )
 from gap.utils.reader import (
-    LocationInputType,
-    BaseDatasetReader,
     DatasetReaderInput
 )
 from gap.utils.netcdf import BaseNetCDFReader
@@ -35,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseZarrReader(BaseNetCDFReader):
+    """Base class for Zarr Reader."""
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
@@ -57,7 +51,12 @@ class BaseZarrReader(BaseNetCDFReader):
             dataset, attributes, location_input, start_date, end_date)
 
     @classmethod
-    def get_s3_variables(cls):
+    def get_s3_variables(cls) -> dict:
+        """Get s3 env variables for Zarr file.
+
+        :return: Dictionary of S3 env vars
+        :rtype: dict
+        """
         prefix = 'MINIO'
         keys = [
             'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
@@ -73,7 +72,12 @@ class BaseZarrReader(BaseNetCDFReader):
         return results
 
     @classmethod
-    def get_s3_client_kwargs(cls):
+    def get_s3_client_kwargs(cls) -> dict:
+        """Get s3 client kwargs for Zarr file.
+
+        :return: dictionary with key endpoint_url or region_name
+        :rtype: dict
+        """
         prefix = 'MINIO'
         client_kwargs = {}
         if os.environ.get(f'{prefix}_AWS_ENDPOINT_URL', ''):
@@ -85,7 +89,14 @@ class BaseZarrReader(BaseNetCDFReader):
         return client_kwargs
 
     @classmethod
-    def get_zarr_base_url(cls, s3: dict):
+    def get_zarr_base_url(cls, s3: dict) -> str:
+        """Generate Zarr base URL.
+
+        :param s3: Dictionary of S3 env vars
+        :type s3: dict
+        :return: Base URL with s3 and bucket name
+        :rtype: str
+        """
         prefix = s3['AWS_DIR_PREFIX']
         bucket_name = s3['AWS_BUCKET_NAME']
         zarr_url = f's3://{bucket_name}/{prefix}'

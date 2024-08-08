@@ -6,17 +6,14 @@ Tomorrow Now GAP.
 """
 
 import os
-import json
 import logging
 from typing import List
 from datetime import datetime, timedelta
 from django.contrib.gis.geos import Point
 import numpy as np
 import xarray as xr
-import regionmask
 from xarray.core.dataset import Dataset as xrDataset
 import fsspec
-from shapely.geometry import shape
 
 from gap.models import (
     Provider,
