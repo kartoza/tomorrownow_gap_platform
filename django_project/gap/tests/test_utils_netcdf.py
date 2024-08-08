@@ -318,7 +318,7 @@ class TestBaseNetCDFReader(TestCase):
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
     @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
     @patch('fsspec.filesystem')
-    def test_setup_netcdf_reader(
+    def test_setup_reader(
         self, mock_filesystem, mock_get_s3_vars, mock_get_s3_kwargs):
         """Test for setup NetCDFReader class."""
         mock_get_s3_kwargs.return_value = {
@@ -329,7 +329,7 @@ class TestBaseNetCDFReader(TestCase):
             'AWS_SECRET_ACCESS_KEY': 'test_key_secret',
         }
         reader = BaseNetCDFReader(Mock(), [], Mock(), Mock(), Mock())
-        reader.setup_netcdf_reader()
+        reader.setup_reader()
         mock_filesystem.assert_called_once_with(
             's3',
             key='test_key_id',

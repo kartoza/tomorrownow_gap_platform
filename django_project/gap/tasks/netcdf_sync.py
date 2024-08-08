@@ -84,12 +84,14 @@ def sync_by_dataset(dataset: Dataset):
             count += 1
     if count > 0:
         logger.info(f'{dataset.name} - Added new NetCDFFile: {count}')
+    return count
 
 
 @app.task(name="netcdf_s3_sync")
 def netcdf_s3_sync():
     """Sync NetCDF Files from S3 storage."""
     cbam_dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
-    salient_dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
-    sync_by_dataset(cbam_dataset)
-    sync_by_dataset(salient_dataset)
+    total_count = sync_by_dataset(cbam_dataset)
+    if total_count > 0:
+        # run ingestor to convert into zarr
+        pass

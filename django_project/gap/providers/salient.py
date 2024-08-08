@@ -66,7 +66,7 @@ class SalientNetCDFReader(BaseNetCDFReader):
         :param end_date:  end date for reading forecast data
         :type end_date: datetime
         """
-        self.setup_netcdf_reader()
+        self.setup_reader()
         self.xrDatasets = []
         netcdf_file = DataSourceFile.objects.filter(
             dataset=self.dataset
