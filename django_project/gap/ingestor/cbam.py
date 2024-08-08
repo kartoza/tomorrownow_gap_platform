@@ -8,6 +8,8 @@ Tomorrow Now GAP.
 import json
 import logging
 import datetime
+import pytz
+import traceback
 from math import ceil
 import xarray as xr
 import numpy as np
@@ -45,7 +47,7 @@ class CBAMIngestor:
             defaults={
                 'created_on': timezone.now(),
                 'start_date_time': timezone.now(),
-                'end_date_time': timezone.now()
+                'end_date_time': timezone.now() - datetime.timedelta(days=20 * 365)
             }
         )
         # min+max are the BBOX that GAP processes
@@ -77,12 +79,11 @@ class CBAMIngestor:
             reader.setup_reader()
             ds = reader.open_dataset(self.datasource_file)
             self.existing_dates = ds.date.values
-        np_date = np.datetime64(f'{date.year}-{date.month}-{date.day}')
+        np_date = np.datetime64(f'{date.isoformat()}')
         return np_date in self.existing_dates
 
     def store_as_zarr(self, dataset: xrDataset, date: datetime.date):
-        logger.info(f'Store to zarr {date.year}-{date.month}-{date.day}')
-        new_date = pd.date_range(f'{date.year}-{date.month}-{date.day}', periods=1)
+        new_date = pd.date_range(f'{date.isoformat()}', periods=1)
         dataset = dataset.assign_coords(date=new_date)
         del dataset.attrs['Date']
         # Generate the new latitude and longitude arrays
@@ -96,7 +97,7 @@ class CBAMIngestor:
             self.created = False
             expanded_ds.to_zarr(zarr_url, mode='w', consolidated=True, storage_options=self.s3_options, encoding={
                 'date': {
-                    'units': f'days since {date.year}-{date.month}-{date.day}'
+                    'units': f'days since {date.isoformat()}'
                 }
             })
         else:
@@ -112,6 +113,7 @@ class CBAMIngestor:
             dataset=self.dataset,
             format=DatasetStore.NETCDF
         ).order_by('start_date_time')
+        logger.info(f'Total CBAM source files: {sources.count()}')
         if not sources.exists():
             return
         source_reader = CBAMNetCDFReader(self.dataset, [], None, None, None)
@@ -156,15 +158,27 @@ class CBAMIngestor:
             progress.row_count = total_monthyear
             progress.status = IngestorSessionStatus.SUCCESS
             progress.save()
-        self.metadata['end_date'] = curr_monthyear
+            self.metadata['end_date'] = iter_monthyear
 
     def run(self):
         # Run the ingestion
         try:
             self._run()
-            self.notes = json.dumps(self.metadata)
+            self.notes = json.dumps(self.metadata, default=str)
             logger.info(f'Ingestor CBAM NetCDFFile: {self.notes}')
+            # update datasourcefile
+            if self.metadata['start_date'] and self.metadata['start_date'] < self.datasource_file.start_date_time.date():
+                self.datasource_file.start_date_time = datetime.datetime.combine(
+                    self.metadata['start_date'], datetime.time.min, tzinfo=pytz.UTC
+                )
+            if self.metadata['end_date'] and self.metadata['end_date'] > self.datasource_file.end_date_time.date():
+                self.datasource_file.end_date_time = datetime.datetime.combine(
+                    self.metadata['end_date'], datetime.time.min, tzinfo=pytz.UTC
+                )
+            self.datasource_file.save()
         except Exception as e:
+            logger.error('Ingestor CBAM failed!', e)
+            logger.error(traceback.format_exc())
             raise Exception(e)
         finally:
             pass
