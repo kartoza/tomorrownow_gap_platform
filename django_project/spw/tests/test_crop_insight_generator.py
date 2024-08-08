@@ -49,7 +49,6 @@ class TestCropInsightGenerator(TestCase):
             mock_execute_spw_model
     ):
         """Test calculate_from_point function."""
-
         last_day = self.today + timedelta(days=10)
 
         def create_timeline_data(
