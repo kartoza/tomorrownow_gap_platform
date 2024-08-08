@@ -141,6 +141,7 @@ def calculate_from_point(point: Point) -> SPWOutput:
     historical_dict = _fetch_timelines_data(
         location_input, attrs, start_dt, end_dt
     )
+    print(historical_dict)
     final_dict = _fetch_ltn_data(
         location_input, attrs, start_dt, end_dt, historical_dict
     )
@@ -177,7 +178,8 @@ def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
         execution_log.input_file.save(filename, output_file)
     remove_plumber_data(data_file_path)
     success, data = execute_spw_model(
-        execution_log.input_file.url, filename, point.y, point.x, 'gap_place')
+        execution_log.input_file.url, filename, point.y, point.x, 'gap_place'
+    )
     if isinstance(data, dict):
         execution_log.output = data
     else:

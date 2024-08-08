@@ -9,7 +9,6 @@ from django.contrib.gis.db import models
 
 from core.models.common import Definition
 from gap.models.common import Village
-from gap.models.crop_insight import Crop
 
 
 class FarmCategory(Definition):
@@ -49,7 +48,7 @@ class Farm(models.Model):
         FarmCategory, on_delete=models.CASCADE
     )
     crop = models.ForeignKey(
-        Crop, on_delete=models.CASCADE
+        'gap.Crop', on_delete=models.SET_NULL, null=True, blank=True
     )
     village = models.ForeignKey(
         Village, on_delete=models.SET_NULL, null=True, blank=True

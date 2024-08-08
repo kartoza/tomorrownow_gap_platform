@@ -8,7 +8,6 @@ import factory
 from django.contrib.gis.geos import Point
 
 from core.factories import BaseMetaFactory, BaseFactory
-from gap.factories.crop_insight import CropFactory
 from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
@@ -56,4 +55,4 @@ class FarmFactory(
     geometry = factory.LazyFunction(lambda: Point(0, 0))
     rsvp_status = factory.SubFactory(FarmRSVPStatusFactory)
     category = factory.SubFactory(FarmCategoryFactory)
-    crop = factory.SubFactory(CropFactory)
+    crop = factory.SubFactory('gap.factories.crop_insight.CropFactory')

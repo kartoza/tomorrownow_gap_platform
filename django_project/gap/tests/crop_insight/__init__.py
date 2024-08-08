@@ -2,5 +2,5 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Plant tests
+.. note:: Crop Insight tests
 """
