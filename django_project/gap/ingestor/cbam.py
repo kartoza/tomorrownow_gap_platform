@@ -216,6 +216,7 @@ class CBAMIngestor:
             self.metadata['end_date'] = iter_monthyear
 
     def run(self):
+        """Run CBAM Ingestor."""
         # Run the ingestion
         try:
             self._run()
