@@ -30,7 +30,7 @@ class CBAMIngestorTest(TestCase):
     ]
 
     def setUp(self):
-        """Setup test."""
+        """Set CBAMIngestorTest."""
         self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
 
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
