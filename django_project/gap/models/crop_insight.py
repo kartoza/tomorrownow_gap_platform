@@ -10,6 +10,7 @@ import uuid
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
+from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from core.models.common import Definition
@@ -46,6 +47,20 @@ class FarmShortTermForecast(models.Model):
         default=timezone.now,
         help_text='Date when the forecast is made'
     )
+
+    class Meta:  # noqa: D106
+        ordering = ['-forecast_date']
+
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.forecast_date}'
+
+
+class FarmShortTermForecastData(models.Model):
+    """Model representing Farm Short-Term Weather Forecast Table data."""
+
+    forecast = models.ForeignKey(
+        FarmShortTermForecast, on_delete=models.CASCADE
+    )
     attribute = models.ForeignKey(
         DatasetAttribute, on_delete=models.CASCADE,
         help_text='Forecast attribute'
@@ -57,11 +72,8 @@ class FarmShortTermForecast(models.Model):
         help_text='The value of the forecast attribute'
     )
 
-    def __str__(self):
-        return f'{self.farm.__str__()} - {self.forecast_date}'
-
     class Meta:  # noqa: D106
-        ordering = ['-forecast_date']
+        ordering = ['attribute', '-value_date']
 
 
 class FarmProbabilisticWeatherForcast(models.Model):
@@ -239,6 +251,50 @@ class FarmCropVariety(models.Model):
         ordering = ['-recommendation_date']
 
 
+class CropInsightRequestReport:
+    """The report model for the Insight Request Report."""
+
+    def __init__(self, farm: Farm):
+        """Initialize the report model for the Insight Request Report."""
+        self.farm = farm
+        self.latitude = farm.geometry.y
+        self.longittude = farm.geometry.x
+
+    @property
+    def data(self):
+        """Return data."""
+        output = {
+            'latitude': self.latitude,
+            'longitude': self.longittude,
+            'spw': None
+        }
+        spw = FarmSuitablePlantingWindowSignal.objects.filter(
+            farm=self.farm
+        ).first()
+        if spw:
+            output['spw'] = spw.signal
+
+        short_term_forcast = FarmShortTermForecast.objects.filter(
+            farm=self.farm
+        ).first()
+
+        if short_term_forcast:
+            datas = short_term_forcast.farmshorttermforecastdata_set.order_by(
+                'value_date'
+            )
+            if datas.first():
+                first_date = datas.first().value_date
+                for data in datas:
+                    difference = data.value_date - first_date
+                    key = f'Day {difference.days + 1}'
+                    if key not in output:
+                        output[key] = {}
+                    output[key][
+                        data.attribute.attribute.variable_name
+                    ] = data.value
+        return output
+
+
 class CropInsightRequest(models.Model):
     """Crop insight request."""
 
@@ -258,10 +314,70 @@ class CropInsightRequest(models.Model):
         null=True, blank=True
     )
 
-    def save(self, *args, **kwargs):
-        """Override importer saved."""
-        super(CropInsightRequest, self).save(*args, **kwargs)
-
     def generate_report(self):
         """Generate reports."""
-        pass
+        output = [
+            ['', '', ''],
+            ['Latitude', 'Longitude', 'Suitable Planting Window Signal'],
+        ]
+        for farm in self.farms.all():
+            row = [
+                farm.geometry.y,
+                farm.geometry.x
+            ]
+            spw = FarmSuitablePlantingWindowSignal.objects.filter(
+                farm=farm
+            ).first()
+            if spw:
+                row.append(spw.signal)
+            else:
+                row.append('')
+
+            first_columns_count = len(row)
+
+            # Forecast
+            forecast = FarmShortTermForecast.objects.filter(
+                farm=farm
+            ).first()
+
+            if forecast:
+                datas = forecast.farmshorttermforecastdata_set.order_by(
+                    'value_date'
+                )
+
+                if datas.first():
+                    first_date = datas.first().value_date
+                    last_date = datas.last().value_date
+                    different = last_date - first_date
+
+                    # Create the header
+                    for idx in range(different.days + 1):
+                        key = f'Day {idx + 1}'
+                        if key not in output[0]:
+                            output[0] += [key, '', '']
+                            output[1] += [
+                                'Temp (min)', 'Temp (max)', 'Precip (daily)'
+                            ]
+                        row += ['', '', '']
+
+                    # Create data
+                    for data in datas:
+                        different = data.value_date - first_date
+                        curr_idx = different.days * 3  # 3 columns per day
+                        curr_idx += first_columns_count
+                        var = data.attribute.source
+                        if var == 'temperatureMax':
+                            curr_idx += 1
+                        elif var == 'rainAccumulationSum':
+                            curr_idx += 2
+                        row[curr_idx] = data.value
+
+            output.append(row)
+
+        # Render csv
+        csv_content = ''
+        for row in output:
+            csv_content += ','.join(map(str, row)) + '\n'
+        content_file = ContentFile(csv_content)
+        self.file.save(f'{self.unique_id}.csv', content_file)
+        self.save()

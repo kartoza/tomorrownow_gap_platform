@@ -14,7 +14,7 @@ from gap.models import (
 from gap.tasks.crop_insight import generate_spw
 
 
-@admin.action(description='Generate Farms SPW')
+@admin.action(description='Generate farms spw')
 def generate_farm_spw(modeladmin, request, queryset):
     """Generate Farms SPW."""
     generate_spw.delay(list(queryset.values_list('id', flat=True)))

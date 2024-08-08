@@ -6,14 +6,15 @@ Tomorrow Now GAP.
 """
 import factory
 
-from core.factories import BaseMetaFactory, BaseFactory
+from core.factories import BaseMetaFactory, BaseFactory, UserF
 from gap.factories.farm import FarmFactory
 from gap.factories.main import DatasetAttributeFactory
 from gap.models import (
     Crop, Pest,
-    FarmShortTermForecast, FarmProbabilisticWeatherForcast,
-    FarmSuitablePlantingWindowSignal,
-    FarmPlantingWindowTable, FarmPestManagement, FarmCropVariety
+    FarmShortTermForecast, FarmShortTermForecastData,
+    FarmProbabilisticWeatherForcast, FarmSuitablePlantingWindowSignal,
+    FarmPlantingWindowTable, FarmPestManagement, FarmCropVariety,
+    CropInsightRequest
 )
 
 
@@ -56,6 +57,18 @@ class FarmShortTermForecastFactory(
 
     farm = factory.SubFactory(FarmFactory)
     forecast_date = factory.Faker('date')
+
+
+class FarmShortTermForecastDataFactory(
+    BaseFactory[FarmShortTermForecastData],
+    metaclass=BaseMetaFactory[FarmShortTermForecastData]
+):
+    """Factory class for FarmShortTermForecastData model."""
+
+    class Meta:  # noqa
+        model = FarmShortTermForecastData
+
+    forecast = factory.SubFactory(FarmShortTermForecastFactory)
     attribute = factory.SubFactory(DatasetAttributeFactory)
     value_date = factory.Faker('date')
     value = factory.Faker('pyfloat')
@@ -135,3 +148,17 @@ class FarmCropVarietyFactory(
     farm = factory.SubFactory(FarmFactory)
     recommendation_date = factory.Faker('date')
     recommended_crop = factory.SubFactory(CropFactory)
+
+
+class CropInsightRequestFactory(
+    BaseFactory[CropInsightRequest],
+    metaclass=BaseMetaFactory[CropInsightRequest]
+):
+    """Factory class for CropInsightRequest model."""
+
+    class Meta:  # noqa
+        model = CropInsightRequest
+
+    unique_id = factory.Faker('uuid4')
+    requested_by = factory.SubFactory(UserF)
+    requested_date = factory.Faker('date')

@@ -10,7 +10,8 @@ from datetime import date, datetime, timedelta
 import pytz
 
 from gap.models.crop_insight import (
-    FarmSuitablePlantingWindowSignal, FarmShortTermForecast
+    FarmSuitablePlantingWindowSignal, FarmShortTermForecast,
+    FarmShortTermForecastData
 )
 from gap.models.farm import Farm
 from gap.models.measurement import DatasetAttribute
@@ -23,13 +24,13 @@ class CropInsightFarmGenerator:
     """Insight Farm Generator."""
 
     def __init__(self, farm: Farm):
+        """Init Generator."""
         self.farm = farm
         self.today = date.today()
         self.tomorrow = self.today + timedelta(days=1)
 
     def generate_spw(self):
         """Generate Farm SPW."""
-
         # Check already being generated, no regenereated!
         if FarmSuitablePlantingWindowSignal.objects.filter(
                 farm=self.farm,
@@ -65,9 +66,12 @@ class CropInsightFarmGenerator:
                             ]
                         ).first()
                         if attr:
-                            FarmShortTermForecast.objects.update_or_create(
+                            c, _ = FarmShortTermForecast.objects.get_or_create(
                                 farm=self.farm,
-                                forecast_date=self.today,
+                                forecast_date=self.today
+                            )
+                            FarmShortTermForecastData.objects.update_or_create(
+                                forecast=c,
                                 value_date=_date,
                                 attribute=attr,
                                 defaults={
