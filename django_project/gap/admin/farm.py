@@ -25,13 +25,12 @@ def generate_farm_spw(modeladmin, request, queryset):
             messages.SUCCESS
         )
     elif queryset.count() == 1:
-        output, history_dict = calculate_from_point(
+        output = calculate_from_point(
             queryset.first().geometry
         )
-        history_dict.update(output.data.__dict__)
         modeladmin.message_user(
             request,
-            json.dumps(history_dict, indent=4),
+            json.dumps(output.data.__dict__, indent=4),
             messages.SUCCESS
         )
 

@@ -152,7 +152,7 @@ def calculate_from_point(point: Point) -> SPWOutput:
                 continue
             row.append(val.get(c, 0))
         rows.append(row)
-    return _execute_spw_model(rows, point), historical_dict
+    return _execute_spw_model(rows, point)
 
 
 def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
