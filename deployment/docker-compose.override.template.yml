@@ -24,14 +24,6 @@ services:
       - ../django_project:/home/web/django_project
       - ./volumes/static:/home/web/static
 
-  celery_beat:
-    build:
-      context: ../
-      dockerfile: deployment/docker/Dockerfile
-    volumes:
-      - ../django_project:/home/web/django_project
-      - ./volumes/static:/home/web/static
-
   nginx:
     volumes:
       - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
@@ -59,7 +51,6 @@ services:
       - db
       - redis
       - worker
-      - celery_beat
     entrypoint: [ ]
 
   plumber:
