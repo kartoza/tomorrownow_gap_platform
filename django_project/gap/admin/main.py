@@ -6,21 +6,19 @@ Tomorrow Now GAP.
 """
 from django.contrib import admin
 
-from .models import (
+from core.admin import AbstractDefinitionAdmin
+from gap.models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
-    DatasetType, Unit
+    DatasetType, Unit, Crop, Village
 )
 
 
 @admin.register(Unit)
-class UnitAdmin(admin.ModelAdmin):
+class UnitAdmin(AbstractDefinitionAdmin):
     """Unit admin."""
 
-    list_display = (
-        'name', 'description'
-    )
-    search_fields = ('name',)
+    pass
 
 
 @admin.register(Attribute)
@@ -34,23 +32,17 @@ class AttributeAdmin(admin.ModelAdmin):
 
 
 @admin.register(Country)
-class CountryAdmin(admin.ModelAdmin):
+class CountryAdmin(AbstractDefinitionAdmin):
     """Country admin."""
 
-    list_display = (
-        'name', 'description'
-    )
-    search_fields = ('name',)
+    pass
 
 
 @admin.register(Provider)
-class ProviderAdmin(admin.ModelAdmin):
+class ProviderAdmin(AbstractDefinitionAdmin):
     """Provider admin."""
 
-    list_display = (
-        'name', 'description'
-    )
-    search_fields = ('name',)
+    pass
 
 
 @admin.register(DatasetType)
@@ -131,3 +123,17 @@ class DataSourceFileAdmin(admin.ModelAdmin):
         'end_date_time', 'created_on'
     )
     list_filter = ('dataset',)
+
+
+@admin.register(Crop)
+class CropAdmin(AbstractDefinitionAdmin):
+    """Crop admin."""
+
+    pass
+
+
+@admin.register(Village)
+class VillageAdmin(AbstractDefinitionAdmin):
+    """Village admin."""
+
+    pass

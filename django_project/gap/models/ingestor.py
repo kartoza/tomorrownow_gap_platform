@@ -5,11 +5,10 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
-
 
 User = get_user_model()
 
@@ -23,6 +22,7 @@ class IngestorType:
     """Ingestor type."""
 
     TAHMO = 'Tahmo'
+    FARM = 'Farm'
 
 
 class IngestorSessionStatus:
@@ -44,6 +44,7 @@ class IngestorSession(models.Model):
         default=IngestorType.TAHMO,
         choices=(
             (IngestorType.TAHMO, IngestorType.TAHMO),
+            (IngestorType.FARM, IngestorType.FARM),
         ),
         max_length=512
     )
@@ -82,8 +83,15 @@ class IngestorSession(models.Model):
     def _run(self):
         """Run the ingestor session."""
         from gap.ingestor.tahmo import TahmoIngestor
+        from gap.ingestor.farm import FarmIngestor
+
+        ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
             ingestor = TahmoIngestor(self)
+        elif self.ingestor_type == IngestorType.FARM:
+            ingestor = FarmIngestor(self)
+
+        if ingestor:
             ingestor.run()
 
     def run(self):
