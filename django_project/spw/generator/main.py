@@ -47,6 +47,7 @@ VAR_MAPPING = {
     'max_total_temperature': 'temperatureMax',
     'min_total_temperature': 'temperatureMin',
 }
+VAR_MAPPING_REVERSE = {v: k for k, v in VAR_MAPPING.items()}
 LTN_MAPPING = {
     'total_evapotranspiration_flux': 'LTNPET',
     'total_rainfall': 'LTNPrecip'
@@ -120,13 +121,13 @@ def generate_sample(file_path: str):
         writer.writerows(output_rows)
 
 
-def calculate_from_point(point: Point) -> SPWOutput:
+def calculate_from_point(point: Point) -> (SPWOutput, dict):
     """Calculate SPW from given point.
 
     :param point: Location to be queried
     :type point: Point
     :return: Output with GoNoGo classification
-    :rtype: SPWOutput
+    :rtype: (SPWOutput, dict)
     """
     TomorrowIODatasetReader.init_provider()
     location_input = DatasetReaderInput.from_point(point)
@@ -141,7 +142,6 @@ def calculate_from_point(point: Point) -> SPWOutput:
     historical_dict = _fetch_timelines_data(
         location_input, attrs, start_dt, end_dt
     )
-    print(historical_dict)
     final_dict = _fetch_ltn_data(
         location_input, attrs, start_dt, end_dt, historical_dict
     )
@@ -153,7 +153,7 @@ def calculate_from_point(point: Point) -> SPWOutput:
                 continue
             row.append(val.get(c, 0))
         rows.append(row)
-    return _execute_spw_model(rows, point)
+    return _execute_spw_model(rows, point), historical_dict
 
 
 def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
@@ -196,6 +196,16 @@ def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
     return output
 
 
+def _fetch_timelines_data_dataset():
+    """Return dataset that will be used for _fetch_timelines_data."""
+    return Dataset.objects.filter(
+        provider__name=TIO_PROVIDER,
+        type__type=CastType.HISTORICAL
+    ).exclude(
+        type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
+    ).first()
+
+
 def _fetch_timelines_data(
         location_input: DatasetReaderInput, attrs: List[DatasetAttribute],
         start_dt: datetime, end_dt: datetime) -> dict:
@@ -212,12 +222,7 @@ def _fetch_timelines_data(
     :return: Dictionary of month_day and results
     :rtype: dict
     """
-    dataset = Dataset.objects.filter(
-        provider__name=TIO_PROVIDER,
-        type__type=CastType.HISTORICAL
-    ).exclude(
-        type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
-    ).first()
+    dataset = _fetch_timelines_data_dataset()
     reader = TomorrowIODatasetReader(
         dataset, attrs, location_input, start_dt, end_dt)
     reader.read()

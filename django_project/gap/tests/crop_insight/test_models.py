@@ -291,7 +291,7 @@ class FarmCropVarietyTest(TestCase):
     def test_update_object(self):
         """Test update object."""
         obj = self.Factory()
-        recommended_crop = CropFactory()
+        recommended_crop = CropFactory.create()
         obj.recommended_crop = recommended_crop
         obj.save()
         updated_obj = self.Model.objects.get(id=obj.id)

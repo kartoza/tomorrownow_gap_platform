@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from core.models.common import Definition
 from gap.models import Farm
-from gap.models.measurement import Attribute
+from gap.models.measurement import DatasetAttribute
 
 
 class Crop(Definition):
@@ -36,7 +36,7 @@ class FarmShortTermForecast(models.Model):
         help_text='Date when the forecast is made'
     )
     attribute = models.ForeignKey(
-        Attribute, on_delete=models.CASCADE,
+        DatasetAttribute, on_delete=models.CASCADE,
         help_text='Forecast attribute'
     )
     value_date = models.DateField(
@@ -138,6 +138,9 @@ class FarmSuitablePlantingWindowSignal(models.Model):
         help_text='Signal value of Suitable Planting Window l.'
     )
 
+    class Meta:  # noqa: D106
+        ordering = ['-generated_date']
+
 
 class FarmPlantingWindowTable(models.Model):
     """Model representing Farm Planting Window Table.
@@ -156,6 +159,9 @@ class FarmPlantingWindowTable(models.Model):
     recommended_date = models.DateField(
         help_text='Recommended planting date'
     )
+
+    class Meta:  # noqa: D106
+        ordering = ['-recommendation_date']
 
 
 class FarmPestManagement(models.Model):
@@ -177,6 +183,9 @@ class FarmPestManagement(models.Model):
         help_text='Recommended pest spray action'
     )
 
+    class Meta:  # noqa: D106
+        ordering = ['-recommendation_date']
+
 
 class FarmCropVariety(models.Model):
     """Model representing Farm Crop Variety.
@@ -196,3 +205,6 @@ class FarmCropVariety(models.Model):
         Crop, on_delete=models.CASCADE,
         help_text='Recommended crop variety'
     )
+
+    class Meta:  # noqa: D106
+        ordering = ['-recommendation_date']

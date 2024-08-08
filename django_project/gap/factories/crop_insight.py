@@ -8,7 +8,7 @@ import factory
 
 from core.factories import BaseMetaFactory, BaseFactory
 from gap.factories.farm import FarmFactory
-from gap.factories.main import AttributeFactory
+from gap.factories.main import DatasetAttributeFactory
 from gap.models import (
     Crop, Pest,
     FarmShortTermForecast, FarmProbabilisticWeatherForcastTable,
@@ -56,7 +56,7 @@ class FarmShortTermForecastFactory(
 
     farm = factory.SubFactory(FarmFactory)
     forecast_date = factory.Faker('date')
-    attribute = factory.SubFactory(AttributeFactory)
+    attribute = factory.SubFactory(DatasetAttributeFactory)
     value_date = factory.Faker('date')
     value = factory.Faker('pyfloat')
 

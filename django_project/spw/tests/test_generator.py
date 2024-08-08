@@ -26,7 +26,7 @@ from gap.utils.reader import (
 from spw.factories import (
     RModelFactory
 )
-from spw.generator import (
+from spw.generator.main import (
     SPWOutput,
     _fetch_timelines_data,
     _fetch_ltn_data,
@@ -201,9 +201,9 @@ class TestSPWGenerator(TestCase):
         self.location_input = DatasetReaderInput.from_point(Point(0, 0))
         self.r_model = RModelFactory.create(name='test')
 
-    @patch('spw.generator.execute_spw_model')
-    @patch('spw.generator._fetch_timelines_data')
-    @patch('spw.generator._fetch_ltn_data')
+    @patch('spw.generator.main.execute_spw_model')
+    @patch('spw.generator.main._fetch_timelines_data')
+    @patch('spw.generator.main._fetch_ltn_data')
     def test_calculate_from_point(
             self, mock_fetch_ltn_data, mock_fetch_timelines_data,
             mock_execute_spw_model):
@@ -234,7 +234,9 @@ class TestSPWGenerator(TestCase):
         }
         mock_execute_spw_model.return_value = (True, r_data)
 
-        output = calculate_from_point(self.location_input.point)
+        output, historical_dict = calculate_from_point(
+            self.location_input.point
+        )
         mock_fetch_ltn_data.assert_called_once()
         mock_fetch_timelines_data.assert_called_once()
         mock_execute_spw_model.assert_called_once()
