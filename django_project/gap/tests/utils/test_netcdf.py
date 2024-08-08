@@ -27,6 +27,7 @@ from gap.utils.reader import (
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
+    BaseNetCDFReader,
     daterange_inc,
 )
 from gap.providers import (
@@ -254,6 +255,34 @@ class TestDatasetReaderInput(TestCase):
         dri = DatasetReaderInput(geom_collection, LocationInputType.POINT)
         with self.assertRaises(TypeError):
             _ = dri.points
+
+
+class TestBaseNetCDFReader(TestCase):
+    """Unit test for class BaseNetCDFReader."""
+
+    def test_read_variables_base_functions(self):
+        """Test base functions for reading variables."""
+        attrib = DatasetAttributeFactory.create()
+        attrib.attribute.variable_name = 'temperature'
+        attrib.attribute.unit.name = 'C'
+        attrib.attribute.name = 'Temperature'
+        reader = BaseNetCDFReader(Mock(), [attrib], Mock(), Mock(), Mock())
+        self.assertFalse(
+            reader._read_variables_by_point(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+        self.assertFalse(
+            reader._read_variables_by_bbox(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+        self.assertFalse(
+            reader._read_variables_by_polygon(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
+        self.assertFalse(
+            reader._read_variables_by_points(
+                attrib.dataset, ['temperature'], Mock(), Mock())
+        )
 
 
 class TestCBAMNetCDFReader(TestCase):
