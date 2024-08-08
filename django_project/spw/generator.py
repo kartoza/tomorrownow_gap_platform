@@ -8,23 +8,23 @@ Tomorrow Now GAP.
 import csv
 import logging
 import os
-import pytz
-from typing import List
-from types import SimpleNamespace
 from datetime import datetime, timedelta
-from django.utils import timezone
+from types import SimpleNamespace
+from typing import List
+
+import pytz
 from django.contrib.gis.geos import Point
+from django.utils import timezone
 
 from gap.models import Dataset, DatasetAttribute, CastType
-from gap.utils.reader import DatasetReaderInput
 from gap.providers import TomorrowIODatasetReader, TIO_PROVIDER
+from gap.utils.reader import DatasetReaderInput
 from spw.models import RModel, RModelExecutionLog, RModelExecutionStatus
 from spw.utils.plumber import (
     execute_spw_model,
     write_plumber_data,
     remove_plumber_data
 )
-
 
 logger = logging.getLogger(__name__)
 ATTRIBUTES = [
@@ -72,7 +72,7 @@ class SPWOutput:
 
 
 def generate_sample(file_path: str):
-    # read csv lat lon input
+    """Generate spw to csv file."""
     point_dict = {}
     with open(file_path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -108,14 +108,17 @@ def generate_sample(file_path: str):
         'Suitable Planting Window Signal'
     ]
     for i in range(0, 5):
-        headers.append(f'Day {i+1} - Temp (min)')
-        headers.append(f'Day {i+1} - Temp (max)')
-        headers.append(f'Day {i+1} - Precip (daily)')
-    with open('/home/web/project/django_project/sample.csv', 'w', encoding='UTF8') as f:
+        headers.append(f'Day {i + 1} - Temp (min)')
+        headers.append(f'Day {i + 1} - Temp (max)')
+        headers.append(f'Day {i + 1} - Precip (daily)')
+    with open(
+            '/home/web/project/django_project/sample.csv', 'w', encoding='UTF8'
+    ) as f:
         writer = csv.writer(f)
         # write the header
         writer.writerow(headers)
         writer.writerows(output_rows)
+
 
 def calculate_from_point(point: Point) -> SPWOutput:
     """Calculate SPW from given point.
@@ -139,7 +142,8 @@ def calculate_from_point(point: Point) -> SPWOutput:
         location_input, attrs, start_dt, end_dt
     )
     final_dict = _fetch_ltn_data(
-        location_input, attrs, start_dt, end_dt, historical_dict)
+        location_input, attrs, start_dt, end_dt, historical_dict
+    )
     rows = []
     for month_day, val in final_dict.items():
         row = [month_day]
@@ -256,7 +260,8 @@ def _fetch_ltn_data(
         type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
     ).first()
     reader = TomorrowIODatasetReader(
-        dataset, attrs, location_input, start_dt, end_dt)
+        dataset, attrs, location_input, start_dt, end_dt
+    )
     reader.read()
     values = reader.get_data_values()
     for val in values.results:
