@@ -5,12 +5,23 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
+import uuid
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 from django.utils import timezone
 
 from core.models.common import Definition
 from gap.models import Farm
 from gap.models.measurement import DatasetAttribute
+
+User = get_user_model()
+
+
+def ingestor_file_path(instance, filename):
+    """Return upload path for Ingestor files."""
+    return f'{settings.STORAGE_DIR_PREFIX}crop-insight/{filename}'
 
 
 class Crop(Definition):
@@ -46,11 +57,14 @@ class FarmShortTermForecast(models.Model):
         help_text='The value of the forecast attribute'
     )
 
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.forecast_date}'
+
     class Meta:  # noqa: D106
         ordering = ['-forecast_date']
 
 
-class FarmProbabilisticWeatherForcastTable(models.Model):
+class FarmProbabilisticWeatherForcast(models.Model):
     """Model representing Farm Probabilistic S2S Weather Forecast Table.
 
     Attributes:
@@ -115,6 +129,9 @@ class FarmProbabilisticWeatherForcastTable(models.Model):
         )
     )
 
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.forecast_date}'
+
     class Meta:  # noqa: D106
         ordering = ['-forecast_date']
 
@@ -138,6 +155,9 @@ class FarmSuitablePlantingWindowSignal(models.Model):
         help_text='Signal value of Suitable Planting Window l.'
     )
 
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.generated_date}'
+
     class Meta:  # noqa: D106
         ordering = ['-generated_date']
 
@@ -159,6 +179,9 @@ class FarmPlantingWindowTable(models.Model):
     recommended_date = models.DateField(
         help_text='Recommended planting date'
     )
+
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.recommendation_date}'
 
     class Meta:  # noqa: D106
         ordering = ['-recommendation_date']
@@ -183,6 +206,9 @@ class FarmPestManagement(models.Model):
         help_text='Recommended pest spray action'
     )
 
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.recommendation_date}'
+
     class Meta:  # noqa: D106
         ordering = ['-recommendation_date']
 
@@ -206,5 +232,36 @@ class FarmCropVariety(models.Model):
         help_text='Recommended crop variety'
     )
 
+    def __str__(self):
+        return f'{self.farm.__str__()} - {self.recommendation_date}'
+
     class Meta:  # noqa: D106
         ordering = ['-recommendation_date']
+
+
+class CropInsightRequest(models.Model):
+    """Crop insight request."""
+
+    unique_id = models.UUIDField(
+        default=uuid.uuid4, editable=False
+    )
+    requested_by = models.ForeignKey(
+        User, on_delete=models.CASCADE
+    )
+    requested_date = models.DateField(
+        default=timezone.now,
+        help_text='Date when the request is made'
+    )
+    farms = models.ManyToManyField(Farm)
+    file = models.FileField(
+        upload_to=ingestor_file_path,
+        null=True, blank=True
+    )
+
+    def save(self, *args, **kwargs):
+        """Override importer saved."""
+        super(CropInsightRequest, self).save(*args, **kwargs)
+
+    def generate_report(self):
+        """Generate reports."""
+        pass

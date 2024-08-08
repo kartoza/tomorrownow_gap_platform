@@ -9,9 +9,9 @@ from django.contrib import admin
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     Crop, Pest,
-    FarmShortTermForecast, FarmProbabilisticWeatherForcastTable,
+    FarmShortTermForecast, FarmProbabilisticWeatherForcast,
     FarmSuitablePlantingWindowSignal, FarmPlantingWindowTable,
-    FarmPestManagement, FarmCropVariety
+    FarmPestManagement, FarmCropVariety, CropInsightRequest
 )
 
 
@@ -39,9 +39,9 @@ class FarmShortTermForecastAdmin(admin.ModelAdmin):
     filter = ('farm', 'forecast_date', 'attribute')
 
 
-@admin.register(FarmProbabilisticWeatherForcastTable)
-class FarmProbabilisticWeatherForcastTableAdmin(admin.ModelAdmin):
-    """Admin for FarmProbabilisticWeatherForcastTable."""
+@admin.register(FarmProbabilisticWeatherForcast)
+class FarmProbabilisticWeatherForcastAdmin(admin.ModelAdmin):
+    """Admin for FarmProbabilisticWeatherForcast."""
 
     list_display = (
         'farm', 'forecast_date', 'forecast_period'
@@ -87,3 +87,15 @@ class FarmCropVarietyAdmin(admin.ModelAdmin):
         'farm', 'recommendation_date', 'recommended_crop'
     )
     filter = ('farm', 'recommendation_date')
+
+
+@admin.register(CropInsightRequest)
+class CropInsightRequestAdmin(admin.ModelAdmin):
+    """Admin for CropInsightRequest."""
+
+    list_display = ('requested_date', 'farm_list')
+    filter_horizontal = ('farms',)
+
+    def farm_list(self, obj: CropInsightRequest):
+        """Return farm list."""
+        return [farm.unique_id for farm in obj.farms.all()]

@@ -11,13 +11,13 @@ from django.test import TestCase
 
 from gap.factories import (
     CropFactory, PestFactory, FarmShortTermForecastFactory,
-    FarmProbabilisticWeatherForcastTableFactory,
+    FarmProbabilisticWeatherForcastFactory,
     FarmSuitablePlantingWindowSignalFactory,
     FarmPlantingWindowTableFactory, FarmPestManagementFactory,
     FarmCropVarietyFactory
 )
 from gap.models import (
-    Crop, Pest, FarmShortTermForecast, FarmProbabilisticWeatherForcastTable,
+    Crop, Pest, FarmShortTermForecast, FarmProbabilisticWeatherForcast,
     FarmSuitablePlantingWindowSignal, FarmPlantingWindowTable,
     FarmPestManagement, FarmCropVariety
 )
@@ -128,11 +128,11 @@ class FarmShortTermForecastCRUDTest(TestCase):
         self.assertFalse(self.Model.objects.filter(id=_id).exists())
 
 
-class FarmProbabilisticWeatherForcastTableCRUDTest(TestCase):
-    """FarmProbabilisticWeatherForcastTable test case."""
+class FarmProbabilisticWeatherForcastCRUDTest(TestCase):
+    """FarmProbabilisticWeatherForcast test case."""
 
-    Factory = FarmProbabilisticWeatherForcastTableFactory
-    Model = FarmProbabilisticWeatherForcastTable
+    Factory = FarmProbabilisticWeatherForcastFactory
+    Model = FarmProbabilisticWeatherForcast
 
     def test_create_object(self):
         """Test create object."""

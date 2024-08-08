@@ -29,6 +29,14 @@ class CropInsightFarmGenerator:
 
     def generate_spw(self):
         """Generate Farm SPW."""
+
+        # Check already being generated, no regenereated!
+        if FarmSuitablePlantingWindowSignal.objects.filter(
+                farm=self.farm,
+                generated_date=self.today
+        ).first():
+            return
+
         output, historical_dict = calculate_from_point(
             self.farm.geometry
         )

@@ -53,3 +53,6 @@ class Farm(models.Model):
     village = models.ForeignKey(
         Village, on_delete=models.SET_NULL, null=True, blank=True
     )
+
+    def __str__(self):
+        return self.unique_id

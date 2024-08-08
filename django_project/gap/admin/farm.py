@@ -4,7 +4,6 @@ Tomorrow Now GAP.
 
 .. note:: Farms admin
 """
-import json
 
 from django.contrib import admin, messages
 
@@ -12,27 +11,18 @@ from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
-from spw.generator import calculate_from_point
+from gap.tasks.crop_insight import generate_spw
 
 
-@admin.action(description='Generate Farm SPW')
+@admin.action(description='Generate Farms SPW')
 def generate_farm_spw(modeladmin, request, queryset):
-    """Restart plumber process action."""
-    if queryset.count() > 1:
-        modeladmin.message_user(
-            request,
-            'Just able to select 1 farm!',
-            messages.SUCCESS
-        )
-    elif queryset.count() == 1:
-        output = calculate_from_point(
-            queryset.first().geometry
-        )
-        modeladmin.message_user(
-            request,
-            json.dumps(output.data.__dict__, indent=4),
-            messages.SUCCESS
-        )
+    """Generate Farms SPW."""
+    generate_spw.delay(list(queryset.values_list('id', flat=True)))
+    modeladmin.message_user(
+        request,
+        'Process will be started in background!',
+        messages.SUCCESS
+    )
 
 
 @admin.register(FarmCategory)

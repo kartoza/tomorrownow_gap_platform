@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: SPW Generator
 """
 
-import csv
 import logging
 import os
 from datetime import datetime, timedelta
@@ -70,55 +69,6 @@ class SPWOutput:
             else:
                 data[key] = val
         self.data = SimpleNamespace(**data)
-
-
-def generate_sample(file_path: str):
-    """Generate spw to csv file."""
-    point_dict = {}
-    with open(file_path) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        line_count = 0
-        for row in csv_reader:
-            if line_count == 0:
-                line_count += 1
-                continue
-            place_name = row[0]
-            lat = float(row[1])
-            lon = float(row[2])
-            point_dict[place_name] = Point(y=lat, x=lon)
-            line_count += 1
-    output_rows = []
-    for place_name, point in point_dict.items():
-        output, historical_dict = calculate_from_point(point)
-        row = [
-            place_name, point.y, point.x, output.data.goNoGo
-        ]
-        today = datetime.now(tz=pytz.UTC)
-        for i in range(0, 5):
-            dt_key = (today + timedelta(days=i + 1)).strftime('%m-%d')
-            if dt_key in historical_dict:
-                forecast = historical_dict[dt_key]
-                row.append(forecast['temperatureMin'])
-                row.append(forecast['temperatureMax'])
-                row.append(forecast['rainAccumulationSum'])
-        output_rows.append(row)
-    headers = [
-        'Place Name',
-        'Lat',
-        'Lon',
-        'Suitable Planting Window Signal'
-    ]
-    for i in range(0, 5):
-        headers.append(f'Day {i + 1} - Temp (min)')
-        headers.append(f'Day {i + 1} - Temp (max)')
-        headers.append(f'Day {i + 1} - Precip (daily)')
-    with open(
-            '/home/web/project/django_project/sample.csv', 'w', encoding='UTF8'
-    ) as f:
-        writer = csv.writer(f)
-        # write the header
-        writer.writerow(headers)
-        writer.writerows(output_rows)
 
 
 def calculate_from_point(point: Point) -> (SPWOutput, dict):
