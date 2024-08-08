@@ -55,12 +55,6 @@ class Unit(Definition):
     pass
 
 
-class Crop(Definition):
-    """Model representing crop."""
-
-    pass
-
-
 class Village(Definition):
     """Model representing village."""
 

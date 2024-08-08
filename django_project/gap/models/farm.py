@@ -8,7 +8,8 @@ Tomorrow Now GAP.
 from django.contrib.gis.db import models
 
 from core.models.common import Definition
-from gap.models.common import Crop, Village
+from gap.models.common import Village
+from gap.models.crop_insight import Crop
 
 
 class FarmCategory(Definition):

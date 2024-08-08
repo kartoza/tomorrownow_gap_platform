@@ -8,7 +8,7 @@ import factory
 from django.contrib.gis.geos import Point
 
 from core.factories import BaseMetaFactory, BaseFactory
-from gap.factories.main import CropFactory
+from gap.factories.crop_insight import CropFactory
 from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
