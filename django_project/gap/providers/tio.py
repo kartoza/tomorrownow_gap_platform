@@ -45,6 +45,16 @@ TIO_VARIABLES = {
         'The combined processes by which water moves from '
         'the earth\'s surface into the atmosphere',
         'mm', 'total_evapotranspiration_flux'
+    ),
+    'temperatureMax': DatasetVariable(
+        'Temperature Max',
+        '',
+        '°C', 'max_total_temperature'
+    ),
+    'temperatureMin': DatasetVariable(
+        'Temperature Min',
+        '',
+        '°C', 'min_total_temperature'
     )
 }
 

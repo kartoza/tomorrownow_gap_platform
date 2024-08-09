@@ -10,7 +10,7 @@ from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
-    DatasetType, Unit, Crop, Village
+    DatasetType, Unit, Village
 )
 
 
@@ -123,13 +123,6 @@ class DataSourceFileAdmin(admin.ModelAdmin):
         'end_date_time', 'created_on'
     )
     list_filter = ('dataset',)
-
-
-@admin.register(Crop)
-class CropAdmin(AbstractDefinitionAdmin):
-    """Crop admin."""
-
-    pass
 
 
 @admin.register(Village)

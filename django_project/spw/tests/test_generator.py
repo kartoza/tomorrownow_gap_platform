@@ -5,33 +5,34 @@ Tomorrow Now GAP.
 .. note:: UnitTest for Plumber functions.
 """
 from datetime import datetime, timedelta
-import pytz
 from unittest.mock import patch, MagicMock
-from django.test import TestCase
+
+import pytz
 from django.contrib.gis.geos import Point
+from django.test import TestCase
 
 from gap.models import (
     DatasetAttribute,
     Dataset
+)
+from gap.providers.tio import (
+    TomorrowIODatasetReader
 )
 from gap.utils.reader import (
     DatasetReaderInput,
     DatasetReaderValue,
     DatasetTimelineValue
 )
-from gap.providers.tio import (
-    TomorrowIODatasetReader
+from spw.factories import (
+    RModelFactory
 )
-from spw.models import RModelExecutionLog, RModelExecutionStatus
-from spw.generator import (
+from spw.generator.main import (
     SPWOutput,
     _fetch_timelines_data,
     _fetch_ltn_data,
     calculate_from_point
 )
-from spw.factories import (
-    RModelFactory
-)
+from spw.models import RModelExecutionLog, RModelExecutionStatus
 
 
 class TestSPWOutput(TestCase):
@@ -143,16 +144,18 @@ class TestSPWFetchDataFunctions(TestCase):
             ])
         )
         result = _fetch_timelines_data(
-            self.location_input, self.attrs, self.start_dt, self.end_dt)
+            self.location_input, self.attrs, self.start_dt, self.end_dt
+        )
         expected_result = {
             '07-20': {
                 'date': '2023-07-20',
                 'evapotranspirationSum': 10,
-                'rainAccumulationSum': 5
+                'rainAccumulationSum': 5,
+                'temperatureMax': 0,
+                'temperatureMin': 0
             }
         }
         self.assertEqual(result, expected_result)
-
 
     @patch.object(TomorrowIODatasetReader, 'read')
     @patch.object(TomorrowIODatasetReader, 'get_data_values')
@@ -198,12 +201,12 @@ class TestSPWGenerator(TestCase):
         self.location_input = DatasetReaderInput.from_point(Point(0, 0))
         self.r_model = RModelFactory.create(name='test')
 
-    @patch('spw.generator.execute_spw_model')
-    @patch('spw.generator._fetch_timelines_data')
-    @patch('spw.generator._fetch_ltn_data')
+    @patch('spw.generator.main.execute_spw_model')
+    @patch('spw.generator.main._fetch_timelines_data')
+    @patch('spw.generator.main._fetch_ltn_data')
     def test_calculate_from_point(
-        self, mock_fetch_ltn_data, mock_fetch_timelines_data,
-        mock_execute_spw_model):
+            self, mock_fetch_ltn_data, mock_fetch_timelines_data,
+            mock_execute_spw_model):
         """Test calculate_from_point function."""
         mock_fetch_ltn_data.return_value = {
             '07-20': {
@@ -231,7 +234,9 @@ class TestSPWGenerator(TestCase):
         }
         mock_execute_spw_model.return_value = (True, r_data)
 
-        output = calculate_from_point(self.location_input.point)
+        output, historical_dict = calculate_from_point(
+            self.location_input.point
+        )
         mock_fetch_ltn_data.assert_called_once()
         mock_fetch_timelines_data.assert_called_once()
         mock_execute_spw_model.assert_called_once()

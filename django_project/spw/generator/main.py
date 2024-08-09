@@ -7,16 +7,17 @@ Tomorrow Now GAP.
 
 import logging
 import os
-import pytz
-from typing import List
-from types import SimpleNamespace
 from datetime import datetime, timedelta
-from django.utils import timezone
+from types import SimpleNamespace
+from typing import List, Tuple
+
+import pytz
 from django.contrib.gis.geos import Point
+from django.utils import timezone
 
 from gap.models import Dataset, DatasetAttribute, CastType
-from gap.utils.reader import DatasetReaderInput
 from gap.providers import TomorrowIODatasetReader, TIO_PROVIDER
+from gap.utils.reader import DatasetReaderInput
 from spw.models import RModel, RModelExecutionLog, RModelExecutionStatus
 from spw.utils.plumber import (
     execute_spw_model,
@@ -24,11 +25,12 @@ from spw.utils.plumber import (
     remove_plumber_data
 )
 
-
 logger = logging.getLogger(__name__)
 ATTRIBUTES = [
     'total_evapotranspiration_flux',
-    'total_rainfall'
+    'total_rainfall',
+    'max_total_temperature',
+    'min_total_temperature'
 ]
 COLUMNS = [
     'month_day',
@@ -40,8 +42,11 @@ COLUMNS = [
 ]
 VAR_MAPPING = {
     'total_evapotranspiration_flux': 'evapotranspirationSum',
-    'total_rainfall': 'rainAccumulationSum'
+    'total_rainfall': 'rainAccumulationSum',
+    'max_total_temperature': 'temperatureMax',
+    'min_total_temperature': 'temperatureMin',
 }
+VAR_MAPPING_REVERSE = {v: k for k, v in VAR_MAPPING.items()}
 LTN_MAPPING = {
     'total_evapotranspiration_flux': 'LTNPET',
     'total_rainfall': 'LTNPrecip'
@@ -66,13 +71,13 @@ class SPWOutput:
         self.data = SimpleNamespace(**data)
 
 
-def calculate_from_point(point: Point) -> SPWOutput:
+def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
     """Calculate SPW from given point.
 
     :param point: Location to be queried
     :type point: Point
     :return: Output with GoNoGo classification
-    :rtype: SPWOutput
+    :rtype: Tuple[SPWOutput, dict]
     """
     TomorrowIODatasetReader.init_provider()
     location_input = DatasetReaderInput.from_point(point)
@@ -83,12 +88,16 @@ def calculate_from_point(point: Point) -> SPWOutput:
     today = datetime.now(tz=pytz.UTC)
     start_dt = today - timedelta(days=37)
     end_dt = today + timedelta(days=14)
-    print(f'Today: {today} - start_dt: {start_dt} - end_dt: {end_dt}')
+    logger.info(
+        f'Calculate SPW for {point} at Today: {today} - '
+        f'start_dt: {start_dt} - end_dt: {end_dt}'
+    )
     historical_dict = _fetch_timelines_data(
         location_input, attrs, start_dt, end_dt
     )
     final_dict = _fetch_ltn_data(
-        location_input, attrs, start_dt, end_dt, historical_dict)
+        location_input, attrs, start_dt, end_dt, historical_dict
+    )
     rows = []
     for month_day, val in final_dict.items():
         row = [month_day]
@@ -97,7 +106,7 @@ def calculate_from_point(point: Point) -> SPWOutput:
                 continue
             row.append(val.get(c, 0))
         rows.append(row)
-    return _execute_spw_model(rows, point)
+    return _execute_spw_model(rows, point), historical_dict
 
 
 def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
@@ -122,7 +131,8 @@ def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
         execution_log.input_file.save(filename, output_file)
     remove_plumber_data(data_file_path)
     success, data = execute_spw_model(
-        execution_log.input_file.url, filename, point.y, point.x, 'gap_place')
+        execution_log.input_file.url, filename, point.y, point.x, 'gap_place'
+    )
     if isinstance(data, dict):
         execution_log.output = data
     else:
@@ -137,6 +147,16 @@ def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
     execution_log.end_date_time = timezone.now()
     execution_log.save()
     return output
+
+
+def _fetch_timelines_data_dataset():
+    """Return dataset that will be used for _fetch_timelines_data."""
+    return Dataset.objects.filter(
+        provider__name=TIO_PROVIDER,
+        type__type=CastType.HISTORICAL
+    ).exclude(
+        type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
+    ).first()
 
 
 def _fetch_timelines_data(
@@ -155,12 +175,7 @@ def _fetch_timelines_data(
     :return: Dictionary of month_day and results
     :rtype: dict
     """
-    dataset = Dataset.objects.filter(
-        provider__name=TIO_PROVIDER,
-        type__type=CastType.HISTORICAL
-    ).exclude(
-        type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
-    ).first()
+    dataset = _fetch_timelines_data_dataset()
     reader = TomorrowIODatasetReader(
         dataset, attrs, location_input, start_dt, end_dt)
     reader.read()
@@ -205,7 +220,8 @@ def _fetch_ltn_data(
         type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
     ).first()
     reader = TomorrowIODatasetReader(
-        dataset, attrs, location_input, start_dt, end_dt)
+        dataset, attrs, location_input, start_dt, end_dt
+    )
     reader.read()
     values = reader.get_data_values()
     for val in values.results:
