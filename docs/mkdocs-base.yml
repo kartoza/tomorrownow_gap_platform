@@ -40,8 +40,18 @@ nav:
   - Home:
       - index.md
       - quick_installation.md
-  - Developers:
-      - developer/index.md
-      - Documentation:
-          - "Data model": developer/data-model.md
-          - "Hyrax Configuration": developer/hyrax-config.md
+  - Administrators:
+      - administrator/index.md
+			- Guide:
+							- administrator/guide/index.md
+			- Manual:
+							- administrator/manual/index.md
+							- Django Administration: administrator/manual/django-admin.md
+							- Django Tables: administrator/manual/django-table.md
+							- Add Record in Table: administrator/manual/django-add-record.md
+							- Edit Record in Table: administrator/manual/django-change-record.md
+	- Developers:
+				- developer/index.md
+				- Documentation:
+						- "Data model": developer/data-model.md
+						- "Hyrax Configuration": developer/hyrax-config.md
