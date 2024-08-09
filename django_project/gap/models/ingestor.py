@@ -23,6 +23,7 @@ class IngestorType:
 
     TAHMO = 'Tahmo'
     FARM = 'Farm'
+    CBAM = 'CBAM'
 
 
 class IngestorSessionStatus:
@@ -45,6 +46,7 @@ class IngestorSession(models.Model):
         choices=(
             (IngestorType.TAHMO, IngestorType.TAHMO),
             (IngestorType.FARM, IngestorType.FARM),
+            (IngestorType.CBAM, IngestorType.CBAM),
         ),
         max_length=512
     )
@@ -84,12 +86,15 @@ class IngestorSession(models.Model):
         """Run the ingestor session."""
         from gap.ingestor.tahmo import TahmoIngestor
         from gap.ingestor.farm import FarmIngestor
+        from gap.ingestor.cbam import CBAMIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
             ingestor = TahmoIngestor(self)
         elif self.ingestor_type == IngestorType.FARM:
             ingestor = FarmIngestor(self)
+        elif self.ingestor_type == IngestorType.CBAM:
+            ingestor = CBAMIngestor(self)
 
         if ingestor:
             ingestor.run()

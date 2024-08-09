@@ -52,6 +52,8 @@ h5netcdf==1.3.0
 scipy==1.14.0
 regionmask==0.12.1
 zarr==2.18.2
+# for parallel, performance depends on chunks
+# dask==2024.7.1
 
 # Excel reader
 pandas==2.2.2
