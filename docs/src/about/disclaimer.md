@@ -1,12 +1,13 @@
 ---
-title: GeoSight-OS Documentation Home 
-summary: GeoSight is UNICEF's geospatial web-based business intelligence platform.
-    - Tim Sutton
+title: TomorrowNow - Global Access Platform (GAP)
+summary: TomorrowNow - GAP is next-gen weather and climate data and services.
+    - Danang Tri Massandy
     - Irwan Fathurrahman
-date: 2023-08-03
-some_url: https://github.com/unicef-drp/GeoSight-OS
-copyright: Copyright 2023, Unicef
-contact: geosight-no-reply@unicef.org
+    - Ketan Bamniya
+date: 2024-08-01
+some_url: https://github.com/kartoza/tomorrownow_gap
+copyright: Copyright 2023, TomorrowNow
+contact: danang@kartoza.com
 license: This program is free software; you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 ---
 
