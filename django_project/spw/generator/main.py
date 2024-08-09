@@ -9,7 +9,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from typing import List
+from typing import List, Tuple
 
 import pytz
 from django.contrib.gis.geos import Point
@@ -71,13 +71,13 @@ class SPWOutput:
         self.data = SimpleNamespace(**data)
 
 
-def calculate_from_point(point: Point) -> (SPWOutput, dict):
+def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
     """Calculate SPW from given point.
 
     :param point: Location to be queried
     :type point: Point
     :return: Output with GoNoGo classification
-    :rtype: (SPWOutput, dict)
+    :rtype: Tuple[SPWOutput, dict]
     """
     TomorrowIODatasetReader.init_provider()
     location_input = DatasetReaderInput.from_point(point)
@@ -88,7 +88,10 @@ def calculate_from_point(point: Point) -> (SPWOutput, dict):
     today = datetime.now(tz=pytz.UTC)
     start_dt = today - timedelta(days=37)
     end_dt = today + timedelta(days=14)
-    print(f'Today: {today} - start_dt: {start_dt} - end_dt: {end_dt}')
+    logger.info(
+        f'Calculate SPW for {point} at Today: {today} - '
+        f'start_dt: {start_dt} - end_dt: {end_dt}'
+    )
     historical_dict = _fetch_timelines_data(
         location_input, attrs, start_dt, end_dt
     )

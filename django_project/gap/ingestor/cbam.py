@@ -138,7 +138,6 @@ class CBAMIngestor:
             BaseZarrReader.get_zarr_base_url(self.s3) +
             self.datasource_file.name
         )
-        print('herehereher')
         if self.created:
             self.created = False
             expanded_ds.to_zarr(
