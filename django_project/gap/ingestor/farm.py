@@ -41,7 +41,11 @@ class FarmIngestor:
     def _run(self):
         """Run the ingestor."""
         df = pd.read_excel(
-            self.session.file.read(), sheet_name=0, header=HEADER_IDX
+            self.session.file.read(), sheet_name=0, header=HEADER_IDX,
+            converters={
+                Keys.FARM_ID: str,
+                Keys.PHONE_NUMBER: str
+            }
         )
         df.reset_index(drop=True, inplace=True)
         data = df.to_dict(orient='records')

@@ -108,7 +108,7 @@ class FarmIngestorTest(TestCase):
         self.assertEqual(farms[1].geometry.x, 35.890972222222224)
 
         self.assertEqual(farms[2].unique_id, '1003')
-        self.assertEqual(farms[2].phone_number, '123-456-7890')
+        self.assertEqual(farms[2].phone_number, '0123456')
         self.assertEqual(farms[2].rsvp_status.name, 'Declined')
         self.assertEqual(farms[2].category.name, 'Control')
         self.assertEqual(farms[2].village.name, 'Village C')
