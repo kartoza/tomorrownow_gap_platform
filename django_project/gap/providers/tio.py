@@ -81,7 +81,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         """Init Tomorrow.io provider and variables."""
         provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
         dt_historical, _ = DatasetType.objects.get_or_create(
-            name='Climate Reanalysis',
+            name='Historical Reanalysis',
             defaults={
                 'type': CastType.HISTORICAL
             }
