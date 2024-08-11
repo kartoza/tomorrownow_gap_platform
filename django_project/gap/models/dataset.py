@@ -28,6 +28,9 @@ class DatasetType(Definition):
         ),
         max_length=512
     )
+    variable_name = models.CharField(
+        max_length=512
+    )
 
 
 class DatasetStore:

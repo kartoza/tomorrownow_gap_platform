@@ -81,7 +81,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         """Init Tomorrow.io provider and variables."""
         provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
         dt_historical, _ = DatasetType.objects.get_or_create(
-            name='Climate Reanalysis',
+            name='Historical Reanalysis',
             defaults={
                 'type': CastType.HISTORICAL
             }
@@ -90,9 +90,9 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             name=f'{provider.name} {dt_historical.name}',
             provider=provider,
             type=dt_historical,
+            store_type=DatasetStore.EXT_API,
             defaults={
                 'time_step': DatasetTimeStep.DAILY,
-                'store_type': DatasetStore.EXT_API,
                 'is_internal_use': True
             }
         )
@@ -106,9 +106,9 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             name=f'{provider.name} {dt_shorttermforecast.name}',
             provider=provider,
             type=dt_shorttermforecast,
+            store_type=DatasetStore.EXT_API,
             defaults={
                 'time_step': DatasetTimeStep.DAILY,
-                'store_type': DatasetStore.EXT_API,
                 'is_internal_use': True
             }
         )
@@ -122,9 +122,9 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             name=f'{provider.name} {dt_ltn.name}',
             provider=provider,
             type=dt_ltn,
+            store_type=DatasetStore.EXT_API,
             defaults={
                 'time_step': DatasetTimeStep.DAILY,
-                'store_type': DatasetStore.EXT_API,
                 'is_internal_use': True
             }
         )

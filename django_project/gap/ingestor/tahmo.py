@@ -49,10 +49,10 @@ class TahmoIngestor:
             name='Ground Observations'
         )
         self.dataset_type = DatasetType.objects.get(
-            name='Ground Observational'
+            name='Observations'
         )
         self.dataset, _ = Dataset.objects.get_or_create(
-            name=f'Tahmo {self.dataset_type.name}',
+            name='Tahmo Ground Observational',
             provider=self.provider,
             type=self.dataset_type,
             time_step=DatasetTimeStep.DAILY,
