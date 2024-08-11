@@ -137,16 +137,24 @@ class TestCropInsightGenerator(TestCase):
                 idx += 1
                 print(row)
                 if idx == 3:
-                    self.assertEqual(row[0], '0.0')  # Latitude
-                    self.assertEqual(row[1], '0.0')  # Longitude
-                    self.assertEqual(row[2], 'Do not plant Tier 1a')
-                    self.assertEqual(row[3], '0.0')  # Temp (min)
-                    self.assertEqual(row[4], '100.0')  # Temp (max)
-                    self.assertEqual(row[5], '5.0')  # Precip (daily)
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm.phone_number)
+                    self.assertEqual(row[2], '0.0')  # Latitude
+                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[4], 'Do not plant Tier 1a')
+                    self.assertEqual(row[5], '0.0')  # Temp (min)
+                    self.assertEqual(row[6], '100.0')  # Temp (max)
+                    self.assertEqual(row[7], '5.0')  # Precip (daily)
                 if idx == 4:
-                    self.assertEqual(row[0], '0.0')  # Latitude
-                    self.assertEqual(row[1], '0.0')  # Longitude
-                    self.assertEqual(row[2], 'Do not plant Tier 1a')
-                    self.assertEqual(row[3], '3.0')  # Temp (min)
-                    self.assertEqual(row[4], '4.0')  # Temp (max)
-                    self.assertEqual(row[5], '2.0')  # Precip (daily)
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm_2.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm_2.phone_number)
+                    self.assertEqual(row[2], '0.0')  # Latitude
+                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[4], 'Do not plant Tier 1a')
+                    self.assertEqual(row[5], '3.0')  # Temp (min)
+                    self.assertEqual(row[6], '4.0')  # Temp (max)
+                    self.assertEqual(row[7], '2.0')  # Precip (daily)

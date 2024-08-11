@@ -56,3 +56,4 @@ class FarmFactory(
     rsvp_status = factory.SubFactory(FarmRSVPStatusFactory)
     category = factory.SubFactory(FarmCategoryFactory)
     crop = factory.SubFactory('gap.factories.crop_insight.CropFactory')
+    phone_number = '123-456-7936'

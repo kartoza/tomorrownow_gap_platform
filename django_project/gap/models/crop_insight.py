@@ -317,11 +317,16 @@ class CropInsightRequest(models.Model):
     def generate_report(self):
         """Generate reports."""
         output = [
-            ['', '', ''],
-            ['Latitude', 'Longitude', 'Suitable Planting Window Signal'],
+            ['', '', '', '', ''],
+            [
+                'Farm ID', 'Phone Number',
+                'Latitude', 'Longitude', 'Suitable Planting Window Signal'
+            ],
         ]
         for farm in self.farms.all():
             row = [
+                farm.unique_id,
+                farm.phone_number,
                 farm.geometry.y,
                 farm.geometry.x
             ]
