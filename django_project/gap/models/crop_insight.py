@@ -334,7 +334,7 @@ class CropInsightRequest(models.Model):
                 farm=farm
             ).first()
             if spw:
-                row.append(spw.signal)
+                row.append(spw.signal.replace(',', '-'))
             else:
                 row.append('')
 
