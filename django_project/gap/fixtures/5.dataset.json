@@ -21,7 +21,7 @@
       "provider": 2,
       "type": 1,
       "time_step": "DAILY",
-      "store_type": "NETCDF",
+      "store_type": "ZARR",
       "is_internal_use": false
     }
   },
@@ -34,7 +34,20 @@
       "provider": 3,
       "type": 3,
       "time_step": "DAILY",
-      "store_type": "NETCDF",
+      "store_type": "ZARR",
+      "is_internal_use": false
+    }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 4,
+    "fields": {
+      "name": "Tomorrow.io Short-term Forecast",
+      "description": null,
+      "provider": 4,
+      "type": 2,
+      "time_step": "DAILY",
+      "store_type": "ZARR",
       "is_internal_use": false
     }
   }
