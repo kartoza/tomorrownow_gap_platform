@@ -23,6 +23,7 @@ class Keys:
     """Keys for the data."""
 
     FARM_ID = 'Farm ID'
+    PHONE_NUMBER = 'Phone Number'
     VILLAGE_NAME = 'Village Name'
     GEOMETRY = 'Farm Location (Lat/Long)'
     RSVP = 'RSVP status'
@@ -49,6 +50,7 @@ class FarmIngestor:
         for idx, row in enumerate(data):
             try:
                 farm_id = row[Keys.FARM_ID]
+                phone_number = row[Keys.PHONE_NUMBER]
                 geometry = dms_string_to_point(row[Keys.GEOMETRY])
                 crop, _ = Crop.objects.get_or_create(name=row[Keys.CROP])
                 category, _ = FarmCategory.objects.get_or_create(
@@ -67,7 +69,8 @@ class FarmIngestor:
                         'crop': crop,
                         'category': category,
                         'rsvp_status': rsvp_status,
-                        'village': village
+                        'village': village,
+                        'phone_number': phone_number
                     }
                 )
             except KeyError as e:
