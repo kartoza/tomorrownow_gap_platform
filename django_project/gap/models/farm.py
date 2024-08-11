@@ -53,6 +53,11 @@ class Farm(models.Model):
     village = models.ForeignKey(
         Village, on_delete=models.SET_NULL, null=True, blank=True
     )
+    phone_number = models.CharField(
+        null=True,
+        blank=True,
+        max_length=255
+    )
 
     def __str__(self):
         return self.unique_id

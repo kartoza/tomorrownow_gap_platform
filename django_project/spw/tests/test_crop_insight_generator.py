@@ -11,12 +11,16 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
+from core.factories import UserF
 from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory
 from gap.models.crop_insight import (
-    FarmSuitablePlantingWindowSignal
+    FarmSuitablePlantingWindowSignal, CropInsightRequest
 )
-from gap.tasks.crop_insight import generate_insight_report
+from gap.tasks.crop_insight import (
+    generate_insight_report,
+    generate_crop_plan
+)
 from spw.factories import RModelFactory
 from spw.generator.crop_insight import CropInsightFarmGenerator
 
@@ -40,6 +44,11 @@ class TestCropInsightGenerator(TestCase):
         self.farm_2 = FarmFactory.create()
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
+        self.superuser = UserF.create(
+            is_staff=True,
+            is_superuser=True,
+            is_active=True
+        )
 
     @patch('spw.generator.main.execute_spw_model')
     @patch('spw.generator.main._fetch_timelines_data')
@@ -137,16 +146,37 @@ class TestCropInsightGenerator(TestCase):
                 idx += 1
                 print(row)
                 if idx == 3:
-                    self.assertEqual(row[0], '0.0')  # Latitude
-                    self.assertEqual(row[1], '0.0')  # Longitude
-                    self.assertEqual(row[2], 'Do not plant Tier 1a')
-                    self.assertEqual(row[3], '0.0')  # Temp (min)
-                    self.assertEqual(row[4], '100.0')  # Temp (max)
-                    self.assertEqual(row[5], '5.0')  # Precip (daily)
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm.phone_number)
+                    self.assertEqual(row[2], '0.0')  # Latitude
+                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[4], 'Do not plant Tier 1a')
+                    self.assertEqual(row[5], '0.0')  # Temp (min)
+                    self.assertEqual(row[6], '100.0')  # Temp (max)
+                    self.assertEqual(row[7], '5.0')  # Precip (daily)
                 if idx == 4:
-                    self.assertEqual(row[0], '0.0')  # Latitude
-                    self.assertEqual(row[1], '0.0')  # Longitude
-                    self.assertEqual(row[2], 'Do not plant Tier 1a')
-                    self.assertEqual(row[3], '3.0')  # Temp (min)
-                    self.assertEqual(row[4], '4.0')  # Temp (max)
-                    self.assertEqual(row[5], '2.0')  # Precip (daily)
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm_2.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm_2.phone_number)
+                    self.assertEqual(row[2], '0.0')  # Latitude
+                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[4], 'Do not plant Tier 1a')
+                    self.assertEqual(row[5], '3.0')  # Temp (min)
+                    self.assertEqual(row[6], '4.0')  # Temp (max)
+                    self.assertEqual(row[7], '2.0')  # Precip (daily)
+
+    @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
+    @patch('gap.models.crop_insight.CropInsightRequest.generate_report')
+    def test_generate_crop_plan(
+        self, mock_generate_report, mock_generate_spw
+    ):
+        """Test generate crop plan for all farms."""
+        generate_crop_plan()
+        self.assertEqual(
+            CropInsightRequest.objects.count(), 1
+        )
+        self.assertEqual(mock_generate_spw.call_count, 2)
+        mock_generate_report.assert_called_once()

@@ -90,6 +90,7 @@ class FarmIngestorTest(TestCase):
         farms = Farm.objects.all()
         self.assertEqual(farms.count(), 3)
         self.assertEqual(farms[0].unique_id, '1001')
+        self.assertEqual(farms[0].phone_number, '123-456-7890')
         self.assertEqual(farms[0].rsvp_status.name, 'Accepted')
         self.assertEqual(farms[0].category.name, 'Treatment')
         self.assertEqual(farms[0].village.name, 'Village A')
@@ -98,6 +99,7 @@ class FarmIngestorTest(TestCase):
         self.assertEqual(farms[0].geometry.x, 35.88930555555555)
 
         self.assertEqual(farms[1].unique_id, '1002')
+        self.assertEqual(farms[1].phone_number, '123-456-7890')
         self.assertEqual(farms[1].rsvp_status.name, 'Declined')
         self.assertEqual(farms[1].category.name, 'Treatment')
         self.assertEqual(farms[1].village.name, 'Village B')
@@ -106,6 +108,7 @@ class FarmIngestorTest(TestCase):
         self.assertEqual(farms[1].geometry.x, 35.890972222222224)
 
         self.assertEqual(farms[2].unique_id, '1003')
+        self.assertEqual(farms[2].phone_number, '0123456')
         self.assertEqual(farms[2].rsvp_status.name, 'Declined')
         self.assertEqual(farms[2].category.name, 'Control')
         self.assertEqual(farms[2].village.name, 'Village C')
