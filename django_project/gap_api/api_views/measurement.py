@@ -58,9 +58,16 @@ class MeasurementAPI(APIView):
             type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
-            'providers', openapi.IN_QUERY,
-            description='List of provider name',
-            type=openapi.TYPE_STRING
+            'product', openapi.IN_QUERY,
+            description='Product type',
+            type=openapi.TYPE_STRING,
+            enum=[
+                'historical_reanalysis',
+                'shortterm_forecast',
+                'seasonal_forecast',
+                'observations'
+            ],
+            default='historical_reanalysis'
         ),
     ]
 
@@ -124,16 +131,16 @@ class MeasurementAPI(APIView):
             return DatasetReaderInput.from_bbox(number_list)
         return None
 
-    def _get_provider_filter(self):
-        """Get provider name filter in the request parameters.
+    def _get_product_filter(self):
+        """Get product name filter in the request parameters.
 
-        :return: List of provider name lowercase
+        :return: List of product type lowercase
         :rtype: List[str]
         """
-        providers = self.request.GET.get('providers', None)
-        if providers is None:
-            return None
-        return providers.lower().split(',')
+        product = self.request.GET.get('product', None)
+        if product is None:
+            return ['historical_reanalysis']
+        return [product.lower()]
 
     def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
         """Read data from given reader.
@@ -169,13 +176,12 @@ class MeasurementAPI(APIView):
             attribute__in=attributes,
             dataset__is_internal_use=False
         )
-        provider_filter = self._get_provider_filter()
-        if provider_filter:
-            dataset_attributes = dataset_attributes.annotate(
-                provider_name=Lower('dataset__provider__name')
-            ).filter(
-                provider_name__in=provider_filter
-            )
+        product_filter = self._get_product_filter()
+        dataset_attributes = dataset_attributes.annotate(
+            product_name=Lower('dataset__type__variable_name')
+        ).filter(
+            product_name__in=product_filter
+        )
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
             if da.dataset.id in dataset_dict:
