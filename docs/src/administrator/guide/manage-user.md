@@ -9,10 +9,9 @@ some_url: https://github.com/kartoza/tomorrownow_gap
 copyright: Copyright 2023, TomorrowNow
 contact: danang@kartoza.com
 license: This program is free software; you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
-
 ---
 
-**Managing Users**
+# Managing Users
 
 As an administrator, you can manage users on the TOMORROW.NOW platform by following these steps:
 
@@ -20,8 +19,7 @@ As an administrator, you can manage users on the TOMORROW.NOW platform by follow
 
 ![Authentication and authorization](./img/manage-user-1.png)
 
-1. Log in to the administration site and navigate to the **AUTHENTICATION AND AUTHORIZATION** section.
-2. Click on the **Users** link to access the users page.
+1. Log in to the administration site and navigate to the **AUTHENTICATION AND AUTHORIZATION** section. Click on the `Users link to access the users page.
 
 ## Filtering the User List
 
@@ -37,9 +35,9 @@ On the right-hand side of the page, you will see a 1️⃣ `FILTER` panel. Use t
 
 ## Adding Users
 
-![Add user](./img/manage-user-4.png)
-
 Click the 1️⃣ `ADD USER` button to add a new user. Fill in the required information, including the user's username, password, and profile details. Review the password requirements and generate a secure password. 
+
+![Add user](./img/manage-user-4.png)
 
 Click one of the three save options:
 
@@ -49,9 +47,9 @@ Click one of the three save options:
 
 ## Editing Users
 
-![Add user](./img/manage-user-4.png)
+Click on a 1️⃣ user's username to edit their information. Make changes to their profile, dates, and permissions as needed.
 
-Click on a user's username to edit their information. Make changes to their profile, dates, and permissions as needed.
+![Add user](./img/manage-user-5.png)
 
 Click one of the three save options:
 
@@ -61,6 +59,8 @@ Click one of the three save options:
 
 ## Deleting Users
 
-1. Select the user(s) you want to delete by checking the 1️⃣ `boxes` next to their names. Click the 2️⃣ `Action` dropdown menu and select **Delete selected user**.
+Select the user(s) you want to delete by checking the 1️⃣ `boxes` next to their names. Click the 2️⃣ `Action` dropdown menu and select **Delete selected user**.
+
+![Delete user](./img/manage-user-6.png)
 
 By following these steps, you can effectively manage users on the TOMORROW.NOW platform.
