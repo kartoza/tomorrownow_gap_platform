@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group
 
-from core.email_receiver import crop_plan_receiver
+from core.group_email_receiver import crop_plan_receiver
 
 User = get_user_model()
 

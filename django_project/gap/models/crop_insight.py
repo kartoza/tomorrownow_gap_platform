@@ -14,7 +14,7 @@ from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
 from django.utils import timezone
 
-from core.email_receiver import crop_plan_receiver
+from core.group_email_receiver import crop_plan_receiver
 from core.models.common import Definition
 from gap.models import Farm
 from gap.models.measurement import DatasetAttribute

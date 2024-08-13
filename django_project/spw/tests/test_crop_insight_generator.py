@@ -12,6 +12,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from core.factories import UserF
+from core.group_email_receiver import _group_crop_plan_receiver
 from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory
 from gap.models.crop_insight import (
@@ -49,6 +50,12 @@ class TestCropInsightGenerator(TestCase):
             is_superuser=True,
             is_active=True
         )
+
+        group = _group_crop_plan_receiver()
+        self.user_1 = UserF(email='user_1@email.com')
+        self.user_2 = UserF(email='user_2@email.com')
+        self.user_3 = UserF(email='user_3@email.com')
+        group.user_set.add(self.user_1, self.user_2)
 
     @patch('spw.generator.main.execute_spw_model')
     @patch('spw.generator.main._fetch_timelines_data')
@@ -144,7 +151,6 @@ class TestCropInsightGenerator(TestCase):
             idx = 0
             for row in csv_reader:
                 idx += 1
-                print(row)
                 if idx == 3:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm.unique_id)
@@ -171,7 +177,7 @@ class TestCropInsightGenerator(TestCase):
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
     @patch('gap.models.crop_insight.CropInsightRequest.generate_report')
     def test_generate_crop_plan(
-        self, mock_generate_report, mock_generate_spw
+            self, mock_generate_report, mock_generate_spw
     ):
         """Test generate crop plan for all farms."""
         generate_crop_plan()
@@ -180,3 +186,23 @@ class TestCropInsightGenerator(TestCase):
         )
         self.assertEqual(mock_generate_spw.call_count, 2)
         mock_generate_report.assert_called_once()
+
+    def test_email_send(self):
+        """Test email send when report created."""
+
+        parent = self
+
+        def mock_send_fn(self, fail_silently=False):
+            """Mock send messages."""
+            parent.assertEqual(len(self.recipients()), 2)
+            parent.assertEqual(
+                self.recipients(),
+                [parent.user_1.email, parent.user_2.email]
+            )
+            return 0
+
+        with patch(
+                "django.core.mail.EmailMessage.send", mock_send_fn
+        ):
+            request = CropInsightRequestFactory.create()
+            request.generate_report()
