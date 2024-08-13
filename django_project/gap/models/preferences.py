@@ -15,7 +15,7 @@ class Preferences(SingletonModel):
     """Preference settings specifically for gap."""
 
     area_of_interest = models.PolygonField(
-        null=True, blank=True
+        null=True, blank=True, srid=4326
     )
 
     class Meta:  # noqa: D106
