@@ -189,7 +189,6 @@ class TestCropInsightGenerator(TestCase):
 
     def test_email_send(self):
         """Test email send when report created."""
-
         parent = self
 
         def mock_send_fn(self, fail_silently=False):
