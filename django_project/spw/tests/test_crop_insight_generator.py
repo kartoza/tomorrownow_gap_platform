@@ -189,15 +189,12 @@ class TestCropInsightGenerator(TestCase):
 
     def test_email_send(self):
         """Test email send when report created."""
+        self.recipients = []
         parent = self
 
         def mock_send_fn(self, fail_silently=False):
             """Mock send messages."""
-            parent.assertEqual(len(self.recipients()), 2)
-            parent.assertEqual(
-                self.recipients(),
-                [parent.user_1.email, parent.user_2.email]
-            )
+            parent.recipients = self.recipients()
             return 0
 
         with patch(
@@ -205,3 +202,9 @@ class TestCropInsightGenerator(TestCase):
         ):
             request = CropInsightRequestFactory.create()
             request.generate_report()
+
+            parent.assertEqual(len(self.recipients), 2)
+            parent.assertEqual(
+                self.recipients,
+                [parent.user_1.email, parent.user_2.email]
+            )
