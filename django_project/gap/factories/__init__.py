@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Factories
 """
 
+from .crop_insight import *
 from .farm import *
 from .main import *
-from .crop_insight import *
+from .preferences import *

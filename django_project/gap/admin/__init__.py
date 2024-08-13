@@ -8,3 +8,4 @@ Tomorrow Now GAP.
 from gap.admin.crop_insight import *
 from gap.admin.farm import *
 from gap.admin.main import *
+from gap.admin.preferences import *

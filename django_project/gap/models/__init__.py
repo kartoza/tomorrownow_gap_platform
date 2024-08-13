@@ -11,4 +11,5 @@ from gap.models.farm import *
 from gap.models.ingestor import *
 from gap.models.measurement import *
 from gap.models.crop_insight import *
+from gap.models.preferences import *
 from gap.models.station import *
