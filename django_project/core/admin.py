@@ -24,8 +24,8 @@ class AbstractDefinitionAdmin(admin.ModelAdmin):
 
 
 class GroupAdminForm(forms.ModelForm):
-    """ModelForm that contains users of the group.
-    """
+    """ModelForm that contains users of the group."""
+
     users = forms.ModelMultipleChoiceField(
         User.objects.all(),
         widget=admin.widgets.FilteredSelectMultiple('Users', False),
@@ -73,7 +73,7 @@ class CustomUserAdmin(UserAdmin):
     )
 
     def receive_email_for_crop_plan(self, obj):
-        """Return if user receive email for crop plan.'"""
+        """Return if user receive email for crop plan."""
         return obj.pk in crop_plan_receiver().values_list(
             'pk', flat=True
         )
