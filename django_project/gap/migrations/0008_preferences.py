@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0006_datasettype_variable_name'),
+        ('gap', '0007_alter_farmshorttermforecastdata_options_and_more'),
     ]
 
     operations = [
