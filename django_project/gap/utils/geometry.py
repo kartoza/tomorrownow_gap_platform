@@ -15,7 +15,6 @@ def split_polygon_to_bbox(polygon: Polygon, size: int):
     :param int size:
         BBOX size that will be used to split the polygon in meters.
     """
-
     source_crs = polygon.crs
 
     if not source_crs:
