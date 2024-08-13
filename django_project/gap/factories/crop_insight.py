@@ -69,7 +69,7 @@ class FarmShortTermForecastDataFactory(
         model = FarmShortTermForecastData
 
     forecast = factory.SubFactory(FarmShortTermForecastFactory)
-    attribute = factory.SubFactory(DatasetAttributeFactory)
+    dataset_attribute = factory.SubFactory(DatasetAttributeFactory)
     value_date = factory.Faker('date')
     value = factory.Faker('pyfloat')
 

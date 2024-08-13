@@ -73,7 +73,7 @@ class CropInsightFarmGenerator:
                             FarmShortTermForecastData.objects.update_or_create(
                                 forecast=c,
                                 value_date=_date,
-                                attribute=attr,
+                                dataset_attribute=attr,
                                 defaults={
                                     'value': val
                                 }

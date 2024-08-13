@@ -13,9 +13,9 @@ license: This program is free software; you can redistribute it and/or modify it
 
 ## GAP
 
-![database design gap](./diagram/ground-observations-database-design-1.png)
+![database design gap](./diagram/solution-design-app-0018-Database-GAP.drawio.png)
 
 ## SPW
 
-![database design spw](./diagram/ground-observations-database-design-2.png)
+![database design spw](./diagram/solution-design-app-0018-Database-SPW.drawio.png)
 

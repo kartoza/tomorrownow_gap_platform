@@ -61,7 +61,7 @@ class FarmShortTermForecastData(models.Model):
     forecast = models.ForeignKey(
         FarmShortTermForecast, on_delete=models.CASCADE
     )
-    attribute = models.ForeignKey(
+    dataset_attribute = models.ForeignKey(
         DatasetAttribute, on_delete=models.CASCADE,
         help_text='Forecast attribute'
     )
@@ -73,7 +73,7 @@ class FarmShortTermForecastData(models.Model):
     )
 
     class Meta:  # noqa: D106
-        ordering = ['attribute', '-value_date']
+        ordering = ['dataset_attribute', '-value_date']
 
 
 class FarmProbabilisticWeatherForcast(models.Model):
@@ -290,7 +290,7 @@ class CropInsightRequestReport:
                     if key not in output:
                         output[key] = {}
                     output[key][
-                        data.attribute.attribute.variable_name
+                        data.dataset_attribute.attribute.variable_name
                     ] = data.value
         return output
 
@@ -370,7 +370,7 @@ class CropInsightRequest(models.Model):
                         different = data.value_date - first_date
                         curr_idx = different.days * 3  # 3 columns per day
                         curr_idx += first_columns_count
-                        var = data.attribute.source
+                        var = data.dataset_attribute.source
                         if var == 'temperatureMax':
                             curr_idx += 1
                         elif var == 'rainAccumulationSum':
