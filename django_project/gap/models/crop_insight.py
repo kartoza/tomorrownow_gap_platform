@@ -414,6 +414,6 @@ Best regards
         email.attach(
             f'{self.unique_id}.csv',
             self.file.open('rb').read(),
-            'application/csv'
+            'text/csv'
         )
         email.send()
