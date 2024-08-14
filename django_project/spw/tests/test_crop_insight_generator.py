@@ -36,6 +36,7 @@ class TestCropInsightGenerator(TestCase):
         '6.unit.json',
         '7.attribute.json',
         '8.dataset_attribute.json',
+        '9.rainfall_classification.json',
         '1.spw_output.json'
     ]
 
