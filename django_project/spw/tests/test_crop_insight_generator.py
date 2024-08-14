@@ -36,7 +36,9 @@ class TestCropInsightGenerator(TestCase):
         '5.dataset.json',
         '6.unit.json',
         '7.attribute.json',
-        '8.dataset_attribute.json'
+        '8.dataset_attribute.json',
+        '9.rainfall_classification.json',
+        '1.spw_output.json'
     ]
 
     def setUp(self):
@@ -68,7 +70,7 @@ class TestCropInsightGenerator(TestCase):
         last_day = self.today + timedelta(days=10)
 
         def create_timeline_data(
-                output, _date, evap, rain, max, min
+                output, _date, evap, rain, max, min, prec_prob
         ):
             """Create time data."""
             if last_day == _date:
@@ -79,10 +81,12 @@ class TestCropInsightGenerator(TestCase):
                 'evapotranspirationSum': evap,
                 'rainAccumulationSum': rain,
                 'temperatureMax': max,
+                'precipitationProbability': prec_prob,
                 'temperatureMin': min
             }
             create_timeline_data(
-                output, _date + timedelta(days=1), evap, rain, max, min
+                output, _date + timedelta(days=1),
+                evap, rain, max, min, prec_prob
             )
 
         mock_fetch_ltn_data.return_value = {
@@ -94,50 +98,65 @@ class TestCropInsightGenerator(TestCase):
                 'LTNPrecip': 3
             }
         }
-        r_data = {
-            'metadata': {
-                'test': 'abcdef'
-            },
-            'goNoGo': ['Do not plant Tier 1a'],
-            'nearDaysLTNPercent': [10.0],
-            'nearDaysCurPercent': [60.0],
-        }
-        mock_execute_spw_model.return_value = (True, r_data)
 
         # For farm 1
+        mock_execute_spw_model.return_value = (
+            True, {
+                'metadata': {
+                    'test': 'abcdef'
+                },
+                'goNoGo': ['Plant NOW Tier 1b'],
+                'nearDaysLTNPercent': [10.0],
+                'nearDaysCurPercent': [60.0],
+            }
+        )
         fetch_timelines_data_val = {}
         create_timeline_data(
             fetch_timelines_data_val, self.today - timedelta(days=10),
-            10, 5, 100, 0
+            10, 10, 100, 0, 50
         )
         mock_fetch_timelines_data.return_value = fetch_timelines_data_val
         generator = CropInsightFarmGenerator(self.farm)
         generator.generate_spw()
-        last_spw = FarmSuitablePlantingWindowSignal.objects.last()
+        last_spw = FarmSuitablePlantingWindowSignal.objects.filter(
+            farm=self.farm
+        ).last()
         forecast = self.farm.farmshorttermforecast_set.all().first()
-        self.assertEqual(last_spw.signal, 'Do not plant Tier 1a')
+        self.assertEqual(last_spw.signal, 'Plant NOW Tier 1b')
         self.assertEqual(self.farm.farmshorttermforecast_set.count(), 1)
         self.assertEqual(
-            forecast.farmshorttermforecastdata_set.count(), 36
+            forecast.farmshorttermforecastdata_set.count(), 45
         )
 
         # For farm 2
+        mock_execute_spw_model.return_value = (
+            True, {
+                'metadata': {
+                    'test': 'abcdef'
+                },
+                'goNoGo': ['Do NOT plant, DRY Tier 4b'],
+                'nearDaysLTNPercent': [10.0],
+                'nearDaysCurPercent': [60.0],
+            }
+        )
         fetch_timelines_data_val = {}
         create_timeline_data(
             fetch_timelines_data_val, self.today - timedelta(days=10),
-            1, 2, 4, 3
+            1, 0.5, 4, 3, 10
         )
         mock_fetch_timelines_data.return_value = fetch_timelines_data_val
         generator = CropInsightFarmGenerator(self.farm_2)
         generator.generate_spw()
-        last_spw = FarmSuitablePlantingWindowSignal.objects.last()
+        last_spw = FarmSuitablePlantingWindowSignal.objects.filter(
+            farm=self.farm_2
+        ).last()
         forecast = self.farm_2.farmshorttermforecast_set.all().first()
-        self.assertEqual(last_spw.signal, 'Do not plant Tier 1a')
+        self.assertEqual(last_spw.signal, 'Do NOT plant, DRY Tier 4b')
         self.assertEqual(
             self.farm_2.farmshorttermforecast_set.count(), 1
         )
         self.assertEqual(
-            forecast.farmshorttermforecastdata_set.count(), 36
+            forecast.farmshorttermforecastdata_set.count(), 45
         )
 
         # Crop insight report
@@ -158,10 +177,15 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[1], self.farm.phone_number)
                     self.assertEqual(row[2], '0.0')  # Latitude
                     self.assertEqual(row[3], '0.0')  # Longitude
-                    self.assertEqual(row[4], 'Do not plant Tier 1a')
-                    self.assertEqual(row[5], '0.0')  # Temp (min)
-                    self.assertEqual(row[6], '100.0')  # Temp (max)
-                    self.assertEqual(row[7], '5.0')  # Precip (daily)
+                    self.assertEqual(row[4], 'Plant Now')
+                    self.assertEqual(
+                        row[5],
+                        'Both current forecast '
+                        'historical rains have good signal to plant.'
+                    )
+                    self.assertEqual(row[6], '10.0')  # Precip (daily)
+                    self.assertEqual(row[7], '50.0')  # Precip % chance
+                    self.assertEqual(row[8], 'Light rain')  # Precip Type
                 if idx == 4:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm_2.unique_id)
@@ -169,10 +193,13 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[1], self.farm_2.phone_number)
                     self.assertEqual(row[2], '0.0')  # Latitude
                     self.assertEqual(row[3], '0.0')  # Longitude
-                    self.assertEqual(row[4], 'Do not plant Tier 1a')
-                    self.assertEqual(row[5], '3.0')  # Temp (min)
-                    self.assertEqual(row[6], '4.0')  # Temp (max)
-                    self.assertEqual(row[7], '2.0')  # Precip (daily)
+                    self.assertEqual(row[4], 'DO NOT PLANT')
+                    self.assertEqual(
+                        row[5], 'Wait for more positive forecast.'
+                    )
+                    self.assertEqual(row[6], '0.5')  # Precip (daily)
+                    self.assertEqual(row[7], '10.0')  # Precip % chance
+                    self.assertEqual(row[8], 'No Rain')  # Precip Type
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
     @patch('gap.models.crop_insight.CropInsightRequest.generate_report')
