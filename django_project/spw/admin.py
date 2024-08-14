@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 from django.contrib import admin, messages
 
-from spw.models import RModel, RModelOutput, RModelExecutionLog
+from spw.models import RModel, RModelOutput, RModelExecutionLog, SPWOutput
 from spw.tasks import start_plumber_process
 
 
@@ -42,3 +42,12 @@ class RModelExecutionLogAdmin(admin.ModelAdmin):
     """Admin page for RModelExecutionLog."""
 
     list_display = ('model', 'start_date_time', 'status')
+
+
+@admin.register(SPWOutput)
+class SPWOutputAdmin(admin.ModelAdmin):
+    """Admin page for SPWOutput."""
+
+    list_display = (
+        'spw_output_identifier', 'spw_tier', 'plant_now_string', 'description'
+    )

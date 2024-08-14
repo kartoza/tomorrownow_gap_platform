@@ -13,7 +13,8 @@ from spw.models import (
     RModel,
     RModelOutput,
     RModelExecutionLog,
-    RModelOutputType
+    RModelOutputType,
+    SPWOutput
 )
 
 
@@ -62,3 +63,21 @@ class RModelExecutionLogFactory(
     location_input = factory.LazyFunction(lambda: Point(0, 0))
     start_date_time = factory.Faker('date_time')
     end_date_time = factory.Faker('date_time')
+
+
+class SPWOutputFactory(
+    BaseFactory[SPWOutput],
+    metaclass=BaseMetaFactory[SPWOutput]
+):
+    """Factory class for SPWOutput."""
+
+    class Meta:  # noqa
+        model = SPWOutput
+
+    spw_output_identifier = factory.Sequence(
+        lambda n: f'identifier-{n}'
+    )
+    spw_tier = factory.Sequence(
+        lambda n: f'tier-{n}'
+    )
+    spw_plant_now = True

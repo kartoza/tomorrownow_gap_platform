@@ -4,13 +4,12 @@ Tomorrow Now GAP.
 
 .. note:: Models for SPW R code
 """
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.dispatch import receiver
-from django.db.models.signals import post_save, post_delete
-from django.contrib.gis.db import models as gis_models
 from django.conf import settings
-
+from django.contrib.auth import get_user_model
+from django.contrib.gis.db import models as gis_models
+from django.db import models
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -135,3 +134,34 @@ class RModelExecutionLog(models.Model):
     errors = models.TextField(
         blank=True, null=True
     )
+
+
+class SPWOutput(models.Model):
+    """Model that stores SPW output and it's description."""
+
+    spw_output_identifier = models.CharField(
+        unique=True,
+        max_length=100,
+        help_text=(
+            'e.g: Plant NOW Tier 1a. '
+            'Make sure the result this is coming from SPW R Model.'
+        )
+    )
+    spw_tier = models.CharField(
+        max_length=100,
+        help_text=(
+            'Tier of spw output. e.g: 1a.'
+        )
+    )
+    spw_plant_now = models.BooleanField()
+    description = models.TextField(
+        null=True, blank=True
+    )
+
+    @property
+    def plant_now_string(self):
+        """Return plant now string.
+
+        Plant Now or DO NOT PLANT
+        """
+        return 'Plant Now' if self.spw_plant_now else 'DO NOT PLANT'
