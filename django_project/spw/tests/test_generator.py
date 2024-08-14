@@ -150,7 +150,7 @@ class TestSPWFetchDataFunctions(TestCase):
             '07-20': {
                 'date': '2023-07-20',
                 'evapotranspirationSum': 10,
-                'precipitationProbability':0,
+                'precipitationProbability': 0,
                 'rainAccumulationSum': 5,
                 'temperatureMax': 0,
                 'temperatureMin': 0
