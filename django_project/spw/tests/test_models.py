@@ -34,10 +34,10 @@ class SPWOutputCRUDTest(TestCase):
         """Test update object."""
         obj = SPWOutputFactory()
         new_tier = "Tier 2"
-        obj.spw_tier = new_tier
+        obj.tier = new_tier
         obj.save()
         updated_obj = SPWOutput.objects.get(id=obj.id)
-        self.assertEqual(updated_obj.spw_tier, new_tier)
+        self.assertEqual(updated_obj.tier, new_tier)
 
     def test_delete_obj(self):
         """Test delete object."""

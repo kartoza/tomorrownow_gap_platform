@@ -49,5 +49,5 @@ class SPWOutputAdmin(admin.ModelAdmin):
     """Admin page for SPWOutput."""
 
     list_display = (
-        'spw_output_identifier', 'spw_tier', 'plant_now_string', 'description'
+        'identifier', 'tier', 'plant_now_string', 'description'
     )

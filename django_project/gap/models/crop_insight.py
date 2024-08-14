@@ -16,6 +16,7 @@ from django.utils import timezone
 from core.models.common import Definition
 from gap.models import Farm
 from gap.models.measurement import DatasetAttribute
+from spw.models import SPWOutput
 
 User = get_user_model()
 
@@ -317,10 +318,10 @@ class CropInsightRequest(models.Model):
     def generate_report(self):
         """Generate reports."""
         output = [
-            ['', '', '', '', ''],
+            ['', '', '', '', 'Suitable Planting Window Signal', ''],
             [
                 'Farm ID', 'Phone Number',
-                'Latitude', 'Longitude', 'Suitable Planting Window Signal'
+                'Latitude', 'Longitude', 'SPW Top Message', 'SPW description'
             ],
         ]
         for farm in self.farms.all():
@@ -330,19 +331,30 @@ class CropInsightRequest(models.Model):
                 farm.geometry.y,
                 farm.geometry.x
             ]
+
+            # next 2 is spw top message and spw description
             spw = FarmSuitablePlantingWindowSignal.objects.filter(
-                farm=farm
+                farm=farm,
+                generated_date=self.requested_date
+
             ).first()
             if spw:
-                row.append(spw.signal.replace(',', '-'))
+                try:
+                    spw_output = SPWOutput.objects.get(identifier=spw.signal)
+                    row += [
+                        spw_output.plant_now_string, spw_output.description
+                    ]
+                except SPWOutput.DoesNotExist:
+                    row += [spw.signal, '']
             else:
-                row.append('')
+                row += ['', '']
 
             first_columns_count = len(row)
 
             # Forecast
             forecast = FarmShortTermForecast.objects.filter(
-                farm=farm
+                farm=farm,
+                forecast_date=self.requested_date
             ).first()
 
             if forecast:

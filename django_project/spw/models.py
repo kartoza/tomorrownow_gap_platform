@@ -139,7 +139,7 @@ class RModelExecutionLog(models.Model):
 class SPWOutput(models.Model):
     """Model that stores SPW output and it's description."""
 
-    spw_output_identifier = models.CharField(
+    identifier = models.CharField(
         unique=True,
         max_length=100,
         help_text=(
@@ -147,13 +147,13 @@ class SPWOutput(models.Model):
             'Make sure the result this is coming from SPW R Model.'
         )
     )
-    spw_tier = models.CharField(
+    tier = models.CharField(
         max_length=100,
         help_text=(
             'Tier of spw output. e.g: 1a.'
         )
     )
-    spw_plant_now = models.BooleanField()
+    is_plant_now = models.BooleanField()
     description = models.TextField(
         null=True, blank=True
     )
@@ -164,4 +164,4 @@ class SPWOutput(models.Model):
 
         Plant Now or DO NOT PLANT
         """
-        return 'Plant Now' if self.spw_plant_now else 'DO NOT PLANT'
+        return 'Plant Now' if self.is_plant_now else 'DO NOT PLANT'

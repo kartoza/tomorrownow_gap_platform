@@ -74,10 +74,10 @@ class SPWOutputFactory(
     class Meta:  # noqa
         model = SPWOutput
 
-    spw_output_identifier = factory.Sequence(
+    identifier = factory.Sequence(
         lambda n: f'identifier-{n}'
     )
-    spw_tier = factory.Sequence(
+    tier = factory.Sequence(
         lambda n: f'tier-{n}'
     )
-    spw_plant_now = True
+    is_plant_now = True
