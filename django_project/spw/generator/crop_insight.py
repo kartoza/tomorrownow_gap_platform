@@ -14,9 +14,8 @@ from gap.models.crop_insight import (
     FarmShortTermForecastData
 )
 from gap.models.farm import Farm
-from gap.models.measurement import DatasetAttribute
 from spw.generator.main import (
-    calculate_from_point, VAR_MAPPING_REVERSE, _fetch_timelines_data_dataset
+    calculate_from_point, VAR_MAPPING_REVERSE, calculate_from_point_attrs
 )
 
 
@@ -41,7 +40,6 @@ class CropInsightFarmGenerator:
         output, historical_dict = calculate_from_point(
             self.farm.geometry
         )
-        dataset = _fetch_timelines_data_dataset()
 
         # Save SPW
         FarmSuitablePlantingWindowSignal.objects.update_or_create(
@@ -51,6 +49,7 @@ class CropInsightFarmGenerator:
                 'signal': output.data.goNoGo
             }
         )
+        attributes = calculate_from_point_attrs()
 
         # Save the short term forecast
         for k, v in historical_dict.items():
@@ -59,8 +58,7 @@ class CropInsightFarmGenerator:
             if self.tomorrow <= _date.date():
                 for attr_name, val in v.items():
                     try:
-                        attr = DatasetAttribute.objects.filter(
-                            dataset=dataset,
+                        attr = attributes.filter(
                             attribute__variable_name=VAR_MAPPING_REVERSE[
                                 attr_name
                             ]

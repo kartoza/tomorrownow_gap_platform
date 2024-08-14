@@ -161,4 +161,3 @@ class CropInsightRequestFactory(
 
     unique_id = factory.Faker('uuid4')
     requested_by = factory.SubFactory(UserF)
-    requested_date = factory.Faker('date')
