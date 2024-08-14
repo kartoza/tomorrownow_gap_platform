@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from core.models.common import Definition
 from gap.models import Farm
+from gap.models.lookup import RainfallClassification
 from gap.models.measurement import DatasetAttribute
 from spw.models import SPWOutput
 
@@ -373,7 +374,8 @@ class CropInsightRequest(models.Model):
                         if key not in output[0]:
                             output[0] += [key, '', '']
                             output[1] += [
-                                'Temp (min)', 'Temp (max)', 'Precip (daily)'
+                                'Precip (daily)', 'Precip % chance',
+                                'Precip Type'
                             ]
                         row += ['', '', '']
 
@@ -383,10 +385,20 @@ class CropInsightRequest(models.Model):
                         curr_idx = different.days * 3  # 3 columns per day
                         curr_idx += first_columns_count
                         var = data.dataset_attribute.source
-                        if var == 'temperatureMax':
+                        if var == 'rainAccumulationSum':
+                            curr_idx = curr_idx
+
+                            # we get the rain type
+                            _class = RainfallClassification.classify(
+                                data.value
+                            )
+                            if _class:
+                                row[curr_idx + 2] = _class.name
+
+                        elif var == 'precipitationProbability':
                             curr_idx += 1
-                        elif var == 'rainAccumulationSum':
-                            curr_idx += 2
+                        else:
+                            continue
                         row[curr_idx] = data.value
 
             output.append(row)
