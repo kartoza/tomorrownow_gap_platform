@@ -11,8 +11,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 from django.core.files.base import ContentFile
+from django.core.mail import EmailMessage
 from django.utils import timezone
 
+from core.group_email_receiver import crop_plan_receiver
 from core.models.common import Definition
 from gap.models import Farm
 from gap.models.measurement import DatasetAttribute
@@ -386,3 +388,32 @@ class CropInsightRequest(models.Model):
         content_file = ContentFile(csv_content)
         self.file.save(f'{self.unique_id}.csv', content_file)
         self.save()
+
+        # Send email
+        email = EmailMessage(
+            subject=(
+                "GAP - Crop Plan Generator Results - "
+                f"{self.requested_date.strftime('%A-%d-%m-%Y')}"
+            ),
+            body='''
+Hi everyone,
+
+
+Please find the attached file for the crop plan generator results.
+
+
+Best regards
+            ''',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[
+                email for email in
+                crop_plan_receiver().values_list('email', flat=True)
+                if email
+            ]
+        )
+        email.attach(
+            f'{self.unique_id}.csv',
+            self.file.open('rb').read(),
+            'text/csv'
+        )
+        email.send()
