@@ -31,7 +31,15 @@ def split_polygon_to_bbox(polygon: Polygon, size: int):
     while x < max_x:
         y = min_y
         while y < max_y:
-            bbox = Polygon.from_bbox((x, y, x + size, y + size))
+            new_x = x + size
+            new_y = y + size
+
+            if new_x > max_x:
+                new_x = max_x
+            if new_y > max_y:
+                new_y = max_y
+
+            bbox = Polygon.from_bbox((x, y, new_x, new_y))
             bbox.srid = used_srid
             if polygon.overlaps(bbox) or polygon.contains(bbox):
                 output.append(bbox)

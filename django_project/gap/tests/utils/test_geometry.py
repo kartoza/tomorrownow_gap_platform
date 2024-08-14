@@ -33,14 +33,18 @@ class GeometryTest(TestCase):
         geom = Polygon(
             [
                 (0.0, 0.0),
-                (100.0, 0.0),
-                (100.0, 100.0),
-                (0.0, 100.0),
+                (95.0, 0.0),
+                (95.0, 95.0),
+                (0.0, 95.0),
                 (0.0, 0.0)
             ], srid=3857
         )
         ouput = split_polygon_to_bbox(geom, 10)
         self.assertEqual(len(ouput), 100)
+        self.assertEqual(
+            [int(coord) for coord in ouput[len(ouput) - 1].boundary.extent],
+            [90, 90, 95, 95]
+        )
 
     def test_run_3857_hexagon(self):
         """Test create when run."""
