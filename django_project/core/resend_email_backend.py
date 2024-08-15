@@ -66,6 +66,8 @@ class ResendBackend(BaseEmailBackend):
         for attachment in email.attachments:
             if isinstance(attachment, tuple):
                 filename, content, mime_type = attachment
+                if isinstance(content, str):
+                    content = content.encode('utf-8')
                 encoded_content = base64.b64encode(content).decode("utf-8")
             else:
                 filename = attachment
