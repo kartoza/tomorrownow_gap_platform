@@ -11,11 +11,15 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 from django.core.files.base import ContentFile
+from django.core.mail import EmailMessage
 from django.utils import timezone
 
+from core.group_email_receiver import crop_plan_receiver
 from core.models.common import Definition
 from gap.models import Farm
+from gap.models.lookup import RainfallClassification
 from gap.models.measurement import DatasetAttribute
+from spw.models import SPWOutput
 
 User = get_user_model()
 
@@ -317,10 +321,10 @@ class CropInsightRequest(models.Model):
     def generate_report(self):
         """Generate reports."""
         output = [
-            ['', '', '', '', ''],
+            ['', '', '', '', 'Suitable Planting Window Signal', ''],
             [
                 'Farm ID', 'Phone Number',
-                'Latitude', 'Longitude', 'Suitable Planting Window Signal'
+                'Latitude', 'Longitude', 'SPW Top Message', 'SPW description'
             ],
         ]
         for farm in self.farms.all():
@@ -330,19 +334,30 @@ class CropInsightRequest(models.Model):
                 farm.geometry.y,
                 farm.geometry.x
             ]
+
+            # next 2 is spw top message and spw description
             spw = FarmSuitablePlantingWindowSignal.objects.filter(
-                farm=farm
+                farm=farm,
+                generated_date=self.requested_date
+
             ).first()
             if spw:
-                row.append(spw.signal.replace(',', '-'))
+                try:
+                    spw_output = SPWOutput.objects.get(identifier=spw.signal)
+                    row += [
+                        spw_output.plant_now_string, spw_output.description
+                    ]
+                except SPWOutput.DoesNotExist:
+                    row += [spw.signal, '']
             else:
-                row.append('')
+                row += ['', '']
 
             first_columns_count = len(row)
 
             # Forecast
             forecast = FarmShortTermForecast.objects.filter(
-                farm=farm
+                farm=farm,
+                forecast_date=self.requested_date
             ).first()
 
             if forecast:
@@ -361,7 +376,8 @@ class CropInsightRequest(models.Model):
                         if key not in output[0]:
                             output[0] += [key, '', '']
                             output[1] += [
-                                'Temp (min)', 'Temp (max)', 'Precip (daily)'
+                                'Precip (daily)', 'Precip % chance',
+                                'Precip Type'
                             ]
                         row += ['', '', '']
 
@@ -371,10 +387,20 @@ class CropInsightRequest(models.Model):
                         curr_idx = different.days * 3  # 3 columns per day
                         curr_idx += first_columns_count
                         var = data.dataset_attribute.source
-                        if var == 'temperatureMax':
+                        if var == 'rainAccumulationSum':
+                            curr_idx = curr_idx
+
+                            # we get the rain type
+                            _class = RainfallClassification.classify(
+                                data.value
+                            )
+                            if _class:
+                                row[curr_idx + 2] = _class.name
+
+                        elif var == 'precipitationProbability':
                             curr_idx += 1
-                        elif var == 'rainAccumulationSum':
-                            curr_idx += 2
+                        else:
+                            continue
                         row[curr_idx] = data.value
 
             output.append(row)
@@ -386,3 +412,32 @@ class CropInsightRequest(models.Model):
         content_file = ContentFile(csv_content)
         self.file.save(f'{self.unique_id}.csv', content_file)
         self.save()
+
+        # Send email
+        email = EmailMessage(
+            subject=(
+                "GAP - Crop Plan Generator Results - "
+                f"{self.requested_date.strftime('%A-%d-%m-%Y')}"
+            ),
+            body='''
+Hi everyone,
+
+
+Please find the attached file for the crop plan generator results.
+
+
+Best regards
+            ''',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[
+                email for email in
+                crop_plan_receiver().values_list('email', flat=True)
+                if email
+            ]
+        )
+        email.attach(
+            f'{self.unique_id}.csv',
+            self.file.open('rb').read(),
+            'text/csv'
+        )
+        email.send()

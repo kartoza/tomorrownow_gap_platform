@@ -1,0 +1,47 @@
+[
+  {
+    "model": "gap.rainfallclassification",
+    "pk": 1,
+    "fields": {
+      "name": "No Rain",
+      "min_value": null,
+      "max_value": 0.5
+    }
+  },
+  {
+    "model": "gap.rainfallclassification",
+    "pk": 2,
+    "fields": {
+      "name": "Minimal rain",
+      "min_value": 0.5,
+      "max_value": 3.0
+    }
+  },
+  {
+    "model": "gap.rainfallclassification",
+    "pk": 3,
+    "fields": {
+      "name": "Light rain",
+      "min_value": 3.0,
+      "max_value": 10.0
+    }
+  },
+  {
+    "model": "gap.rainfallclassification",
+    "pk": 4,
+    "fields": {
+      "name": "Moderate rain",
+      "min_value": 10.0,
+      "max_value": 20.0
+    }
+  },
+  {
+    "model": "gap.rainfallclassification",
+    "pk": 5,
+    "fields": {
+      "name": "Heavy reain",
+      "min_value": 20.0,
+      "max_value": null
+    }
+  }
+]

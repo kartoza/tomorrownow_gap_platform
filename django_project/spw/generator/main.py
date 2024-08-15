@@ -30,7 +30,8 @@ ATTRIBUTES = [
     'total_evapotranspiration_flux',
     'total_rainfall',
     'max_total_temperature',
-    'min_total_temperature'
+    'min_total_temperature',
+    'precipitation_probability'
 ]
 COLUMNS = [
     'month_day',
@@ -45,6 +46,7 @@ VAR_MAPPING = {
     'total_rainfall': 'rainAccumulationSum',
     'max_total_temperature': 'temperatureMax',
     'min_total_temperature': 'temperatureMin',
+    'precipitation_probability': 'precipitationProbability',
 }
 VAR_MAPPING_REVERSE = {v: k for k, v in VAR_MAPPING.items()}
 LTN_MAPPING = {
@@ -71,6 +73,14 @@ class SPWOutput:
         self.data = SimpleNamespace(**data)
 
 
+def calculate_from_point_attrs():
+    """Return attributes that are being used in calculate from point."""
+    return DatasetAttribute.objects.filter(
+        attribute__variable_name__in=ATTRIBUTES,
+        dataset__provider__name=TIO_PROVIDER
+    )
+
+
 def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
     """Calculate SPW from given point.
 
@@ -81,10 +91,6 @@ def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
     """
     TomorrowIODatasetReader.init_provider()
     location_input = DatasetReaderInput.from_point(point)
-    attrs = list(DatasetAttribute.objects.filter(
-        attribute__variable_name__in=ATTRIBUTES,
-        dataset__provider__name=TIO_PROVIDER
-    ))
     today = datetime.now(tz=pytz.UTC)
     start_dt = today - timedelta(days=37)
     end_dt = today + timedelta(days=14)
@@ -92,11 +98,25 @@ def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
         f'Calculate SPW for {point} at Today: {today} - '
         f'start_dt: {start_dt} - end_dt: {end_dt}'
     )
+
+    attrs = calculate_from_point_attrs()
+
+    # Attribute for /timelines
+    historical_attrs = list(
+        attrs.filter(dataset__type__type=CastType.FORECAST)
+    )
     historical_dict = _fetch_timelines_data(
-        location_input, attrs, start_dt, end_dt
+        location_input, historical_attrs, start_dt, end_dt
+    )
+
+    # Attribute for /historical/normals
+    ltn_attrs = list(
+        attrs.filter(
+            dataset__type__name=TomorrowIODatasetReader.LONG_TERM_NORMALS_TYPE
+        )
     )
     final_dict = _fetch_ltn_data(
-        location_input, attrs, start_dt, end_dt, historical_dict
+        location_input, ltn_attrs, start_dt, end_dt, historical_dict
     )
     rows = []
     for month_day, val in final_dict.items():
