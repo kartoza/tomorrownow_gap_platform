@@ -228,6 +228,16 @@ class MeasurementAPI(APIView):
         
         return response
 
+    def _read_data_as_ascii(self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> Response:
+        reader:BaseDatasetReader = list(reader_dict.values())[0]
+        reader.read()
+        data_value = reader.get_data_values2()
+        response = StreamingHttpResponse(data_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
+        response['Content-Disposition'] = 'attachment; filename="data.txt"'
+
+        return response
+
     def get_response_data(self) -> Response:
         """Read data from dataset.
 
@@ -260,6 +270,7 @@ class MeasurementAPI(APIView):
         ).filter(
             product_name__in=product_filter
         )
+        # TODO: validate empty dataset_attributes
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
             if da.dataset.id in dataset_dict:
@@ -278,6 +289,8 @@ class MeasurementAPI(APIView):
             return self._read_data_as_netcdf(dataset_dict, start_dt, end_dt)
         elif output_format == DatasetReaderOutputType.CSV:
             return self._read_data_as_csv(dataset_dict, start_dt, end_dt)
+        elif output_format == DatasetReaderOutputType.ASCII:
+            return self._read_data_as_ascii(dataset_dict, start_dt, end_dt)
 
         raise ValidationError({
             'Invalid Request Parameter': f'Incorrect output_type value: {output_format}'

@@ -218,6 +218,7 @@ class PointTimelineValues:
 class DatasetReaderValue2:
 
     date_variable = 'date'
+    chunk_size_in_bytes = 81920  # 80KB chunks
 
     def __init__(
             self, val: Union[xrDataset, List[PointTimelineValues]],
@@ -298,12 +299,12 @@ class DatasetReaderValue2:
             self.xr_dataset.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
             with open(tmp_file.name, 'rb') as f:
                 while True:
-                    chunk = f.read(8192)  # Read in 8KB chunks
+                    chunk = f.read(self.chunk_size_in_bytes)
                     if not chunk:
                         break
                     yield chunk
 
-    def to_csv_stream(self):
+    def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream."""
         dim_order = [self.date_variable]
         reordered_cols = [attribute.attribute.variable_name for attribute in self.attributes]
@@ -315,11 +316,14 @@ class DatasetReaderValue2:
             reordered_cols.insert(0, 'lat')
         df = self.xr_dataset.to_dataframe(dim_order=dim_order)
         df_reordered = df[reordered_cols]
-        for chunk in df_reordered.to_csv(index=True, header=True, sep=',', mode='a', lineterminator='\n', chunksize=1):
-            yield chunk
-
-    def to_ascii(self):
-        pass
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=True, delete_on_close=False) as tmp_file:
+            df_reordered.to_csv(tmp_file.name, index=True, header=True, sep=separator, mode='w', lineterminator='\n', float_format='%.4f')
+            with open(tmp_file.name, 'rb') as f:
+                while True:
+                    chunk = f.read(self.chunk_size_in_bytes)
+                    if not chunk:
+                        break
+                    yield chunk
 
 
 class DatasetReaderValue:
