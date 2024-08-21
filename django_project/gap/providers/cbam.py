@@ -26,13 +26,50 @@ from gap.utils.reader import (
     DatasetReaderInput,
     DatasetTimelineValue,
     DatasetReaderValue,
-    LocationDatasetReaderValue
+    LocationDatasetReaderValue,
+    DatasetReaderValue2,
+    PointTimelineValues
 )
 from gap.utils.netcdf import (
     daterange_inc,
     BaseNetCDFReader
 )
 from gap.utils.zarr import BaseZarrReader
+
+
+class CBAMReaderValue(DatasetReaderValue2):
+    """Class that convert CBAM Dataset to TimelineValues."""
+
+    date_variable = 'date'
+
+    def __init__(
+            self, val: xrDataset | List[PointTimelineValues],
+            location_input: DatasetReaderInput,
+            attributes: List[DatasetAttribute]) -> None:
+        super().__init__(val, location_input, attributes)
+
+    def _xr_dataset_to_dict(self) -> dict:
+        if self.is_empty():
+            return {
+                'geometry': json.loads(self.location_input.point.json),
+                'data': []
+            }
+        results:List[DatasetTimelineValue] = []
+        for dt_idx, dt in enumerate(self.xr_dataset[self.date_variable].values):
+            value_data = {}
+            for attribute in self.attributes:
+                v = self.xr_dataset[attribute.source].values[dt_idx]
+                value_data[attribute.attribute.variable_name] = (
+                    v if not np.isnan(v) else None
+                )
+            results.append(DatasetTimelineValue(
+                dt,
+                value_data
+            ))
+        return {
+            'geometry': json.loads(self.location_input.point.json),
+            'data': [result.to_dict() for result in results]
+        }
 
 
 class CBAMNetCDFReader(BaseNetCDFReader):
@@ -166,6 +203,18 @@ class CBAMNetCDFReader(BaseNetCDFReader):
                 val, locations, lat_dim, lon_dim
             )
         return self._get_data_values_from_single_location(locations[0], val)
+
+    def get_data_values2(self) -> DatasetReaderValue2:
+        """Fetch data values from dataset.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        val = None
+        if len(self.xrDatasets) > 0:
+            val = xr.combine_nested(
+                self.xrDatasets, concat_dim=[self.date_variable])
+        return CBAMReaderValue(val, self.location_input, self.attributes)
 
     def _read_variables_by_point(
             self, dataset: xrDataset, variables: List[str],
@@ -379,3 +428,14 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
         if val is None:
             return
         self.xrDatasets.append(val)
+
+    def get_data_values2(self) -> DatasetReaderValue2:
+        """Fetch data values from dataset.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        val = None
+        if len(self.xrDatasets) > 0:
+            val = self.xrDatasets[0]
+        return CBAMReaderValue(val, self.location_input, self.attributes)

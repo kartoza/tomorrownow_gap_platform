@@ -14,6 +14,8 @@ from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
+from django.http import StreamingHttpResponse
 from django.db.models.functions import Lower
 from django.contrib.gis.geos import (
     GEOSGeometry,
@@ -30,7 +32,8 @@ from gap.utils.reader import (
     LocationInputType,
     DatasetReaderInput,
     DatasetReaderValue,
-    BaseDatasetReader
+    BaseDatasetReader,
+    DatasetReaderOutputType
 )
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
@@ -68,6 +71,18 @@ class MeasurementAPI(APIView):
                 'observations'
             ],
             default='historical_reanalysis'
+        ),
+        openapi.Parameter(
+            'output_type', openapi.IN_QUERY,
+            description='Returned format',
+            type=openapi.TYPE_STRING,
+            enum=[
+                DatasetReaderOutputType.JSON,
+                DatasetReaderOutputType.NETCDF,
+                DatasetReaderOutputType.CSV,
+                DatasetReaderOutputType.ASCII
+            ],
+            default=DatasetReaderOutputType.JSON
         ),
     ]
 
@@ -142,6 +157,16 @@ class MeasurementAPI(APIView):
             return ['historical_reanalysis']
         return [product.lower()]
 
+    def _get_format_filter(self):
+        """Get format filter in the request parameters.
+
+        :return: List of product type lowercase
+        :rtype: List[str]
+        """
+        product = self.request.GET.get(
+            'output_type', DatasetReaderOutputType.JSON)
+        return product.lower()
+
     def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
         """Read data from given reader.
 
@@ -153,7 +178,48 @@ class MeasurementAPI(APIView):
         reader.read()
         return reader.get_data_values()
 
-    def get_response_data(self):
+    def _read_data_as_json(
+            self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> DatasetReaderValue:
+        """Read data from given reader.
+
+        :param reader: Dataset Reader
+        :type reader: BaseDatasetReader
+        :return: data value
+        :rtype: DatasetReaderValue
+        """
+        data = {
+            'metadata': {
+                'start_date': start_dt.isoformat(timespec='seconds'),
+                'end_date': end_dt.isoformat(timespec='seconds'),
+                'dataset': []
+            },
+            'results': []
+        }
+        for reader in reader_dict.values():
+            reader.read()
+            values = reader.get_data_values2().to_json()
+            if values:
+                data['metadata']['dataset'].append({
+                    'provider': reader.dataset.provider.name,
+                    'attributes': reader.get_attributes_metadata()
+                })
+                data['results'].append(values)
+        return data
+
+    def _read_data_as_netcdf(
+            self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> DatasetReaderValue:
+        reader:BaseDatasetReader = list(reader_dict.values())[0]
+        reader.read()
+        data_value = reader.get_data_values2()
+        response = StreamingHttpResponse(data_value.to_netcdf_stream(), content_type='application/x-netcdf')
+        response['Content-Disposition'] = 'attachment; filename="data.nc"'
+
+        return response
+
+
+    def get_response_data(self) -> Response:
         """Read data from dataset.
 
         :return: Dictionary of metadata and data
@@ -169,9 +235,12 @@ class MeasurementAPI(APIView):
             self._get_date_filter('end_date'),
             time.max, tzinfo=pytz.UTC
         )
+        output_format = self._get_format_filter()
         data = {}
         if location is None:
             return data
+        # TODO: validate if json is only available for single location filter
+        # TODO: validate minimum/maximum area filter?
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
             dataset__is_internal_use=False
@@ -190,23 +259,18 @@ class MeasurementAPI(APIView):
                 reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
-        data = {
-            'metadata': {
-                'start_date': start_dt.isoformat(timespec='seconds'),
-                'end_date': end_dt.isoformat(timespec='seconds'),
-                'dataset': []
-            },
-            'results': []
-        }
-        for reader in dataset_dict.values():
-            values = self._read_data(reader).to_dict()
-            if values:
-                data['metadata']['dataset'].append({
-                    'provider': reader.dataset.provider.name,
-                    'attributes': reader.get_attributes_metadata()
-                })
-                data['results'].append(values)
-        return data
+        # TODO: validate if there are multiple dataset but the output type is not json
+        if output_format == DatasetReaderOutputType.JSON:
+            return Response(
+                status=200,
+                data=self._read_data_as_json(dataset_dict, start_dt, end_dt)
+            )
+        elif output_format == DatasetReaderOutputType.NETCDF:
+            return self._read_data_as_netcdf(dataset_dict, start_dt, end_dt)
+
+        raise ValidationError({
+            'Invalid Request Parameter': f'Incorrect output_type value: {output_format}'
+        })
 
     @swagger_auto_schema(
         operation_id='get-measurement',
@@ -242,10 +306,7 @@ class MeasurementAPI(APIView):
     )
     def get(self, request, *args, **kwargs):
         """Fetch measurement data by attributes and date range filter."""
-        return Response(
-            status=200,
-            data=self.get_response_data()
-        )
+        return self.get_response_data()
 
     @swagger_auto_schema(
         operation_id='get-measurement-by-geom',
@@ -272,7 +333,4 @@ class MeasurementAPI(APIView):
     )
     def post(self, request, *args, **kwargs):
         """Fetch measurement data by polygon/points."""
-        return Response(
-            status=200,
-            data=self.get_response_data()
-        )
+        return self.get_response_data()

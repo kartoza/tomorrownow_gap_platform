@@ -10,6 +10,9 @@ from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
+import netCDF4 as nc
+import tempfile
+from xarray.core.dataset import Dataset as xrDataset
 from django.contrib.gis.geos import (
     Point, MultiPolygon, GeometryCollection, MultiPoint
 )
@@ -66,6 +69,91 @@ class DatasetVariable:
         return attr
 
 
+class LocationInputType:
+    """Class for data input type."""
+
+    POINT = 'point'
+    BBOX = 'bbox'
+    POLYGON = 'polygon'
+    LIST_OF_POINT = 'list_of_point'
+
+
+class DatasetReaderInput:
+    """Class to store the dataset reader input.
+
+    Input type: Point, bbox, polygon, list of point
+    """
+
+    def __init__(self, geom_collection: GeometryCollection, type: str):
+        """Initialize DatasetReaderInput class."""
+        self.geom_collection = geom_collection
+        self.type = type
+
+    @property
+    def point(self) -> Point:
+        """Get single point from input."""
+        if self.type != LocationInputType.POINT:
+            raise TypeError('Location input type is not point!')
+        return Point(
+            x=self.geom_collection[0].x,
+            y=self.geom_collection[0].y, srid=4326)
+
+    @property
+    def polygon(self) -> MultiPolygon:
+        """Get MultiPolygon object from input."""
+        if self.type != LocationInputType.POLYGON:
+            raise TypeError('Location input type is not polygon!')
+        return self.geom_collection
+
+    @property
+    def points(self) -> List[Point]:
+        """Get list of point from input."""
+        if self.type not in [
+            LocationInputType.BBOX, LocationInputType.LIST_OF_POINT
+        ]:
+            raise TypeError('Location input type is not bbox/points!')
+        return [
+            Point(x=point.x, y=point.y, srid=4326) for
+            point in self.geom_collection
+        ]
+
+    @classmethod
+    def from_point(cls, point: Point):
+        """Create input from single point.
+
+        :param point: single point
+        :type point: Point
+        :return: DatasetReaderInput with POINT type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPoint([point]), LocationInputType.POINT)
+
+    @classmethod
+    def from_bbox(cls, bbox_list: List[float]):
+        """Create input from bbox (xmin, ymin, xmax, ymax).
+
+        :param bbox_list: (xmin, ymin, xmax, ymax)
+        :type bbox_list: List[float]
+        :return: DatasetReaderInput with BBOX type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPoint([
+                Point(x=bbox_list[0], y=bbox_list[1], srid=4326),
+                Point(x=bbox_list[2], y=bbox_list[3], srid=4326)
+            ]), LocationInputType.BBOX)
+
+
+class DatasetReaderOutputType:
+    """Dataset Output Type Format."""
+
+    JSON = 'json'
+    NETCDF = 'netcdf'
+    CSV = 'csv'
+    ASCII = 'ascii'
+
+
 class DatasetTimelineValue:
     """Class representing data value for given datetime."""
 
@@ -120,6 +208,79 @@ class DatasetTimelineValue:
         }
 
 
+class PointTimelineValues:
+
+    def __init__(self, location: Point, values: List[DatasetTimelineValue]) -> None:
+        self.location = location
+        self.values = values
+
+
+class DatasetReaderValue2:
+
+    def __init__(
+            self, val: Union[xrDataset, List[PointTimelineValues]],
+            location_input: DatasetReaderInput,
+            attributes: List[DatasetAttribute]) -> None:
+        self._val = val
+        self._is_xr_dataset = isinstance(val, xrDataset)
+        self.location_input = location_input
+        self.attributes = attributes
+
+    @property
+    def xr_dataset(self) -> xrDataset:
+        return self._val
+
+    @property
+    def values(self) -> List[PointTimelineValues]:
+        return self._val
+
+    def is_empty(self) -> bool:
+        if self._is_xr_dataset:
+            return self._val is None
+        return len(self.values) == 0
+
+    def _to_dict(self) -> dict:
+        """Convert into dict.
+
+        :return: Dictionary of metadata and data
+        :rtype: dict
+        """
+        if self.location_input is None or len(self.values) == 0:
+            return {}
+
+        return {
+            'geometry': json.loads(self.location_input.point.json),
+            'data': [result.to_dict() for result in self.values[0].values]
+        }
+
+    def _xr_dataset_to_dict(self) -> dict:
+        pass
+
+    def to_json(self):
+        if self.location_input.type != LocationInputType.POINT:
+            raise TypeError('Location input type is not point!')
+        if self._is_xr_dataset:
+            return self._xr_dataset_to_dict()
+        return self._to_dict()
+
+    def to_netcdf_stream(self):
+        with tempfile.NamedTemporaryFile(suffix=".nc", delete=True, delete_on_close=False) as tmp_file:
+            self.xr_dataset.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
+            print(f'tmp_file.name {tmp_file.name}')
+            with open(tmp_file.name, 'rb') as f:
+                while True:
+                    chunk = f.read(8192)  # Read in 8KB chunks
+                    if not chunk:
+                        break
+                    yield chunk
+
+    def to_csv(self):
+        pass
+
+    def to_ascii(self):
+        pass
+
+
 class DatasetReaderValue:
     """Class representing all values from reader."""
 
@@ -172,89 +333,14 @@ class LocationDatasetReaderValue(DatasetReaderValue):
         return location_data
 
 
-class LocationInputType:
-    """Class for data input type."""
-
-    POINT = 'point'
-    BBOX = 'bbox'
-    POLYGON = 'polygon'
-    LIST_OF_POINT = 'list_of_point'
-
-
-class DatasetReaderInput:
-    """Class to store the dataset reader input.
-
-    Input type: Point, bbox, polygon, list of point
-    """
-
-    def __init__(self, geom_collection: GeometryCollection, type: str):
-        """Initialize DatasetReaderInput class."""
-        self.geom_collection = geom_collection
-        self.type = type
-
-    @property
-    def point(self) -> Point:
-        """Get single point from input."""
-        if self.type != LocationInputType.POINT:
-            raise TypeError('Location input type is not bbox/point!')
-        return Point(
-            x=self.geom_collection[0].x,
-            y=self.geom_collection[0].y, srid=4326)
-
-    @property
-    def polygon(self) -> MultiPolygon:
-        """Get MultiPolygon object from input."""
-        if self.type != LocationInputType.POLYGON:
-            raise TypeError('Location input type is not polygon!')
-        return self.geom_collection
-
-    @property
-    def points(self) -> List[Point]:
-        """Get list of point from input."""
-        if self.type not in [
-            LocationInputType.BBOX, LocationInputType.LIST_OF_POINT
-        ]:
-            raise TypeError('Location input type is not bbox/point!')
-        return [
-            Point(x=point.x, y=point.y, srid=4326) for
-            point in self.geom_collection
-        ]
-
-    @classmethod
-    def from_point(cls, point: Point):
-        """Create input from single point.
-
-        :param point: single point
-        :type point: Point
-        :return: DatasetReaderInput with POINT type
-        :rtype: DatasetReaderInput
-        """
-        return DatasetReaderInput(
-            MultiPoint([point]), LocationInputType.POINT)
-
-    @classmethod
-    def from_bbox(cls, bbox_list: List[float]):
-        """Create input from bbox (xmin, ymin, xmax, ymax).
-
-        :param bbox_list: (xmin, ymin, xmax, ymax)
-        :type bbox_list: List[float]
-        :return: DatasetReaderInput with BBOX type
-        :rtype: DatasetReaderInput
-        """
-        return DatasetReaderInput(
-            MultiPoint([
-                Point(x=bbox_list[0], y=bbox_list[1], srid=4326),
-                Point(x=bbox_list[2], y=bbox_list[3], srid=4326)
-            ]), LocationInputType.BBOX)
-
-
 class BaseDatasetReader:
     """Base class for Dataset Reader."""
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput,
-            start_date: datetime, end_date: datetime) -> None:
+            start_date: datetime, end_date: datetime,
+            output_type=DatasetReaderOutputType.JSON) -> None:
         """Initialize BaseDatasetReader class.
 
         :param dataset: Dataset for reading
@@ -267,12 +353,15 @@ class BaseDatasetReader:
         :type start_date: datetime
         :param end_date: End date time filter
         :type end_date: datetime
+        :param output_type: Output type
+        :type output_type: str
         """
         self.dataset = dataset
         self.attributes = attributes
         self.location_input = location_input
         self.start_date = start_date
         self.end_date = end_date
+        self.output_type = output_type
 
     def add_attribute(self, attribute: DatasetAttribute):
         """Add a new attribuute to be read.
@@ -313,6 +402,14 @@ class BaseDatasetReader:
             )
 
     def get_data_values(self) -> DatasetReaderValue:
+        """Fetch data values from dataset.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        pass
+
+    def get_data_values2(self) -> DatasetReaderValue2:
         """Fetch data values from dataset.
 
         :return: Data Value.
