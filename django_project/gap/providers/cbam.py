@@ -49,6 +49,12 @@ class CBAMReaderValue(DatasetReaderValue2):
         super().__init__(val, location_input, attributes)
 
     def _xr_dataset_to_dict(self) -> dict:
+        """Convert xArray Dataset to dictionary.
+
+        Implementation depends on provider.
+        :return: data dictionary
+        :rtype: dict
+        """
         if self.is_empty():
             return {
                 'geometry': json.loads(self.location_input.point.json),
@@ -58,8 +64,9 @@ class CBAMReaderValue(DatasetReaderValue2):
         for dt_idx, dt in enumerate(self.xr_dataset[self.date_variable].values):
             value_data = {}
             for attribute in self.attributes:
-                v = self.xr_dataset[attribute.source].values[dt_idx]
-                value_data[attribute.attribute.variable_name] = (
+                var_name = attribute.attribute.variable_name
+                v = self.xr_dataset[var_name].values[dt_idx]
+                value_data[var_name] = (
                     v if not np.isnan(v) else None
                 )
             results.append(DatasetTimelineValue(

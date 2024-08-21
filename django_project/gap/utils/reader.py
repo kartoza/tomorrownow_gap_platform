@@ -217,6 +217,8 @@ class PointTimelineValues:
 
 class DatasetReaderValue2:
 
+    date_variable = 'date'
+
     def __init__(
             self, val: Union[xrDataset, List[PointTimelineValues]],
             location_input: DatasetReaderInput,
@@ -225,6 +227,16 @@ class DatasetReaderValue2:
         self._is_xr_dataset = isinstance(val, xrDataset)
         self.location_input = location_input
         self.attributes = attributes
+        self._post_init()
+
+    def _post_init(self):
+        """Rename source variable into attribute name."""
+        if not self._is_xr_dataset:
+            return
+        renamed_dict = {}
+        for attr in self.attributes:
+            renamed_dict[attr.source] = attr.attribute.variable_name
+        self._val = self._val.rename(renamed_dict)
 
     @property
     def xr_dataset(self) -> xrDataset:
@@ -235,6 +247,11 @@ class DatasetReaderValue2:
         return self._val
 
     def is_empty(self) -> bool:
+        """Check if value is empty.
+
+        :return: True if empty dataset or empty list
+        :rtype: bool
+        """
         if self._is_xr_dataset:
             return self._val is None
         return len(self.values) == 0
@@ -254,9 +271,21 @@ class DatasetReaderValue2:
         }
 
     def _xr_dataset_to_dict(self) -> dict:
-        pass
+        """Convert xArray Dataset to dictionary.
 
-    def to_json(self):
+        Implementation depends on provider.
+        :return: data dictionary
+        :rtype: dict
+        """
+        return {}
+
+    def to_json(self) -> dict:
+        """Convert result to json.
+
+        :raises TypeError: if location input is not a Point
+        :return: data dictionary
+        :rtype: dict
+        """
         if self.location_input.type != LocationInputType.POINT:
             raise TypeError('Location input type is not point!')
         if self._is_xr_dataset:
@@ -264,9 +293,9 @@ class DatasetReaderValue2:
         return self._to_dict()
 
     def to_netcdf_stream(self):
+        """Generate netcdf stream."""
         with tempfile.NamedTemporaryFile(suffix=".nc", delete=True, delete_on_close=False) as tmp_file:
             self.xr_dataset.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
-            print(f'tmp_file.name {tmp_file.name}')
             with open(tmp_file.name, 'rb') as f:
                 while True:
                     chunk = f.read(8192)  # Read in 8KB chunks
@@ -274,8 +303,20 @@ class DatasetReaderValue2:
                         break
                     yield chunk
 
-    def to_csv(self):
-        pass
+    def to_csv_stream(self):
+        """Generate csv bytes stream."""
+        dim_order = [self.date_variable]
+        reordered_cols = [attribute.attribute.variable_name for attribute in self.attributes]
+        if 'lat' in self.xr_dataset.dims:
+            dim_order.append('lat')
+            dim_order.append('lon')
+        else:
+            reordered_cols.insert(0, 'lon')
+            reordered_cols.insert(0, 'lat')
+        df = self.xr_dataset.to_dataframe(dim_order=dim_order)
+        df_reordered = df[reordered_cols]
+        for chunk in df_reordered.to_csv(index=True, header=True, sep=',', mode='a', lineterminator='\n', chunksize=1):
+            yield chunk
 
     def to_ascii(self):
         pass
