@@ -321,18 +321,17 @@ class CropInsightRequest(models.Model):
     def generate_report(self):
         """Generate reports."""
         output = [
-            ['', '', '', '', 'Suitable Planting Window Signal', ''],
             [
-                'Farm ID', 'Phone Number',
-                'Latitude', 'Longitude', 'SPW Top Message', 'SPW description'
+                'farmID', 'phoneNumber',
+                'latitude', 'longitude', 'SPWTopMessage', 'SPWDescription'
             ],
         ]
         for farm in self.farms.all():
             row = [
                 farm.unique_id,
                 farm.phone_number,
-                farm.geometry.y,
-                farm.geometry.x
+                round(farm.geometry.y, 4),
+                round(farm.geometry.x, 4)
             ]
 
             # next 2 is spw top message and spw description
@@ -372,12 +371,13 @@ class CropInsightRequest(models.Model):
 
                     # Create the header
                     for idx in range(different.days + 1):
-                        key = f'Day {idx + 1}'
-                        if key not in output[0]:
-                            output[0] += [key, '', '']
-                            output[1] += [
-                                'Precip (daily)', 'Precip % chance',
-                                'Precip Type'
+                        day_n = idx + 1
+                        header_1 = f'day{day_n}_mm'
+                        header_2 = f'day{day_n}_Chance'
+                        header_3 = f'day{day_n}_Type'
+                        if header_1 not in output[0]:
+                            output[0] += [
+                                header_1, header_2, header_3
                             ]
                         row += ['', '', '']
 

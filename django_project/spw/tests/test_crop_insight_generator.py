@@ -9,6 +9,7 @@ import csv
 from datetime import date, timedelta
 from unittest.mock import patch
 
+from django.contrib.gis.geos import Point
 from django.test import TestCase
 
 from core.factories import UserF
@@ -40,11 +41,28 @@ class TestCropInsightGenerator(TestCase):
         '9.rainfall_classification.json',
         '1.spw_output.json'
     ]
+    csv_headers = [
+        'farmID', 'phoneNumber', 'latitude', 'longitude', 'SPWTopMessage',
+        'SPWDescription',
+        'day1_mm', 'day1_Chance', 'day1_Type',
+        'day2_mm', 'day2_Chance', 'day2_Type',
+        'day3_mm', 'day3_Chance', 'day3_Type',
+        'day4_mm', 'day4_Chance', 'day4_Type',
+        'day5_mm', 'day5_Chance', 'day5_Type',
+        'day6_mm', 'day6_Chance', 'day6_Type',
+        'day7_mm', 'day7_Chance', 'day7_Type',
+        'day8_mm', 'day8_Chance', 'day8_Type',
+        'day9_mm', 'day9_Chance', 'day9_Type'
+    ]
 
     def setUp(self):
         """Set the test class."""
-        self.farm = FarmFactory.create()
-        self.farm_2 = FarmFactory.create()
+        self.farm = FarmFactory.create(
+            geometry=Point(11.1111111, 10.111111111)
+        )
+        self.farm_2 = FarmFactory.create(
+            geometry=Point(22.22222222, 100.111111111)
+        )
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
         self.superuser = UserF.create(
@@ -167,16 +185,20 @@ class TestCropInsightGenerator(TestCase):
         self.request.refresh_from_db()
         with self.request.file.open(mode='r') as csv_file:
             csv_reader = csv.reader(csv_file)
-            idx = 0
+            row_num = 1
             for row in csv_reader:
-                idx += 1
-                if idx == 3:
+                # Header
+                if row_num == 1:
+                    self.assertEqual(row, self.csv_headers)
+
+                # First row
+                elif row_num == 2:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm.unique_id)
                     # Phone Number
                     self.assertEqual(row[1], self.farm.phone_number)
-                    self.assertEqual(row[2], '0.0')  # Latitude
-                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[2], '10.1111')  # Latitude
+                    self.assertEqual(row[3], '11.1111')  # Longitude
                     self.assertEqual(row[4], 'Plant Now')
                     self.assertEqual(
                         row[5],
@@ -186,13 +208,15 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[6], '10.0')  # Precip (daily)
                     self.assertEqual(row[7], '50.0')  # Precip % chance
                     self.assertEqual(row[8], 'Light rain')  # Precip Type
-                if idx == 4:
+
+                # Second row
+                elif row_num == 3:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm_2.unique_id)
                     # Phone Number
                     self.assertEqual(row[1], self.farm_2.phone_number)
-                    self.assertEqual(row[2], '0.0')  # Latitude
-                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[2], '100.1111')  # Latitude
+                    self.assertEqual(row[3], '22.2222')  # Longitude
                     self.assertEqual(row[4], 'DO NOT PLANT')
                     self.assertEqual(
                         row[5], 'Wait for more positive forecast.'
@@ -200,6 +224,7 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[6], '0.5')  # Precip (daily)
                     self.assertEqual(row[7], '10.0')  # Precip % chance
                     self.assertEqual(row[8], 'No Rain')  # Precip Type
+                row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
     @patch('gap.models.crop_insight.CropInsightRequest.generate_report')
