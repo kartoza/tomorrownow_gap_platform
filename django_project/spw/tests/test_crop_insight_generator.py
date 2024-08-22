@@ -40,6 +40,7 @@ ltn_returns = {
 def always_retrying(
         location_input, attrs, start_dt, end_dt, historical_dict: dict
 ):
+    """Mock the function that always retry."""
     raise Exception('Test exception')
 
 
@@ -51,6 +52,7 @@ retry = {
 def retrying_2_times(
         location_input, attrs, start_dt, end_dt, historical_dict: dict
 ):
+    """Mock the function just retry 2 times."""
     if retry['count'] <= 2:
         retry['count'] += 1
         raise Exception('Test exception')

@@ -41,7 +41,7 @@ class CropInsightFarmGenerator:
         generated = False
         retry = 1
         while not generated:
-            print(f'Generating Farm SPW...')
+            print('Generating Farm SPW...')
             try:
                 output, historical_dict = calculate_from_point(
                     self.farm.geometry
