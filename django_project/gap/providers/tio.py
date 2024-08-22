@@ -5,11 +5,12 @@ Tomorrow Now GAP.
 .. note:: Tomorrow.io Data Reader
 """
 
-import os
 import json
 import logging
-from typing import List
+import os
 from datetime import datetime, timedelta
+from typing import List
+
 import pytz
 import requests
 from django.contrib.gis.geos import Point
@@ -55,6 +56,13 @@ TIO_VARIABLES = {
         'Temperature Min',
         '',
         '°C', 'min_total_temperature'
+    )
+}
+TIO_SHORT_TERM_FORCAST_VARIABLES = {
+    'precipitationProbability': DatasetVariable(
+        'Precipitation Probability',
+        '',
+        '%', 'precipitation_probability'
     )
 }
 
@@ -151,11 +159,21 @@ class TomorrowIODatasetReader(BaseDatasetReader):
                 source_unit=attr.unit
             )
 
+        # For shorterm forecast
+        for key, val in TIO_SHORT_TERM_FORCAST_VARIABLES.items():
+            attr = val.get_gap_attribute()
+            DatasetAttribute.objects.get_or_create(
+                dataset=ds_forecast,
+                attribute=attr,
+                source=key,
+                source_unit=attr.unit
+            )
+
     def _is_ltn_request(self):
         """Check if the request is for Long Term Normal (LTN) request."""
         return (
-            self.dataset.type.type == CastType.HISTORICAL and
-            self.dataset.type.name == self.LONG_TERM_NORMALS_TYPE
+                self.dataset.type.type == CastType.HISTORICAL and
+                self.dataset.type.name == self.LONG_TERM_NORMALS_TYPE
         )
 
     def _get_api_key(self):

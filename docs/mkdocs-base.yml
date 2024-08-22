@@ -37,21 +37,21 @@ markdown_extensions:
       emoji_index: !!python/name:materialx.emoji.twemoji
 
 nav:
-  - Home:
-      - index.md
-      - quick_installation.md
-  - Administrators:
-      - administrator/index.md
-			- Guide:
-							- administrator/guide/index.md
-			- Manual:
-							- administrator/manual/index.md
-							- Django Administration: administrator/manual/django-admin.md
-							- Django Tables: administrator/manual/django-table.md
-							- Add Record in Table: administrator/manual/django-add-record.md
-							- Edit Record in Table: administrator/manual/django-change-record.md
-	- Developers:
-				- developer/index.md
-				- Documentation:
-						- "Data model": developer/data-model.md
-						- "Hyrax Configuration": developer/hyrax-config.md
+    - Home:
+        - index.md
+        - quick_installation.md
+    - Administrators:
+        - administrator/index.md
+        - Guide:
+            - administrator/guide/index.md
+            - Access Admin Panel: administrator/guide/access-admin-panel.md
+        - Manual:
+            - administrator/manual/index.md
+            - Django Administration: administrator/manual/django-admin.md
+            - Django Tables: administrator/manual/django-table.md
+            - Add Record in Table: administrator/manual/django-add-record.md
+            - Edit Record in Table: administrator/manual/django-change-record.md
+    - Developers:
+        - developer/index.md
+        - Data model: developer/data-model.md
+        - Hyrax Configuration: developer/hyrax-config.md

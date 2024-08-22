@@ -9,6 +9,7 @@ from gap.models.common import *
 from gap.models.dataset import *
 from gap.models.farm import *
 from gap.models.ingestor import *
+from gap.models.lookup import *
 from gap.models.measurement import *
 from gap.models.crop_insight import *
 from gap.models.preferences import *

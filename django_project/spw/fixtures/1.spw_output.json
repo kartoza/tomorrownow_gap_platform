@@ -1,0 +1,82 @@
+[
+  {
+    "model": "spw.spwoutput",
+    "pk": 1,
+    "fields": {
+      "identifier": "Plant NOW Tier 1a",
+      "tier": "1a",
+      "is_plant_now": true,
+      "description": "Current forecast and historical rains indicate plant now."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 2,
+    "fields": {
+      "identifier": "Plant NOW Tier 1b",
+      "tier": "1b",
+      "is_plant_now": true,
+      "description": "Both current forecast historical rains have good signal to plant."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 3,
+    "fields": {
+      "identifier": "Plant NOW Tier 1c",
+      "tier": "1c",
+      "is_plant_now": true,
+      "description": "Historical rains signal time to plant and forecast has positive signal."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 4,
+    "fields": {
+      "identifier": "Plant NOW Tier 2",
+      "tier": "2",
+      "is_plant_now": true,
+      "description": "Weak planting signal - could plant some of your land."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 5,
+    "fields": {
+      "identifier": "Do NOT plant, WATCH Tier 3a",
+      "tier": "3a",
+      "is_plant_now": false,
+      "description": "Watch -  there are some signals looking more positive for rains arrival."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 6,
+    "fields": {
+      "identifier": "Do NOT plant, WATCH Tier 3b",
+      "tier": "3b",
+      "is_plant_now": false,
+      "description": "Watch - some early signals that rains may be coming soon."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 7,
+    "fields": {
+      "identifier": "Do NOT plant, out of season rain Tier 4a",
+      "tier": "4a",
+      "is_plant_now": false,
+      "description": "Rain in forecast but history would suggest not yet time to plant."
+    }
+  },
+  {
+    "model": "spw.spwoutput",
+    "pk": 8,
+    "fields": {
+      "identifier": "Do NOT plant, DRY Tier 4b",
+      "tier": "4b",
+      "is_plant_now": false,
+      "description": "Wait for more positive forecast."
+    }
+  }
+]

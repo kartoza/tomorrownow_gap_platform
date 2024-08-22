@@ -7,5 +7,6 @@ Tomorrow Now GAP.
 
 from .crop_insight import *
 from .farm import *
+from .lookup import *
 from .main import *
 from .preferences import *
