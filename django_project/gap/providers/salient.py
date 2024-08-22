@@ -12,13 +12,15 @@ from django.contrib.gis.geos import Point
 import numpy as np
 import regionmask
 import xarray as xr
+import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
 from shapely.geometry import shape
 
 from gap.models import (
     Dataset,
     DatasetAttribute,
-    DataSourceFile
+    DataSourceFile,
+    DatasetStore
 )
 
 from gap.utils.reader import (
@@ -26,11 +28,63 @@ from gap.utils.reader import (
     DatasetReaderInput,
     DatasetTimelineValue,
     DatasetReaderValue,
-    LocationDatasetReaderValue
+    LocationDatasetReaderValue,
+    DatasetReaderValue2,
+    PointTimelineValues
 )
 from gap.utils.netcdf import (
     BaseNetCDFReader
 )
+from gap.utils.zarr import BaseZarrReader
+
+
+
+class SalientReaderValue(DatasetReaderValue2):
+    """Class that convert Salient Dataset to TimelineValues."""
+
+    date_variable = 'forecast_day_idx'
+
+    def __init__(
+            self, val: xrDataset | List[PointTimelineValues],
+            location_input: DatasetReaderInput,
+            attributes: List[DatasetAttribute]) -> None:
+        super().__init__(val, location_input, attributes)
+
+    def _xr_dataset_to_dict(self) -> dict:
+        """Convert xArray Dataset to dictionary.
+
+        Implementation depends on provider.
+        :return: data dictionary
+        :rtype: dict
+        """
+        if self.is_empty():
+            return {
+                'geometry': json.loads(self.location_input.point.json),
+                'data': []
+            }
+        results:List[DatasetTimelineValue] = []
+        for dt_idx, dt in enumerate(self.xr_dataset[self.date_variable].values):
+            value_data = {}
+            for attribute in self.attributes:
+                var_name = attribute.attribute.variable_name
+                if 'ensemble' in self.xr_dataset[var_name].dims:
+                    value_data[var_name] = (
+                        self.xr_dataset[var_name].values[:, dt_idx]
+                    )
+                else:
+                    v = self.xr_dataset[var_name].values[dt_idx]
+                    value_data[var_name] = (
+                        v if not np.isnan(v) else None
+                    )
+            forecast_day = self.xr_dataset.forecast_date.values + np.timedelta64(dt, 'D')
+            results.append(DatasetTimelineValue(
+                forecast_day,
+                value_data
+            ))
+        return {
+            'geometry': json.loads(self.location_input.point.json),
+            'data': [result.to_dict() for result in results]
+        }
 
 
 class SalientNetCDFReader(BaseNetCDFReader):
@@ -69,7 +123,8 @@ class SalientNetCDFReader(BaseNetCDFReader):
         self.setup_reader()
         self.xrDatasets = []
         netcdf_file = DataSourceFile.objects.filter(
-            dataset=self.dataset
+            dataset=self.dataset,
+            format=DatasetStore.NETCDF
         ).order_by('id').last()
         if netcdf_file is None:
             return
@@ -248,3 +303,82 @@ class SalientNetCDFReader(BaseNetCDFReader):
                 val, locations, lat_dim, lon_dim
             )
         return self._get_data_values_from_single_location(locations[0], val)
+
+
+class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
+    """Salient Zarr Reader."""
+
+    date_variable = 'forecast_day_idx'
+
+    def __init__(
+            self, dataset: Dataset, attributes: List[DatasetAttribute],
+            location_input: DatasetReaderInput, start_date: datetime,
+            end_date: datetime) -> None:
+        """Initialize SalientZarrReader class."""
+        super().__init__(
+            dataset, attributes, location_input, start_date, end_date)
+        self.latest_forecast_date = None
+
+    def read_forecast_data(self, start_date: datetime, end_date: datetime):
+        """Read forecast data from dataset.
+
+        :param start_date: start date for reading forecast data
+        :type start_date: datetime
+        :param end_date:  end date for reading forecast data
+        :type end_date: datetime
+        """
+        self.setup_reader()
+        self.xrDatasets = []
+        zarr_file = DataSourceFile.objects.filter(
+            dataset=self.dataset,
+            format=DatasetStore.ZARR
+        ).order_by('id').last()
+        if zarr_file is None:
+            return
+        ds = self.open_dataset(zarr_file)
+        # get latest forecast date
+        self.latest_forecast_date = ds['forecast_date'][-1].values
+        val = self.read_variables(ds, start_date, end_date)
+        if val is None:
+            return
+        self.xrDatasets.append(val)
+
+    def get_data_values2(self) -> DatasetReaderValue2:
+        """Fetch data values from dataset.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        val = None
+        if len(self.xrDatasets) > 0:
+            val = self.xrDatasets[0]
+        return SalientReaderValue(val, self.location_input, self.attributes)
+
+    def _read_variables_by_point(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from single point.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        point = self.location_input.point
+        min_idx = int(abs((start_dt - self.latest_forecast_date) / np.timedelta64(1, 'D')))
+        max_idx = int(abs((end_dt - self.latest_forecast_date) / np.timedelta64(1, 'D')))
+        return dataset[variables].sel(
+            forecast_date=self.latest_forecast_date,
+            lat=point.y,
+            lon=point.x, method='nearest').where(
+                (dataset['forecast_day_idx'] >= min_idx) &
+                (dataset['forecast_day_idx'] <= max_idx),
+                drop=True
+        )

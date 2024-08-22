@@ -263,7 +263,7 @@ class DatasetReaderValue2:
         :return: Dictionary of metadata and data
         :rtype: dict
         """
-        if self.location_input is None or len(self.values) == 0:
+        if self.location_input is None or self._val is None or len(self.values) == 0:
             return {}
 
         return {
