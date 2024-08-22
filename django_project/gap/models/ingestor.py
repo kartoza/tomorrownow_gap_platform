@@ -24,6 +24,8 @@ class IngestorType:
     TAHMO = 'Tahmo'
     FARM = 'Farm'
     CBAM = 'CBAM'
+    SALIENT = 'Salient'
+    TOMORROWIO = 'Tomorrow.io'
 
 
 class IngestorSessionStatus:
@@ -47,6 +49,8 @@ class IngestorSession(models.Model):
             (IngestorType.TAHMO, IngestorType.TAHMO),
             (IngestorType.FARM, IngestorType.FARM),
             (IngestorType.CBAM, IngestorType.CBAM),
+            (IngestorType.SALIENT, IngestorType.SALIENT),
+            (IngestorType.TOMORROWIO, IngestorType.TOMORROWIO),
         ),
         max_length=512
     )
@@ -71,6 +75,10 @@ class IngestorSession(models.Model):
         auto_now_add=True
     )
     end_at = models.DateTimeField(
+        blank=True, null=True
+    )
+    additional_config = models.JSONField(
+        default=dict,
         blank=True, null=True
     )
 
