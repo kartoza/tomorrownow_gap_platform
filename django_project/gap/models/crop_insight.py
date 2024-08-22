@@ -330,8 +330,8 @@ class CropInsightRequest(models.Model):
             row = [
                 farm.unique_id,
                 farm.phone_number,
-                farm.geometry.y,
-                farm.geometry.x
+                round(farm.geometry.y, 4),
+                round(farm.geometry.x, 4)
             ]
 
             # next 2 is spw top message and spw description

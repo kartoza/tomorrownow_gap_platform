@@ -9,6 +9,7 @@ import csv
 from datetime import date, timedelta
 from unittest.mock import patch
 
+from django.contrib.gis.geos import Point
 from django.test import TestCase
 
 from core.factories import UserF
@@ -56,8 +57,12 @@ class TestCropInsightGenerator(TestCase):
 
     def setUp(self):
         """Set the test class."""
-        self.farm = FarmFactory.create()
-        self.farm_2 = FarmFactory.create()
+        self.farm = FarmFactory.create(
+            geometry=Point(11.1111111, 10.111111111)
+        )
+        self.farm_2 = FarmFactory.create(
+            geometry=Point(22.22222222, 100.111111111)
+        )
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
         self.superuser = UserF.create(
@@ -192,8 +197,8 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[0], self.farm.unique_id)
                     # Phone Number
                     self.assertEqual(row[1], self.farm.phone_number)
-                    self.assertEqual(row[2], '0.0')  # Latitude
-                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[2], '10.1111')  # Latitude
+                    self.assertEqual(row[3], '11.1111')  # Longitude
                     self.assertEqual(row[4], 'Plant Now')
                     self.assertEqual(
                         row[5],
@@ -210,8 +215,8 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[0], self.farm_2.unique_id)
                     # Phone Number
                     self.assertEqual(row[1], self.farm_2.phone_number)
-                    self.assertEqual(row[2], '0.0')  # Latitude
-                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[2], '100.1111')  # Latitude
+                    self.assertEqual(row[3], '22.2222')  # Longitude
                     self.assertEqual(row[4], 'DO NOT PLANT')
                     self.assertEqual(
                         row[5], 'Wait for more positive forecast.'
