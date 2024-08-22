@@ -26,6 +26,39 @@ from gap.tasks.crop_insight import (
 from spw.factories import RModelFactory
 from spw.generator.crop_insight import CropInsightFarmGenerator
 
+ltn_returns = {
+    '07-20': {
+        'date': '2023-07-20',
+        'evapotranspirationSum': 10,
+        'rainAccumulationSum': 5,
+        'LTNPET': 8,
+        'LTNPrecip': 3
+    }
+}
+
+
+def always_retrying(
+        location_input, attrs, start_dt, end_dt, historical_dict: dict
+):
+    """Mock the function that always retry."""
+    raise Exception('Test exception')
+
+
+retry = {
+    'count': 1
+}
+
+
+def retrying_2_times(
+        location_input, attrs, start_dt, end_dt, historical_dict: dict
+):
+    """Mock the function just retry 2 times."""
+    if retry['count'] <= 2:
+        retry['count'] += 1
+        raise Exception('Test exception')
+    else:
+        return ltn_returns
+
 
 class TestCropInsightGenerator(TestCase):
     """Unit test for Crop Insight Generator class."""
@@ -107,16 +140,6 @@ class TestCropInsightGenerator(TestCase):
                 evap, rain, max, min, prec_prob
             )
 
-        mock_fetch_ltn_data.return_value = {
-            '07-20': {
-                'date': '2023-07-20',
-                'evapotranspirationSum': 10,
-                'rainAccumulationSum': 5,
-                'LTNPET': 8,
-                'LTNPrecip': 3
-            }
-        }
-
         # For farm 1
         mock_execute_spw_model.return_value = (
             True, {
@@ -135,7 +158,19 @@ class TestCropInsightGenerator(TestCase):
         )
         mock_fetch_timelines_data.return_value = fetch_timelines_data_val
         generator = CropInsightFarmGenerator(self.farm)
-        generator.generate_spw()
+
+        # ------------------------------------------------------------
+        # Check if _fetch_ltn_data always returns exception
+        with patch('spw.generator.main._fetch_ltn_data', always_retrying):
+            with self.assertRaises(Exception):
+                generator.generate_spw()
+
+        # ------------------------------------------------------------
+        # Check if _fetch_ltn_data always returns exception
+        with patch('spw.generator.main._fetch_ltn_data', retrying_2_times):
+            generator.generate_spw()
+        # ------------------------------------------------------------
+
         last_spw = FarmSuitablePlantingWindowSignal.objects.filter(
             farm=self.farm
         ).last()
@@ -147,6 +182,15 @@ class TestCropInsightGenerator(TestCase):
         )
 
         # For farm 2
+        mock_fetch_ltn_data.return_value = {
+            '07-20': {
+                'date': '2023-07-20',
+                'evapotranspirationSum': 10,
+                'rainAccumulationSum': 5,
+                'LTNPET': 8,
+                'LTNPrecip': 3
+            }
+        }
         mock_execute_spw_model.return_value = (
             True, {
                 'metadata': {

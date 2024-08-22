@@ -37,9 +37,22 @@ class CropInsightFarmGenerator:
         ).first():
             return
 
-        output, historical_dict = calculate_from_point(
-            self.farm.geometry
-        )
+        # Generate the spw
+        generated = False
+        retry = 1
+        while not generated:
+            print('Generating Farm SPW...')
+            try:
+                output, historical_dict = calculate_from_point(
+                    self.farm.geometry
+                )
+                generated = True
+            except Exception as e:
+                # When error, retry until 3 times
+                # If it is 3 times, raise the error
+                if retry >= 3:
+                    raise e
+                retry += 1
 
         # Save SPW
         FarmSuitablePlantingWindowSignal.objects.update_or_create(
