@@ -5,17 +5,12 @@ Tomorrow Now GAP.
 .. note:: Factory classes for Lookup
 """
 import factory
+from factory.django import DjangoModelFactory
 
-from core.factories import BaseMetaFactory, BaseFactory
-from gap.models import (
-    RainfallClassification
-)
+from gap.models import RainfallClassification
 
 
-class RainfallClassificationFactory(
-    BaseFactory[RainfallClassification],
-    metaclass=BaseMetaFactory[RainfallClassification]
-):
+class RainfallClassificationFactory(DjangoModelFactory):
     """Factory class for Provider model."""
 
     class Meta:  # noqa

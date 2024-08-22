@@ -7,8 +7,9 @@ Tomorrow Now GAP.
 import factory
 from django.contrib.gis.geos import Point
 from django.db.models.signals import post_save, post_delete
+from factory.django import DjangoModelFactory
 
-from core.factories import BaseMetaFactory, BaseFactory, UserF
+from core.factories import UserF
 from spw.models import (
     RModel,
     RModelOutput,
@@ -19,9 +20,7 @@ from spw.models import (
 
 
 @factory.django.mute_signals(post_save, post_delete)
-class RModelFactory(
-    BaseFactory[RModel], metaclass=BaseMetaFactory[RModel]
-):
+class RModelFactory(DjangoModelFactory):
     """Factory class for RModel model."""
 
     class Meta:  # noqa
@@ -37,9 +36,7 @@ class RModelFactory(
     updated_by = factory.SubFactory(UserF)
 
 
-class RModelOutputFactory(
-    BaseFactory[RModelOutput], metaclass=BaseMetaFactory[RModelOutput]
-):
+class RModelOutputFactory(DjangoModelFactory):
     """Factory class for RModelOutput."""
 
     class Meta:  # noqa
@@ -50,10 +47,7 @@ class RModelOutputFactory(
     variable_name = RModelOutputType.GO_NO_GO_STATUS
 
 
-class RModelExecutionLogFactory(
-    BaseFactory[RModelExecutionLog],
-    metaclass=BaseMetaFactory[RModelExecutionLog]
-):
+class RModelExecutionLogFactory(DjangoModelFactory):
     """Factory class for RModelExecutionLog."""
 
     class Meta:  # noqa
@@ -65,10 +59,7 @@ class RModelExecutionLogFactory(
     end_date_time = factory.Faker('date_time')
 
 
-class SPWOutputFactory(
-    BaseFactory[SPWOutput],
-    metaclass=BaseMetaFactory[SPWOutput]
-):
+class SPWOutputFactory(DjangoModelFactory):
     """Factory class for SPWOutput."""
 
     class Meta:  # noqa
