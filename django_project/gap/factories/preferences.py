@@ -6,14 +6,12 @@ Tomorrow Now GAP.
 """
 import factory
 from django.contrib.gis.geos import Polygon
+from factory.django import DjangoModelFactory
 
-from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import Preferences
 
 
-class PreferencesFactory(
-    BaseFactory[Preferences], metaclass=BaseMetaFactory[Preferences]
-):
+class PreferencesFactory(DjangoModelFactory):
     """Factory class for Provider model."""
 
     class Meta:  # noqa

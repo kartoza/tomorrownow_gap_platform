@@ -5,8 +5,9 @@ Tomorrow Now GAP.
 .. note:: Factory classes for Models
 """
 import factory
+from factory.django import DjangoModelFactory
 
-from core.factories import BaseMetaFactory, BaseFactory, UserF
+from core.factories import UserF
 from gap.factories.farm import FarmFactory
 from gap.factories.main import DatasetAttributeFactory
 from gap.models import (
@@ -18,9 +19,7 @@ from gap.models import (
 )
 
 
-class CropFactory(
-    BaseFactory[Crop], metaclass=BaseMetaFactory[Crop]
-):
+class CropFactory(DjangoModelFactory):
     """Factory class for Crop model."""
 
     class Meta:  # noqa
@@ -32,9 +31,7 @@ class CropFactory(
     description = factory.Faker('text')
 
 
-class PestFactory(
-    BaseFactory[Pest], metaclass=BaseMetaFactory[Pest]
-):
+class PestFactory(DjangoModelFactory):
     """Factory class for Crop model."""
 
     class Meta:  # noqa
@@ -46,10 +43,7 @@ class PestFactory(
     description = factory.Faker('text')
 
 
-class FarmShortTermForecastFactory(
-    BaseFactory[FarmShortTermForecast],
-    metaclass=BaseMetaFactory[FarmShortTermForecast]
-):
+class FarmShortTermForecastFactory(DjangoModelFactory):
     """Factory class for FarmShortTermForecast model."""
 
     class Meta:  # noqa
@@ -59,10 +53,7 @@ class FarmShortTermForecastFactory(
     forecast_date = factory.Faker('date')
 
 
-class FarmShortTermForecastDataFactory(
-    BaseFactory[FarmShortTermForecastData],
-    metaclass=BaseMetaFactory[FarmShortTermForecastData]
-):
+class FarmShortTermForecastDataFactory(DjangoModelFactory):
     """Factory class for FarmShortTermForecastData model."""
 
     class Meta:  # noqa
@@ -74,10 +65,7 @@ class FarmShortTermForecastDataFactory(
     value = factory.Faker('pyfloat')
 
 
-class FarmProbabilisticWeatherForcastFactory(
-    BaseFactory[FarmProbabilisticWeatherForcast],
-    metaclass=BaseMetaFactory[FarmProbabilisticWeatherForcast]
-):
+class FarmProbabilisticWeatherForcastFactory(DjangoModelFactory):
     """Factory class for FarmProbabilisticWeatherForcast model."""
 
     class Meta:  # noqa
@@ -94,10 +82,7 @@ class FarmProbabilisticWeatherForcastFactory(
     precipitation_90th_percentile = factory.Faker('pyfloat')
 
 
-class FarmSuitablePlantingWindowSignalFactory(
-    BaseFactory[FarmSuitablePlantingWindowSignal],
-    metaclass=BaseMetaFactory[FarmSuitablePlantingWindowSignal]
-):
+class FarmSuitablePlantingWindowSignalFactory(DjangoModelFactory):
     """Factory class for FarmSuitablePlantingWindowSignal model."""
 
     class Meta:  # noqa
@@ -108,10 +93,7 @@ class FarmSuitablePlantingWindowSignalFactory(
     signal = factory.Faker('text')
 
 
-class FarmPlantingWindowTableFactory(
-    BaseFactory[FarmPlantingWindowTable],
-    metaclass=BaseMetaFactory[FarmPlantingWindowTable]
-):
+class FarmPlantingWindowTableFactory(DjangoModelFactory):
     """Factory class for FarmPlantingWindowTable model."""
 
     class Meta:  # noqa
@@ -122,10 +104,7 @@ class FarmPlantingWindowTableFactory(
     recommended_date = factory.Faker('date')
 
 
-class FarmPestManagementFactory(
-    BaseFactory[FarmPestManagement],
-    metaclass=BaseMetaFactory[FarmPestManagement]
-):
+class FarmPestManagementFactory(DjangoModelFactory):
     """Factory class for FarmPestManagement model."""
 
     class Meta:  # noqa
@@ -136,10 +115,7 @@ class FarmPestManagementFactory(
     spray_recommendation = factory.Faker('text')
 
 
-class FarmCropVarietyFactory(
-    BaseFactory[FarmCropVariety],
-    metaclass=BaseMetaFactory[FarmCropVariety]
-):
+class FarmCropVarietyFactory(DjangoModelFactory):
     """Factory class for FarmCropVariety model."""
 
     class Meta:  # noqa
@@ -150,10 +126,7 @@ class FarmCropVarietyFactory(
     recommended_crop = factory.SubFactory(CropFactory)
 
 
-class CropInsightRequestFactory(
-    BaseFactory[CropInsightRequest],
-    metaclass=BaseMetaFactory[CropInsightRequest]
-):
+class CropInsightRequestFactory(DjangoModelFactory):
     """Factory class for CropInsightRequest model."""
 
     class Meta:  # noqa
