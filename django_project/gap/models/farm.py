@@ -64,5 +64,5 @@ class Farm(models.Model):
 
     @property
     def farm_id(self):
-        """Return farm's unique id.'"""
+        """Return farm's unique id."""
         return self.unique_id

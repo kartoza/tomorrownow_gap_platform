@@ -320,8 +320,7 @@ class CropPlanData:
 
     @property
     def data(self) -> dict:
-        """Return the data based on the """
-
+        """Return the data."""
         # ---------------------------------------
         # Spw data
         spw_top_message = ''
