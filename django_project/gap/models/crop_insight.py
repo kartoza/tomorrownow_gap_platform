@@ -440,7 +440,7 @@ class CropInsightRequest(models.Model):
         email = EmailMessage(
             subject=(
                 "GAP - Crop Plan Generator Results - "
-                f"{self.generated_date.strftime('%A-%d-%m-%Y')}"
+                f"{self.requested_date.strftime('%A-%d-%m-%Y')}"
             ),
             body='''
 Hi everyone,
