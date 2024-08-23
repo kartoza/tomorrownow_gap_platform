@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import uuid
+from datetime import date
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -255,48 +256,79 @@ class FarmCropVariety(models.Model):
         ordering = ['-recommendation_date']
 
 
-class CropInsightRequestReport:
+class CropPlanData:
     """The report model for the Insight Request Report."""
 
-    def __init__(self, farm: Farm):
+    def __init__(self, farm: Farm, requested_date: date):
         """Initialize the report model for the Insight Request Report."""
+        self.forecast = {}
+        self.requested_date = requested_date
         self.farm = farm
-        self.latitude = farm.geometry.y
-        self.longittude = farm.geometry.x
 
-    @property
-    def data(self):
-        """Return data."""
-        output = {
-            'latitude': self.latitude,
-            'longitude': self.longittude,
-            'spw': None
-        }
+        # Update data
+        self.farm_id = self.farm.unique_id
+        self.phone_number = self.farm.phone_number
+        self.latitude = farm.geometry.y
+        self.longitude = farm.geometry.x
+        self.spw_top_message = ''
+        self.spw_description = ''
+
+        self.update_data()
+
+    def update_data(self):
+        """Update data for the attributes."""
+        # Get spw data
         spw = FarmSuitablePlantingWindowSignal.objects.filter(
-            farm=self.farm
+            farm=self.farm,
+            generated_date=self.requested_date
+
         ).first()
         if spw:
-            output['spw'] = spw.signal
+            try:
+                spw_output = SPWOutput.objects.get(identifier=spw.signal)
+                self.spw_top_message = spw_output.plant_now_string
+                self.spw_description = spw_output.description
+            except SPWOutput.DoesNotExist:
+                self.spw_top_message = spw.signal
+                self.spw_description = ''
 
-        short_term_forcast = FarmShortTermForecast.objects.filter(
-            farm=self.farm
+        # Forecast
+        forecast = FarmShortTermForecast.objects.filter(
+            farm=self.farm,
+            forecast_date=self.requested_date
         ).first()
 
-        if short_term_forcast:
-            datas = short_term_forcast.farmshorttermforecastdata_set.order_by(
-                'value_date'
-            )
-            if datas.first():
-                first_date = datas.first().value_date
-                for data in datas:
-                    difference = data.value_date - first_date
-                    key = f'Day {difference.days + 1}'
-                    if key not in output:
-                        output[key] = {}
-                    output[key][
-                        data.dataset_attribute.attribute.variable_name
-                    ] = data.value
-        return output
+        # Skip if no forecast
+        if not forecast:
+            return
+        datas = forecast.farmshorttermforecastdata_set.order_by(
+            'value_date'
+        )
+
+        # Skip if no data
+        if not datas.first():
+            return
+
+        first_date = datas.first().value_date
+
+        # Create data
+        for data in datas:
+            var = data.dataset_attribute.source
+
+            day_n = (data.value_date - first_date).days + 1
+            if day_n not in self.forecast:
+                self.forecast[day_n] = {}
+
+            self.forecast[day_n][var] = data.value
+            if var == 'rainAccumulationSum':
+                self.forecast[day_n]['rainAccumulationType'] = ''
+
+                # we get the rain type
+                _class = RainfallClassification.classify(
+                    data.value
+                )
+                if _class:
+                    self.forecast[day_n]['rainAccumulationType'] = _class.name
 
 
 class CropInsightRequest(models.Model):
@@ -326,83 +358,54 @@ class CropInsightRequest(models.Model):
                 'latitude', 'longitude', 'SPWTopMessage', 'SPWDescription'
             ],
         ]
+        last_max_day = 0
         for farm in self.farms.all():
+            data = CropPlanData(farm, self.requested_date)
             row = [
-                farm.unique_id,
-                farm.phone_number,
-                round(farm.geometry.y, 4),
-                round(farm.geometry.x, 4)
+                data.farm_id,
+                data.phone_number,
+                round(data.latitude, 4),
+                round(data.longitude, 4),
+                data.spw_top_message,
+                data.spw_description
             ]
 
-            # next 2 is spw top message and spw description
-            spw = FarmSuitablePlantingWindowSignal.objects.filter(
-                farm=farm,
-                generated_date=self.requested_date
+            # We add the forecast
+            forecast_keys = data.forecast.keys()
+            max_day = last_max_day
+            if forecast_keys:
+                max_day = max([int(key) for key in data.forecast.keys()])
+                last_max_day = max_day
 
-            ).first()
-            if spw:
-                try:
-                    spw_output = SPWOutput.objects.get(identifier=spw.signal)
-                    row += [
-                        spw_output.plant_now_string, spw_output.description
+            # Save the data
+            for idx in range(last_max_day):
+                # Create the header
+                day_n = idx + 1
+                header_1 = f'day{day_n}_mm'
+                header_2 = f'day{day_n}_Chance'
+                header_3 = f'day{day_n}_Type'
+                if header_1 not in output[0]:
+                    output[0] += [
+                        header_1, header_2, header_3
                     ]
-                except SPWOutput.DoesNotExist:
-                    row += [spw.signal, '']
-            else:
-                row += ['', '']
-
-            first_columns_count = len(row)
-
-            # Forecast
-            forecast = FarmShortTermForecast.objects.filter(
-                farm=farm,
-                forecast_date=self.requested_date
-            ).first()
-
-            if forecast:
-                datas = forecast.farmshorttermforecastdata_set.order_by(
-                    'value_date'
-                )
-
-                if datas.first():
-                    first_date = datas.first().value_date
-                    last_date = datas.last().value_date
-                    different = last_date - first_date
-
-                    # Create the header
-                    for idx in range(different.days + 1):
-                        day_n = idx + 1
-                        header_1 = f'day{day_n}_mm'
-                        header_2 = f'day{day_n}_Chance'
-                        header_3 = f'day{day_n}_Type'
-                        if header_1 not in output[0]:
-                            output[0] += [
-                                header_1, header_2, header_3
-                            ]
-                        row += ['', '', '']
-
-                    # Create data
-                    for data in datas:
-                        different = data.value_date - first_date
-                        curr_idx = different.days * 3  # 3 columns per day
-                        curr_idx += first_columns_count
-                        var = data.dataset_attribute.source
-                        if var == 'rainAccumulationSum':
-                            curr_idx = curr_idx
-
-                            # we get the rain type
-                            _class = RainfallClassification.classify(
-                                data.value
-                            )
-                            if _class:
-                                row[curr_idx + 2] = _class.name
-
-                        elif var == 'precipitationProbability':
-                            curr_idx += 1
-                        else:
-                            continue
-                        row[curr_idx] = data.value
-
+                # Get forecast data
+                try:
+                    forecast_data = data.forecast[day_n]
+                except KeyError:
+                    forecast_data = {}
+                try:
+                    value_1 = forecast_data['rainAccumulationSum']
+                except KeyError:
+                    value_1 = ''
+                try:
+                    value_2 = forecast_data['precipitationProbability']
+                except KeyError:
+                    value_2 = ''
+                try:
+                    value_3 = forecast_data['rainAccumulationType']
+                except KeyError:
+                    value_3 = ''
+                row += [value_1, value_2, value_3]
             output.append(row)
 
         # Render csv
