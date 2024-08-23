@@ -61,3 +61,8 @@ class Farm(models.Model):
 
     def __str__(self):
         return self.unique_id
+
+    @property
+    def farm_id(self):
+        """Return farm's unique id.'"""
+        return self.unique_id

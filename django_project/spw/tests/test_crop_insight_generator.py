@@ -87,7 +87,9 @@ class TestCropInsightGenerator(TestCase):
         'day8_mm', 'day8_Chance', 'day8_Type',
         'day9_mm', 'day9_Chance', 'day9_Type',
         'day10_mm', 'day10_Chance', 'day10_Type',
-        'day11_mm', 'day11_Chance', 'day11_Type'
+        'day11_mm', 'day11_Chance', 'day11_Type',
+        'day12_mm', 'day12_Chance', 'day12_Type',
+        'day13_mm', 'day13_Chance', 'day13_Type',
     ]
 
     def setUp(self):

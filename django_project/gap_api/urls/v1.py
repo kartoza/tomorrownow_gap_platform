@@ -9,8 +9,9 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, authentication
 
-from gap_api.api_views.user import UserInfo
+from gap_api.api_views.crop_insight import CropPlanAPI
 from gap_api.api_views.measurement import MeasurementAPI
+from gap_api.api_views.user import UserInfo
 from gap_api.urls.schema import CustomSchemaGenerator
 
 schema_view_v1 = get_schema_view(
@@ -55,7 +56,6 @@ measurement_urls = [
         name='get-measurement'
     )
 ]
-
 urlpatterns = [
     re_path(
         r'^docs/$',
@@ -65,3 +65,10 @@ urlpatterns = [
 ]
 urlpatterns += user_urls
 urlpatterns += measurement_urls
+urlpatterns += [
+    re_path(
+        r'crop-plan/$',
+        CropPlanAPI.as_view(),
+        name='crop-plan'
+    )
+]

@@ -29,7 +29,6 @@ class CropInsightFarmGenerator:
         self.tomorrow = self.today + timedelta(days=1)
 
     def generate_spw(self):
-        print('Generate')
         """Generate Farm SPW."""
         # Check already being generated, no regenereated!
         if FarmSuitablePlantingWindowSignal.objects.filter(
