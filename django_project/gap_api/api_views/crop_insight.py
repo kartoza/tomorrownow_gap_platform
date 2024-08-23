@@ -27,7 +27,7 @@ from gap_api.utils.helper import ApiTag
 
 
 def default_fields():
-    """Default fields."""
+    """Return default fields."""
     try:
         return CropPlanData.default_fields()
     except ProgrammingError:
