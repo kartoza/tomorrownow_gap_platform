@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 from datetime import datetime
 
+from django.db.utils import ProgrammingError
 from django.http import HttpResponseBadRequest
 from django.utils import timezone
 from drf_yasg import openapi
@@ -23,6 +24,14 @@ from gap_api.serializers.crop_insight import (
     CropInsightSerializer, CropInsightGeojsonSerializer
 )
 from gap_api.utils.helper import ApiTag
+
+
+def default_fields():
+    """Default fields."""
+    try:
+        return CropPlanData.default_fields()
+    except ProgrammingError:
+        return []
 
 
 class CropPlanAPI(APIView):
@@ -72,7 +81,7 @@ class CropPlanAPI(APIView):
                 description=(
                         'Forecast fields, use separator. '
                         "Don't put parameter to return all Forecast fields. \n"
-                        f"The fields : {CropPlanData.default_fields()}"
+                        f"The fields : {default_fields()}"
                 ),
                 type=openapi.TYPE_STRING
             ),
