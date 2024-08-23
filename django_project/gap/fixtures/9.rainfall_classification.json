@@ -39,7 +39,7 @@
     "model": "gap.rainfallclassification",
     "pk": 5,
     "fields": {
-      "name": "Heavy reain",
+      "name": "Heavy rain",
       "min_value": 20.0,
       "max_value": null
     }
