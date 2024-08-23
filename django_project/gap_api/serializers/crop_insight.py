@@ -18,13 +18,17 @@ class _BaseCropInsightSerializer:
 
     def __init__(self, *args, **kwargs):
         """Init class."""
-        self.requested_date = kwargs.pop('requested_date', timezone.now())
+        self.generated_date = kwargs.pop('generated_date', timezone.now())
+        self.forecast_fields = kwargs.pop('forecast_fields', None)
         super(_BaseCropInsightSerializer, self).__init__(*args, **kwargs)
 
     def to_representation(self, farm: Farm):
         """To representation."""
         representation = super().to_representation(farm)
-        context = CropPlanData(farm, self.requested_date).data
+        context = CropPlanData(
+            farm, self.generated_date,
+            forecast_fields=self.forecast_fields
+        ).data
         representation.update(context)
         return representation
 

@@ -59,7 +59,7 @@ measurement_urls = [
 urlpatterns = [
     re_path(
         r'^docs/$',
-        schema_view_v1.with_ui('redoc', cache_timeout=0),
+        schema_view_v1.with_ui('swagger', cache_timeout=0),
         name='schema-redoc'
     ),
 ]

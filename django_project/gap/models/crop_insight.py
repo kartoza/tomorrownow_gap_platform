@@ -260,14 +260,29 @@ class FarmCropVariety(models.Model):
 class CropPlanData:
     """The report model for the Insight Request Report."""
 
+    @staticmethod
+    def default_fields():
+        """Return shortterm default fields."""
+        from gap.providers.tio import tomorrowio_shortterm_forcast_dataset
+
+        dataset = tomorrowio_shortterm_forcast_dataset()
+        forecast_fields = list(
+            DatasetAttribute.objects.filter(
+                dataset=dataset
+            ).values_list(
+                'source', flat=True
+            )
+        )
+        if 'rainAccumulationSum' in forecast_fields:
+            forecast_fields.append('rainAccumulationType')
+        return forecast_fields
+
     def __init__(
-            self, farm: Farm, requested_date: date, forecast_days: int = 13,
+            self, farm: Farm, generated_date: date, forecast_days: int = 13,
             forecast_fields: list = None
     ):
         """Initialize the report model for the Insight Request Report."""
-        from gap.providers.tio import tomorrowio_shortterm_forcast_dataset
-
-        self.requested_date = requested_date
+        self.generated_date = generated_date
         self.farm = farm
 
         # Update data
@@ -281,7 +296,7 @@ class CropPlanData:
         # Forecast
         forecast = FarmShortTermForecast.objects.filter(
             farm=self.farm,
-            forecast_date=self.requested_date
+            forecast_date=self.generated_date
         ).first()
 
         # Check if forecast is found
@@ -294,16 +309,7 @@ class CropPlanData:
 
         # Make default forecast_fields
         if not forecast_fields:
-            dataset = tomorrowio_shortterm_forcast_dataset()
-            forecast_fields = list(
-                DatasetAttribute.objects.filter(
-                    dataset=dataset
-                ).values_list(
-                    'source', flat=True
-                )
-            )
-            if 'rainAccumulationSum' in forecast_fields:
-                forecast_fields.append('rainAccumulationType')
+            forecast_fields = CropPlanData.default_fields()
 
         self.forecast = self.forecast.filter(
             dataset_attribute__source__in=forecast_fields
@@ -322,7 +328,7 @@ class CropPlanData:
         spw_description = ''
         spw = FarmSuitablePlantingWindowSignal.objects.filter(
             farm=self.farm,
-            generated_date=self.requested_date
+            generated_date=self.generated_date
 
         ).first()
         if spw:
@@ -361,7 +367,8 @@ class CropPlanData:
                 day_n = (data.value_date - first_date).days + 1
                 output[f'day{day_n}_{var}'] = data.value
 
-                if var == 'rainAccumulationSum':
+                if (var == 'rainAccumulationSum' and
+                        'rainAccumulationType' in self.forecast_fields):
                     # we get the rain type
                     _class = RainfallClassification.classify(data.value)
                     if _class:
@@ -402,7 +409,7 @@ class CropInsightRequest(models.Model):
         # Get farms
         for farm in farms:
             data = CropPlanData(
-                farm, self.requested_date,
+                farm, self.generated_date,
                 forecast_fields=[
                     'rainAccumulationSum', 'precipitationProbability',
                     'rainAccumulationType'
@@ -434,7 +441,7 @@ class CropInsightRequest(models.Model):
         email = EmailMessage(
             subject=(
                 "GAP - Crop Plan Generator Results - "
-                f"{self.requested_date.strftime('%A-%d-%m-%Y')}"
+                f"{self.generated_date.strftime('%A-%d-%m-%Y')}"
             ),
             body='''
 Hi everyone,

@@ -4,8 +4,10 @@ Tomorrow Now GAP.
 
 .. note:: Measurement APIs
 """
+from datetime import datetime
 
 from django.http import HttpResponseBadRequest
+from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
@@ -14,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from gap.models import Farm
+from gap.models.crop_insight import CropPlanData
 from gap_api.renderers import GEOJSONRenderer
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.serializers.crop_insight import (
@@ -46,14 +49,14 @@ class CropPlanAPI(APIView):
                 openapi.IN_QUERY,
                 description=(
                         'List of farm id, use comma separator. '
-                        'Put "all" for returning all farms.'
+                        "Don't put parameter to return all farm."
                 ),
                 type=openapi.TYPE_STRING
             ),
             openapi.Parameter(
                 'generated_date',
                 openapi.IN_QUERY,
-                description='Start Date',
+                description='Default to today or YYYY-MM-DD',
                 type=openapi.TYPE_STRING
             ),
             openapi.Parameter(
@@ -62,6 +65,15 @@ class CropPlanAPI(APIView):
                 type=openapi.TYPE_STRING,
                 enum=outputs,
                 default=outputs[0]
+            ),
+            openapi.Parameter(
+                'forecast_fields', openapi.IN_QUERY,
+                description=(
+                        'Forecast fields, use separator. '
+                        "Don't put parameter to return all Forecast fields. \n"
+                        f"The fields : {CropPlanData.default_fields()}"
+                ),
+                type=openapi.TYPE_STRING
             ),
         ],
         responses={
@@ -85,8 +97,34 @@ class CropPlanAPI(APIView):
         elif output_format == 'geojson':
             serializer = CropInsightGeojsonSerializer
 
+        # Generated date
+        try:
+            generated_date = datetime.strptime(
+                request.GET.get(
+                    'generated_date', timezone.now().strftime("%Y-%m-%d")
+                ),
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            return HttpResponseBadRequest(
+                'generated_date format is not valid, use YYYY-MM-DD'
+            )
+
+        # Get forecast fields
+        forecast_fields = request.GET.get('forecast_fields', None)
+        if forecast_fields:
+            forecast_fields = forecast_fields.split(',')
+
         # Farms query
-        farms = Farm.objects.all()
+        farm_ids = request.GET.get('farm_ids', None)
+        if farm_ids:
+            farms = Farm.objects.filter(unique_id__in=farm_ids.split(','))
+        else:
+            farms = Farm.objects.all()
         return Response(
-            data=serializer(farms, many=True).data
+            data=serializer(
+                farms, many=True,
+                generated_date=generated_date,
+                forecast_fields=forecast_fields
+            ).data
         )
