@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 
 from gap.models import Farm
 from gap.models.crop_insight import CropPlanData
-from gap_api.renderers import GEOJSONRenderer
+from gap_api.renderers import GEOJSONRenderer, CSVDynamicHeaderRenderer
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.serializers.crop_insight import (
     CropInsightSerializer, CropInsightGeojsonSerializer
@@ -37,7 +37,8 @@ class CropPlanAPI(APIView):
     renderer_classes = [
         BrowsableAPIRenderer,
         JSONRenderer,
-        GEOJSONRenderer
+        GEOJSONRenderer,
+        CSVDynamicHeaderRenderer
     ]
 
     @swagger_auto_schema(
@@ -121,10 +122,11 @@ class CropPlanAPI(APIView):
             farms = Farm.objects.filter(unique_id__in=farm_ids.split(','))
         else:
             farms = Farm.objects.all()
-        return Response(
-            data=serializer(
-                farms, many=True,
-                generated_date=generated_date,
-                forecast_fields=forecast_fields
-            ).data
-        )
+
+        data = serializer(
+            farms, many=True,
+            generated_date=generated_date,
+            forecast_fields=forecast_fields
+        ).data
+
+        return Response(data=data)

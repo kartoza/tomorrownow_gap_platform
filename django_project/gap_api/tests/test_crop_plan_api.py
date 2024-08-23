@@ -128,7 +128,10 @@ class CropPlanAPITest(BaseAPIViewTest):
         """Test correct."""
         response = self.request(
             reverse('api:v1:crop-plan') +
-            '?farm_ids=farm-2&generated_date=2020-01-01'
+            '?farm_ids=farm-2&generated_date=2020-01-01&format=json'
+        )
+        self.assertEqual(
+            response.accepted_media_type, 'application/json'
         )
         self.assertEqual(response.status_code, 200)
         _data = response.data
@@ -168,3 +171,12 @@ class CropPlanAPITest(BaseAPIViewTest):
         self.assertEqual(_data[0]['day1_SOURCE_2'], 6)
         self.assertEqual(_data[0]['day2_SOURCE_1'], 5)
         self.assertEqual(_data[0]['day2_SOURCE_2'], 7)
+
+    def test_correct_with_csv(self):
+        """Test correct."""
+        response = self.request(
+            reverse('api:v1:crop-plan') +
+            '?farm_ids=farm-2&generated_date=2020-01-01&format=csv'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.accepted_media_type, 'text/csv')
