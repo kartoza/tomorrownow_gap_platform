@@ -40,6 +40,9 @@ class DatasetAttribute(models.Model):
     source_unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE
     )
+    has_ensembles = models.BooleanField(
+        default=False
+    )
 
     def __str__(self) -> str:
         return f'{self.attribute} - {self.dataset}'

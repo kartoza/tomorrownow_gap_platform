@@ -354,6 +354,9 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
             val = self.xrDatasets[0]
         return SalientReaderValue(val, self.location_input, self.attributes)
 
+    def _get_forecast_day_idx(self, date: np.datetime64) -> int:
+        return int(abs((date - self.latest_forecast_date) / np.timedelta64(1, 'D')))
+
     def _read_variables_by_point(
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
@@ -372,13 +375,35 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         :rtype: xrDataset
         """
         point = self.location_input.point
-        min_idx = int(abs((start_dt - self.latest_forecast_date) / np.timedelta64(1, 'D')))
-        max_idx = int(abs((end_dt - self.latest_forecast_date) / np.timedelta64(1, 'D')))
+        min_idx = self._get_forecast_day_idx(start_dt)
+        max_idx = self._get_forecast_day_idx(end_dt)
         return dataset[variables].sel(
             forecast_date=self.latest_forecast_date,
             lat=point.y,
             lon=point.x, method='nearest').where(
-                (dataset['forecast_day_idx'] >= min_idx) &
-                (dataset['forecast_day_idx'] <= max_idx),
+                (dataset[self.date_variable] >= min_idx) &
+                (dataset[self.date_variable] <= max_idx),
                 drop=True
+        )
+
+    def _read_variables_by_bbox(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        points = self.location_input.points
+        lat_min = points[0].y
+        lat_max = points[1].y
+        lon_min = points[0].x
+        lon_max = points[1].x
+        min_idx = self._get_forecast_day_idx(start_dt)
+        max_idx = self._get_forecast_day_idx(end_dt)
+        # output results is in two dimensional array
+        return dataset[variables].sel(
+            forecast_date=self.latest_forecast_date
+        ).where(
+            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
+            (dataset.lon >= lon_min) & (dataset.lon <= lon_max) &
+            (dataset[self.date_variable] >= min_idx) &
+            (dataset[self.date_variable] <= max_idx),
+            drop=True
         )

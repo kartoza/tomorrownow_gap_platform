@@ -314,6 +314,9 @@ class DatasetReaderValue2:
         else:
             reordered_cols.insert(0, 'lon')
             reordered_cols.insert(0, 'lat')
+        if 'ensemble' in self.xr_dataset.dims:
+            dim_order.append('ensemble')
+            # reordered_cols.insert(0, 'ensemble')
         df = self.xr_dataset.to_dataframe(dim_order=dim_order)
         df_reordered = df[reordered_cols]
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=True, delete_on_close=False) as tmp_file:
