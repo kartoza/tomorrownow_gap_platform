@@ -408,7 +408,7 @@ class CropInsightRequest(models.Model):
         # Get farms
         for farm in farms:
             data = CropPlanData(
-                farm, self.generated_date,
+                farm, self.requested_date,
                 forecast_fields=[
                     'rainAccumulationSum', 'precipitationProbability',
                     'rainAccumulationType'
