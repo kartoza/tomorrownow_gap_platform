@@ -87,8 +87,6 @@ class CustomUserAdmin(UserAdmin):
 @admin.action(description='Cancel Task')
 def cancel_background_task(modeladmin, request, queryset):
     """Cancel a background task."""
-    from celery.result import AsyncResult
-    from core.celery import app
     for background_task in queryset:
         if background_task.task_id:
             cancel_task(background_task.task_id)

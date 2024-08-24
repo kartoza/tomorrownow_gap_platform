@@ -81,11 +81,15 @@ class BackgroundTask(models.Model):
         unique=True
     )
 
-    submitted_on = models.DateTimeField()
+    submitted_on = models.DateTimeField(
+        default=timezone.now
+    )
 
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True
     )
 
     started_at = models.DateTimeField(
@@ -285,6 +289,7 @@ class BackgroundTask(models.Model):
     def is_possible_interrupted(self, delta = 1800):
         """Check whether the task is stuck or being interrupted.
 
+        This requires the task to send an update to BackgroundTask.
         :param delta: Diff seconds, defaults to 1800
         :type delta: int, optional
         :return: True if task is stuck or interrupted
