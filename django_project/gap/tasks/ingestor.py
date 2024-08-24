@@ -13,7 +13,7 @@ from gap.models.ingestor import IngestorSession
 logger = get_task_logger(__name__)
 
 
-@app.task
+@app.task(name='ingestor_session')
 def run_ingestor_session(_id: int):
     """Run ingestor."""
     try:
