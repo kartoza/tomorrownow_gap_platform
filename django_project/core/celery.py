@@ -41,6 +41,6 @@ app.conf.beat_schedule = {
     'generate-crop-plan': {
         'task': 'generate_crop_plan',
         # Run everyday at 2am East Africa Time or 23:00 UTC
-        'schedule': crontab(minute='0', hour='23'),
+        'schedule': crontab(minute='30', hour='1'),
     },
 }
