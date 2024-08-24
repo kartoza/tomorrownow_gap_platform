@@ -39,3 +39,4 @@ class BackgroundTaskF(DjangoModelFactory):
         lambda n: u'task-name %s' % n
     )
     task_id = factory.Faker('uuid4')
+    submitted_by = factory.SubFactory(UserF)
