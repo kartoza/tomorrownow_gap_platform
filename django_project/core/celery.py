@@ -2,9 +2,14 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
+import logging
 
 from celery import Celery
+from celery.result import AsyncResult
 from celery.schedules import crontab
+
+
+logger = logging.getLogger(__name__)
 
 # set the default Django settings module for the 'celery' program.
 # this is also used in manage.py
@@ -44,3 +49,23 @@ app.conf.beat_schedule = {
         'schedule': crontab(minute='30', hour='1'),
     },
 }
+
+
+def cancel_task(task_id: str):
+    """
+    Cancel task if it's ongoing.
+
+    :param task_id: task identifier
+    """
+    try:
+        res = AsyncResult(task_id)
+        if not res.ready():
+            # find if there is running task and stop it
+            app.control.revoke(
+                task_id,
+                terminate=True,
+                signal='SIGKILL'
+            )
+    except Exception as ex:
+        logger.error(f'Failed cancel_task: {task_id}')
+        logger.error(ex)

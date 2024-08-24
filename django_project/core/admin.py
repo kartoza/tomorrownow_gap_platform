@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group
 
+from core.celery import cancel_task
 from core.models.background_task import BackgroundTask
 from core.group_email_receiver import crop_plan_receiver
 
@@ -83,23 +84,19 @@ class CustomUserAdmin(UserAdmin):
     receive_email_for_crop_plan.boolean = True
 
 
-
 @admin.action(description='Cancel Task')
 def cancel_background_task(modeladmin, request, queryset):
+    """Cancel a background task."""
     from celery.result import AsyncResult
     from core.celery import app
     for background_task in queryset:
         if background_task.task_id:
-            res = AsyncResult(background_task.task_id)
-            if not res.ready():
-                # find if there is running task and stop it
-                app.control.revoke(background_task.task_id,
-                                   terminate=True,
-                                   signal='SIGKILL')
+            cancel_task(background_task.task_id)
 
 
 @admin.register(BackgroundTask)
 class BackgroundTaskAdmin(admin.ModelAdmin):
+    """Admin class for BackgroundTask model."""
     list_display = ('task_name', 'task_id', 'status', 'started_at',
                     'finished_at', 'last_update')
     search_fields = ['task_name', 'status', 'task_id']
