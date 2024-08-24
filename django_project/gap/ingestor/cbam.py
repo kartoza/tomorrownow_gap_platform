@@ -192,8 +192,7 @@ class CBAMIngestor:
             self.metadata['total_processed'] += 1
             total_monthyear += 1
             if (
-                curr_monthyear.year != iter_monthyear.year and
-                curr_monthyear.month != iter_monthyear.month
+                curr_monthyear.year != iter_monthyear.year
             ):
                 # update ingestion progress
                 if progress:
