@@ -14,6 +14,7 @@ from django.test import TestCase
 
 from core.factories import UserF
 from core.group_email_receiver import _group_crop_plan_receiver
+from gap.factories import PreferencesFactory
 from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory
 from gap.models.crop_insight import (
@@ -116,6 +117,11 @@ class TestCropInsightGenerator(TestCase):
         self.user_2 = UserF(email='user_2@email.com')
         self.user_3 = UserF(email='user_3@email.com')
         group.user_set.add(self.user_1, self.user_2)
+        self.preferences = PreferencesFactory()
+        self.preferences.crop_plan_config = {
+            'lat_lon_decimal_digits': 4
+        }
+        self.preferences.save()
 
     @patch('spw.generator.main.execute_spw_model')
     @patch('spw.generator.main._fetch_timelines_data')

@@ -21,6 +21,7 @@ from core.models.common import Definition
 from gap.models import Farm
 from gap.models.lookup import RainfallClassification
 from gap.models.measurement import DatasetAttribute
+from gap.models.preferences import Preferences
 from spw.models import SPWOutput
 
 User = get_user_model()
@@ -289,9 +290,21 @@ class CropPlanData:
         self.farm_id = self.farm.unique_id
         self.phone_number = self.farm.phone_number
 
+        # load farm lat lon
+        crop_plan_conf = Preferences.load().crop_plan_config
+        lat_lon_digits = crop_plan_conf.get('lat_lon_decimal_digits', -1)
         geometry = farm.geometry
-        self.latitude = round(geometry.y, 4) if geometry else ''
-        self.longitude = round(geometry.x, 4) if geometry else ''
+        self.latitude = ''
+        self.longitude = ''
+        if geometry:
+            self.latitude = (
+                round(geometry.y, lat_lon_digits) if
+                lat_lon_digits != -1 else geometry.y
+            )
+            self.longitude = (
+                round(geometry.x, lat_lon_digits) if
+                lat_lon_digits != -1 else geometry.x
+            )
 
         # Forecast
         forecast = FarmShortTermForecast.objects.filter(
