@@ -72,8 +72,7 @@ class BackgroundTask(models.Model):
 
     task_id = models.CharField(
         max_length=256,
-        null=True,
-        blank=True
+        unique=True
     )
 
     uuid = models.UUIDField(
@@ -237,11 +236,10 @@ class BackgroundTask(models.Model):
         """Event handler when task is cancelled."""
         self.last_update = timezone.now()
         self.status = TaskStatus.CANCELLED
-        self.task_id = None
         self.progress_text = 'Task has been cancelled.'
         self.save(
             update_fields=[
-                'last_update', 'status', 'task_id', 'progress_text'
+                'last_update', 'status', 'progress_text'
             ]
         )
 

@@ -309,6 +309,9 @@ def task_revoked_handler(sender, request = None, **kwargs):
         }
     )
     bg_task.task_on_cancelled()
+    if bg_task.task_name == 'ingestor_session':
+        from gap.ingestor.base import ingestor_revoked_handler
+        ingestor_revoked_handler(bg_task)
 
 
 @signals.task_internal_error.connect

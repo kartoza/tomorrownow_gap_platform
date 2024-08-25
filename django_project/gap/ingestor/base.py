@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Base Ingestor.
 """
 
+from core.models import BackgroundTask
 from gap.models import IngestorSession, IngestorSessionStatus
 
 
@@ -18,3 +19,21 @@ class BaseIngestor:
     def is_cancelled(self):
         self.session.refresh_from_db()
         return self.session.is_cancelled
+
+
+def ingestor_revoked_handler(bg_task: BackgroundTask):
+    """Event handler when ingestor task is cancelled by celery.
+
+    :param bg_task: background task
+    :type bg_task: BackgroundTask
+    """
+    # retrieve ingestor session
+    session = IngestorSession.objects.filter(
+        id=int(bg_task.context_id)
+    ).first()
+    if session is None:
+        return
+
+    # update status as cancelled
+    session.status = IngestorSessionStatus.CANCELLED
+    session.save(update_fields=['status'])
