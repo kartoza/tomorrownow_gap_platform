@@ -70,13 +70,6 @@ class CropPlanAPI(APIView):
                 type=openapi.TYPE_STRING
             ),
             openapi.Parameter(
-                'format', openapi.IN_QUERY,
-                description='Output Format',
-                type=openapi.TYPE_STRING,
-                enum=outputs,
-                default=outputs[0]
-            ),
-            openapi.Parameter(
                 'forecast_fields', openapi.IN_QUERY,
                 description=(
                         'Forecast fields, use separator. '
@@ -84,6 +77,13 @@ class CropPlanAPI(APIView):
                         f"The fields : {default_fields()}"
                 ),
                 type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                'format', openapi.IN_QUERY,
+                description='Output Format',
+                type=openapi.TYPE_STRING,
+                enum=outputs,
+                default=outputs[0]
             ),
         ],
         responses={
