@@ -40,3 +40,4 @@ class BackgroundTaskF(DjangoModelFactory):
     )
     task_id = factory.Faker('uuid4')
     submitted_by = factory.SubFactory(UserF)
+    parameters = '(9999,)'

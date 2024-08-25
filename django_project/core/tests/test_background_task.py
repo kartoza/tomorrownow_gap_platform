@@ -8,8 +8,9 @@ Tomorrow Now GAP.
 import mock
 import datetime
 import pytz
-from django.test import TestCase
 from ast import literal_eval as make_tuple
+from django.test import TestCase
+from django.utils import timezone
 
 from core.models import BackgroundTask, TaskStatus
 from core.celery import (
@@ -94,28 +95,127 @@ class TestBackgroundTask(TestCase):
         self.assertEqual(bg2.requester_name, '-')
 
     def test_task_on_sent(self):
-        pass
+        """Test task on sent event handler."""
+        bg_task = BackgroundTaskF.create(
+            task_id=None
+        )
+        headers = {
+            'task': 'test',
+            'id': 'test-id'
+        }
+        task_args = (9999,)
+        task_sent_handler(headers=headers, body=(task_args,))
+        bg_task.refresh_from_db()
+        self.assertFalse(bg_task.task_id)
+        headers = {
+            'task': self.bg_task.task_name,
+            'id': self.bg_task.task_id
+        }
+        task_args = (9999,)
+        task_sent_handler(headers=headers, body=(task_args,))
+        self.bg_task.refresh_from_db()
+        self.assertEqual(self.bg_task.parameters, str(task_args))
+        self.assertEqual(self.bg_task.context_id, '9999')
+        self.assertEqual(self.bg_task.status, TaskStatus.PENDING)
+        self.assertEqual(
+            self.bg_task.last_update, mocked_dt)
 
     def test_task_on_queued(self):
-        pass
+        """Test task on queued handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_received_handler(sender, sender.request)
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(bg_task.status, TaskStatus.QUEUED)
 
     def test_task_on_started(self):
-        pass
+        """Test task on started handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_prerun_handler(sender, str(bg_task.task_id))
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(
+            bg_task.started_at, mocked_dt)
+        self.assertEqual(bg_task.status, TaskStatus.RUNNING)
+        self.assertEqual(bg_task.progress, 0)
+        self.assertEqual(bg_task.progress_text, 'Task has been started.')
 
     def test_task_on_completed(self):
-        pass
+        """Test task on completed handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_success_handler(sender, request=sender.request)
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(
+            bg_task.finished_at, mocked_dt)
+        self.assertEqual(bg_task.status, TaskStatus.COMPLETED)
+        self.assertEqual(bg_task.progress, 100)
 
     def test_task_on_cancelled(self):
-        pass
+        """Test task on cancelleed handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_revoked_handler(sender, request=sender.request)
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(bg_task.status, TaskStatus.CANCELLED)
 
     def test_task_on_errors(self):
-        pass
+        """Test task on errors handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_failure_handler(
+            sender, str(bg_task.task_id),
+            exception=Exception('this is error')
+        )
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(bg_task.status, TaskStatus.STOPPED)
+        self.assertTrue('this is error' in bg_task.errors)
+
+    def test_task_on_internal_error(self):
+        """Test task on internal error handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_internal_error_handler(
+            sender, str(bg_task.task_id),
+            exception=Exception('this is error')
+        )
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(bg_task.status, TaskStatus.STOPPED)
+        self.assertTrue('this is error' in bg_task.errors)
 
     def test_task_on_retried(self):
-        pass
+        """Test task on retried handler."""
+        bg_task = BackgroundTaskF.create()
+        sender = self.get_task_sender(bg_task)
+        task_retry_handler(sender, 'test-retry')
+        bg_task.refresh_from_db()
+        self.assertEqual(
+            bg_task.last_update, mocked_dt)
+        self.assertEqual(
+            bg_task.progress_text, 'Task is retried by scheduler.')
 
     def test_is_possible_interrupted(self):
-        pass
+        """Test is possible interrupted function"""
+        bg_task = BackgroundTaskF.create()
+        self.assertFalse(bg_task.is_possible_interrupted())
+        bg_task.status = TaskStatus.RUNNING
+        bg_task.save()
+        self.assertFalse(bg_task.is_possible_interrupted())
+        bg_task.last_update = timezone.now() - datetime.timedelta(days=1)
+        bg_task.save()
+        self.assertTrue(bg_task.is_possible_interrupted())
 
     def test_conf_celery(self):
         """Test celery conf."""

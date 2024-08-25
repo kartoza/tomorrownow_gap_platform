@@ -165,7 +165,7 @@ def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'last_update': timezone.now(),
             'parameters': task_args
         }
@@ -193,7 +193,7 @@ def task_received_handler(sender, request=None, **kwargs):
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'last_update': timezone.now(),
             'parameters': str(task_args)
         }
@@ -225,7 +225,7 @@ def task_prerun_handler(
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'parameters': str(args),
             'last_update': timezone.now(),
         }
@@ -248,7 +248,7 @@ def task_success_handler(sender, **kwargs):
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'last_update': timezone.now(),
         }
     )
@@ -279,7 +279,7 @@ def task_failure_handler(
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'parameters': str(args),
             'last_update': timezone.now(),
         }
@@ -304,7 +304,7 @@ def task_revoked_handler(sender, request = None, **kwargs):
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'last_update': timezone.now(),
         }
     )
@@ -330,7 +330,7 @@ def task_internal_error_handler(
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'last_update': timezone.now(),
         }
     )
@@ -354,7 +354,7 @@ def task_retry_handler(sender, reason, **kwargs):
     bg_task, _ = BackgroundTask.objects.get_or_create(
         task_id=task_id,
         defaults={
-            'name': task_name,
+            'task_name': task_name,
             'last_update': timezone.now(),
         }
     )
