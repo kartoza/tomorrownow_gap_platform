@@ -40,6 +40,7 @@ class DatasetStore:
     NETCDF = 'NETCDF'
     ZARR = 'ZARR'
     EXT_API = 'EXT_API'
+    ZIP_FILE = 'ZIP_FILE'
 
 
 class DatasetTimeStep:
@@ -50,7 +51,7 @@ class DatasetTimeStep:
 
 
 class Dataset(Definition):
-    """Model representing dataset of measument collection."""
+    """Model representing dataset of measurement collection."""
 
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
@@ -100,6 +101,7 @@ class DataSourceFile(models.Model):
         choices=(
             (DatasetStore.NETCDF, DatasetStore.NETCDF),
             (DatasetStore.ZARR, DatasetStore.ZARR),
+            (DatasetStore.ZIP_FILE, DatasetStore.ZIP_FILE),
         ),
         max_length=512
     )

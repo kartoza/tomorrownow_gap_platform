@@ -61,8 +61,34 @@ TIO_VARIABLES = {
 TIO_SHORT_TERM_FORCAST_VARIABLES = {
     'precipitationProbability': DatasetVariable(
         'Precipitation Probability',
-        '',
+        (
+            'Probability of precipitation represents the chance of >0.0254 cm '
+            '(0.01 in.) of liquid equivalent precipitation at a radius '
+            'surrounding a point location over a specific period of time.'
+        ),
         '%', 'precipitation_probability'
+    ),
+    'humidityMax': DatasetVariable(
+        'Humidity Maximum',
+        'The concentration of water vapor present in the air',
+        '%', 'humidity_maximum'
+    ),
+    'humidityMin': DatasetVariable(
+        'Humidity Minimum',
+        (
+            'The total amount of shortwave radiation received '
+            'from above by a surface horizontal to the ground'
+        ),
+        '%', 'humidity_minimum'
+    ),
+    'windSpeedAvg': DatasetVariable(
+        'Wind speed average',
+        (
+            'The fundamental atmospheric quantity caused by air moving from '
+            'high to low pressure, usually due to changes in temperature '
+            '(at 10m)'
+        ),
+        'm/s', 'wind_speed_avg'
     )
 }
 
@@ -195,6 +221,12 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             'content-type': 'application/json'
         }
 
+    def geom_type_allowed(self):
+        """Return if geom type is allowed."""
+        return self.location_input.type in [
+            LocationInputType.POINT, LocationInputType.POLYGON
+        ]
+
     def _get_payload(
             self, start_date: datetime, end_date: datetime,
             is_ltn: bool = False):
@@ -215,11 +247,9 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         start_dt = start_date
         if (end_date - start_dt).total_seconds() < 24 * 3600:
             start_dt = start_dt - timedelta(days=1)
+
         payload = {
-            'location': (
-                f'{self.location_input.point.y}, '
-                f'{self.location_input.point.x}'
-            ),
+            'location': self.location_input.geometry.geojson,
             'fields': [attr.source for attr in self.attributes],
             'timesteps': ['1d'],
             'units': 'metric',
@@ -248,7 +278,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         self.errors = None
         self.warnings = None
         today = datetime.now(tz=pytz.UTC)
-        if self.location_input.type != LocationInputType.POINT:
+        if not self.geom_type_allowed:
             return
         # handles:
         # - start_date=end_date
@@ -289,16 +319,18 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        if self.location_input.type != LocationInputType.POINT:
+        if not self.geom_type_allowed:
             return DatasetReaderValue(Point(x=0, y=0, srid=4326), [])
         if not self.is_success():
             logger.error(f'Tomorrow.io API errors: {len(self.errors)}')
             logger.error(json.dumps(self.errors))
-            return DatasetReaderValue(self.location_input.point, [])
+            return DatasetReaderValue(self.location_input.geometry, [])
         if self.warnings:
             logger.warn(f'Tomorrow.io API warnings: {len(self.warnings)}')
             logger.warn(json.dumps(self.warnings))
-        return DatasetReaderValue(self.location_input.point, self.results)
+        return DatasetReaderValue(
+            self.location_input.geometry, self.results
+        )
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.

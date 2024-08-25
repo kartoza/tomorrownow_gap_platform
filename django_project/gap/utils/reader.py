@@ -6,12 +6,13 @@ Tomorrow Now GAP.
 """
 
 import json
-from typing import Union, List, Dict
-import numpy as np
 from datetime import datetime
+from typing import Union, List, Dict
+
+import numpy as np
 import pytz
 from django.contrib.gis.geos import (
-    Point, MultiPolygon, GeometryCollection, MultiPoint
+    Point, MultiPolygon, GeometryCollection, MultiPoint, GEOSGeometry
 )
 
 from gap.models import (
@@ -102,8 +103,8 @@ class DatasetTimelineValue:
         dt = self.datetime
         if isinstance(self.datetime, np.datetime64):
             timestamp = (
-                (dt - np.datetime64('1970-01-01T00:00:00')) /
-                np.timedelta64(1, 's')
+                    (dt - np.datetime64('1970-01-01T00:00:00')) /
+                    np.timedelta64(1, 's')
             )
             dt = datetime.fromtimestamp(timestamp, tz=pytz.UTC)
         return dt.strftime(format)
@@ -124,16 +125,16 @@ class DatasetReaderValue:
     """Class representing all values from reader."""
 
     def __init__(
-            self, location: Point,
+            self, geometry: GEOSGeometry,
             results: List[DatasetTimelineValue]) -> None:
         """Initialize DatasetReaderValue object.
 
-        :param location: point to the observed station/grid cell
-        :type location: Point
+        :param geometry: geometry to the observed station/grid cell
+        :type geometry: GEOSGeometry
         :param results: Data value list
         :type results: List[DatasetTimelineValue]
         """
-        self.location = location
+        self.geometry = geometry
         self.results = results
 
     def to_dict(self):
@@ -142,10 +143,10 @@ class DatasetReaderValue:
         :return: Dictionary of metadata and data
         :rtype: dict
         """
-        if self.location is None:
+        if self.geometry is None:
             return {}
         return {
-            'geometry': json.loads(self.location.json),
+            'geometry': json.loads(self.geometry.json),
             'data': [result.to_dict() for result in self.results]
         }
 
@@ -191,6 +192,14 @@ class DatasetReaderInput:
         """Initialize DatasetReaderInput class."""
         self.geom_collection = geom_collection
         self.type = type
+
+    @property
+    def geometry(self) -> GEOSGeometry:
+        """Return geometry of geom_collection."""
+        geometry = self.geom_collection
+        if self.type == LocationInputType.POINT:
+            geometry = self.point
+        return geometry
 
     @property
     def point(self) -> Point:
@@ -319,7 +328,6 @@ class BaseDatasetReader:
         :rtype: DatasetReaderValue
         """
         pass
-
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.

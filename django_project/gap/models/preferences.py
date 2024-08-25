@@ -56,3 +56,10 @@ class Preferences(SingletonModel):
 
     def __str__(self):
         return 'Preferences'
+
+    def collect_sort_term_forecast_tio(self):
+        """Collect sort term forecast tio of area of interest."""
+        from gap.utils.collector import collect_sort_term_forecast_tio
+        collect_sort_term_forecast_tio(
+            self.area_of_interest, 22000  # 22km size
+        )

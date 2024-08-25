@@ -125,7 +125,7 @@ class TestTomorrowIODatasetReader(TestCase):
         self.assertEqual(len(self.reader.warnings), 1)
         # test get_data_values
         reader_value = self.reader.get_data_values()
-        self.assertEqual(reader_value.location, self.location_input.point)
+        self.assertEqual(reader_value.geometry, self.location_input.point)
         self.assertEqual(len(reader_value.results), 1)
         # mock 400 error
         mock_response = {
@@ -144,7 +144,7 @@ class TestTomorrowIODatasetReader(TestCase):
         self.assertEqual(len(self.reader.errors), 1)
         # test get_data_values
         reader_value = self.reader.get_data_values()
-        self.assertEqual(reader_value.location, self.location_input.point)
+        self.assertEqual(reader_value.geometry, self.location_input.point)
         self.assertEqual(len(reader_value.results), 0)
 
     @requests_mock.Mocker()
