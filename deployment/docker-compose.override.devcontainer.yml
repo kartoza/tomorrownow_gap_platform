@@ -14,7 +14,7 @@ services:
   worker:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ${PWD}
+      context: ../
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     volumes:
@@ -25,7 +25,7 @@ services:
   dev:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     build:
-      context: ${PWD}
+      context: ../
       dockerfile: deployment/docker/Dockerfile
       target: vscode
     entrypoint: []

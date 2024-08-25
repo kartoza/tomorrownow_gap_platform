@@ -7,8 +7,10 @@ Tomorrow Now GAP.
 
 import factory
 from django.contrib.auth import get_user_model
-
 from factory.django import DjangoModelFactory
+
+from core.models import BackgroundTask
+
 
 User = get_user_model()
 
@@ -24,3 +26,17 @@ class UserF(DjangoModelFactory):
     )
     first_name = 'John'
     last_name = 'Doe'
+
+
+class BackgroundTaskF(DjangoModelFactory):
+    """Factory class for BackgroundTask."""
+
+    class Meta:  # noqa
+        model = BackgroundTask
+
+    task_name = factory.Sequence(
+        lambda n: u'task-name %s' % n
+    )
+    task_id = factory.Faker('uuid4')
+    submitted_by = factory.SubFactory(UserF)
+    parameters = '(9999,)'
