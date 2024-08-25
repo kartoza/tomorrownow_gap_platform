@@ -85,7 +85,11 @@ class TestCropInsightGenerator(TestCase):
         'day6_mm', 'day6_Chance', 'day6_Type',
         'day7_mm', 'day7_Chance', 'day7_Type',
         'day8_mm', 'day8_Chance', 'day8_Type',
-        'day9_mm', 'day9_Chance', 'day9_Type'
+        'day9_mm', 'day9_Chance', 'day9_Type',
+        'day10_mm', 'day10_Chance', 'day10_Type',
+        'day11_mm', 'day11_Chance', 'day11_Type',
+        'day12_mm', 'day12_Chance', 'day12_Type',
+        'day13_mm', 'day13_Chance', 'day13_Type',
     ]
 
     def setUp(self):
@@ -95,6 +99,9 @@ class TestCropInsightGenerator(TestCase):
         )
         self.farm_2 = FarmFactory.create(
             geometry=Point(22.22222222, 100.111111111)
+        )
+        self.farm_3 = FarmFactory.create(
+            geometry=Point(50.22222222, 50.111111111)
         )
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
@@ -118,7 +125,7 @@ class TestCropInsightGenerator(TestCase):
             mock_execute_spw_model
     ):
         """Test calculate_from_point function."""
-        last_day = self.today + timedelta(days=10)
+        last_day = self.today + timedelta(days=12)
 
         def create_timeline_data(
                 output, _date, evap, rain, max, min, prec_prob
@@ -178,7 +185,7 @@ class TestCropInsightGenerator(TestCase):
         self.assertEqual(last_spw.signal, 'Plant NOW Tier 1b')
         self.assertEqual(self.farm.farmshorttermforecast_set.count(), 1)
         self.assertEqual(
-            forecast.farmshorttermforecastdata_set.count(), 45
+            forecast.farmshorttermforecastdata_set.count(), 55
         )
 
         # For farm 2
@@ -218,13 +225,14 @@ class TestCropInsightGenerator(TestCase):
             self.farm_2.farmshorttermforecast_set.count(), 1
         )
         self.assertEqual(
-            forecast.farmshorttermforecastdata_set.count(), 45
+            forecast.farmshorttermforecastdata_set.count(), 55
         )
 
         # Crop insight report
         self.request = CropInsightRequestFactory.create()
         self.request.farms.add(self.farm)
         self.request.farms.add(self.farm_2)
+        self.request.farms.add(self.farm_3)
         generate_insight_report(self.request.id)
         self.request.refresh_from_db()
         with self.request.file.open(mode='r') as csv_file:
@@ -235,7 +243,7 @@ class TestCropInsightGenerator(TestCase):
                 if row_num == 1:
                     self.assertEqual(row, self.csv_headers)
 
-                # First row
+                # Farm 1
                 elif row_num == 2:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm.unique_id)
@@ -253,7 +261,7 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[7], '50.0')  # Precip % chance
                     self.assertEqual(row[8], 'Light rain')  # Precip Type
 
-                # Second row
+                # Farm 2
                 elif row_num == 3:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm_2.unique_id)
@@ -268,6 +276,20 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[6], '0.5')  # Precip (daily)
                     self.assertEqual(row[7], '10.0')  # Precip % chance
                     self.assertEqual(row[8], 'No Rain')  # Precip Type
+
+                # Farm 3
+                elif row_num == 4:
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm_3.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm_3.phone_number)
+                    self.assertEqual(row[2], '50.1111')  # Latitude
+                    self.assertEqual(row[3], '50.2222')  # Longitude
+                    self.assertEqual(row[4], '')
+                    self.assertEqual(row[5], '')
+                    self.assertEqual(row[6], '')  # Precip (daily)
+                    self.assertEqual(row[7], '')  # Precip % chance
+                    self.assertEqual(row[8], '')  # Precip Type
                 row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
@@ -280,7 +302,7 @@ class TestCropInsightGenerator(TestCase):
         self.assertEqual(
             CropInsightRequest.objects.count(), 1
         )
-        self.assertEqual(mock_generate_spw.call_count, 2)
+        self.assertEqual(mock_generate_spw.call_count, 3)
         mock_generate_report.assert_called_once()
 
     def test_email_send(self):

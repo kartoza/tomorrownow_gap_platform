@@ -67,6 +67,28 @@ TIO_SHORT_TERM_FORCAST_VARIABLES = {
 }
 
 
+def tomorrowio_shortterm_forcast_dataset() -> Dataset:
+    """Return dataset object for tomorrow.io Dataset for sort term forecast."""
+    provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
+    dt_shorttermforecast, _ = DatasetType.objects.get_or_create(
+        name='Short-term Forecast',
+        defaults={
+            'type': CastType.FORECAST
+        }
+    )
+    ds_forecast, _ = Dataset.objects.get_or_create(
+        name=f'{provider.name} {dt_shorttermforecast.name}',
+        provider=provider,
+        type=dt_shorttermforecast,
+        store_type=DatasetStore.EXT_API,
+        defaults={
+            'time_step': DatasetTimeStep.DAILY,
+            'is_internal_use': True
+        }
+    )
+    return ds_forecast
+
+
 class TomorrowIODatasetReader(BaseDatasetReader):
     """Class to read data from Tomorrow.io API."""
 
@@ -104,22 +126,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
                 'is_internal_use': True
             }
         )
-        dt_shorttermforecast, _ = DatasetType.objects.get_or_create(
-            name='Short-term Forecast',
-            defaults={
-                'type': CastType.FORECAST
-            }
-        )
-        ds_forecast, _ = Dataset.objects.get_or_create(
-            name=f'{provider.name} {dt_shorttermforecast.name}',
-            provider=provider,
-            type=dt_shorttermforecast,
-            store_type=DatasetStore.EXT_API,
-            defaults={
-                'time_step': DatasetTimeStep.DAILY,
-                'is_internal_use': True
-            }
-        )
+        ds_forecast = tomorrowio_shortterm_forcast_dataset()
         dt_ltn, _ = DatasetType.objects.get_or_create(
             name=cls.LONG_TERM_NORMALS_TYPE,
             defaults={
