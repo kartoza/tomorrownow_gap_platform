@@ -97,7 +97,7 @@ class TestBackgroundTask(TestCase):
     def test_task_on_sent(self):
         """Test task on sent event handler."""
         bg_task = BackgroundTaskF.create(
-            task_id=None
+            task_id='test-id'
         )
         headers = {
             'task': 'test',
@@ -106,7 +106,7 @@ class TestBackgroundTask(TestCase):
         task_args = (9999,)
         task_sent_handler(headers=headers, body=(task_args,))
         bg_task.refresh_from_db()
-        self.assertFalse(bg_task.task_id)
+        self.assertTrue(bg_task.task_id)
         headers = {
             'task': self.bg_task.task_name,
             'id': self.bg_task.task_id
