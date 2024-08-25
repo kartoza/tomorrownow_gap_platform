@@ -114,7 +114,11 @@ class IngestorSession(models.Model):
         """Run the ingestor session."""
         try:
             self._run()
-            self.status = IngestorSessionStatus.SUCCESS
+            self.status = (
+                IngestorSessionStatus.SUCCESS if
+                not self.is_cancelled else
+                IngestorSessionStatus.CANCELLED
+            )
         except Exception as e:
             self.status = IngestorSessionStatus.FAILED
             self.notes = f'{e}'
