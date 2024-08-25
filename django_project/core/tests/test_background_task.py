@@ -207,7 +207,7 @@ class TestBackgroundTask(TestCase):
             bg_task.progress_text, 'Task is retried by scheduler.')
 
     def test_is_possible_interrupted(self):
-        """Test is possible interrupted function"""
+        """Test is possible interrupted function."""
         bg_task = BackgroundTaskF.create()
         self.assertFalse(bg_task.is_possible_interrupted())
         bg_task.status = TaskStatus.RUNNING

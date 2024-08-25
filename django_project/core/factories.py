@@ -8,7 +8,6 @@ Tomorrow Now GAP.
 import factory
 from django.contrib.auth import get_user_model
 from factory.django import DjangoModelFactory
-from django.utils import timezone
 
 from core.models import BackgroundTask
 

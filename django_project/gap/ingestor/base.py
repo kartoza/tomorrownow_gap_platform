@@ -17,6 +17,12 @@ class BaseIngestor:
         self.session = session
 
     def is_cancelled(self):
+        """Check if session is cancelled by user.
+
+        This method will refetch the session object from DB.
+        :return: True if session is gracefully cancelled.
+        :rtype: bool
+        """
         self.session.refresh_from_db()
         return self.session.is_cancelled
 

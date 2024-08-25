@@ -133,7 +133,7 @@ EXCLUDED_TASK_LIST = [
 
 
 def is_task_ignored(task_name: str) -> bool:
-    """Check if task should be ignored
+    """Check if task should be ignored.
 
     :param task_name: name of the task
     :type task_name: str
@@ -260,7 +260,7 @@ def task_failure_handler(
         sender, task_id=None, args=None,
         exception=None, traceback=None, **kwargs):
     """Handle a failure task from unexpected exception.
- 
+
     :param sender: task sender
     :type sender: any
     :param task_id: task id, defaults to None
@@ -370,9 +370,15 @@ def task_retry_handler(sender, reason, **kwargs):
     args=[('with_defaults', strtobool)],
 )
 def conf(state, with_defaults=False, **kwargs):
-    """
-    This overrides the `conf` inspect command to effectively disable it.
+    """Disable the `conf` inspect command.
+
     This is to stop sensitive configuration info appearing in e.g. Flower.
     (Celery makes an attempt to remove sensitive info,but it is not foolproof)
+    :param state: state
+    :type state: any
+    :param with_defaults: defaults, defaults to False
+    :type with_defaults: bool, optional
+    :return: Detail dictionary
+    :rtype: dict
     """
     return {'error': 'Config inspection has been disabled.'}

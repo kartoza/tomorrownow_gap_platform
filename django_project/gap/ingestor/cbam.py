@@ -201,7 +201,7 @@ class CBAMIngestor(BaseIngestor):
                 )
 
             # merge source_ds to target zarr
-            source_ds = source_reader.open_dataset(source)            
+            source_ds = source_reader.open_dataset(source)
             self.store_as_zarr(source_ds, iter_monthyear)
 
             # update progress

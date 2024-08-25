@@ -42,7 +42,7 @@ READ_ONLY_STATUS = [
 
 def parse_context_id_from_parameters(parameters: str) -> str:
     """Parse context_id from parameters.
-    
+
     Context id is assummed to be the first parameter
     :param parameters: string of tuple parameters
     :type parameters: str
@@ -268,12 +268,12 @@ class BackgroundTask(models.Model):
         self.save(
             update_fields=[
                 'last_update', 'status', 'errors', 'stack_trace_errors',
-                'progress_text'    
+                'progress_text'
             ]
         )
 
     def task_on_retried(self, reason):
-        """Event handler when task is retried by celery
+        """Event handler when task is retried by celery.
 
         :param reason: description why it's being retried
         :type reason: str

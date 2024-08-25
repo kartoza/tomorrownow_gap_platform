@@ -95,6 +95,7 @@ def cancel_background_task(modeladmin, request, queryset):
 @admin.register(BackgroundTask)
 class BackgroundTaskAdmin(admin.ModelAdmin):
     """Admin class for BackgroundTask model."""
+
     list_display = ('task_name', 'task_id', 'status', 'started_at',
                     'finished_at', 'last_update')
     search_fields = ['task_name', 'status', 'task_id']
