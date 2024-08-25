@@ -23,17 +23,18 @@ from gap.models import (
 )
 from gap.providers import CBAMNetCDFReader
 from gap.utils.zarr import BaseZarrReader
+from gap.ingestor.base import BaseIngestor
 
 
 logger = logging.getLogger(__name__)
 
 
-class CBAMIngestor:
+class CBAMIngestor(BaseIngestor):
     """Ingestor for CBAM Historical Data."""
 
     def __init__(self, session: IngestorSession):
         """Initialize CBAMIngestor."""
-        self.session = session
+        super().__init__(session)
         self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
         self.s3 = BaseZarrReader.get_s3_variables()
         self.s3_options = {
@@ -161,6 +162,8 @@ class CBAMIngestor:
             'end_date': None,
             'total_processed': 0
         }
+
+        # query NetCDF DataSourceFile for CBAM Dataset
         sources = DataSourceFile.objects.filter(
             dataset=self.dataset,
             format=DatasetStore.NETCDF
@@ -168,16 +171,26 @@ class CBAMIngestor:
         logger.info(f'Total CBAM source files: {sources.count()}')
         if not sources.exists():
             return
+
+        # Initialize NetCDFReader
         source_reader = CBAMNetCDFReader(self.dataset, [], None, None, None)
         source_reader.setup_reader()
         total_monthyear = 0
         progress = None
         curr_monthyear = None
+
+        # iterate for each NetCDF DataFileSource
         for source in sources:
+            # check if cancelled
+            if self.is_cancelled():
+                break
+
             iter_monthyear = source.start_date_time.date()
             # check if iter_monthyear is already in dataset
             if self.is_date_in_zarr(iter_monthyear):
                 continue
+
+            # initialize progress if empty
             if curr_monthyear is None:
                 self.metadata['start_date'] = iter_monthyear
                 curr_monthyear = iter_monthyear
@@ -186,14 +199,16 @@ class CBAMIngestor:
                     filename=f'{curr_monthyear.year}-{curr_monthyear.month}',
                     row_count=0
                 )
-            source_ds = source_reader.open_dataset(source)
+
             # merge source_ds to target zarr
+            source_ds = source_reader.open_dataset(source)
             self.store_as_zarr(source_ds, iter_monthyear)
+
+            # update progress
             self.metadata['total_processed'] += 1
             total_monthyear += 1
             if (
-                curr_monthyear.year != iter_monthyear.year and
-                curr_monthyear.month != iter_monthyear.month
+                curr_monthyear.year != iter_monthyear.year
             ):
                 # update ingestion progress
                 if progress:
@@ -208,6 +223,7 @@ class CBAMIngestor:
                     filename=f'{curr_monthyear.year}-{curr_monthyear.month}',
                     row_count=0
                 )
+
         # save last progress
         if progress:
             progress.row_count = total_monthyear
@@ -222,6 +238,7 @@ class CBAMIngestor:
             self._run()
             self.notes = json.dumps(self.metadata, default=str)
             logger.info(f'Ingestor CBAM NetCDFFile: {self.notes}')
+
             # update datasourcefile
             if (
                 self.metadata['start_date'] and self.metadata['start_date'] <
