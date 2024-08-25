@@ -1,3 +1,11 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Utilities for S3.
+
+"""
+
 import io
 import zipfile
 

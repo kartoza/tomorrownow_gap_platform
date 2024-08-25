@@ -68,9 +68,10 @@ def collect_sort_term_forecast_tio(polygon: Polygon, size: int):
     for bbox in split_polygon_to_bbox(polygon, size):
 
         # Check the file, skip if the file exist
-        file_name = f"{hashlib.sha256(
+        hash_string = hashlib.sha256(
             json.dumps(bbox.geojson).encode('utf-8')
-        ).hexdigest()}.json"
+        ).hexdigest()
+        file_name = f"{hash_string}.json"
         bbox_filename = os.path.join(folder, file_name)
 
         # If the json file is exist, skip it
