@@ -31,11 +31,24 @@ def area_of_interest_default():
     return Polygon(coordinates)
 
 
+def crop_plan_config_default():
+    """Return dictionary for crop plan config."""
+    return {
+        'lat_lon_decimal_digits': -1,
+        'tz': '+02:00'  # East Africa Time
+    }
+
+
 class Preferences(SingletonModel):
     """Preference settings specifically for gap."""
 
     area_of_interest = models.PolygonField(
         srid=4326, default=area_of_interest_default
+    )
+
+    crop_plan_config = models.JSONField(
+        default=crop_plan_config_default,
+        blank=True
     )
 
     class Meta:  # noqa: D106
