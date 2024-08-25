@@ -136,3 +136,36 @@ class CBAMIngestorTest(TestCase):
         ingestor._run.assert_called_once()
         mock_json_dumps.assert_called_once_with(
             ingestor.metadata, default=str)
+
+    @patch('gap.providers.CBAMNetCDFReader.open_dataset')
+    @patch('gap.utils.zarr.BaseZarrReader.open_dataset')
+    @patch('gap.utils.zarr.BaseZarrReader.setup_reader')
+    def test_cancel_run(
+        self, mock_setup_reader, mock_open_dataset, mock_open_dataset_reader
+    ):
+        """Test cancel run."""
+        session = IngestorSession.objects.create()
+        session.is_cancelled = True
+        session.save()
+        ingestor = CBAMIngestor(session)
+        mock_ds = MagicMock(spec=xrDataset)
+        mock_open_dataset.return_value = mock_ds
+        mock_open_dataset_reader.return_value = mock_ds
+
+        DataSourceFile.objects.create(
+            name='test',
+            dataset=self.dataset,
+            start_date_time=datetime.combine(
+                date=date(2023, 1, 1), time=time.min),
+            end_date_time=datetime.combine(
+                date=date(2023, 1, 1), time=time.min),
+            format=DatasetStore.NETCDF,
+            created_on=datetime.combine(date=date(2023, 1, 1), time=time.min)
+        )
+
+        ingestor.is_date_in_zarr = MagicMock(return_value=False)
+        ingestor.store_as_zarr = MagicMock()
+
+        ingestor.run()
+
+        ingestor.store_as_zarr.assert_not_called()

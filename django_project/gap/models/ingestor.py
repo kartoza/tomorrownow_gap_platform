@@ -34,6 +34,7 @@ class IngestorSessionStatus:
     RUNNING = 'RUNNING'
     SUCCESS = 'SUCCESS'
     FAILED = 'FAILED'
+    CANCELLED = 'CANCELLED'
 
 
 class IngestorSession(models.Model):
@@ -64,6 +65,10 @@ class IngestorSession(models.Model):
             (IngestorSessionStatus.RUNNING, IngestorSessionStatus.RUNNING),
             (IngestorSessionStatus.SUCCESS, IngestorSessionStatus.SUCCESS),
             (IngestorSessionStatus.FAILED, IngestorSessionStatus.FAILED),
+            (
+                IngestorSessionStatus.CANCELLED,
+                IngestorSessionStatus.CANCELLED
+            ),
         ),
         max_length=512
     )
@@ -77,10 +82,8 @@ class IngestorSession(models.Model):
     end_at = models.DateTimeField(
         blank=True, null=True
     )
-    additional_config = models.JSONField(
-        default=dict,
-        blank=True, null=True
-    )
+    additional_config = models.JSONField(blank=True, default=dict, null=True)
+    is_cancelled = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         """Override ingestor save."""
@@ -111,7 +114,11 @@ class IngestorSession(models.Model):
         """Run the ingestor session."""
         try:
             self._run()
-            self.status = IngestorSessionStatus.SUCCESS
+            self.status = (
+                IngestorSessionStatus.SUCCESS if
+                not self.is_cancelled else
+                IngestorSessionStatus.CANCELLED
+            )
         except Exception as e:
             self.status = IngestorSessionStatus.FAILED
             self.notes = f'{e}'

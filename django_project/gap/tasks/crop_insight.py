@@ -17,14 +17,14 @@ logger = get_task_logger(__name__)
 User = get_user_model()
 
 
-@app.task
+@app.task(name='generate_spw')
 def generate_spw(farms_id: list):
     """Generate spw."""
     for farm in Farm.objects.filter(id__in=farms_id):
         CropInsightFarmGenerator(farm).generate_spw()
 
 
-@app.task
+@app.task(name='generate_insight_report')
 def generate_insight_report(_id: list):
     """Generate insight report."""
     request = CropInsightRequest.objects.get(id=_id)

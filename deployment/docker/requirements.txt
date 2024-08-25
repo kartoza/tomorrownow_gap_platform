@@ -6,6 +6,9 @@ djangorestframework==3.14.0
 # Geographic add-ons for Django Rest Framework
 djangorestframework-gis==1.0
 
+# CSV add-ons for Django Rest Framework
+djangorestframework-csv==3.0.2
+
 # Python HTTP library
 requests==2.31.0
 
