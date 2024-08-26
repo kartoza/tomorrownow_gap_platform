@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0009_preferences'),
+        ('gap', '0011_preferences_crop_plan_config'),
     ]
 
     operations = [
