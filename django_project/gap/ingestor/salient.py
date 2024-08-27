@@ -12,7 +12,7 @@ import logging
 import datetime
 import pytz
 import traceback
-import tempfile
+import fsspec
 from math import ceil
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ import xarray as xr
 import salientsdk as sk
 from xarray.core.dataset import Dataset as xrDataset
 from django.utils import timezone
-import fsspec
+from django.core.files.storage import default_storage
 
 
 from gap.models import (
@@ -123,7 +123,6 @@ class SalientCollector(BaseIngestor):
         filename = f'{str(uuid.uuid4())}.nc'
         netcdf_url = (
             NetCDFMediaS3.get_netcdf_base_url(self.s3) + filename
-            
         )
         sliced_ds.to_netcdf(
             netcdf_url, engine='netcdf4', mode='w',
@@ -152,7 +151,7 @@ class SalientCollector(BaseIngestor):
 
     def _run(self):
         """Download Salient Seasonal Forecast from sdk."""
-        logger.info(f'Running data collector for Salient.')
+        logger.info(f'Running data collector for Salient - {self.session.id}.')
         logger.info(f'Working directory: {self.working_dir}')
 
         # initialize sdk
@@ -222,19 +221,83 @@ class SalientIngestor(BaseIngestor):
             )
         )
 
+    def _get_s3_filepath(self, source_file: DataSourceFile):
+        dir_prefix = os.environ.get(f'MINIO_AWS_DIR_PREFIX', '')
+        return os.path.join(
+            dir_prefix,
+            'salient',
+            source_file.name
+        )
+
+    def _open_dataset(self, source_file: DataSourceFile) -> xrDataset:
+        s3 = NetCDFMediaS3.get_s3_variables('salient')
+        fs = fsspec.filesystem(
+            's3',
+            key=s3.get('AWS_ACCESS_KEY_ID'),
+            secret=s3.get('AWS_SECRET_ACCESS_KEY'),
+            client_kwargs=NetCDFMediaS3.get_s3_client_kwargs()
+        )
+
+        prefix = os.path.join(s3['AWS_DIR_PREFIX'], 'salient')
+        bucket_name = s3['AWS_BUCKET_NAME']
+        netcdf_url = f's3://{bucket_name}/{prefix}'
+        if not netcdf_url.endswith('/'):
+            netcdf_url += '/'
+        netcdf_url += f'{source_file.name}'
+        return xr.open_dataset(fs.open(netcdf_url))
+
+    def _update_zarr_source_file(self, forecast_date: datetime.date):
+        if self.datasource_file.start_date_time.date() > forecast_date:
+            self.datasource_file.start_date_time = datetime.datetime(
+                forecast_date.year, forecast_date.month, forecast_date.day,
+                0, 0, 0, tzinfo=pytz.UTC
+            )
+        elif self.datasource_file.end_date_time.date() < forecast_date:
+            self.datasource_file.end_date_time = datetime.datetime(
+                forecast_date.year, forecast_date.month, forecast_date.day,
+                0, 0, 0, tzinfo=pytz.UTC
+            )
+        self.datasource_file.save()
+
+    def _remove_original_source_file(self, source_file: DataSourceFile, file_path: str):
+        try:
+            default_storage.delete(file_path)
+        except Exception as ex:
+            logger.error(f'Failed to remove original source_file {file_path}!', ex)
+        finally:
+            source_file.delete()
+
     def _run(self):
         """Run Salient ingestor."""
+        logger.info(f'Running data ingestor for Salient: {self.session.id}.')
         # Query the datasource file
+        source_file = (
+            self.session.collector.dataset_files.first()
+        )
+        if source_file is None:
+            return
+        s3_storage = default_storage
+        file_path = self._get_s3_filepath(source_file)
+        if not s3_storage.exists(file_path):
+            logger.warn(f'DataSource {file_path} does not exist!')
+            return
+        
+        # open the dataset
+        dataset = self._open_dataset(source_file)
 
-        today = datetime.datetime.now()
-        # self.store_as_zarr(fcst_file, today.date())
+        # convert to zarr
+        forecast_date = source_file.start_date_time.date()
+        self.store_as_zarr(dataset, forecast_date)
 
-        # update start/end date of datasource file
+        # update start/end date of zarr datasource file
+        self._update_zarr_source_file(forecast_date)
+
+        # delete netcdf datasource file
+        self._remove_original_source_file(source_file, file_path)
 
     def store_as_zarr(self, dataset: xrDataset, forecast_date: datetime.date):
         forecast_dates = pd.date_range(
             f'{forecast_date.isoformat()}', periods=1)
-        end_date = forecast_date + datetime.timedelta(days=3 * 30)
         data_vars = {}
         for var_name, da in dataset.data_vars.items():    
             # Initialize the data_var with the empty array

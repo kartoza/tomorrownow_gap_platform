@@ -12,6 +12,7 @@ from gap.models import (
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
     DatasetType, Unit, Village, CollectorSession
 )
+from gap.tasks.ingestor import run_collector_session
 
 
 @admin.register(Unit)
@@ -114,6 +115,13 @@ class IngestorSessionAdmin(admin.ModelAdmin):
     inlines = (IngestorSessionProgressInline,)
 
 
+@admin.action(description='Run Collector Session Task')
+def trigger_collector_session(modeladmin, request, queryset):
+    """Run Collector Session."""
+    for query in queryset:
+        run_collector_session.delay(query.id)
+
+
 @admin.register(CollectorSession)
 class CollectorSessionAdmin(admin.ModelAdmin):
     """CollectorSession admin."""
@@ -123,6 +131,7 @@ class CollectorSessionAdmin(admin.ModelAdmin):
         'total_output'
     )
     list_filter = ('ingestor_type', 'status')
+    actions = (trigger_collector_session,)
 
     def total_output(self, obj: CollectorSession):
         """Return total count."""

@@ -91,10 +91,13 @@ class CollectorSession(BaseSession):
     def _run(self, working_dir):
         """Run the collector session."""
         from gap.ingestor.cbam import CBAMCollector
+        from gap.ingestor.salient import SalientCollector
 
         ingestor = None
         if self.ingestor_type == IngestorType.CBAM:
             ingestor = CBAMCollector(self, working_dir)
+        elif self.ingestor_type == IngestorType.SALIENT:
+            ingestor = SalientCollector(self, working_dir)
 
         if ingestor:
             ingestor.run()
