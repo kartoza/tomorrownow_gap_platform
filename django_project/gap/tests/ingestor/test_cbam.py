@@ -12,12 +12,14 @@ from xarray.core.dataset import Dataset as xrDataset
 from django.test import TestCase
 
 from gap.models import Dataset, DataSourceFile, DatasetStore
-from gap.models.ingestor import IngestorSession
+from gap.models.ingestor import IngestorSession, IngestorType, CollectorSession, IngestorSessionStatus
 from gap.ingestor.cbam import CBAMIngestor
+from gap.tasks.ingestor import run_cbam_collector_session
+from gap.factories import DataSourceFileFactory
 
 
-class CBAMIngestorTest(TestCase):
-    """CBAM ingestor test case."""
+class CBAMIngestorBaseTest(TestCase):
+    """Base test for CBAM ingestor/collector."""
 
     fixtures = [
         '2.provider.json',
@@ -30,8 +32,90 @@ class CBAMIngestorTest(TestCase):
     ]
 
     def setUp(self):
-        """Set CBAMIngestorTest."""
+        """Set CBAMIngestorBaseTest."""
         self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
+
+
+class CBAMCollectorTest(CBAMIngestorBaseTest):
+    """CBAM collector test case."""
+
+    @patch('gap.ingestor.cbam.s3fs.S3FileSystem')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
+    def test_cbam_collector(
+        self, mock_get_s3_kwargs, mock_get_s3_env, mock_s3fs
+    ):
+        """Test run cbam collector."""
+        mock_get_s3_env.return_value = {
+            'AWS_DIR_PREFIX': 'cbam',
+            'AWS_ENDPOINT_URL': 'test_endpoint',
+            'AWS_BUCKET_NAME': 'test_bucket'
+        }
+        mock_fs = MagicMock()
+        mock_s3fs.return_value = mock_fs
+        mock_fs.walk.return_value = [
+            ('test_bucket/cbam', [], ['2023-01-01.nc']),
+            ('test_bucket/cbam', [], ['2023-01-02.nc']),
+            ('test_bucket/cbam/dmrpp', [], ['2023-01-01.nc.dmrpp']),
+            ('test_bucket/cbam/2023', [], ['2023-02-01.nc']),
+        ]
+        # add existing NetCDF File
+        DataSourceFileFactory.create(
+            dataset=self.dataset,
+            name='2023-01-02.nc'
+        )
+        collector = CollectorSession.objects.create(
+            ingestor_type=IngestorType.CBAM
+        )
+        collector.run()
+        collector.refresh_from_db()
+        print(collector.notes)
+        self.assertEqual(collector.status, IngestorSessionStatus.SUCCESS)
+        mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
+        self.assertEqual(
+            DataSourceFile.objects.filter(
+                dataset=self.dataset, name='2023-01-02.nc'
+            ).count(),
+            1
+        )
+        self.assertFalse(
+            DataSourceFile.objects.filter(
+                dataset=self.dataset, name='dmrpp/2023-01-01.nc.dmrpp'
+            ).exists()
+        )
+        self.assertTrue(
+            DataSourceFile.objects.filter(
+                dataset=self.dataset, name='2023-01-01.nc'
+            ).exists()
+        )
+        self.assertTrue(
+            DataSourceFile.objects.filter(
+                dataset=self.dataset, name='2023/2023-02-01.nc'
+            ).exists()
+        )
+
+    @patch.object(CollectorSession, 'run')
+    def test_run_cbam_collector_session(self, mocked_run):
+        """Test task to run cbam collector session."""
+        run_cbam_collector_session()
+        mocked_run.assert_called_once()
+        self.assertFalse(IngestorSession.objects.filter(
+            ingestor_type=IngestorType.CBAM
+        ).exists())
+
+
+class CBAMIngestorTest(CBAMIngestorBaseTest):
+    """CBAM ingestor test case."""
+
+    fixtures = [
+        '2.provider.json',
+        '3.observation_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')

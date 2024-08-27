@@ -13,6 +13,7 @@ from gap.ingestor.exceptions import (
 from gap.models import (
     IngestorSession, Farm, Crop, FarmCategory, FarmRSVPStatus, Village
 )
+from gap.ingestor.base import BaseIngestor
 from gap.utils.dms import dms_string_to_point
 
 COLUMN_COUNT = 9
@@ -31,12 +32,12 @@ class Keys:
     CROP = 'Trial Crop'
 
 
-class FarmIngestor:
+class FarmIngestor(BaseIngestor):
     """Ingestor for Farm data."""
 
-    def __init__(self, session: IngestorSession):
+    def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
-        self.session = session
+        super().__init__(session, working_dir)
 
     def _run(self):
         """Run the ingestor."""

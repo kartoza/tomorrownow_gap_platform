@@ -22,6 +22,9 @@ class Attribute(Definition):
     unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE
     )
+    is_active = models.BooleanField(
+        default=True
+    )
 
 
 class DatasetAttribute(models.Model):

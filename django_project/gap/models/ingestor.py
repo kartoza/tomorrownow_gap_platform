@@ -5,10 +5,13 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
+import tempfile
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
+
+from gap.models.dataset import DataSourceFile
 
 User = get_user_model()
 
@@ -37,12 +40,11 @@ class IngestorSessionStatus:
     CANCELLED = 'CANCELLED'
 
 
-class IngestorSession(models.Model):
-    """Ingestor Session model.
+class BaseSession(models.Model):
+    """Base class for Collector and Ingestor Session."""
 
-    Attributes:
-        ingestor_type (str): Ingestor type.
-    """
+    class Meta:  # noqa: D106
+        abstract = True
 
     ingestor_type = models.CharField(
         default=IngestorType.TAHMO,
@@ -54,10 +56,6 @@ class IngestorSession(models.Model):
             (IngestorType.TOMORROWIO, IngestorType.TOMORROWIO),
         ),
         max_length=512
-    )
-    file = models.FileField(
-        upload_to=ingestor_file_path,
-        null=True, blank=True
     )
     status = models.CharField(
         default=IngestorSessionStatus.RUNNING,
@@ -75,7 +73,6 @@ class IngestorSession(models.Model):
     notes = models.TextField(
         blank=True, null=True
     )
-
     run_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -85,6 +82,58 @@ class IngestorSession(models.Model):
     additional_config = models.JSONField(blank=True, default=dict, null=True)
     is_cancelled = models.BooleanField(default=False)
 
+
+class CollectorSession(BaseSession):
+    """Class representing data collection session."""
+
+    dataset_files = models.ManyToManyField(DataSourceFile)
+
+    def _run(self, working_dir):
+        """Run the collector session."""
+        from gap.ingestor.cbam import CBAMCollector
+
+        ingestor = None
+        if self.ingestor_type == IngestorType.CBAM:
+            ingestor = CBAMCollector(self, working_dir)
+
+        if ingestor:
+            ingestor.run()
+
+
+    def run(self):
+        try:
+            with tempfile.TemporaryDirectory() as working_dir:
+                self._run(working_dir)
+                self.status = (
+                    IngestorSessionStatus.SUCCESS if
+                    not self.is_cancelled else
+                    IngestorSessionStatus.CANCELLED
+                )
+        except Exception as e:
+            self.status = IngestorSessionStatus.FAILED
+            self.notes = f'{e}'
+
+        self.end_at = timezone.now()
+        self.save()
+
+
+class IngestorSession(BaseSession):
+    """Ingestor Session model.
+
+    Attributes:
+        ingestor_type (str): Ingestor type.
+    """
+
+    file = models.FileField(
+        upload_to=ingestor_file_path,
+        null=True, blank=True
+    )
+
+    collector = models.ForeignKey(
+        CollectorSession, null=True, blank=True,
+        on_delete=models.SET_NULL
+    )
+
     def save(self, *args, **kwargs):
         """Override ingestor save."""
         from gap.tasks import run_ingestor_session  # noqa
@@ -93,7 +142,7 @@ class IngestorSession(models.Model):
         if created:
             run_ingestor_session.delay(self.id)
 
-    def _run(self):
+    def _run(self, working_dir):
         """Run the ingestor session."""
         from gap.ingestor.tahmo import TahmoIngestor
         from gap.ingestor.farm import FarmIngestor
@@ -101,11 +150,11 @@ class IngestorSession(models.Model):
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
-            ingestor = TahmoIngestor(self)
+            ingestor = TahmoIngestor(self, working_dir)
         elif self.ingestor_type == IngestorType.FARM:
-            ingestor = FarmIngestor(self)
+            ingestor = FarmIngestor(self, working_dir)
         elif self.ingestor_type == IngestorType.CBAM:
-            ingestor = CBAMIngestor(self)
+            ingestor = CBAMIngestor(self, working_dir)
 
         if ingestor:
             ingestor.run()
@@ -113,12 +162,13 @@ class IngestorSession(models.Model):
     def run(self):
         """Run the ingestor session."""
         try:
-            self._run()
-            self.status = (
-                IngestorSessionStatus.SUCCESS if
-                not self.is_cancelled else
-                IngestorSessionStatus.CANCELLED
-            )
+            with tempfile.TemporaryDirectory() as working_dir:
+                self._run(working_dir)
+                self.status = (
+                    IngestorSessionStatus.SUCCESS if
+                    not self.is_cancelled else
+                    IngestorSessionStatus.CANCELLED
+                )
         except Exception as e:
             self.status = IngestorSessionStatus.FAILED
             self.notes = f'{e}'

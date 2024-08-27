@@ -10,7 +10,7 @@ from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
-    DatasetType, Unit, Village
+    DatasetType, Unit, Village, CollectorSession
 )
 
 
@@ -112,6 +112,21 @@ class IngestorSessionAdmin(admin.ModelAdmin):
     )
     list_filter = ('ingestor_type', 'status')
     inlines = (IngestorSessionProgressInline,)
+
+
+@admin.register(CollectorSession)
+class CollectorSessionAdmin(admin.ModelAdmin):
+    """CollectorSession admin."""
+
+    list_display = (
+        'run_at', 'status', 'end_at', 'ingestor_type',
+        'total_output'
+    )
+    list_filter = ('ingestor_type', 'status')
+
+    def total_output(self, obj: CollectorSession):
+        """Return total count."""
+        return obj.dataset_files.count()
 
 
 @admin.register(DataSourceFile)

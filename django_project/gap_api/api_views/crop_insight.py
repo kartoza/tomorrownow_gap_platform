@@ -8,6 +8,7 @@ from datetime import datetime
 
 from django.db.utils import ProgrammingError
 from django.http import HttpResponseBadRequest
+from django.conf import settings
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -28,6 +29,9 @@ from gap_api.utils.helper import ApiTag
 
 def default_fields():
     """Return default fields."""
+    # avoid pytest discover test errors
+    if settings.DEBUG:
+        return
     try:
         return CropPlanData.default_fields()
     except ProgrammingError:

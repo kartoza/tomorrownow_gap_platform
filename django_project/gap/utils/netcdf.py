@@ -92,6 +92,70 @@ def daterange_inc(start_date: datetime, end_date: datetime):
         yield start_date + timedelta(n)
 
 
+class NetCDFMediaS3:
+    """Class to provide S3 variables to Media bucket."""
+
+    @classmethod
+    def get_s3_variables(cls, dir_name: str) -> dict:
+        """Get s3 env variables for NetCDF file.
+
+        :param dir_name: Directory name
+        :type dir_name: str
+        :return: Dictionary of S3 env vars
+        :rtype: dict
+        """
+        prefix = 'MINIO'
+        keys = [
+            'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+            'AWS_ENDPOINT_URL', 'AWS_REGION_NAME'
+        ]
+        results = {}
+        for key in keys:
+            results[key] = os.environ.get(f'{prefix}_{key}', '')
+        results['AWS_BUCKET_NAME'] = os.environ.get(
+            'MINIO_AWS_BUCKET_NAME', '')
+        dir_prefix = os.environ.get(
+            'MINIO_AWS_DIR_PREFIX', '')
+        results['AWS_DIR_PREFIX'] = os.path.join(
+            dir_prefix,
+            dir_name
+        )
+        return results
+
+    @classmethod
+    def get_s3_client_kwargs(cls) -> dict:
+        """Get s3 client kwargs for NetCDF file.
+
+        :return: dictionary with key endpoint_url or region_name
+        :rtype: dict
+        """
+        prefix = 'MINIO'
+        client_kwargs = {}
+        if os.environ.get(f'{prefix}_AWS_ENDPOINT_URL', ''):
+            client_kwargs['endpoint_url'] = os.environ.get(
+                f'{prefix}_AWS_ENDPOINT_URL', '')
+        if os.environ.get(f'{prefix}_AWS_REGION_NAME', ''):
+            client_kwargs['region_name'] = os.environ.get(
+                f'{prefix}_AWS_REGION_NAME', '')
+        return client_kwargs
+
+    @classmethod
+    def get_netcdf_base_url(cls, s3: dict) -> str:
+        """Generate NetCDF base URL.
+
+        :param s3: Dictionary of S3 env vars
+        :type s3: dict
+        :return: Base URL with s3 and bucket name
+        :rtype: str
+        """
+        prefix = s3['AWS_DIR_PREFIX']
+        bucket_name = s3['AWS_BUCKET_NAME']
+        netcdf_url = f's3://{bucket_name}/{prefix}'
+        if not netcdf_url.endswith('/'):
+            netcdf_url += '/'
+        return netcdf_url
+
+
 class BaseNetCDFReader(BaseDatasetReader):
     """Base class for NetCDF File Reader."""
 

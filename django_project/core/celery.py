@@ -42,10 +42,6 @@ app.conf.beat_scheduler = 'django_celery_beat.schedulers.DatabaseScheduler'
 
 # Task cron job schedules
 app.conf.beat_schedule = {
-    'netcdf-s3-sync': {
-        'task': 'netcdf_s3_sync',
-        'schedule': crontab(minute='0', hour='1'),  # Run everyday at 1am UTC
-    },
     'generate-crop-plan': {
         'task': 'generate_crop_plan',
         # Run everyday at 2am East Africa Time or 23:00 UTC

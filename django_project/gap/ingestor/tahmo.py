@@ -23,6 +23,7 @@ from gap.models import (
     Measurement, Dataset, DatasetType, DatasetTimeStep,
     DatasetStore, DatasetAttribute
 )
+from gap.ingestor.base import BaseIngestor
 
 
 class TahmoVariable:
@@ -35,12 +36,12 @@ class TahmoVariable:
         self.dataset_attr = None
 
 
-class TahmoIngestor:
+class TahmoIngestor(BaseIngestor):
     """Ingestor for tahmo data."""
 
-    def __init__(self, session: IngestorSession):
+    def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
-        self.session = session
+        super().__init__(session, working_dir)
 
         self.provider = Provider.objects.get(
             name='Tahmo'
@@ -222,11 +223,13 @@ class TahmoIngestor:
             raise FileNotFoundException()
 
         # Extract file
-        dir_path = f'/tmp/{str(uuid.uuid4())}'
+        dir_path = os.path.join(self.working_dir, str(uuid.uuid4()))
         os.makedirs(dir_path, exist_ok=True)
         with self.session.file.open('rb') as zip_file:
             # Create a NamedTemporaryFile to store the downloaded file
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            with tempfile.NamedTemporaryFile(
+                delete=False, dir=self.working_dir
+            ) as tmp_file:
                 tmp_file.write(zip_file.read())
                 tmp_file_path = tmp_file.name
         with ZipFile(tmp_file_path, 'r') as zip_ref:
