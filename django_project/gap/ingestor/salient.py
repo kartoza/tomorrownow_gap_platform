@@ -59,6 +59,7 @@ class SalientCollector(BaseIngestor):
         # reset variables
         self.total_count = 0
         self.data_files = []
+        self.metadata = {}
 
     def _get_date_config(self):
         """Retrieve date from config or default to be today."""
@@ -139,6 +140,7 @@ class SalientCollector(BaseIngestor):
         sliced_file_path = os.path.join(self.working_dir, filename)
         sliced_ds.to_netcdf(sliced_file_path, engine='h5netcdf', format='NETCDF4')
         self.fs.put(sliced_file_path, netcdf_url)
+        file_stats = os.stat(sliced_file_path)
 
         # create DataSourceFile
         start_datetime = datetime.datetime(
@@ -159,6 +161,12 @@ class SalientCollector(BaseIngestor):
         ))
         self.total_count += 1
         self.session.dataset_files.set(self.data_files)
+        self.metadata = {
+            'filepath': netcdf_url,
+            'filesize': file_stats.st_size,
+            'forecast_date': forecast_date.isoformat(),
+            'end_date': end_date.isoformat()
+        }
 
     def _run(self):
         """Download Salient Seasonal Forecast from sdk."""
@@ -195,6 +203,7 @@ class SalientCollector(BaseIngestor):
         """Run Salient Data Collector."""
         try:
             self._run()
+            self.session.notes = json.dumps(self.metadata, default=str)
         except Exception as e:
             logger.error('Collector Salient failed!', e)
             logger.error(traceback.format_exc())
@@ -226,7 +235,7 @@ class SalientIngestor(BaseIngestor):
                     'created_on': timezone.now(),
                     'start_date_time': timezone.now(),
                     'end_date_time': (
-                        timezone.now() + datetime.timedelta(days=3 * 30)
+                        timezone.now()
                     )
                 }
             )
@@ -248,7 +257,7 @@ class SalientIngestor(BaseIngestor):
             client_kwargs=NetCDFMediaS3.get_s3_client_kwargs()
         )
 
-        prefix = os.path.join(s3['AWS_DIR_PREFIX'], 'salient')
+        prefix = s3['AWS_DIR_PREFIX']
         bucket_name = s3['AWS_BUCKET_NAME']
         netcdf_url = f's3://{bucket_name}/{prefix}'
         if not netcdf_url.endswith('/'):
@@ -257,53 +266,79 @@ class SalientIngestor(BaseIngestor):
         return xr.open_dataset(fs.open(netcdf_url))
 
     def _update_zarr_source_file(self, forecast_date: datetime.date):
-        if self.datasource_file.start_date_time.date() > forecast_date:
+        if self.created:
             self.datasource_file.start_date_time = datetime.datetime(
                 forecast_date.year, forecast_date.month, forecast_date.day,
                 0, 0, 0, tzinfo=pytz.UTC
             )
-        elif self.datasource_file.end_date_time.date() < forecast_date:
-            self.datasource_file.end_date_time = datetime.datetime(
-                forecast_date.year, forecast_date.month, forecast_date.day,
-                0, 0, 0, tzinfo=pytz.UTC
+            self.datasource_file.end_date_time = (
+                self.datasource_file.start_date_time
             )
+        else:
+            if self.datasource_file.start_date_time.date() > forecast_date:
+                self.datasource_file.start_date_time = datetime.datetime(
+                    forecast_date.year, forecast_date.month,
+                    forecast_date.day,
+                    0, 0, 0, tzinfo=pytz.UTC
+                )
+            if self.datasource_file.end_date_time.date() < forecast_date:
+                self.datasource_file.end_date_time = datetime.datetime(
+                    forecast_date.year, forecast_date.month,
+                    forecast_date.day,
+                    0, 0, 0, tzinfo=pytz.UTC
+                )
         self.datasource_file.save()
 
-    def _remove_original_source_file(self, source_file: DataSourceFile, file_path: str):
+    def _remove_original_source_file(
+            self, source_file: DataSourceFile, file_path: str):
         try:
             default_storage.delete(file_path)
         except Exception as ex:
-            logger.error(f'Failed to remove original source_file {file_path}!', ex)
+            logger.error(
+                f'Failed to remove original source_file {file_path}!', ex)
         finally:
             source_file.delete()
 
     def _run(self):
         """Run Salient ingestor."""
         logger.info(f'Running data ingestor for Salient: {self.session.id}.')
-        # Query the datasource file
-        source_file = (
-            self.session.collector.dataset_files.first()
-        )
-        if source_file is None:
-            return
-        s3_storage = default_storage
-        file_path = self._get_s3_filepath(source_file)
-        if not s3_storage.exists(file_path):
-            logger.warn(f'DataSource {file_path} does not exist!')
-            return
+        total_files = 0
+        forecast_dates = []
+        for collector in self.session.collectors.order_by('id'):
+            # Query the datasource file
+            source_file = (
+                collector.dataset_files.first()
+            )
+            if source_file is None:
+                continue
+            s3_storage = default_storage
+            file_path = self._get_s3_filepath(source_file)
+            if not s3_storage.exists(file_path):
+                logger.warn(f'DataSource {file_path} does not exist!')
+                continue
         
-        # open the dataset
-        dataset = self._open_dataset(source_file)
+            # open the dataset
+            dataset = self._open_dataset(source_file)
 
-        # convert to zarr
-        forecast_date = source_file.start_date_time.date()
-        self.store_as_zarr(dataset, forecast_date)
+            # convert to zarr
+            forecast_date = source_file.start_date_time.date()
+            self.store_as_zarr(dataset, forecast_date)
 
-        # update start/end date of zarr datasource file
-        self._update_zarr_source_file(forecast_date)
+            # update start/end date of zarr datasource file
+            self._update_zarr_source_file(forecast_date)
 
-        # delete netcdf datasource file
-        self._remove_original_source_file(source_file, file_path)
+            # delete netcdf datasource file
+            self._remove_original_source_file(source_file, file_path)
+
+            total_files += 1
+            forecast_dates.append(forecast_date.isoformat())
+            if self.created:
+                # reset created
+                self.created = False
+        self.metadata = {
+            'total_files': total_files,
+            'forecast_dates': forecast_dates
+        }
 
     def store_as_zarr(self, dataset: xrDataset, forecast_date: datetime.date):
         forecast_dates = pd.date_range(
@@ -359,8 +394,7 @@ class SalientIngestor(BaseIngestor):
         # Run the ingestion
         try:
             self._run()
-            self.notes = json.dumps(self.metadata, default=str)
-            logger.info(f'Ingestor Salient: {self.notes}')
+            self.session.notes = json.dumps(self.metadata, default=str)
         except Exception as e:
             logger.error('Ingestor Salient failed!', e)
             logger.error(traceback.format_exc())

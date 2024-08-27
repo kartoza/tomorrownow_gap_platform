@@ -34,6 +34,7 @@ class IngestorType:
 class IngestorSessionStatus:
     """Ingestor status."""
 
+    PENDING = 'PENDING'
     RUNNING = 'RUNNING'
     SUCCESS = 'SUCCESS'
     FAILED = 'FAILED'
@@ -58,8 +59,9 @@ class BaseSession(models.Model):
         max_length=512
     )
     status = models.CharField(
-        default=IngestorSessionStatus.RUNNING,
+        default=IngestorSessionStatus.PENDING,
         choices=(
+            (IngestorSessionStatus.PENDING, IngestorSessionStatus.PENDING),
             (IngestorSessionStatus.RUNNING, IngestorSessionStatus.RUNNING),
             (IngestorSessionStatus.SUCCESS, IngestorSessionStatus.SUCCESS),
             (IngestorSessionStatus.FAILED, IngestorSessionStatus.FAILED),
@@ -82,6 +84,14 @@ class BaseSession(models.Model):
     additional_config = models.JSONField(blank=True, default=dict, null=True)
     is_cancelled = models.BooleanField(default=False)
 
+    def _pre_run(self):
+        self.status = IngestorSessionStatus.RUNNING
+        self.run_at = timezone.now()
+        self.is_cancelled = False
+        self.notes = ''
+        self.end_at = None
+        self.save()
+
 
 class CollectorSession(BaseSession):
     """Class representing data collection session."""
@@ -102,12 +112,9 @@ class CollectorSession(BaseSession):
         if ingestor:
             ingestor.run()
 
-
     def run(self):
         try:
-            self.status = IngestorSessionStatus.RUNNING
-            self.notes = ''
-            self.save()
+            self._pre_run()
             with tempfile.TemporaryDirectory() as working_dir:
                 self._run(working_dir)
                 self.status = (
@@ -122,6 +129,8 @@ class CollectorSession(BaseSession):
         self.end_at = timezone.now()
         self.save()
 
+    def __str__(self) -> str:
+        return f'{self.id}-{self.ingestor_type}-{self.status}'
 
 class IngestorSession(BaseSession):
     """Ingestor Session model.
@@ -135,10 +144,7 @@ class IngestorSession(BaseSession):
         null=True, blank=True
     )
 
-    collector = models.ForeignKey(
-        CollectorSession, null=True, blank=True,
-        on_delete=models.SET_NULL
-    )
+    collectors = models.ManyToManyField(CollectorSession, blank=True)
 
     def save(self, *args, **kwargs):
         """Override ingestor save."""
@@ -153,6 +159,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.tahmo import TahmoIngestor
         from gap.ingestor.farm import FarmIngestor
         from gap.ingestor.cbam import CBAMIngestor
+        from gap.ingestor.salient import SalientIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -161,12 +168,15 @@ class IngestorSession(BaseSession):
             ingestor = FarmIngestor(self, working_dir)
         elif self.ingestor_type == IngestorType.CBAM:
             ingestor = CBAMIngestor(self, working_dir)
+        elif self.ingestor_type == IngestorType.SALIENT:
+            ingestor = SalientIngestor(self, working_dir)
 
         if ingestor:
             ingestor.run()
 
     def run(self):
         """Run the ingestor session."""
+        self._pre_run()
         try:
             with tempfile.TemporaryDirectory() as working_dir:
                 self._run(working_dir)
