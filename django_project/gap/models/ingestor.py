@@ -86,7 +86,7 @@ class BaseSession(models.Model):
 class CollectorSession(BaseSession):
     """Class representing data collection session."""
 
-    dataset_files = models.ManyToManyField(DataSourceFile)
+    dataset_files = models.ManyToManyField(DataSourceFile, blank=True)
 
     def _run(self, working_dir):
         """Run the collector session."""
@@ -105,6 +105,9 @@ class CollectorSession(BaseSession):
 
     def run(self):
         try:
+            self.status = IngestorSessionStatus.RUNNING
+            self.notes = ''
+            self.save()
             with tempfile.TemporaryDirectory() as working_dir:
                 self._run(working_dir)
                 self.status = (

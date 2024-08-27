@@ -13,7 +13,7 @@ import datetime
 import pytz
 import traceback
 import fsspec
-from math import ceil
+import s3fs
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -25,8 +25,7 @@ from django.core.files.storage import default_storage
 
 from gap.models import (
     Dataset, DataSourceFile, DatasetStore,
-    IngestorSession, IngestorSessionProgress, IngestorSessionStatus,
-    CollectorSession, Preferences
+    IngestorSession, CollectorSession, Preferences
 )
 from gap.ingestor.base import BaseIngestor
 from gap.utils.netcdf import NetCDFMediaS3
@@ -43,12 +42,21 @@ class SalientCollector(BaseIngestor):
         """Initialize SalientCollector."""
         super().__init__(session, working_dir)
         self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
+    
+        # init s3 variables and fs
         self.s3 = NetCDFMediaS3.get_s3_variables('salient')
         self.s3_options = {
             'key': self.s3.get('AWS_ACCESS_KEY_ID'),
             'secret': self.s3.get('AWS_SECRET_ACCESS_KEY'),
             'client_kwargs': NetCDFMediaS3.get_s3_client_kwargs()
         }
+        self.fs = s3fs.S3FileSystem(
+            key=self.s3.get('AWS_ACCESS_KEY_ID'),
+            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            client_kwargs=NetCDFMediaS3.get_s3_client_kwargs()
+        )
+
+        # reset variables
         self.total_count = 0
         self.data_files = []
 
@@ -56,7 +64,7 @@ class SalientCollector(BaseIngestor):
         """Retrieve date from config or default to be today."""
         date_str = '-today'
         if 'forecast_date' in self.session.additional_config:
-            date_str = self.session.additional_config
+            date_str = self.session.additional_config['forecast_date']
         return date_str
 
     def _get_variable_list_config(self):
@@ -105,10 +113,14 @@ class SalientCollector(BaseIngestor):
         :param date_str: forecast date in str
         :type date_str: str
         """
+        file_stats = os.stat(file_path)
+        logger.info(
+            f'Salient downscale size: {file_stats.st_size / (1024 * 1024)} MB'
+        )
         # prepare start and end dates
         forecast_date = self._convert_forecast_date(date_str)
         end_date = forecast_date + datetime.timedelta(days=3 * 30)
-
+        logger.info(f'Slicing dataset from {forecast_date} to {end_date}')
         # open the original netcdf file
         dataset = xr.open_dataset(file_path)
 
@@ -124,10 +136,9 @@ class SalientCollector(BaseIngestor):
         netcdf_url = (
             NetCDFMediaS3.get_netcdf_base_url(self.s3) + filename
         )
-        sliced_ds.to_netcdf(
-            netcdf_url, engine='netcdf4', mode='w',
-            storage_options=self.s3_options
-        )
+        sliced_file_path = os.path.join(self.working_dir, filename)
+        sliced_ds.to_netcdf(sliced_file_path, engine='h5netcdf', format='NETCDF4')
+        self.fs.put(sliced_file_path, netcdf_url)
 
         # create DataSourceFile
         start_datetime = datetime.datetime(
@@ -231,8 +242,7 @@ class SalientIngestor(BaseIngestor):
 
     def _open_dataset(self, source_file: DataSourceFile) -> xrDataset:
         s3 = NetCDFMediaS3.get_s3_variables('salient')
-        fs = fsspec.filesystem(
-            's3',
+        fs = s3fs.S3FileSystem(
             key=s3.get('AWS_ACCESS_KEY_ID'),
             secret=s3.get('AWS_SECRET_ACCESS_KEY'),
             client_kwargs=NetCDFMediaS3.get_s3_client_kwargs()
