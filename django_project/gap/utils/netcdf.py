@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 import os
 import logging
 from typing import List
+from math import ceil
 from datetime import datetime, timedelta
 from django.contrib.gis.geos import Point
 import numpy as np
@@ -90,6 +91,22 @@ def daterange_inc(start_date: datetime, end_date: datetime):
     days = int((end_date - start_date).days)
     for n in range(days + 1):
         yield start_date + timedelta(n)
+
+
+def find_start_latlng(metadata: dict) -> float:
+    """Find start lat/lng to create coords based on GAP Area of Interest.
+
+    :param metadata: lon_metadata/lat_metadata
+    :type metadata: dict
+    :return: start of lat/lon to create dataset
+    :rtype: float
+    """
+    diff = ceil(
+        abs(
+            (metadata['original_min'] - metadata['min']) / metadata['inc']
+        )
+    )
+    return metadata['original_min'] - (diff * metadata['inc'])
 
 
 class NetCDFMediaS3:

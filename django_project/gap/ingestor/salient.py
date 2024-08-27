@@ -28,7 +28,7 @@ from gap.models import (
     IngestorSession, CollectorSession, Preferences
 )
 from gap.ingestor.base import BaseIngestor
-from gap.utils.netcdf import NetCDFMediaS3
+from gap.utils.netcdf import NetCDFMediaS3, find_start_latlng
 from gap.utils.zarr import BaseZarrReader
 
 
@@ -226,6 +226,8 @@ class SalientIngestor(BaseIngestor):
             'client_kwargs': BaseZarrReader.get_s3_client_kwargs()
         }
         self.metadata = {}
+
+        # get zarr data source file
         self.datasource_file, self.created = (
             DataSourceFile.objects.get_or_create(
                 name='salient.zarr',
@@ -240,6 +242,22 @@ class SalientIngestor(BaseIngestor):
                 }
             )
         )
+
+        # min+max are the BBOX that GAP processes
+        # inc and original_min comes from Salient netcdf file
+        self.lat_metadata = {
+            'min': -27,
+            'max': 16,
+            'inc': 0.25,
+            'original_min': -0.625
+        }
+        self.lon_metadata = {
+            'min': 21.8,
+            'max': 52,
+            'inc': 0.25,
+            'original_min': 33.38
+        }
+        self.reindex_tolerance = 0.001
 
     def _get_s3_filepath(self, source_file: DataSourceFile):
         dir_prefix = os.environ.get(f'MINIO_AWS_DIR_PREFIX', '')
@@ -370,7 +388,21 @@ class SalientIngestor(BaseIngestor):
         zarr_ds = zarr_ds.swap_dims({'forecast_day': 'forecast_day_idx'})
         zarr_ds = zarr_ds.drop_vars('forecast_day')
 
-        # TODO: expand lat and lon
+        # expand lat and lon
+        min_lat = find_start_latlng(self.lat_metadata)
+        min_lon = find_start_latlng(self.lon_metadata)
+        new_lat = np.arange(
+            min_lat, self.lat_metadata['max'] + self.lat_metadata['inc'],
+            self.lat_metadata['inc']
+        )
+        new_lon = np.arange(
+            min_lon, self.lon_metadata['max'] + self.lon_metadata['inc'],
+            self.lon_metadata['inc']
+        )
+        expanded_ds = zarr_ds.reindex(
+            lat=new_lat, lon=new_lon, method='nearest',
+            tolerance=self.reindex_tolerance
+        )
 
         # write to zarr
         zarr_url = (
@@ -378,12 +410,12 @@ class SalientIngestor(BaseIngestor):
             self.datasource_file.name
         )
         if self.created:
-            zarr_ds.to_zarr(
+            expanded_ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
                 storage_options=self.s3_options
             )
         else:
-            zarr_ds.to_zarr(
+            expanded_ds.to_zarr(
                 zarr_url, mode='a', append_dim='forecast_date',
                 consolidated=True,
                 storage_options=self.s3_options

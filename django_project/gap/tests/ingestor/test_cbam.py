@@ -16,6 +16,7 @@ from gap.models.ingestor import IngestorSession, IngestorType, CollectorSession,
 from gap.ingestor.cbam import CBAMIngestor
 from gap.tasks.ingestor import run_cbam_collector_session
 from gap.factories import DataSourceFileFactory
+from gap.utils.netcdf import find_start_latlng
 
 
 class CBAMIngestorBaseTest(TestCase):
@@ -143,7 +144,7 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         }
         session = IngestorSession.objects.create()
         ingestor = CBAMIngestor(session)
-        result = ingestor.find_start_latlng(metadata)
+        result = find_start_latlng(metadata)
         expected_result = -27.00160304
         self.assertAlmostEqual(result, expected_result, places=6)
 

@@ -25,7 +25,7 @@ from gap.models import (
     CollectorSession
 )
 from gap.providers import CBAMNetCDFReader
-from gap.utils.netcdf import NetCDFProvider
+from gap.utils.netcdf import NetCDFProvider, find_start_latlng
 from gap.utils.zarr import BaseZarrReader
 from gap.ingestor.base import BaseIngestor
 
@@ -146,6 +146,8 @@ class CBAMIngestor(BaseIngestor):
             'secret': self.s3.get('AWS_SECRET_ACCESS_KEY'),
             'client_kwargs': BaseZarrReader.get_s3_client_kwargs()
         }
+
+        # get zarr data source file
         self.datasource_file, self.created = (
             DataSourceFile.objects.get_or_create(
                 name='cbam.zarr',
@@ -160,6 +162,7 @@ class CBAMIngestor(BaseIngestor):
                 }
             )
         )
+
         # min+max are the BBOX that GAP processes
         # inc and original_min comes from CBAM netcdf file
         self.lat_metadata = {
@@ -176,21 +179,6 @@ class CBAMIngestor(BaseIngestor):
         }
         self.reindex_tolerance = 0.001
         self.existing_dates = None
-
-    def find_start_latlng(self, metadata: dict) -> float:
-        """Find start lat/lng to create coords based on GAP Area of Interest.
-
-        :param metadata: lon_metadata/lat_metadata
-        :type metadata: dict
-        :return: start of lat/lon to create dataset
-        :rtype: float
-        """
-        diff = ceil(
-            abs(
-                (metadata['original_min'] - metadata['min']) / metadata['inc']
-            )
-        )
-        return metadata['original_min'] - (diff * metadata['inc'])
 
     def is_date_in_zarr(self, date: datetime.date) -> bool:
         """Check whether a date has been added to zarr file.
@@ -225,8 +213,8 @@ class CBAMIngestor(BaseIngestor):
         dataset = dataset.assign_coords(date=new_date)
         del dataset.attrs['Date']
         # Generate the new latitude and longitude arrays
-        min_lat = self.find_start_latlng(self.lat_metadata)
-        min_lon = self.find_start_latlng(self.lon_metadata)
+        min_lat = find_start_latlng(self.lat_metadata)
+        min_lon = find_start_latlng(self.lon_metadata)
         new_lat = np.arange(
             min_lat, self.lat_metadata['max'] + self.lat_metadata['inc'],
             self.lat_metadata['inc']
