@@ -42,7 +42,7 @@ class SalientCollector(BaseIngestor):
         """Initialize SalientCollector."""
         super().__init__(session, working_dir)
         self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
-    
+
         # init s3 variables and fs
         self.s3 = NetCDFMediaS3.get_s3_variables('salient')
         self.s3_options = {
@@ -84,7 +84,7 @@ class SalientCollector(BaseIngestor):
 
     def _get_coords(self):
         """Retrieve polygon coordinates."""
-        # TODO: we need to verify on dev whether 
+        # TODO: we need to verify on dev whether
         # it's possible to request for whole GAP AoI
         return self.session.additional_config.get(
             'coords',
@@ -107,7 +107,7 @@ class SalientCollector(BaseIngestor):
 
     def _store_as_netcdf_file(self, file_path: str, date_str: str):
         """Store the downscale Salient NetCDF to Default's Storage.
-        
+
         Data will be truncated to 3 months data.
         :param file_path: file path to downscale netcdf
         :type file_path: str
@@ -138,7 +138,8 @@ class SalientCollector(BaseIngestor):
             NetCDFMediaS3.get_netcdf_base_url(self.s3) + filename
         )
         sliced_file_path = os.path.join(self.working_dir, filename)
-        sliced_ds.to_netcdf(sliced_file_path, engine='h5netcdf', format='NETCDF4')
+        sliced_ds.to_netcdf(
+            sliced_file_path, engine='h5netcdf', format='NETCDF4')
         self.fs.put(sliced_file_path, netcdf_url)
         file_stats = os.stat(sliced_file_path)
 
@@ -260,7 +261,14 @@ class SalientIngestor(BaseIngestor):
         self.reindex_tolerance = 0.01
 
     def _get_s3_filepath(self, source_file: DataSourceFile):
-        dir_prefix = os.environ.get(f'MINIO_AWS_DIR_PREFIX', '')
+        """Get Salient NetCDF temporary file from Collector.
+
+        :param source_file: Temporary NetCDF File
+        :type source_file: DataSourceFile
+        :return: s3 path to the file
+        :rtype: str
+        """
+        dir_prefix = os.environ.get('MINIO_AWS_DIR_PREFIX', '')
         return os.path.join(
             dir_prefix,
             'salient',
@@ -268,6 +276,13 @@ class SalientIngestor(BaseIngestor):
         )
 
     def _open_dataset(self, source_file: DataSourceFile) -> xrDataset:
+        """Open temporary NetCDF File.
+
+        :param source_file: Temporary NetCDF File
+        :type source_file: DataSourceFile
+        :return: xarray dataset
+        :rtype: xrDataset
+        """
         s3 = NetCDFMediaS3.get_s3_variables('salient')
         fs = s3fs.S3FileSystem(
             key=s3.get('AWS_ACCESS_KEY_ID'),
@@ -284,6 +299,11 @@ class SalientIngestor(BaseIngestor):
         return xr.open_dataset(fs.open(netcdf_url))
 
     def _update_zarr_source_file(self, forecast_date: datetime.date):
+        """Update zarr DataSourceFile start and end datetime.
+
+        :param forecast_date: Forecast date that has been processed
+        :type forecast_date: datetime.date
+        """
         if self.created:
             self.datasource_file.start_date_time = datetime.datetime(
                 forecast_date.year, forecast_date.month, forecast_date.day,
@@ -307,8 +327,15 @@ class SalientIngestor(BaseIngestor):
                 )
         self.datasource_file.save()
 
-    def _remove_original_source_file(
+    def _remove_temporary_source_file(
             self, source_file: DataSourceFile, file_path: str):
+        """Remove temporary NetCDFFile from collector.
+
+        :param source_file: Temporary NetCDF File
+        :type source_file: DataSourceFile
+        :param file_path: s3 file path
+        :type file_path: str
+        """
         try:
             default_storage.delete(file_path)
         except Exception as ex:
@@ -334,7 +361,7 @@ class SalientIngestor(BaseIngestor):
             if not s3_storage.exists(file_path):
                 logger.warn(f'DataSource {file_path} does not exist!')
                 continue
-        
+
             # open the dataset
             dataset = self._open_dataset(source_file)
 
@@ -346,7 +373,7 @@ class SalientIngestor(BaseIngestor):
             self._update_zarr_source_file(forecast_date)
 
             # delete netcdf datasource file
-            self._remove_original_source_file(source_file, file_path)
+            self._remove_temporary_source_file(source_file, file_path)
 
             total_files += 1
             forecast_dates.append(forecast_date.isoformat())
@@ -359,16 +386,24 @@ class SalientIngestor(BaseIngestor):
         }
 
     def store_as_zarr(self, dataset: xrDataset, forecast_date: datetime.date):
+        """Store xarray dataset from forecast_date into Salient zarr file.
+
+        The dataset will be expanded by lat and lon.
+        :param dataset: xarray dataset from NetCDF file
+        :type dataset: xrDataset
+        :param forecast_date: forecast date
+        :type forecast_date: datetime.date
+        """
         forecast_dates = pd.date_range(
             f'{forecast_date.isoformat()}', periods=1)
         data_vars = {}
-        for var_name, da in dataset.data_vars.items():    
+        for var_name, da in dataset.data_vars.items():
             # Initialize the data_var with the empty array
             data_vars[var_name] = da.expand_dims('forecast_date', axis=0)
 
         # Create the dataset
         zarr_ds = xr.Dataset(
-            data_vars, 
+            data_vars,
             coords={
                 'forecast_date': ('forecast_date', forecast_dates),
                 'forecast_day': (

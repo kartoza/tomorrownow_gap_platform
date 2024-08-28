@@ -12,7 +12,12 @@ from xarray.core.dataset import Dataset as xrDataset
 from django.test import TestCase
 
 from gap.models import Dataset, DataSourceFile, DatasetStore
-from gap.models.ingestor import IngestorSession, IngestorType, CollectorSession, IngestorSessionStatus
+from gap.models.ingestor import (
+    IngestorSession,
+    IngestorType,
+    CollectorSession,
+    IngestorSessionStatus
+)
 from gap.ingestor.cbam import CBAMIngestor
 from gap.tasks.ingestor import run_cbam_collector_session
 from gap.factories import DataSourceFileFactory
@@ -142,8 +147,6 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
             'min': -27,
             'inc': 0.03574368
         }
-        session = IngestorSession.objects.create()
-        ingestor = CBAMIngestor(session)
         result = find_start_latlng(metadata)
         expected_result = -27.00160304
         self.assertAlmostEqual(result, expected_result, places=6)

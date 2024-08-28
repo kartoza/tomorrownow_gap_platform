@@ -132,6 +132,7 @@ class CollectorSession(BaseSession):
     def __str__(self) -> str:
         return f'{self.id}-{self.ingestor_type}-{self.status}'
 
+
 class IngestorSession(BaseSession):
     """Ingestor Session model.
 

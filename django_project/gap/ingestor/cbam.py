@@ -12,7 +12,6 @@ import datetime
 import pytz
 import s3fs
 import traceback
-from math import ceil
 import numpy as np
 import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
@@ -44,14 +43,15 @@ class CBAMCollector(BaseIngestor):
         self.fs = s3fs.S3FileSystem(
             key=self.s3.get('AWS_ACCESS_KEY_ID'),
             secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
-            client_kwargs=NetCDFProvider.get_s3_client_kwargs(self.dataset.provider)
+            client_kwargs=NetCDFProvider.get_s3_client_kwargs(
+                self.dataset.provider)
         )
         self.total_count = 0
         self.data_files = []
 
     def _run(self):
         """Collect list of files in the CBAM S3 directory.
-        
+
         The filename must be: 'YYYY-MM-DD.nc'
         """
         logger.info(f'Check NETCDF Files by dataset {self.dataset.name}')
@@ -118,7 +118,10 @@ class CBAMCollector(BaseIngestor):
                 self.total_count += 1
 
         if self.total_count > 0:
-            logger.info(f'{self.dataset.name} - Added new NetCDFFile: {self.total_count}')
+            logger.info(
+                f'{self.dataset.name} - Added new NetCDFFile: '
+                f'{self.total_count}'
+            )
             self.session.dataset_files.set(self.data_files)
 
     def run(self):
