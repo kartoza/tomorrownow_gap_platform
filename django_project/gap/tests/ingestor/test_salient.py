@@ -130,10 +130,8 @@ class TestSalientCollector(SalientIngestorBaseTest):
         mock_sk.upload_shapefile.return_value = 'fake_shapefile'
 
         with (
-            patch.object(
-                self.collector, '_store_as_netcdf_file'
-            ) as mock_store_as_netcdf_file
-        ):
+            patch.object(self.collector, '_store_as_netcdf_file')
+        ) as mock_store_as_netcdf_file:
             self.collector.run()
             mock_store_as_netcdf_file.assert_called_once()
 
