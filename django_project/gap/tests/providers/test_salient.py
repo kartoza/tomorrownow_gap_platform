@@ -101,7 +101,7 @@ class TestSalientNetCDFReader(TestCase):
         )
         with patch.object(SalientNetCDFReader, 'open_dataset') as mock_open:
             mock_open.return_value = (
-                xr.open_dataset(file_path)
+                xr.open_dataset(file_path, engine='h5netcdf')
             )
             reader = SalientNetCDFReader(
                 self.dataset, [self.dataset_attr1, self.dataset_attr2],
@@ -132,7 +132,7 @@ class TestSalientNetCDFReader(TestCase):
         )
         with patch.object(SalientNetCDFReader, 'open_dataset') as mock_open:
             mock_open.return_value = (
-                xr.open_dataset(file_path)
+                xr.open_dataset(file_path, engine='h5netcdf')
             )
             reader = SalientNetCDFReader(
                 self.dataset, [self.dataset_attr1, self.dataset_attr2],
@@ -170,7 +170,7 @@ class TestSalientNetCDFReader(TestCase):
         )
         with patch.object(SalientNetCDFReader, 'open_dataset') as mock_open:
             mock_open.return_value = (
-                xr.open_dataset(file_path)
+                xr.open_dataset(file_path, engine='h5netcdf')
             )
             location_input = DatasetReaderInput(
                 MultiPoint([p, Point(x=p.x + 0.5, y=p.y + 0.5)]),

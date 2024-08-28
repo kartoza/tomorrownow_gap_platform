@@ -75,7 +75,7 @@ class TestCBAMNetCDFReader(TestCase):
         )
         with patch.object(CBAMNetCDFReader, 'open_dataset') as mock_open:
             mock_open.return_value = (
-                xr.open_dataset(file_path)
+                xr.open_dataset(file_path, engine='h5netcdf')
             )
             reader = CBAMNetCDFReader(
                 self.dataset, [self.dataset_attr],
