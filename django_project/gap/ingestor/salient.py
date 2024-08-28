@@ -257,7 +257,7 @@ class SalientIngestor(BaseIngestor):
             'inc': 0.25,
             'original_min': 33.38
         }
-        self.reindex_tolerance = 0.001
+        self.reindex_tolerance = 0.01
 
     def _get_s3_filepath(self, source_file: DataSourceFile):
         dir_prefix = os.environ.get(f'MINIO_AWS_DIR_PREFIX', '')
@@ -435,6 +435,7 @@ class SalientIngestor(BaseIngestor):
             pass
 
     def verify(self):
+        """Verify the resulting zarr file."""
         zarr_url = (
             BaseZarrReader.get_zarr_base_url(self.s3) +
             self.datasource_file.name
