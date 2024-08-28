@@ -12,7 +12,9 @@ from gap.models import (
     Country,
     Station,
     Measurement,
-    ObservationType
+    ObservationType,
+    CollectorSession,
+    IngestorType
 )
 from gap.factories import (
     ProviderFactory,
@@ -217,3 +219,22 @@ class MeasurementCRUDTest(TestCase):
         measurement.delete()
         self.assertFalse(
             Measurement.objects.filter(id=measurement_id).exists())
+
+
+class CollectorSessionCRUDTest(TestCase):
+    """CollectorSession test case."""
+
+    def test_collector_session(self):
+        """Test collector session."""
+        session = CollectorSession.objects.create(
+            ingestor_type=IngestorType.SALIENT
+        )
+        self.assertTrue(
+            CollectorSession.objects.filter(id=session.id).exists())
+        self.assertEqual(
+            str(session),
+            f'{session.id}-{session.ingestor_type}-{session.status}'
+        )
+        session.delete()
+        self.assertFalse(
+            CollectorSession.objects.filter(id=session.id).exists())

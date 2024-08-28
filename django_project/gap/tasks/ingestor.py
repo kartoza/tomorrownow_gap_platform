@@ -20,7 +20,7 @@ def run_ingestor_session(_id: int):
         session = IngestorSession.objects.get(id=_id)
         session.run()
     except IngestorSession.DoesNotExist:
-        logger.debug('Ingestor Session {} does not exists'.format(_id))
+        logger.error('Ingestor Session {} does not exists'.format(_id))
 
 
 @app.task(name='collector_session')
@@ -30,7 +30,7 @@ def run_collector_session(_id: int):
         session = CollectorSession.objects.get(id=_id)
         session.run()
     except CollectorSession.DoesNotExist:
-        logger.debug('Collector Session {} does not exists'.format(_id))
+        logger.error('Collector Session {} does not exists'.format(_id))
 
 
 @app.task(name='cbam_collector_session')

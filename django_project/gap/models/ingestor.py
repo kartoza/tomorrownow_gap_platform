@@ -87,7 +87,6 @@ class BaseSession(models.Model):
     def _pre_run(self):
         self.status = IngestorSessionStatus.RUNNING
         self.run_at = timezone.now()
-        self.is_cancelled = False
         self.notes = None
         self.end_at = None
         self.save()

@@ -75,7 +75,6 @@ class CBAMCollectorTest(CBAMIngestorBaseTest):
         )
         collector.run()
         collector.refresh_from_db()
-        print(collector.notes)
         self.assertEqual(collector.status, IngestorSessionStatus.SUCCESS)
         mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
         self.assertEqual(
@@ -99,6 +98,42 @@ class CBAMCollectorTest(CBAMIngestorBaseTest):
                 dataset=self.dataset, name='2023/2023-02-01.nc'
             ).exists()
         )
+
+    @patch('gap.ingestor.cbam.s3fs.S3FileSystem')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_variables')
+    @patch('gap.utils.netcdf.NetCDFProvider.get_s3_client_kwargs')
+    def test_cbam_collector_cancel(
+        self, mock_get_s3_kwargs, mock_get_s3_env, mock_s3fs
+    ):
+        """Test run cbam collector."""
+        mock_get_s3_env.return_value = {
+            'AWS_DIR_PREFIX': 'cbam',
+            'AWS_ENDPOINT_URL': 'test_endpoint',
+            'AWS_BUCKET_NAME': 'test_bucket'
+        }
+        mock_fs = MagicMock()
+        mock_s3fs.return_value = mock_fs
+        mock_fs.walk.return_value = [
+            ('test_bucket/cbam', [], ['2023-01-01.nc']),
+            ('test_bucket/cbam', [], ['2023-01-02.nc']),
+            ('test_bucket/cbam/dmrpp', [], ['2023-01-01.nc.dmrpp']),
+            ('test_bucket/cbam/2023', [], ['2023-02-01.nc']),
+        ]
+        # add existing NetCDF File
+        DataSourceFileFactory.create(
+            dataset=self.dataset,
+            name='2023-01-02.nc'
+        )
+        collector = CollectorSession.objects.create(
+            ingestor_type=IngestorType.CBAM
+        )
+        collector.is_cancelled = True
+        collector.save()
+        collector.run()
+        collector.refresh_from_db()
+        self.assertEqual(collector.status, IngestorSessionStatus.CANCELLED)
+        mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
+        self.assertEqual(collector.dataset_files.count(), 0)
 
     @patch.object(CollectorSession, 'run')
     def test_run_cbam_collector_session(self, mocked_run):
