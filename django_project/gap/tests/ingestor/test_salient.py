@@ -6,20 +6,19 @@ Tomorrow Now GAP.
 """
 
 from unittest.mock import patch, MagicMock
-from datetime import datetime, date, time
+from datetime import datetime, date
 import numpy as np
+import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
 from django.test import TestCase
 
-from gap.models import Dataset, DataSourceFile, DatasetStore
+from gap.models import Dataset, DataSourceFile
 from gap.models.ingestor import (
     IngestorSession,
     IngestorType,
-    CollectorSession,
-    IngestorSessionStatus
+    CollectorSession
 )
 from gap.ingestor.salient import SalientIngestor, SalientCollector
-from gap.tasks.ingestor import run_salient_collector_session
 from gap.factories import DataSourceFileFactory
 
 
@@ -244,3 +243,87 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         mock_get_zarr_base_url.assert_called_once()
         mock_get_mapper.assert_called_once()
         mock_open_zarr.assert_called_once()
+
+    @patch('xarray.Dataset.to_zarr')
+    @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
+    def test_store_as_zarr(
+        self, mock_get_s3_variables, mock_get_zarr_base_url, mock_to_zarr
+    ):
+        """Test store the dataset to zarr."""
+        mock_get_s3_variables.return_value = {
+            'AWS_ACCESS_KEY_ID': 'mock_key',
+            'AWS_SECRET_ACCESS_KEY': 'mock_secret'
+        }
+        mock_get_zarr_base_url.return_value = 'mock_zarr_url/'
+
+        # Create a mock dataset
+        mock_dataset = xrDataset(
+            {
+                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+            },
+            coords={
+                'forecast_day': pd.date_range('2024-08-28', periods=1),
+                'lat': [0, 1],
+                'lon': [0, 1],
+            }
+        )
+        forecast_date = date(2024, 8, 28)
+
+        # Call the method
+        self.ingestor.store_as_zarr(mock_dataset, forecast_date)
+
+        # Assertions
+        mock_to_zarr.assert_called_once()
+        self.assertEqual(mock_to_zarr.call_args[1]['mode'], 'w')
+        self.assertTrue(mock_to_zarr.call_args[1]['consolidated'])
+        self.assertEqual(
+            mock_to_zarr.call_args[1]['storage_options'],
+            self.ingestor.s3_options
+        )
+
+    @patch('xarray.Dataset.to_zarr')
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
+    @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
+    @patch('xarray.open_dataset')
+    @patch('s3fs.S3FileSystem')
+    @patch('django.core.files.storage.default_storage.exists')
+    @patch('django.core.files.storage.default_storage.delete')
+    def test_run(
+        self, mock_storage_delete, mock_storage_exists, mock_s3_filesystem,
+        mock_open_dataset, mock_get_zarr_base_url, mock_get_s3_variables,
+        mock_to_zarr
+    ):
+        """Test Run Salient Ingestor."""
+        # Set up mocks
+        mock_get_s3_variables.return_value = {
+            'AWS_ACCESS_KEY_ID': 'mock_key',
+            'AWS_SECRET_ACCESS_KEY': 'mock_secret'
+        }
+        mock_get_zarr_base_url.return_value = 'mock_zarr_url/'
+
+        # Mock the default storage to simulate file existence
+        mock_storage_exists.return_value = True
+
+        # Mock the open_dataset return value
+        mock_dataset = xrDataset(
+            {
+                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+            },
+            coords={
+                'forecast_day': pd.date_range('2024-08-28', periods=1),
+                'lat': [0, 1],
+                'lon': [0, 1],
+            }
+        )
+        mock_open_dataset.return_value = mock_dataset
+
+        # Call the method
+        self.ingestor._run()
+
+        # Assertions
+        self.assertEqual(self.ingestor.metadata['total_files'], 1)
+        self.assertEqual(len(self.ingestor.metadata['forecast_dates']), 1)
+        mock_storage_delete.assert_called_once_with(
+            self.ingestor._get_s3_filepath(self.datasourcefile))
+        mock_to_zarr.assert_called_once()
