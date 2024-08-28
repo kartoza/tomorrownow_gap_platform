@@ -6,7 +6,8 @@
         "name": "Air Temperature Min",
         "description": null,
         "variable_name": "air_temperature_min",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -16,7 +17,8 @@
         "name": "Air Temperature Max",
         "description": null,
         "variable_name": "air_temperature_max",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -26,7 +28,8 @@
         "name": "Air Temperature Average",
         "description": null,
         "variable_name": "air_temperature_average",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -36,7 +39,8 @@
         "name": "Relative Humidity Min",
         "description": null,
         "variable_name": "relative_humidity_min",
-        "unit": 6
+        "unit": 6,
+        "is_active": true
     }
 },
 {
@@ -46,7 +50,8 @@
         "name": "Relative Humidity Max",
         "description": null,
         "variable_name": "relative_humidity_max",
-        "unit": 6
+        "unit": 6,
+        "is_active": true
     }
 },
 {
@@ -56,7 +61,8 @@
         "name": "Solar radiation",
         "description": null,
         "variable_name": "solar_radiation",
-        "unit": 7
+        "unit": 7,
+        "is_active": true
     }
 },
 {
@@ -66,7 +72,8 @@
         "name": "Precipitation",
         "description": null,
         "variable_name": "precipitation",
-        "unit": 8
+        "unit": 8,
+        "is_active": true
     }
 },
 {
@@ -76,7 +83,8 @@
         "name": "Total Evapotranspiration Flux",
         "description": "Total Evapotranspiration flux with respect to grass cover (0000:2300)",
         "variable_name": "total_evapotranspiration_flux",
-        "unit": 1
+        "unit": 1,
+        "is_active": true
     }
 },
 {
@@ -86,7 +94,8 @@
         "name": "Max Total Temperature",
         "description": "Maximum temperature (0000:2300)",
         "variable_name": "max_total_temperature",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -96,7 +105,8 @@
         "name": "Max Night Temperature",
         "description": "Maximum night-time temperature (1900:0500)",
         "variable_name": "max_night_temperature",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -106,7 +116,8 @@
         "name": "Average Solar Irradiance",
         "description": "Average hourly solar irradiance reaching the surface (0600:1800)",
         "variable_name": "average_solar_irradiance",
-        "unit": 3
+        "unit": 3,
+        "is_active": true
     }
 },
 {
@@ -116,7 +127,8 @@
         "name": "Total Solar Irradiance",
         "description": "Total solar irradiance reaching the surface (0000:2300)",
         "variable_name": "total_solar_irradiance",
-        "unit": 3
+        "unit": 3,
+        "is_active": true
     }
 },
 {
@@ -126,7 +138,8 @@
         "name": "Min Night Temperature",
         "description": "Minimum night-time temperature (1900:0500)",
         "variable_name": "min_night_temperature",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -136,7 +149,8 @@
         "name": "Max Day Temperature",
         "description": "Maximum day-time temperature (0600:1800)",
         "variable_name": "max_day_temperature",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -146,7 +160,8 @@
         "name": "Total Rainfall",
         "description": "Total rainfall (0000:2300)",
         "variable_name": "total_rainfall",
-        "unit": 1
+        "unit": 1,
+        "is_active": true
     }
 },
 {
@@ -156,7 +171,8 @@
         "name": "Min Day Temperature",
         "description": "Minumum day-time temperature (0600:1800)",
         "variable_name": "min_day_temperature",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -166,7 +182,8 @@
         "name": "Min Total Temperature",
         "description": "Minumum temperature (0000:2300)",
         "variable_name": "min_total_temperature",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -176,7 +193,8 @@
         "name": "Precipitation Climatology",
         "description": null,
         "variable_name": "precip_clim",
-        "unit": 4
+        "unit": 4,
+        "is_active": true
     }
 },
 {
@@ -186,7 +204,8 @@
         "name": "Temperature Climatology",
         "description": null,
         "variable_name": "temp_clim",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -196,7 +215,8 @@
         "name": "Precipitation Anomaly",
         "description": null,
         "variable_name": "precip_anom",
-        "unit": 4
+        "unit": 4,
+        "is_active": true
     }
 },
 {
@@ -206,7 +226,8 @@
         "name": "Temperature Anomaly",
         "description": null,
         "variable_name": "temp_anom",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 },
 {
@@ -216,7 +237,8 @@
         "name": "Precipitation",
         "description": null,
         "variable_name": "precip",
-        "unit": 4
+        "unit": 4,
+        "is_active": true
     }
 },
 {
@@ -226,7 +248,8 @@
         "name": "Temperature",
         "description": null,
         "variable_name": "temp",
-        "unit": 5
+        "unit": 5,
+        "is_active": true
     }
 }
 ]

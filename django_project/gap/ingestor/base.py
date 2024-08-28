@@ -5,16 +5,27 @@ Tomorrow Now GAP.
 .. note:: Base Ingestor.
 """
 
+from typing import Union
+
 from core.models import BackgroundTask
-from gap.models import IngestorSession, IngestorSessionStatus
+from gap.models import (
+    CollectorSession,
+    IngestorSession,
+    IngestorSessionStatus
+)
 
 
 class BaseIngestor:
-    """Ingestor Base class."""
+    """Collector/Ingestor Base class."""
 
-    def __init__(self, session: IngestorSession):
-        """Initialize ingestor."""
+    def __init__(
+        self,
+        session: Union[CollectorSession, IngestorSession],
+        working_dir: str
+    ):
+        """Initialize ingestor/collector."""
         self.session = session
+        self.working_dir = working_dir
 
     def is_cancelled(self):
         """Check if session is cancelled by user.

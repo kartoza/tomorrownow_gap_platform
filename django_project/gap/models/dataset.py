@@ -40,6 +40,7 @@ class DatasetStore:
     NETCDF = 'NETCDF'
     ZARR = 'ZARR'
     EXT_API = 'EXT_API'
+    ZIP_FILE = 'ZIP_FILE'
 
 
 class DatasetTimeStep:
@@ -100,6 +101,7 @@ class DataSourceFile(models.Model):
         choices=(
             (DatasetStore.NETCDF, DatasetStore.NETCDF),
             (DatasetStore.ZARR, DatasetStore.ZARR),
+            (DatasetStore.ZIP_FILE, DatasetStore.ZIP_FILE),
         ),
         max_length=512
     )

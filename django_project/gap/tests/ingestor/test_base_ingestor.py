@@ -18,7 +18,8 @@ class BaseIngestorTest(TestCase):
     def test_is_cancelled(self):
         """Test is_cancelled method."""
         session = IngestorSession.objects.create()
-        ingestor = BaseIngestor(IngestorSession.objects.get(id=session.id))
+        ingestor = BaseIngestor(
+            IngestorSession.objects.get(id=session.id), '/tmp')
         self.assertFalse(ingestor.is_cancelled())
         session.is_cancelled = True
         session.save()

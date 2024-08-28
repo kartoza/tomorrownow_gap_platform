@@ -5,12 +5,13 @@ Tomorrow Now GAP.
 .. note:: CBAM ingestor.
 """
 
+import os
 import json
 import logging
 import datetime
 import pytz
+import s3fs
 import traceback
-from math import ceil
 import numpy as np
 import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
@@ -19,9 +20,11 @@ from django.utils import timezone
 
 from gap.models import (
     Dataset, DataSourceFile, DatasetStore,
-    IngestorSession, IngestorSessionProgress, IngestorSessionStatus
+    IngestorSession, IngestorSessionProgress, IngestorSessionStatus,
+    CollectorSession
 )
 from gap.providers import CBAMNetCDFReader
+from gap.utils.netcdf import NetCDFProvider, find_start_latlng
 from gap.utils.zarr import BaseZarrReader
 from gap.ingestor.base import BaseIngestor
 
@@ -29,12 +32,116 @@ from gap.ingestor.base import BaseIngestor
 logger = logging.getLogger(__name__)
 
 
+class CBAMCollector(BaseIngestor):
+    """Data collector for CBAM Historical data."""
+
+    def __init__(self, session: CollectorSession, working_dir: str = '/tmp'):
+        """Initialize CBAMCollector."""
+        super().__init__(session, working_dir)
+        self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
+        self.s3 = NetCDFProvider.get_s3_variables(self.dataset.provider)
+        self.fs = s3fs.S3FileSystem(
+            key=self.s3.get('AWS_ACCESS_KEY_ID'),
+            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            client_kwargs=NetCDFProvider.get_s3_client_kwargs(
+                self.dataset.provider)
+        )
+        self.total_count = 0
+        self.data_files = []
+
+    def _run(self):
+        """Collect list of files in the CBAM S3 directory.
+
+        The filename must be: 'YYYY-MM-DD.nc'
+        """
+        logger.info(f'Check NETCDF Files by dataset {self.dataset.name}')
+        directory_path = self.s3.get('AWS_DIR_PREFIX')
+        bucket_name = self.s3.get('AWS_BUCKET_NAME')
+        self.total_count = 0
+        for dirpath, dirnames, filenames in \
+            self.fs.walk(f's3://{bucket_name}/{directory_path}'):
+            # check if cancelled
+            if self.is_cancelled():
+                break
+
+            # iterate for each file
+            for filename in filenames:
+                # check if cancelled
+                if self.is_cancelled():
+                    break
+
+                # skip non-nc file
+                if not filename.endswith('.nc'):
+                    continue
+
+                # get the file_path
+                cleaned_dir = dirpath.replace(
+                    f'{bucket_name}/{directory_path}', '')
+                if cleaned_dir:
+                    file_path = (
+                        f'{cleaned_dir}{filename}' if
+                        cleaned_dir.endswith('/') else
+                        f'{cleaned_dir}/{filename}'
+                    )
+                else:
+                    file_path = filename
+                if file_path.startswith('/'):
+                    file_path = file_path[1:]
+
+                # check existing and skip if exist
+                check_exist = DataSourceFile.objects.filter(
+                    name=file_path,
+                    dataset=self.dataset,
+                    format=DatasetStore.NETCDF
+                ).exists()
+                if check_exist:
+                    continue
+
+                # parse datetime from filename
+                netcdf_filename = os.path.split(file_path)[1]
+                file_date = datetime.datetime.strptime(
+                    netcdf_filename.split('.')[0], '%Y-%m-%d')
+                start_datetime = datetime.datetime(
+                    file_date.year, file_date.month, file_date.day,
+                    0, 0, 0, tzinfo=pytz.UTC
+                )
+
+                # insert record to DataSourceFile
+                self.data_files.append(DataSourceFile.objects.create(
+                    name=file_path,
+                    dataset=self.dataset,
+                    start_date_time=start_datetime,
+                    end_date_time=start_datetime,
+                    created_on=timezone.now(),
+                    format=DatasetStore.NETCDF
+                ))
+                self.total_count += 1
+
+        if self.total_count > 0:
+            logger.info(
+                f'{self.dataset.name} - Added new NetCDFFile: '
+                f'{self.total_count}'
+            )
+            self.session.dataset_files.set(self.data_files)
+
+    def run(self):
+        """Run CBAM Data Collector."""
+        try:
+            self._run()
+        except Exception as e:
+            logger.error('Collector CBAM failed!', e)
+            logger.error(traceback.format_exc())
+            raise Exception(e)
+        finally:
+            pass
+
+
 class CBAMIngestor(BaseIngestor):
     """Ingestor for CBAM Historical Data."""
 
-    def __init__(self, session: IngestorSession):
+    def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize CBAMIngestor."""
-        super().__init__(session)
+        super().__init__(session, working_dir)
         self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
         self.s3 = BaseZarrReader.get_s3_variables()
         self.s3_options = {
@@ -42,6 +149,8 @@ class CBAMIngestor(BaseIngestor):
             'secret': self.s3.get('AWS_SECRET_ACCESS_KEY'),
             'client_kwargs': BaseZarrReader.get_s3_client_kwargs()
         }
+
+        # get zarr data source file
         self.datasource_file, self.created = (
             DataSourceFile.objects.get_or_create(
                 name='cbam.zarr',
@@ -56,6 +165,7 @@ class CBAMIngestor(BaseIngestor):
                 }
             )
         )
+
         # min+max are the BBOX that GAP processes
         # inc and original_min comes from CBAM netcdf file
         self.lat_metadata = {
@@ -72,21 +182,6 @@ class CBAMIngestor(BaseIngestor):
         }
         self.reindex_tolerance = 0.001
         self.existing_dates = None
-
-    def find_start_latlng(self, metadata: dict) -> float:
-        """Find start lat/lng to create coords based on GAP Area of Interest.
-
-        :param metadata: lon_metadata/lat_metadata
-        :type metadata: dict
-        :return: start of lat/lon to create dataset
-        :rtype: float
-        """
-        diff = ceil(
-            abs(
-                (metadata['original_min'] - metadata['min']) / metadata['inc']
-            )
-        )
-        return metadata['original_min'] - (diff * metadata['inc'])
 
     def is_date_in_zarr(self, date: datetime.date) -> bool:
         """Check whether a date has been added to zarr file.
@@ -121,8 +216,8 @@ class CBAMIngestor(BaseIngestor):
         dataset = dataset.assign_coords(date=new_date)
         del dataset.attrs['Date']
         # Generate the new latitude and longitude arrays
-        min_lat = self.find_start_latlng(self.lat_metadata)
-        min_lon = self.find_start_latlng(self.lon_metadata)
+        min_lat = find_start_latlng(self.lat_metadata)
+        min_lon = find_start_latlng(self.lon_metadata)
         new_lat = np.arange(
             min_lat, self.lat_metadata['max'] + self.lat_metadata['inc'],
             self.lat_metadata['inc']

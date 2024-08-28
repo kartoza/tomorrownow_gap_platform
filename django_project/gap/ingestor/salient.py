@@ -1,0 +1,480 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Salient ingestor.
+"""
+
+import os
+import uuid
+import json
+import logging
+import datetime
+import pytz
+import traceback
+import fsspec
+import s3fs
+import numpy as np
+import pandas as pd
+import xarray as xr
+import salientsdk as sk
+from xarray.core.dataset import Dataset as xrDataset
+from django.utils import timezone
+from django.core.files.storage import default_storage
+
+
+from gap.models import (
+    Dataset, DataSourceFile, DatasetStore,
+    IngestorSession, CollectorSession, Preferences
+)
+from gap.ingestor.base import BaseIngestor
+from gap.utils.netcdf import NetCDFMediaS3, find_start_latlng
+from gap.utils.zarr import BaseZarrReader
+
+
+logger = logging.getLogger(__name__)
+
+
+class SalientCollector(BaseIngestor):
+    """Collector for Salient seasonal forecast data."""
+
+    def __init__(self, session: CollectorSession, working_dir: str = '/tmp'):
+        """Initialize SalientCollector."""
+        super().__init__(session, working_dir)
+        self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
+
+        # init s3 variables and fs
+        self.s3 = NetCDFMediaS3.get_s3_variables('salient')
+        self.s3_options = {
+            'key': self.s3.get('AWS_ACCESS_KEY_ID'),
+            'secret': self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            'client_kwargs': NetCDFMediaS3.get_s3_client_kwargs()
+        }
+        self.fs = s3fs.S3FileSystem(
+            key=self.s3.get('AWS_ACCESS_KEY_ID'),
+            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            client_kwargs=NetCDFMediaS3.get_s3_client_kwargs()
+        )
+
+        # reset variables
+        self.total_count = 0
+        self.data_files = []
+        self.metadata = {}
+
+    def _get_date_config(self):
+        """Retrieve date from config or default to be today."""
+        date_str = '-today'
+        if 'forecast_date' in self.session.additional_config:
+            date_str = self.session.additional_config['forecast_date']
+        return date_str
+
+    def _get_variable_list_config(self):
+        """Retrieve variable list."""
+        default_vars = [
+            "precip",  # precipitation (mm/day)
+            "tmin",  # minimum daily temperature (degC)
+            "tmax",  # maximum daily temperature (degC)
+            "wspd",  # wind speed at 10m (m/s)
+            "tsi",  # total solar insolation (W/m^2)
+            "rh",  # relative humidity (%),
+            "temp"
+        ]
+        return self.session.additional_config.get(
+            'variable_list', default_vars)
+
+    def _get_coords(self):
+        """Retrieve polygon coordinates."""
+        # TODO: we need to verify on dev whether
+        # it's possible to request for whole GAP AoI
+        return self.session.additional_config.get(
+            'coords',
+            list(Preferences.load().area_of_interest.coords[0])
+        )
+
+    def _convert_forecast_date(self, date_str: str):
+        """Convert string forecast date to date object.
+
+        :param date_str: '-today' or 'YYYY-MM-DD'
+        :type date_str: str
+        :return: date object
+        :rtype: Date object
+        """
+        if date_str == '-today':
+            today = datetime.datetime.now()
+            return today.date()
+        dt = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        return dt.date()
+
+    def _store_as_netcdf_file(self, file_path: str, date_str: str):
+        """Store the downscale Salient NetCDF to Default's Storage.
+
+        Data will be truncated to 3 months data.
+        :param file_path: file path to downscale netcdf
+        :type file_path: str
+        :param date_str: forecast date in str
+        :type date_str: str
+        """
+        file_stats = os.stat(file_path)
+        logger.info(
+            f'Salient downscale size: {file_stats.st_size / (1024 * 1024)} MB'
+        )
+        # prepare start and end dates
+        forecast_date = self._convert_forecast_date(date_str)
+        end_date = forecast_date + datetime.timedelta(days=3 * 30)
+        logger.info(f'Slicing dataset from {forecast_date} to {end_date}')
+        # open the original netcdf file
+        dataset = xr.open_dataset(file_path)
+
+        # select 3 months data
+        sliced_ds = dataset.sel(
+            forecast_day=slice(
+                forecast_date.isoformat(), end_date.isoformat()
+            )
+        )
+
+        # store as netcdf to S3
+        filename = f'{str(uuid.uuid4())}.nc'
+        netcdf_url = (
+            NetCDFMediaS3.get_netcdf_base_url(self.s3) + filename
+        )
+        sliced_file_path = os.path.join(self.working_dir, filename)
+        sliced_ds.to_netcdf(
+            sliced_file_path, engine='h5netcdf', format='NETCDF4')
+        self.fs.put(sliced_file_path, netcdf_url)
+        file_stats = os.stat(sliced_file_path)
+
+        # create DataSourceFile
+        start_datetime = datetime.datetime(
+            forecast_date.year, forecast_date.month, forecast_date.day,
+            0, 0, 0, tzinfo=pytz.UTC
+        )
+        end_datetime = datetime.datetime(
+            end_date.year, end_date.month, end_date.day,
+            0, 0, 0, tzinfo=pytz.UTC
+        )
+        self.data_files.append(DataSourceFile.objects.create(
+            name=filename,
+            dataset=self.dataset,
+            start_date_time=start_datetime,
+            end_date_time=end_datetime,
+            created_on=timezone.now(),
+            format=DatasetStore.NETCDF
+        ))
+        self.total_count += 1
+        self.session.dataset_files.set(self.data_files)
+        self.metadata = {
+            'filepath': netcdf_url,
+            'filesize': file_stats.st_size,
+            'forecast_date': forecast_date.isoformat(),
+            'end_date': end_date.isoformat()
+        }
+
+    def _run(self):
+        """Download Salient Seasonal Forecast from sdk."""
+        logger.info(f'Running data collector for Salient - {self.session.id}.')
+        logger.info(f'Working directory: {self.working_dir}')
+
+        # initialize sdk
+        sk.set_file_destination(self.working_dir)
+        sk.login(
+            os.environ.get("SALIENT_SDK_USERNAME"),
+            os.environ.get("SALIENT_SDK_PASSWORD")
+        )
+
+        # create the requested locations
+        loc = sk.Location(shapefile=sk.upload_shapefile(
+            coords=self._get_coords(),
+            geoname="gap-1",
+            force=False)
+        )
+
+        # request data
+        fcst_file = sk.downscale(
+            loc=loc,
+            variables=self._get_variable_list_config(),
+            date=self._get_date_config(),
+            members=50,
+            force=False,
+            verbose=False,
+        )
+
+        self._store_as_netcdf_file(fcst_file, self._get_date_config())
+
+    def run(self):
+        """Run Salient Data Collector."""
+        try:
+            self._run()
+            self.session.notes = json.dumps(self.metadata, default=str)
+        except Exception as e:
+            logger.error('Collector Salient failed!', e)
+            logger.error(traceback.format_exc())
+            raise Exception(e)
+        finally:
+            pass
+
+
+class SalientIngestor(BaseIngestor):
+    """Ingestor for Salient seasonal forecast data."""
+
+    def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
+        """Initialize SalientIngestor."""
+        super().__init__(session, working_dir)
+        self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
+        self.s3 = BaseZarrReader.get_s3_variables()
+        self.s3_options = {
+            'key': self.s3.get('AWS_ACCESS_KEY_ID'),
+            'secret': self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            'client_kwargs': BaseZarrReader.get_s3_client_kwargs()
+        }
+        self.metadata = {}
+
+        # get zarr data source file
+        self.datasource_file, self.created = (
+            DataSourceFile.objects.get_or_create(
+                name='salient.zarr',
+                dataset=self.dataset,
+                format=DatasetStore.ZARR,
+                defaults={
+                    'created_on': timezone.now(),
+                    'start_date_time': timezone.now(),
+                    'end_date_time': (
+                        timezone.now()
+                    )
+                }
+            )
+        )
+
+        # min+max are the BBOX that GAP processes
+        # inc and original_min comes from Salient netcdf file
+        self.lat_metadata = {
+            'min': -27,
+            'max': 16,
+            'inc': 0.25,
+            'original_min': -0.625
+        }
+        self.lon_metadata = {
+            'min': 21.8,
+            'max': 52,
+            'inc': 0.25,
+            'original_min': 33.38
+        }
+        self.reindex_tolerance = 0.01
+
+    def _get_s3_filepath(self, source_file: DataSourceFile):
+        """Get Salient NetCDF temporary file from Collector.
+
+        :param source_file: Temporary NetCDF File
+        :type source_file: DataSourceFile
+        :return: s3 path to the file
+        :rtype: str
+        """
+        dir_prefix = os.environ.get('MINIO_AWS_DIR_PREFIX', '')
+        return os.path.join(
+            dir_prefix,
+            'salient',
+            source_file.name
+        )
+
+    def _open_dataset(self, source_file: DataSourceFile) -> xrDataset:
+        """Open temporary NetCDF File.
+
+        :param source_file: Temporary NetCDF File
+        :type source_file: DataSourceFile
+        :return: xarray dataset
+        :rtype: xrDataset
+        """
+        s3 = NetCDFMediaS3.get_s3_variables('salient')
+        fs = s3fs.S3FileSystem(
+            key=s3.get('AWS_ACCESS_KEY_ID'),
+            secret=s3.get('AWS_SECRET_ACCESS_KEY'),
+            client_kwargs=NetCDFMediaS3.get_s3_client_kwargs()
+        )
+
+        prefix = s3['AWS_DIR_PREFIX']
+        bucket_name = s3['AWS_BUCKET_NAME']
+        netcdf_url = f's3://{bucket_name}/{prefix}'
+        if not netcdf_url.endswith('/'):
+            netcdf_url += '/'
+        netcdf_url += f'{source_file.name}'
+        return xr.open_dataset(fs.open(netcdf_url))
+
+    def _update_zarr_source_file(self, forecast_date: datetime.date):
+        """Update zarr DataSourceFile start and end datetime.
+
+        :param forecast_date: Forecast date that has been processed
+        :type forecast_date: datetime.date
+        """
+        if self.created:
+            self.datasource_file.start_date_time = datetime.datetime(
+                forecast_date.year, forecast_date.month, forecast_date.day,
+                0, 0, 0, tzinfo=pytz.UTC
+            )
+            self.datasource_file.end_date_time = (
+                self.datasource_file.start_date_time
+            )
+        else:
+            if self.datasource_file.start_date_time.date() > forecast_date:
+                self.datasource_file.start_date_time = datetime.datetime(
+                    forecast_date.year, forecast_date.month,
+                    forecast_date.day,
+                    0, 0, 0, tzinfo=pytz.UTC
+                )
+            if self.datasource_file.end_date_time.date() < forecast_date:
+                self.datasource_file.end_date_time = datetime.datetime(
+                    forecast_date.year, forecast_date.month,
+                    forecast_date.day,
+                    0, 0, 0, tzinfo=pytz.UTC
+                )
+        self.datasource_file.save()
+
+    def _remove_temporary_source_file(
+            self, source_file: DataSourceFile, file_path: str):
+        """Remove temporary NetCDFFile from collector.
+
+        :param source_file: Temporary NetCDF File
+        :type source_file: DataSourceFile
+        :param file_path: s3 file path
+        :type file_path: str
+        """
+        try:
+            default_storage.delete(file_path)
+        except Exception as ex:
+            logger.error(
+                f'Failed to remove original source_file {file_path}!', ex)
+        finally:
+            source_file.delete()
+
+    def _run(self):
+        """Run Salient ingestor."""
+        logger.info(f'Running data ingestor for Salient: {self.session.id}.')
+        total_files = 0
+        forecast_dates = []
+        for collector in self.session.collectors.order_by('id'):
+            # Query the datasource file
+            source_file = (
+                collector.dataset_files.first()
+            )
+            if source_file is None:
+                continue
+            s3_storage = default_storage
+            file_path = self._get_s3_filepath(source_file)
+            if not s3_storage.exists(file_path):
+                logger.warn(f'DataSource {file_path} does not exist!')
+                continue
+
+            # open the dataset
+            dataset = self._open_dataset(source_file)
+
+            # convert to zarr
+            forecast_date = source_file.start_date_time.date()
+            self.store_as_zarr(dataset, forecast_date)
+
+            # update start/end date of zarr datasource file
+            self._update_zarr_source_file(forecast_date)
+
+            # delete netcdf datasource file
+            self._remove_temporary_source_file(source_file, file_path)
+
+            total_files += 1
+            forecast_dates.append(forecast_date.isoformat())
+            if self.created:
+                # reset created
+                self.created = False
+        self.metadata = {
+            'total_files': total_files,
+            'forecast_dates': forecast_dates
+        }
+
+    def store_as_zarr(self, dataset: xrDataset, forecast_date: datetime.date):
+        """Store xarray dataset from forecast_date into Salient zarr file.
+
+        The dataset will be expanded by lat and lon.
+        :param dataset: xarray dataset from NetCDF file
+        :type dataset: xrDataset
+        :param forecast_date: forecast date
+        :type forecast_date: datetime.date
+        """
+        forecast_dates = pd.date_range(
+            f'{forecast_date.isoformat()}', periods=1)
+        data_vars = {}
+        for var_name, da in dataset.data_vars.items():
+            # Initialize the data_var with the empty array
+            data_vars[var_name] = da.expand_dims('forecast_date', axis=0)
+
+        # Create the dataset
+        zarr_ds = xr.Dataset(
+            data_vars,
+            coords={
+                'forecast_date': ('forecast_date', forecast_dates),
+                'forecast_day': (
+                    'forecast_day', dataset.coords['forecast_day'].values
+                ),
+                'lat': ('lat', dataset.coords['lat'].values),
+                'lon': ('lon', dataset.coords['lon'].values),
+                'ensemble': ('ensemble', np.arange(50)),
+            }
+        )
+
+        # transform forecast_day into number of days
+        fd = np.datetime64(forecast_date.isoformat())
+        forecast_day_idx = (zarr_ds['forecast_day'] - fd).dt.days.data
+        zarr_ds = zarr_ds.assign_coords(
+            forecast_day_idx=("forecast_day", forecast_day_idx))
+        zarr_ds = zarr_ds.swap_dims({'forecast_day': 'forecast_day_idx'})
+        zarr_ds = zarr_ds.drop_vars('forecast_day')
+
+        # expand lat and lon
+        min_lat = find_start_latlng(self.lat_metadata)
+        min_lon = find_start_latlng(self.lon_metadata)
+        new_lat = np.arange(
+            min_lat, self.lat_metadata['max'] + self.lat_metadata['inc'],
+            self.lat_metadata['inc']
+        )
+        new_lon = np.arange(
+            min_lon, self.lon_metadata['max'] + self.lon_metadata['inc'],
+            self.lon_metadata['inc']
+        )
+        expanded_ds = zarr_ds.reindex(
+            lat=new_lat, lon=new_lon, method='nearest',
+            tolerance=self.reindex_tolerance
+        )
+
+        # write to zarr
+        zarr_url = (
+            BaseZarrReader.get_zarr_base_url(self.s3) +
+            self.datasource_file.name
+        )
+        if self.created:
+            expanded_ds.to_zarr(
+                zarr_url, mode='w', consolidated=True,
+                storage_options=self.s3_options
+            )
+        else:
+            expanded_ds.to_zarr(
+                zarr_url, mode='a', append_dim='forecast_date',
+                consolidated=True,
+                storage_options=self.s3_options
+            )
+
+    def run(self):
+        """Run Salient Ingestor."""
+        # Run the ingestion
+        try:
+            self._run()
+            self.session.notes = json.dumps(self.metadata, default=str)
+        except Exception as e:
+            logger.error('Ingestor Salient failed!', e)
+            logger.error(traceback.format_exc())
+            raise Exception(e)
+        finally:
+            pass
+
+    def verify(self):
+        """Verify the resulting zarr file."""
+        zarr_url = (
+            BaseZarrReader.get_zarr_base_url(self.s3) +
+            self.datasource_file.name
+        )
+        s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
+        self.zarr_ds = xr.open_zarr(s3_mapper, consolidated=True)
+        print(self.zarr_ds)
