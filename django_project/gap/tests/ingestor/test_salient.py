@@ -269,6 +269,7 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         forecast_date = date(2024, 8, 28)
 
         # Call the method
+        self.ingestor.created = True
         self.ingestor.store_as_zarr(mock_dataset, forecast_date)
 
         # Assertions
