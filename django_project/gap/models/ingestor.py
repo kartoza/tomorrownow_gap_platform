@@ -113,6 +113,7 @@ class CollectorSession(BaseSession):
             ingestor.run()
 
     def run(self):
+        """Run the collector session."""
         try:
             self._pre_run()
             with tempfile.TemporaryDirectory() as working_dir:

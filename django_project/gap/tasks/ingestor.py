@@ -50,9 +50,5 @@ def run_cbam_collector_session():
 
 @app.task(name='salient_collector_session')
 def run_salient_collector_session():
-    pass
-
-
-@app.task(name='tomorrowio_collector_session')
-def run_tomorrowio_collector_session():
+    """Run Collector for Salient Dataset."""
     pass
