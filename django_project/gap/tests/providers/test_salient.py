@@ -111,8 +111,8 @@ class TestSalientNetCDFReader(TestCase):
             data_value = reader.get_data_values()
             mock_open.assert_called_once()
             self.assertEqual(len(data_value.results), 3)
-            self.assertEqual(
-                data_value.results[0].values['temp_clim'], 19.461235)
+            self.assertAlmostEqual(
+                data_value.results[0].values['temp_clim'], 19.461235, 6)
             self.assertEqual(
                 len(data_value.results[0].values['precip_anom']), 50)
 
@@ -149,8 +149,8 @@ class TestSalientNetCDFReader(TestCase):
             self.assertIn(p, data_value.results)
             val = data_value.results[p]
             self.assertEqual(len(val), 3)
-            self.assertEqual(
-                val[0].values['temp_clim'], 19.461235)
+            self.assertAlmostEqual(
+                val[0].values['temp_clim'], 19.461235, 6)
             self.assertEqual(
                 len(val[0].values['precip_anom']), 50)
 

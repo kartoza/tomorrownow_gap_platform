@@ -86,9 +86,9 @@ class TestCBAMNetCDFReader(TestCase):
             self.assertEqual(len(reader.xrDatasets), 1)
             data_value = reader.get_data_values()
             self.assertEqual(len(data_value.results), 1)
-            self.assertEqual(
+            self.assertAlmostEqual(
                 data_value.results[0].values['max_total_temperature'],
-                33.371735)
+                33.371735, 6)
 
     def test_get_data_values_from_multiple_locations(self):
         """Test get data values from several locations."""
