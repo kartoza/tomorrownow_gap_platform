@@ -42,13 +42,31 @@ from gap.utils.zarr import BaseZarrReader
 class SalientReaderValue(DatasetReaderValue2):
     """Class that convert Salient Dataset to TimelineValues."""
 
-    date_variable = 'forecast_day_idx'
+    date_variable = 'forecast_day'
 
     def __init__(
             self, val: xrDataset | List[PointTimelineValues],
             location_input: DatasetReaderInput,
-            attributes: List[DatasetAttribute]) -> None:
+            attributes: List[DatasetAttribute],
+            forecast_date: np.datetime64) -> None:
+        self.forecast_date = forecast_date
         super().__init__(val, location_input, attributes)
+
+    def _post_init(self):
+        if not self._is_xr_dataset:
+            return
+        renamed_dict = {
+            'forecast_day_idx': 'forecast_day'
+        }
+        for attr in self.attributes:
+            renamed_dict[attr.source] = attr.attribute.variable_name
+        self._val = self._val.rename(renamed_dict)
+
+        # replace forecast_day to actualdates
+        initial_date = pd.Timestamp(self.forecast_date)
+        forecast_day_timedelta = pd.to_timedelta(self._val.forecast_day, unit='D')
+        forecast_day = initial_date + forecast_day_timedelta
+        self._val = self._val.assign_coords(forecast_day=('forecast_day', forecast_day))
 
     def _xr_dataset_to_dict(self) -> dict:
         """Convert xArray Dataset to dictionary.
@@ -352,10 +370,14 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         val = None
         if len(self.xrDatasets) > 0:
             val = self.xrDatasets[0]
-        return SalientReaderValue(val, self.location_input, self.attributes)
+        return SalientReaderValue(
+            val, self.location_input, self.attributes,
+            self.latest_forecast_date)
 
     def _get_forecast_day_idx(self, date: np.datetime64) -> int:
-        return int(abs((date - self.latest_forecast_date) / np.timedelta64(1, 'D')))
+        return int(
+            abs((date - self.latest_forecast_date) / np.timedelta64(1, 'D'))
+        )
 
     def _read_variables_by_point(
             self, dataset: xrDataset, variables: List[str],
