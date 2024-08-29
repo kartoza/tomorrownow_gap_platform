@@ -51,7 +51,7 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
     """Common class for Measurement API Test."""
 
     def _get_measurement_request(
-            self, lat=-2.215, lon=29.125, attributes='max_total_temperature',
+            self, lat=-2.215, lon=29.125, attributes='max_temperature',
             start_dt='2024-04-01', end_dt='2024-04-04', product=None):
         """Get request for Measurement API.
 
@@ -60,7 +60,7 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         :param lon: longitude, defaults to 29.125
         :type lon: float, optional
         :param attributes: comma separated list of attribute,
-            defaults to 'max_total_temperature'
+            defaults to 'max_temperature'
         :type attributes: str, optional
         :param start_dt: start date range, defaults to '2024-04-01'
         :type start_dt: str, optional
@@ -86,7 +86,7 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
 
 
     def _post_measurement_request(
-            self, lat=-2.215, lon=29.125, attributes='max_total_temperature',
+            self, lat=-2.215, lon=29.125, attributes='max_temperature',
             start_dt='2024-04-01', end_dt='2024-04-04', product=None):
         """Get request for Measurement API.
 
@@ -95,7 +95,7 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         :param lon: longitude, defaults to 29.125
         :type lon: float, optional
         :param attributes: comma separated list of attribute,
-            defaults to 'max_total_temperature'
+            defaults to 'max_temperature'
         :type attributes: str, optional
         :param start_dt: start date range, defaults to '2024-04-01'
         :type start_dt: str, optional
@@ -163,7 +163,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
         attribute1 = DatasetAttribute.objects.filter(
             dataset=dataset,
-            attribute__variable_name='max_total_temperature'
+            attribute__variable_name='max_temperature'
         ).first()
         attribute2 = DatasetAttribute.objects.filter(
             dataset=dataset,
@@ -206,7 +206,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
         attribute1 = DatasetAttribute.objects.filter(
             dataset=dataset,
-            attribute__variable_name='max_total_temperature'
+            attribute__variable_name='max_temperature'
         ).first()
         attribute2 = DatasetAttribute.objects.filter(
             dataset=dataset,

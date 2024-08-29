@@ -50,12 +50,12 @@ TIO_VARIABLES = {
     'temperatureMax': DatasetVariable(
         'Temperature Max',
         '',
-        '°C', 'max_total_temperature'
+        '°C', 'max_temperature'
     ),
     'temperatureMin': DatasetVariable(
         'Temperature Min',
         '',
-        '°C', 'min_total_temperature'
+        '°C', 'min_temperature'
     )
 }
 TIO_SHORT_TERM_FORCAST_VARIABLES = {
