@@ -243,6 +243,37 @@ class MeasurementAPI(APIView):
         response['Content-Disposition'] = 'attachment; filename="data.txt"'
         return response
 
+    def validate_output_format(self, location: DatasetReaderInput, output_format):
+        if output_format == DatasetReaderOutputType.JSON:
+            if location.type != LocationInputType.POINT:
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Output format json is only available for single point query!'
+                    )
+                })
+
+    def validate_dataset_attributes(self, dataset_attributes, output_format):
+        if len(dataset_attributes) == 0:
+            raise ValidationError({
+                'Invalid Request Parameter': (
+                    'No matching attribute found!'
+                )
+            })
+        
+        if output_format == 'csv':
+            non_ensemble_count = dataset_attributes.filter(
+                ensembles=False
+            ).count()
+            ensemble_count = dataset_attributes.filter(
+                ensembles=True
+            ).count()
+            if ensemble_count > 0 and non_ensemble_count > 0:
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        f'Attribute with ensemble cannot be mixed with non-ensemble'
+                    )
+                })
+
     def get_response_data(self) -> Response:
         """Read data from dataset.
 
@@ -263,11 +294,13 @@ class MeasurementAPI(APIView):
         data = {}
         if location is None:
             return data
-        # TODO: validate if json is only available for single location filter
+        # validate if json is only available for single location filter
+        self.validate_output_format(location, output_format)
         # TODO: validate minimum/maximum area filter?
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
-            dataset__is_internal_use=False
+            dataset__is_internal_use=False,
+            attribute__is_active=True
         )
         product_filter = self._get_product_filter()
         dataset_attributes = dataset_attributes.annotate(
@@ -275,6 +308,7 @@ class MeasurementAPI(APIView):
         ).filter(
             product_name__in=product_filter
         )
+        self.validate_dataset_attributes(dataset_attributes, output_format)
         # TODO: validate empty dataset_attributes
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
