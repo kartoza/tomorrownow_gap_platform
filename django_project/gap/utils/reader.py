@@ -10,7 +10,6 @@ from typing import Union, List, Dict
 import numpy as np
 from datetime import datetime
 import pytz
-import netCDF4 as nc
 import tempfile
 from xarray.core.dataset import Dataset as xrDataset
 from django.contrib.gis.geos import (
@@ -210,7 +209,9 @@ class DatasetTimelineValue:
 
 class PointTimelineValues:
 
-    def __init__(self, location: Point, values: List[DatasetTimelineValue]) -> None:
+    def __init__(
+            self, location: Point,
+            values: List[DatasetTimelineValue]) -> None:
         self.location = location
         self.values = values
 
@@ -263,7 +264,10 @@ class DatasetReaderValue2:
         :return: Dictionary of metadata and data
         :rtype: dict
         """
-        if self.location_input is None or self._val is None or len(self.values) == 0:
+        if (
+            self.location_input is None or self._val is None or
+            len(self.values) == 0
+        ):
             return {}
 
         return {
@@ -295,8 +299,12 @@ class DatasetReaderValue2:
 
     def to_netcdf_stream(self):
         """Generate netcdf stream."""
-        with tempfile.NamedTemporaryFile(suffix=".nc", delete=True, delete_on_close=False) as tmp_file:
-            self.xr_dataset.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=".nc", delete=True, delete_on_close=False)
+        ) as tmp_file:
+            self.xr_dataset.to_netcdf(
+                tmp_file.name, format='NETCDF4', engine='netcdf4')
             with open(tmp_file.name, 'rb') as f:
                 while True:
                     chunk = f.read(self.chunk_size_in_bytes)
@@ -307,7 +315,9 @@ class DatasetReaderValue2:
     def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream."""
         dim_order = [self.date_variable]
-        reordered_cols = [attribute.attribute.variable_name for attribute in self.attributes]
+        reordered_cols = [
+            attribute.attribute.variable_name for attribute in self.attributes
+        ]
         if 'lat' in self.xr_dataset.dims:
             dim_order.append('lat')
             dim_order.append('lon')
@@ -319,8 +329,13 @@ class DatasetReaderValue2:
             # reordered_cols.insert(0, 'ensemble')
         df = self.xr_dataset.to_dataframe(dim_order=dim_order)
         df_reordered = df[reordered_cols]
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=True, delete_on_close=False) as tmp_file:
-            df_reordered.to_csv(tmp_file.name, index=True, header=True, sep=separator, mode='w', lineterminator='\n', float_format='%.4f')
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=suffix, delete=True, delete_on_close=False)
+        ) as tmp_file:
+            df_reordered.to_csv(
+                tmp_file.name, index=True, header=True, sep=separator,
+                mode='w', lineterminator='\n', float_format='%.4f')
             with open(tmp_file.name, 'rb') as f:
                 while True:
                     chunk = f.read(self.chunk_size_in_bytes)

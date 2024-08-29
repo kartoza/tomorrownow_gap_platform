@@ -21,7 +21,8 @@ from django.contrib.gis.geos import (
     GEOSGeometry,
     Point,
     MultiPoint,
-    MultiPolygon
+    MultiPolygon,
+    Polygon
 )
 
 from gap.models import (
@@ -124,12 +125,12 @@ class MeasurementAPI(APIView):
                 geom = GEOSGeometry(
                     json.dumps(geojson['geometry']), srid=4326
                 )
-                if isinstance(geom, MultiPolygon):
+                if isinstance(geom, (MultiPolygon, Polygon)):
                     break
                 point_list.append(geom[0])
             if geom is None:
                 raise TypeError('Unknown geometry type!')
-            if isinstance(geom, MultiPolygon):
+            if isinstance(geom, (MultiPolygon, Polygon)):
                 return DatasetReaderInput(
                     geom, LocationInputType.POLYGON)
             return DatasetReaderInput(
@@ -210,32 +211,36 @@ class MeasurementAPI(APIView):
     def _read_data_as_netcdf(
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> Response:
-        reader:BaseDatasetReader = list(reader_dict.values())[0]
+        reader: BaseDatasetReader = list(reader_dict.values())[0]
         reader.read()
         data_value = reader.get_data_values2()
-        response = StreamingHttpResponse(data_value.to_netcdf_stream(), content_type='application/x-netcdf')
+        response = StreamingHttpResponse(
+            data_value.to_netcdf_stream(), content_type='application/x-netcdf'
+        )
         response['Content-Disposition'] = 'attachment; filename="data.nc"'
 
         return response
 
-    def _read_data_as_csv(self, reader_dict: Dict[int, BaseDatasetReader],
+    def _read_data_as_csv(
+            self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> Response:
-        reader:BaseDatasetReader = list(reader_dict.values())[0]
+        reader: BaseDatasetReader = list(reader_dict.values())[0]
         reader.read()
         data_value = reader.get_data_values2()
-        response = StreamingHttpResponse(data_value.to_csv_stream(), content_type='text/csv')
+        response = StreamingHttpResponse(
+            data_value.to_csv_stream(), content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="data.csv"'
-        
         return response
 
-    def _read_data_as_ascii(self, reader_dict: Dict[int, BaseDatasetReader],
+    def _read_data_as_ascii(
+            self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> Response:
-        reader:BaseDatasetReader = list(reader_dict.values())[0]
+        reader: BaseDatasetReader = list(reader_dict.values())[0]
         reader.read()
         data_value = reader.get_data_values2()
-        response = StreamingHttpResponse(data_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
+        response = StreamingHttpResponse(
+            data_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
         response['Content-Disposition'] = 'attachment; filename="data.txt"'
-
         return response
 
     def get_response_data(self) -> Response:
@@ -279,7 +284,8 @@ class MeasurementAPI(APIView):
                 reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
-        # TODO: validate if there are multiple dataset but the output type is not json
+        # TODO: validate if there are multiple dataset
+        # but the output type is not json
         if output_format == DatasetReaderOutputType.JSON:
             return Response(
                 status=200,
@@ -293,7 +299,9 @@ class MeasurementAPI(APIView):
             return self._read_data_as_ascii(dataset_dict, start_dt, end_dt)
 
         raise ValidationError({
-            'Invalid Request Parameter': f'Incorrect output_type value: {output_format}'
+            'Invalid Request Parameter': (
+                f'Incorrect output_type value: {output_format}'
+            )
         })
 
     @swagger_auto_schema(

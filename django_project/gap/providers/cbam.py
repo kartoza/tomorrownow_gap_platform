@@ -60,8 +60,9 @@ class CBAMReaderValue(DatasetReaderValue2):
                 'geometry': json.loads(self.location_input.point.json),
                 'data': []
             }
-        results:List[DatasetTimelineValue] = []
-        for dt_idx, dt in enumerate(self.xr_dataset[self.date_variable].values):
+        results: List[DatasetTimelineValue] = []
+        for dt_idx, dt in enumerate(
+            self.xr_dataset[self.date_variable].values):
             value_data = {}
             for attribute in self.attributes:
                 var_name = attribute.attribute.variable_name

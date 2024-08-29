@@ -55,6 +55,7 @@ class SalientReaderValue(DatasetReaderValue2):
     def _post_init(self):
         if not self._is_xr_dataset:
             return
+        # rename attributes and the forecast_day
         renamed_dict = {
             'forecast_day_idx': 'forecast_day'
         }
@@ -64,9 +65,11 @@ class SalientReaderValue(DatasetReaderValue2):
 
         # replace forecast_day to actualdates
         initial_date = pd.Timestamp(self.forecast_date)
-        forecast_day_timedelta = pd.to_timedelta(self._val.forecast_day, unit='D')
+        forecast_day_timedelta = pd.to_timedelta(
+            self._val.forecast_day, unit='D')
         forecast_day = initial_date + forecast_day_timedelta
-        self._val = self._val.assign_coords(forecast_day=('forecast_day', forecast_day))
+        self._val = self._val.assign_coords(
+            forecast_day=('forecast_day', forecast_day))
 
     def _xr_dataset_to_dict(self) -> dict:
         """Convert xArray Dataset to dictionary.
@@ -80,8 +83,9 @@ class SalientReaderValue(DatasetReaderValue2):
                 'geometry': json.loads(self.location_input.point.json),
                 'data': []
             }
-        results:List[DatasetTimelineValue] = []
-        for dt_idx, dt in enumerate(self.xr_dataset[self.date_variable].values):
+        results: List[DatasetTimelineValue] = []
+        for dt_idx, dt in enumerate(
+            self.xr_dataset[self.date_variable].values):
             value_data = {}
             for attribute in self.attributes:
                 var_name = attribute.attribute.variable_name
@@ -94,7 +98,9 @@ class SalientReaderValue(DatasetReaderValue2):
                     value_data[var_name] = (
                         v if not np.isnan(v) else None
                     )
-            forecast_day = self.xr_dataset.forecast_date.values + np.timedelta64(dt, 'D')
+            forecast_day = (
+                self.xr_dataset.forecast_date.values + np.timedelta64(dt, 'D')
+            )
             results.append(DatasetTimelineValue(
                 forecast_day,
                 value_data
@@ -201,9 +207,8 @@ class SalientNetCDFReader(BaseNetCDFReader):
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
-        var_dims = dataset[variables[0]].dims
         # use the first variable to get its dimension
-        if 'ensemble' in var_dims:
+        if self._has_ensembles():
             # use 0 idx ensemble and 0 idx forecast_day
             mask = np.zeros_like(dataset[variables[0]][0][0], dtype=bool)
         else:
@@ -412,6 +417,19 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
             self, dataset: xrDataset, variables: List[str],
             start_dt: np.datetime64,
             end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from a bbox.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
         points = self.location_input.points
         lat_min = points[0].y
         lat_max = points[1].y
@@ -429,3 +447,83 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
             (dataset[self.date_variable] <= max_idx),
             drop=True
         )
+
+    def _read_variables_by_polygon(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from a polygon.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        min_idx = self._get_forecast_day_idx(start_dt)
+        max_idx = self._get_forecast_day_idx(end_dt)
+        # Convert the Django GIS Polygon to a format compatible with shapely
+        shapely_multipolygon = shape(
+            json.loads(self.location_input.polygon.geojson))
+
+        # Create a mask using regionmask from the shapely polygon
+        mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
+        # Mask the dataset
+        return dataset[variables].sel(
+            forecast_date=self.latest_forecast_date
+        ).where(
+            (mask == 0) &
+            (dataset[self.date_variable] >= min_idx) &
+            (dataset[self.date_variable] <= max_idx),
+            drop=True
+        )
+
+    def _read_variables_by_points(
+            self, dataset: xrDataset, variables: List[str],
+            start_dt: np.datetime64,
+            end_dt: np.datetime64) -> xrDataset:
+        """Read variables values from a list of point.
+
+        :param dataset: Dataset to be read
+        :type dataset: xrDataset
+        :param variables: list of variable name
+        :type variables: List[str]
+        :param start_dt: start datetime
+        :type start_dt: np.datetime64
+        :param end_dt: end datetime
+        :type end_dt: np.datetime64
+        :return: Dataset that has been filtered
+        :rtype: xrDataset
+        """
+        min_idx = self._get_forecast_day_idx(start_dt)
+        max_idx = self._get_forecast_day_idx(end_dt)
+        if self._has_ensembles():
+            # use 0 idx ensemble and 0 idx forecast_day
+            mask = np.zeros_like(dataset[variables[0]][0][0][0], dtype=bool)
+        else:
+            # use the 0 index for it's date variable
+            mask = np.zeros_like(dataset[variables[0]][0][0], dtype=bool)
+        # Iterate through the points and update the mask
+        for lon, lat in self.location_input.points:
+            # Find nearest lat and lon indices
+            lat_idx = np.abs(dataset['lat'] - lat).argmin()
+            lon_idx = np.abs(dataset['lon'] - lon).argmin()
+            mask[lat_idx, lon_idx] = True
+        mask_da = xr.DataArray(
+            mask,
+            coords={
+                'lat': dataset['lat'], 'lon': dataset['lon']
+            }, dims=['lat', 'lon']
+        )
+        # Apply the mask to the dataset
+        return dataset[variables].sel(
+            forecast_date=self.latest_forecast_date
+        ).where(
+            (mask_da) &
+            (dataset[self.date_variable] >= min_idx) &
+            (dataset[self.date_variable] <= max_idx), drop=True)
