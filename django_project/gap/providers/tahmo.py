@@ -22,8 +22,59 @@ from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
     BaseDatasetReader,
-    LocationDatasetReaderValue
+    DatasetReaderValue2,
+    PointTimelineValues
 )
+
+
+class CSVBuffer:
+    """An object that implements just the write method of the file-like
+    interface.
+    """
+    def write(self, value):
+        """Return the string to write."""
+        yield value
+
+
+
+class TahmoReaderValue(DatasetReaderValue2):
+    """Class that convert Tahmo Dataset to TimelineValues."""
+
+    date_variable = 'date'
+
+    def __init__(
+            self, val: List[PointTimelineValues],
+            location_input: DatasetReaderInput,
+            attributes: List[DatasetAttribute],
+            start_date: datetime,
+            end_date: datetime) -> None:
+        super().__init__(val, location_input, attributes)
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def to_csv_stream(self, suffix='.csv', separator=','):
+        headers = [
+            'date',
+            'lat',
+            'lon'
+        ]
+        for attr in self.attributes:
+            headers.append(attr.attribute.variable_name)
+        yield bytes(','.join(headers) + '\n', 'utf-8')
+        for p in self.values:
+            for val in p.values:
+                data = [
+                    val.get_datetime_repr('%Y-%m-%d'),
+                    str(p.location.y),
+                    str(p.location.x)
+                ]
+                for attr in self.attributes:
+                    var_name = attr.attribute.variable_name
+                    if var_name in val.values:
+                        data.append(str(val.values[var_name]))
+                    else:
+                        data.append('')
+                yield bytes(','.join(data) + '\n', 'utf-8')
 
 
 class TahmoDatasetReader(BaseDatasetReader):
@@ -48,7 +99,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         """
         super().__init__(
             dataset, attributes, location_input, start_date, end_date)
-        self.results = {}
+        self.results: List[PointTimelineValues] = []
 
     def _find_nearest_station_by_point(self, point: Point = None):
         p = point
@@ -123,7 +174,7 @@ class TahmoDatasetReader(BaseDatasetReader):
             station__in=nearest_stations
         ).order_by('station', 'date_time', 'dataset_attribute')
         # final result, group by point
-        self.results = {}
+        self.results = []
         curr_point = None
         curr_dt = None
         station_results = []
@@ -138,7 +189,9 @@ class TahmoDatasetReader(BaseDatasetReader):
                     DatasetTimelineValue(curr_dt, measurement_dict))
                 curr_dt = measurement.date_time
                 measurement_dict = {}
-                self.results[curr_point] = station_results
+                self.results.append(
+                    PointTimelineValues(curr_point, station_results)
+                )
                 curr_point = measurement.station.geometry
                 station_results = []
             else:
@@ -152,7 +205,9 @@ class TahmoDatasetReader(BaseDatasetReader):
             ] = measurement.value
         station_results.append(
             DatasetTimelineValue(curr_dt, measurement_dict))
-        self.results[curr_point] = station_results
+        self.results.append(
+            PointTimelineValues(curr_point, station_results)
+        )
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch results.
@@ -160,7 +215,15 @@ class TahmoDatasetReader(BaseDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        if len(self.results.keys()) == 1:
-            key = list(self.results.keys())[0]
-            return DatasetReaderValue(key, self.results[key])
-        return LocationDatasetReaderValue(self.results)
+        return None
+
+    def get_data_values2(self) -> DatasetReaderValue2:
+        """Fetch data values from dataset.
+
+        :return: Data Value.
+        :rtype: DatasetReaderValue
+        """
+        return TahmoReaderValue(
+            self.results, self.location_input, self.attributes,
+            self.start_date, self.end_date
+        )
