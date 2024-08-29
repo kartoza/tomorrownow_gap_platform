@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 ATTRIBUTES = [
     'total_evapotranspiration_flux',
     'total_rainfall',
-    'max_total_temperature',
-    'min_total_temperature',
+    'max_temperature',
+    'min_temperature',
     'precipitation_probability'
 ]
 COLUMNS = [
@@ -44,8 +44,8 @@ COLUMNS = [
 VAR_MAPPING = {
     'total_evapotranspiration_flux': 'evapotranspirationSum',
     'total_rainfall': 'rainAccumulationSum',
-    'max_total_temperature': 'temperatureMax',
-    'min_total_temperature': 'temperatureMin',
+    'max_temperature': 'temperatureMax',
+    'min_temperature': 'temperatureMin',
     'precipitation_probability': 'precipitationProbability',
 }
 VAR_MAPPING_REVERSE = {v: k for k, v in VAR_MAPPING.items()}
