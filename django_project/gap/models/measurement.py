@@ -43,6 +43,12 @@ class DatasetAttribute(models.Model):
     source_unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE
     )
+    ensembles = models.BooleanField(
+        default=False,
+        help_text=(
+            'Flag indicating that the attribute is an array of 50 ensembles.'
+        )
+    )
 
     def __str__(self) -> str:
         return f'{self.attribute} - {self.dataset}'

@@ -6,7 +6,8 @@
         "dataset": 1,
         "attribute": 1,
         "source": "te_min",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -16,7 +17,8 @@
         "dataset": 1,
         "attribute": 2,
         "source": "te_max",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -26,7 +28,8 @@
         "dataset": 1,
         "attribute": 3,
         "source": "te_avg",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -36,7 +39,8 @@
         "dataset": 1,
         "attribute": 4,
         "source": "rh_min",
-        "source_unit": 6
+        "source_unit": 6,
+        "ensembles": false
     }
 },
 {
@@ -46,7 +50,8 @@
         "dataset": 1,
         "attribute": 5,
         "source": "rh_max",
-        "source_unit": 6
+        "source_unit": 6,
+        "ensembles": false
     }
 },
 {
@@ -56,7 +61,8 @@
         "dataset": 1,
         "attribute": 6,
         "source": "ra_total",
-        "source_unit": 7
+        "source_unit": 7,
+        "ensembles": false
     }
 },
 {
@@ -66,7 +72,8 @@
         "dataset": 1,
         "attribute": 7,
         "source": "pr_total",
-        "source_unit": 8
+        "source_unit": 4,
+        "ensembles": false
     }
 },
 {
@@ -76,7 +83,8 @@
         "dataset": 2,
         "attribute": 8,
         "source": "total_evapotranspiration_flux",
-        "source_unit": 1
+        "source_unit": 1,
+        "ensembles": false
     }
 },
 {
@@ -86,7 +94,8 @@
         "dataset": 2,
         "attribute": 9,
         "source": "max_total_temperature",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -96,7 +105,8 @@
         "dataset": 2,
         "attribute": 10,
         "source": "max_night_temperature",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -106,7 +116,8 @@
         "dataset": 2,
         "attribute": 11,
         "source": "average_solar_irradiance",
-        "source_unit": 3
+        "source_unit": 3,
+        "ensembles": false
     }
 },
 {
@@ -116,7 +127,8 @@
         "dataset": 2,
         "attribute": 12,
         "source": "total_solar_irradiance",
-        "source_unit": 3
+        "source_unit": 3,
+        "ensembles": false
     }
 },
 {
@@ -126,7 +138,8 @@
         "dataset": 2,
         "attribute": 13,
         "source": "min_night_temperature",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -136,7 +149,8 @@
         "dataset": 2,
         "attribute": 14,
         "source": "max_day_temperature",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -146,7 +160,8 @@
         "dataset": 2,
         "attribute": 15,
         "source": "total_rainfall",
-        "source_unit": 1
+        "source_unit": 1,
+        "ensembles": false
     }
 },
 {
@@ -156,7 +171,8 @@
         "dataset": 2,
         "attribute": 16,
         "source": "min_day_temperature",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -166,7 +182,8 @@
         "dataset": 2,
         "attribute": 17,
         "source": "min_total_temperature",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -176,7 +193,8 @@
         "dataset": 3,
         "attribute": 18,
         "source": "precip_clim",
-        "source_unit": 4
+        "source_unit": 4,
+        "ensembles": false
     }
 },
 {
@@ -186,7 +204,8 @@
         "dataset": 3,
         "attribute": 19,
         "source": "temp_clim",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": false
     }
 },
 {
@@ -196,7 +215,8 @@
         "dataset": 3,
         "attribute": 20,
         "source": "precip_anom",
-        "source_unit": 4
+        "source_unit": 4,
+        "ensembles": true
     }
 },
 {
@@ -206,7 +226,8 @@
         "dataset": 3,
         "attribute": 21,
         "source": "temp_anom",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": true
     }
 },
 {
@@ -214,9 +235,10 @@
     "pk": 22,
     "fields": {
         "dataset": 3,
-        "attribute": 22,
+        "attribute": 7,
         "source": "precip",
-        "source_unit": 4
+        "source_unit": 4,
+        "ensembles": true
     }
 },
 {
@@ -226,7 +248,173 @@
         "dataset": 3,
         "attribute": 23,
         "source": "temp",
-        "source_unit": 5
+        "source_unit": 5,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 24,
+    "fields": {
+        "dataset": 3,
+        "attribute": 17,
+        "source": "tmin",
+        "source_unit": 5,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 25,
+    "fields": {
+        "dataset": 3,
+        "attribute": 24,
+        "source": "tmin_clim",
+        "source_unit": 5,
+        "ensembles": false
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 26,
+    "fields": {
+        "dataset": 3,
+        "attribute": 25,
+        "source": "tmin_anom",
+        "source_unit": 5,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 27,
+    "fields": {
+        "dataset": 3,
+        "attribute": 9,
+        "source": "tmax",
+        "source_unit": 5,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 28,
+    "fields": {
+        "dataset": 3,
+        "attribute": 26,
+        "source": "tmax_clim",
+        "source_unit": 5,
+        "ensembles": false
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 29,
+    "fields": {
+        "dataset": 3,
+        "attribute": 27,
+        "source": "tmax_anom",
+        "source_unit": 5,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 30,
+    "fields": {
+        "dataset": 3,
+        "attribute": 28,
+        "source": "rh",
+        "source_unit": 6,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 31,
+    "fields": {
+        "dataset": 3,
+        "attribute": 29,
+        "source": "rh_clim",
+        "source_unit": 6,
+        "ensembles": false
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 32,
+    "fields": {
+        "dataset": 3,
+        "attribute": 30,
+        "source": "rh_anom",
+        "source_unit": 6,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 33,
+    "fields": {
+        "dataset": 3,
+        "attribute": 6,
+        "source": "tsi",
+        "source_unit": 9,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 34,
+    "fields": {
+        "dataset": 3,
+        "attribute": 31,
+        "source": "tsi_clim",
+        "source_unit": 9,
+        "ensembles": false
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 35,
+    "fields": {
+        "dataset": 3,
+        "attribute": 32,
+        "source": "tsi_anom",
+        "source_unit": 9,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 36,
+    "fields": {
+        "dataset": 3,
+        "attribute": 33,
+        "source": "wspd",
+        "source_unit": 8,
+        "ensembles": true
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 37,
+    "fields": {
+        "dataset": 3,
+        "attribute": 34,
+        "source": "wspd_clim",
+        "source_unit": 8,
+        "ensembles": false
+    }
+},
+{
+    "model": "gap.datasetattribute",
+    "pk": 38,
+    "fields": {
+        "dataset": 3,
+        "attribute": 35,
+        "source": "wspd_anom",
+        "source_unit": 8,
+        "ensembles": true
     }
 }
 ]
