@@ -194,6 +194,7 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         """Test update zarr source file with forecast_date."""
         # Test new DataSourceFile creation
         mock_forecast_date = date(2024, 8, 28)
+        self.ingestor.created = True
         self.ingestor._update_zarr_source_file(mock_forecast_date)
         self.ingestor.datasource_file.refresh_from_db()
         self.assertEqual(
