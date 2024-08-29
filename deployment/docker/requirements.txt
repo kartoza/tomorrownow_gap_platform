@@ -6,8 +6,11 @@ djangorestframework==3.14.0
 # Geographic add-ons for Django Rest Framework
 djangorestframework-gis==1.0
 
+# CSV add-ons for Django Rest Framework
+djangorestframework-csv==3.0.2
+
 # Python HTTP library
-requests==2.28.2
+requests==2.31.0
 
 # The uWSGI server
 uwsgi==2.0.23
@@ -58,3 +61,6 @@ zarr==2.18.2
 # Excel reader
 pandas==2.2.2
 openpyxl==3.1.5
+
+# salient sdk
+salientsdk==0.2.6

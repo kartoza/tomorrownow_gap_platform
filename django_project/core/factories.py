@@ -5,38 +5,17 @@ Tomorrow Now GAP.
 .. note:: Core factories.
 """
 
-from typing import Generic, TypeVar
-
 import factory
 from django.contrib.auth import get_user_model
+from factory.django import DjangoModelFactory
 
-T = TypeVar('T')
+from core.models import BackgroundTask
+
+
 User = get_user_model()
 
 
-class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
-    """Base meta factory class."""
-
-    def __call__(cls, *args, **kwargs) -> T:
-        """Override the default Factory() syntax to call the default strategy.
-
-        Returns an instance of the associated class.
-        """
-        return super().__call__(*args, **kwargs)
-
-
-class BaseFactory(Generic[T], factory.django.DjangoModelFactory):
-    """Base factory class to make the factory return correct class typing."""
-
-    @classmethod
-    def create(cls, **kwargs) -> T:
-        """Create an instance of the model, and save it to the database."""
-        return super().create(**kwargs)
-
-
-class UserF(
-    BaseFactory[User], metaclass=BaseMetaFactory[User]
-):
+class UserF(DjangoModelFactory):
     """Factory class for User."""
 
     class Meta:  # noqa
@@ -47,3 +26,17 @@ class UserF(
     )
     first_name = 'John'
     last_name = 'Doe'
+
+
+class BackgroundTaskF(DjangoModelFactory):
+    """Factory class for BackgroundTask."""
+
+    class Meta:  # noqa
+        model = BackgroundTask
+
+    task_name = factory.Sequence(
+        lambda n: u'task-name %s' % n
+    )
+    task_id = factory.Faker('uuid4')
+    submitted_by = factory.SubFactory(UserF)
+    parameters = '(9999,)'

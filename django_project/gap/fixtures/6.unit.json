@@ -19,7 +19,7 @@
     "model": "gap.unit",
     "pk": 4,
     "fields": {
-      "name": "mm day-1",
+      "name": "mm/day",
       "description": null
     }
   },
@@ -51,7 +51,15 @@
     "model": "gap.unit",
     "pk": 8,
     "fields": {
-      "name": "mm/day",
+      "name": "m/s",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 9,
+    "fields": {
+      "name": "kWh/m2/day",
       "description": null
     }
   }

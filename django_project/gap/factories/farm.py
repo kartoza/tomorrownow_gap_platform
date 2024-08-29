@@ -6,16 +6,14 @@ Tomorrow Now GAP.
 """
 import factory
 from django.contrib.gis.geos import Point
+from factory.django import DjangoModelFactory
 
-from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
 
 
-class FarmCategoryFactory(
-    BaseFactory[FarmCategory], metaclass=BaseMetaFactory[FarmCategory]
-):
+class FarmCategoryFactory(DjangoModelFactory):
     """Factory class for FarmCategory model."""
 
     class Meta:  # noqa
@@ -27,9 +25,7 @@ class FarmCategoryFactory(
     description = factory.Faker('text')
 
 
-class FarmRSVPStatusFactory(
-    BaseFactory[FarmRSVPStatus], metaclass=BaseMetaFactory[FarmRSVPStatus]
-):
+class FarmRSVPStatusFactory(DjangoModelFactory):
     """Factory class for FarmRSVPStatus model."""
 
     class Meta:  # noqa
@@ -41,9 +37,7 @@ class FarmRSVPStatusFactory(
     description = factory.Faker('text')
 
 
-class FarmFactory(
-    BaseFactory[Farm], metaclass=BaseMetaFactory[Farm]
-):
+class FarmFactory(DjangoModelFactory):
     """Factory class for Farm model."""
 
     class Meta:  # noqa

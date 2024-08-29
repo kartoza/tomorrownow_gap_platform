@@ -14,6 +14,7 @@ class ApiTag:
 
     USER = 'User'
     Measurement = 'Measurement'
+    CROP_PLAN = 'Crop plan'
 
 
 # COMMON MANUAL PARAMETERS

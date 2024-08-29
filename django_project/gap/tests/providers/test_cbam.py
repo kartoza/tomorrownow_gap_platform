@@ -36,8 +36,8 @@ class TestCBAMNetCDFReader(TestCase):
         self.dataset = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.CBAM))
         self.attribute = AttributeFactory.create(
-            name='Max Total Temperature',
-            variable_name='max_total_temperature')
+            name='Max Temperature',
+            variable_name='max_temperature')
         self.dataset_attr = DatasetAttributeFactory.create(
             dataset=self.dataset,
             attribute=self.attribute,
@@ -75,7 +75,7 @@ class TestCBAMNetCDFReader(TestCase):
         )
         with patch.object(CBAMNetCDFReader, 'open_dataset') as mock_open:
             mock_open.return_value = (
-                xr.open_dataset(file_path)
+                xr.open_dataset(file_path, engine='h5netcdf')
             )
             reader = CBAMNetCDFReader(
                 self.dataset, [self.dataset_attr],
@@ -86,9 +86,9 @@ class TestCBAMNetCDFReader(TestCase):
             self.assertEqual(len(reader.xrDatasets), 1)
             data_value = reader.get_data_values()
             self.assertEqual(len(data_value.results), 1)
-            self.assertEqual(
-                data_value.results[0].values['max_total_temperature'],
-                33.371735)
+            self.assertAlmostEqual(
+                data_value.results[0].values['max_temperature'],
+                33.371735, 6)
 
     def test_get_data_values_from_multiple_locations(self):
         """Test get data values from several locations."""

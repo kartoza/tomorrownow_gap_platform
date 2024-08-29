@@ -1,19 +1,24 @@
 FROM rstudio/plumber:v1.2.0 AS prod
 
-# install python 3.10
+# install python 3.12
 RUN apt-get update -y && apt-get upgrade -y
 
 RUN apt install software-properties-common -y
 
 RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update -y && apt-get upgrade -y
 
-RUN apt install Python3.10
+RUN apt install python3.12 -y
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+RUN update-alternatives --set python3 /usr/bin/python3.12
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
+RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
-    gcc gettext cron \
+    gcc gettext cron build-essential \
     spatialite-bin libsqlite3-mod-spatialite \
-    python3-dev python3-gdal python3-psycopg2 python3-ldap \
-    python3-pip python3-pil python3-lxml python3-pylibmc \
+    python3.12-dev python3-gdal python3-psycopg2 python3-ldap libpython3.12-dev \
+    python3-pil python3-lxml python3-pylibmc \
     uwsgi uwsgi-plugin-python3 \
     libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
 
@@ -22,10 +27,10 @@ RUN install2.r --error tidyverse tidygam mgcv ggpubr classInt zoo
 
 # Install pip packages
 ADD deployment/docker/requirements.txt /requirements.txt
-RUN pip3 install --upgrade pip && pip install --upgrade pip
+RUN python3 -m pip install setuptools
 # Fix uwsgi build failure missing cc1
 ARG CPUCOUNT=1
-RUN pip3 install -r /requirements.txt
+RUN python3 -m pip install -r /requirements.txt
 
 # add django project
 ADD django_project /home/web/django_project

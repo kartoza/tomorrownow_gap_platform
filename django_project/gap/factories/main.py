@@ -6,8 +6,8 @@ Tomorrow Now GAP.
 """
 import factory
 from django.contrib.gis.geos import Point, MultiPolygon, Polygon
+from factory.django import DjangoModelFactory
 
-from core.factories import BaseMetaFactory, BaseFactory
 from gap.models import (
     CastType,
     DatasetType,
@@ -27,9 +27,7 @@ from gap.models import (
 )
 
 
-class ProviderFactory(
-    BaseFactory[Provider], metaclass=BaseMetaFactory[Provider]
-):
+class ProviderFactory(DjangoModelFactory):
     """Factory class for Provider model."""
 
     class Meta:  # noqa
@@ -39,9 +37,7 @@ class ProviderFactory(
     description = factory.Faker('text')
 
 
-class DatasetTypeFactory(
-    BaseFactory[DatasetType], metaclass=BaseMetaFactory[DatasetType]
-):
+class DatasetTypeFactory(DjangoModelFactory):
     """Factory class for DatasetType model."""
 
     class Meta:  # noqa
@@ -52,9 +48,7 @@ class DatasetTypeFactory(
     type = CastType.HISTORICAL
 
 
-class DatasetFactory(
-    BaseFactory[Dataset], metaclass=BaseMetaFactory[Dataset]
-):
+class DatasetFactory(DjangoModelFactory):
     """Factory class for Dataset model."""
 
     class Meta:  # noqa
@@ -68,9 +62,7 @@ class DatasetFactory(
     provider = factory.SubFactory(ProviderFactory)
 
 
-class UnitFactory(
-    BaseFactory[Unit], metaclass=BaseMetaFactory[Unit]
-):
+class UnitFactory(DjangoModelFactory):
     """Factory class for Unitdel."""
 
     class Meta:  # noqa
@@ -82,9 +74,7 @@ class UnitFactory(
     description = factory.Faker('text')
 
 
-class AttributeFactory(
-    BaseFactory[Attribute], metaclass=BaseMetaFactory[Attribute]
-):
+class AttributeFactory(DjangoModelFactory):
     """Factory class for Attribute model."""
 
     class Meta:  # noqa
@@ -100,9 +90,7 @@ class AttributeFactory(
     unit = factory.SubFactory(UnitFactory)
 
 
-class DatasetAttributeFactory(
-    BaseFactory[DatasetAttribute], metaclass=BaseMetaFactory[DatasetAttribute]
-):
+class DatasetAttributeFactory(DjangoModelFactory):
     """Factory class for DatasetAttribute model."""
 
     class Meta:  # noqa
@@ -116,9 +104,7 @@ class DatasetAttributeFactory(
     source_unit = factory.SubFactory(UnitFactory)
 
 
-class ObservationTypeFactory(
-    BaseFactory[ObservationType], metaclass=BaseMetaFactory[ObservationType]
-):
+class ObservationTypeFactory(DjangoModelFactory):
     """Factory class for ObservationType model."""
 
     class Meta:  # noqa
@@ -130,9 +116,7 @@ class ObservationTypeFactory(
     description = factory.Faker('text')
 
 
-class CountryFactory(
-    BaseFactory[Country], metaclass=BaseMetaFactory[Country]
-):
+class CountryFactory(DjangoModelFactory):
     """Factory class for Country model."""
 
     class Meta:  # noqa
@@ -148,9 +132,7 @@ class CountryFactory(
     description = factory.Faker('text')
 
 
-class StationFactory(
-    BaseFactory[Station], metaclass=BaseMetaFactory[Station]
-):
+class StationFactory(DjangoModelFactory):
     """Factory class for Station model."""
 
     class Meta:  # noqa
@@ -169,9 +151,7 @@ class StationFactory(
     observation_type = factory.SubFactory(ObservationTypeFactory)
 
 
-class MeasurementFactory(
-    BaseFactory[Measurement], metaclass=BaseMetaFactory[Measurement]
-):
+class MeasurementFactory(DjangoModelFactory):
     """Factory class for Measurement model."""
 
     class Meta:  # noqa
@@ -183,9 +163,7 @@ class MeasurementFactory(
     value = factory.Faker('pyfloat')
 
 
-class DataSourceFileFactory(
-    BaseFactory[DataSourceFile], metaclass=BaseMetaFactory[DataSourceFile]
-):
+class DataSourceFileFactory(DjangoModelFactory):
     """Factory class for DataSourceFile model."""
 
     class Meta:  # noqa
@@ -199,9 +177,7 @@ class DataSourceFileFactory(
     format = DatasetStore.NETCDF
 
 
-class VillageFactory(
-    BaseFactory[Village], metaclass=BaseMetaFactory[Village]
-):
+class VillageFactory(DjangoModelFactory):
     """Factory class for Village model."""
 
     class Meta:  # noqa

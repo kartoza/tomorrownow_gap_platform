@@ -17,6 +17,5 @@ class GAPConfig(AppConfig):
 
     def ready(self):
         """App ready handler."""
-        from gap.tasks.netcdf_sync import netcdf_s3_sync  # noqa
         from gap.tasks.crop_insight import generate_crop_plan  # noqa
         pass

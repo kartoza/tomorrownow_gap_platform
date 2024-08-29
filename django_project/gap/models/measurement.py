@@ -22,6 +22,9 @@ class Attribute(Definition):
     unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE
     )
+    is_active = models.BooleanField(
+        default=True
+    )
 
 
 class DatasetAttribute(models.Model):
@@ -40,8 +43,11 @@ class DatasetAttribute(models.Model):
     source_unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE
     )
-    has_ensembles = models.BooleanField(
-        default=False
+    ensembles = models.BooleanField(
+        default=False,
+        help_text=(
+            'Flag indicating that the attribute is an array of 50 ensembles.'
+        )
     )
 
     def __str__(self) -> str:

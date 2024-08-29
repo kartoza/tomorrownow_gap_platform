@@ -9,10 +9,12 @@ import csv
 from datetime import date, timedelta
 from unittest.mock import patch
 
+from django.contrib.gis.geos import Point
 from django.test import TestCase
 
 from core.factories import UserF
 from core.group_email_receiver import _group_crop_plan_receiver
+from gap.factories import PreferencesFactory
 from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory
 from gap.models.crop_insight import (
@@ -24,6 +26,39 @@ from gap.tasks.crop_insight import (
 )
 from spw.factories import RModelFactory
 from spw.generator.crop_insight import CropInsightFarmGenerator
+
+ltn_returns = {
+    '07-20': {
+        'date': '2023-07-20',
+        'evapotranspirationSum': 10,
+        'rainAccumulationSum': 5,
+        'LTNPET': 8,
+        'LTNPrecip': 3
+    }
+}
+
+
+def always_retrying(
+        location_input, attrs, start_dt, end_dt, historical_dict: dict
+):
+    """Mock the function that always retry."""
+    raise Exception('Test exception')
+
+
+retry = {
+    'count': 1
+}
+
+
+def retrying_2_times(
+        location_input, attrs, start_dt, end_dt, historical_dict: dict
+):
+    """Mock the function just retry 2 times."""
+    if retry['count'] <= 2:
+        retry['count'] += 1
+        raise Exception('Test exception')
+    else:
+        return ltn_returns
 
 
 class TestCropInsightGenerator(TestCase):
@@ -40,11 +75,35 @@ class TestCropInsightGenerator(TestCase):
         '9.rainfall_classification.json',
         '1.spw_output.json'
     ]
+    csv_headers = [
+        'farmID', 'phoneNumber', 'latitude', 'longitude', 'SPWTopMessage',
+        'SPWDescription',
+        'day1_mm', 'day1_Chance', 'day1_Type',
+        'day2_mm', 'day2_Chance', 'day2_Type',
+        'day3_mm', 'day3_Chance', 'day3_Type',
+        'day4_mm', 'day4_Chance', 'day4_Type',
+        'day5_mm', 'day5_Chance', 'day5_Type',
+        'day6_mm', 'day6_Chance', 'day6_Type',
+        'day7_mm', 'day7_Chance', 'day7_Type',
+        'day8_mm', 'day8_Chance', 'day8_Type',
+        'day9_mm', 'day9_Chance', 'day9_Type',
+        'day10_mm', 'day10_Chance', 'day10_Type',
+        'day11_mm', 'day11_Chance', 'day11_Type',
+        'day12_mm', 'day12_Chance', 'day12_Type',
+        'day13_mm', 'day13_Chance', 'day13_Type',
+    ]
 
     def setUp(self):
         """Set the test class."""
-        self.farm = FarmFactory.create()
-        self.farm_2 = FarmFactory.create()
+        self.farm = FarmFactory.create(
+            geometry=Point(11.1111111, 10.111111111)
+        )
+        self.farm_2 = FarmFactory.create(
+            geometry=Point(22.22222222, 100.111111111)
+        )
+        self.farm_3 = FarmFactory.create(
+            geometry=Point(50.22222222, 50.111111111)
+        )
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
         self.superuser = UserF.create(
@@ -58,6 +117,11 @@ class TestCropInsightGenerator(TestCase):
         self.user_2 = UserF(email='user_2@email.com')
         self.user_3 = UserF(email='user_3@email.com')
         group.user_set.add(self.user_1, self.user_2)
+        self.preferences = PreferencesFactory()
+        self.preferences.crop_plan_config = {
+            'lat_lon_decimal_digits': 4
+        }
+        self.preferences.save()
 
     @patch('spw.generator.main.execute_spw_model')
     @patch('spw.generator.main._fetch_timelines_data')
@@ -67,7 +131,7 @@ class TestCropInsightGenerator(TestCase):
             mock_execute_spw_model
     ):
         """Test calculate_from_point function."""
-        last_day = self.today + timedelta(days=10)
+        last_day = self.today + timedelta(days=12)
 
         def create_timeline_data(
                 output, _date, evap, rain, max, min, prec_prob
@@ -89,16 +153,6 @@ class TestCropInsightGenerator(TestCase):
                 evap, rain, max, min, prec_prob
             )
 
-        mock_fetch_ltn_data.return_value = {
-            '07-20': {
-                'date': '2023-07-20',
-                'evapotranspirationSum': 10,
-                'rainAccumulationSum': 5,
-                'LTNPET': 8,
-                'LTNPrecip': 3
-            }
-        }
-
         # For farm 1
         mock_execute_spw_model.return_value = (
             True, {
@@ -117,7 +171,19 @@ class TestCropInsightGenerator(TestCase):
         )
         mock_fetch_timelines_data.return_value = fetch_timelines_data_val
         generator = CropInsightFarmGenerator(self.farm)
-        generator.generate_spw()
+
+        # ------------------------------------------------------------
+        # Check if _fetch_ltn_data always returns exception
+        with patch('spw.generator.main._fetch_ltn_data', always_retrying):
+            with self.assertRaises(Exception):
+                generator.generate_spw()
+
+        # ------------------------------------------------------------
+        # Check if _fetch_ltn_data always returns exception
+        with patch('spw.generator.main._fetch_ltn_data', retrying_2_times):
+            generator.generate_spw()
+        # ------------------------------------------------------------
+
         last_spw = FarmSuitablePlantingWindowSignal.objects.filter(
             farm=self.farm
         ).last()
@@ -125,10 +191,19 @@ class TestCropInsightGenerator(TestCase):
         self.assertEqual(last_spw.signal, 'Plant NOW Tier 1b')
         self.assertEqual(self.farm.farmshorttermforecast_set.count(), 1)
         self.assertEqual(
-            forecast.farmshorttermforecastdata_set.count(), 45
+            forecast.farmshorttermforecastdata_set.count(), 55
         )
 
         # For farm 2
+        mock_fetch_ltn_data.return_value = {
+            '07-20': {
+                'date': '2023-07-20',
+                'evapotranspirationSum': 10,
+                'rainAccumulationSum': 5,
+                'LTNPET': 8,
+                'LTNPrecip': 3
+            }
+        }
         mock_execute_spw_model.return_value = (
             True, {
                 'metadata': {
@@ -156,27 +231,32 @@ class TestCropInsightGenerator(TestCase):
             self.farm_2.farmshorttermforecast_set.count(), 1
         )
         self.assertEqual(
-            forecast.farmshorttermforecastdata_set.count(), 45
+            forecast.farmshorttermforecastdata_set.count(), 55
         )
 
         # Crop insight report
         self.request = CropInsightRequestFactory.create()
         self.request.farms.add(self.farm)
         self.request.farms.add(self.farm_2)
+        self.request.farms.add(self.farm_3)
         generate_insight_report(self.request.id)
         self.request.refresh_from_db()
         with self.request.file.open(mode='r') as csv_file:
             csv_reader = csv.reader(csv_file)
-            idx = 0
+            row_num = 1
             for row in csv_reader:
-                idx += 1
-                if idx == 3:
+                # Header
+                if row_num == 1:
+                    self.assertEqual(row, self.csv_headers)
+
+                # Farm 1
+                elif row_num == 2:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm.unique_id)
                     # Phone Number
                     self.assertEqual(row[1], self.farm.phone_number)
-                    self.assertEqual(row[2], '0.0')  # Latitude
-                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[2], '10.1111')  # Latitude
+                    self.assertEqual(row[3], '11.1111')  # Longitude
                     self.assertEqual(row[4], 'Plant Now')
                     self.assertEqual(
                         row[5],
@@ -186,13 +266,15 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[6], '10.0')  # Precip (daily)
                     self.assertEqual(row[7], '50.0')  # Precip % chance
                     self.assertEqual(row[8], 'Light rain')  # Precip Type
-                if idx == 4:
+
+                # Farm 2
+                elif row_num == 3:
                     # Farm Unique ID
                     self.assertEqual(row[0], self.farm_2.unique_id)
                     # Phone Number
                     self.assertEqual(row[1], self.farm_2.phone_number)
-                    self.assertEqual(row[2], '0.0')  # Latitude
-                    self.assertEqual(row[3], '0.0')  # Longitude
+                    self.assertEqual(row[2], '100.1111')  # Latitude
+                    self.assertEqual(row[3], '22.2222')  # Longitude
                     self.assertEqual(row[4], 'DO NOT PLANT')
                     self.assertEqual(
                         row[5], 'Wait for more positive forecast.'
@@ -200,6 +282,21 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[6], '0.5')  # Precip (daily)
                     self.assertEqual(row[7], '10.0')  # Precip % chance
                     self.assertEqual(row[8], 'No Rain')  # Precip Type
+
+                # Farm 3
+                elif row_num == 4:
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm_3.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm_3.phone_number)
+                    self.assertEqual(row[2], '50.1111')  # Latitude
+                    self.assertEqual(row[3], '50.2222')  # Longitude
+                    self.assertEqual(row[4], '')
+                    self.assertEqual(row[5], '')
+                    self.assertEqual(row[6], '')  # Precip (daily)
+                    self.assertEqual(row[7], '')  # Precip % chance
+                    self.assertEqual(row[8], '')  # Precip Type
+                row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
     @patch('gap.models.crop_insight.CropInsightRequest.generate_report')
@@ -211,7 +308,7 @@ class TestCropInsightGenerator(TestCase):
         self.assertEqual(
             CropInsightRequest.objects.count(), 1
         )
-        self.assertEqual(mock_generate_spw.call_count, 2)
+        self.assertEqual(mock_generate_spw.call_count, 3)
         mock_generate_report.assert_called_once()
 
     def test_email_send(self):
