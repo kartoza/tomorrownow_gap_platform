@@ -27,8 +27,7 @@ from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
     LocationDatasetReaderValue,
-    DatasetReaderValue2,
-    PointTimelineValues
+    DatasetReaderValue2
 )
 from gap.utils.netcdf import (
     daterange_inc,
@@ -43,7 +42,7 @@ class CBAMReaderValue(DatasetReaderValue2):
     date_variable = 'date'
 
     def __init__(
-            self, val: xrDataset | List[PointTimelineValues],
+            self, val: xrDataset | List[DatasetTimelineValue],
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute]) -> None:
         super().__init__(val, location_input, attributes)

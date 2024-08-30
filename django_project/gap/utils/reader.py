@@ -158,7 +158,7 @@ class DatasetTimelineValue:
 
     def __init__(
             self, datetime: Union[np.datetime64, datetime],
-            values: dict) -> None:
+            values: dict, location: Point) -> None:
         """Initialize DatasetTimelineValue object.
 
         :param datetime: datetime of data
@@ -168,6 +168,7 @@ class DatasetTimelineValue:
         """
         self.datetime = datetime
         self.values = values
+        self.location = location
 
     def _datetime_as_str(self):
         """Convert datetime object to string."""
@@ -222,7 +223,7 @@ class DatasetReaderValue2:
     chunk_size_in_bytes = 81920  # 80KB chunks
 
     def __init__(
-            self, val: Union[xrDataset, List[PointTimelineValues]],
+            self, val: Union[xrDataset, List[DatasetTimelineValue]],
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute]) -> None:
         self._val = val
@@ -245,7 +246,7 @@ class DatasetReaderValue2:
         return self._val
 
     @property
-    def values(self) -> List[PointTimelineValues]:
+    def values(self) -> List[DatasetTimelineValue]:
         return self._val
 
     def is_empty(self) -> bool:
@@ -272,7 +273,7 @@ class DatasetReaderValue2:
 
         return {
             'geometry': json.loads(self.location_input.point.json),
-            'data': [result.to_dict() for result in self.values[0].values]
+            'data': [result.to_dict() for result in self.values]
         }
 
     def _xr_dataset_to_dict(self) -> dict:

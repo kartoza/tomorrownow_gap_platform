@@ -22,8 +22,7 @@ from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
     BaseDatasetReader,
-    DatasetReaderValue2,
-    PointTimelineValues
+    DatasetReaderValue2
 )
 
 
@@ -43,7 +42,7 @@ class TahmoReaderValue(DatasetReaderValue2):
     date_variable = 'date'
 
     def __init__(
-            self, val: List[PointTimelineValues],
+            self, val: List[DatasetTimelineValue],
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute],
             start_date: datetime,
@@ -61,20 +60,20 @@ class TahmoReaderValue(DatasetReaderValue2):
         for attr in self.attributes:
             headers.append(attr.attribute.variable_name)
         yield bytes(','.join(headers) + '\n', 'utf-8')
-        for p in self.values:
-            for val in p.values:
-                data = [
-                    val.get_datetime_repr('%Y-%m-%d'),
-                    str(p.location.y),
-                    str(p.location.x)
-                ]
-                for attr in self.attributes:
-                    var_name = attr.attribute.variable_name
-                    if var_name in val.values:
-                        data.append(str(val.values[var_name]))
-                    else:
-                        data.append('')
-                yield bytes(','.join(data) + '\n', 'utf-8')
+
+        for val in self.values:
+            data = [
+                val.get_datetime_repr('%Y-%m-%d'),
+                str(val.location.y),
+                str(val.location.x)
+            ]
+            for attr in self.attributes:
+                var_name = attr.attribute.variable_name
+                if var_name in val.values:
+                    data.append(str(val.values[var_name]))
+                else:
+                    data.append('')
+            yield bytes(','.join(data) + '\n', 'utf-8')
 
 
 class TahmoDatasetReader(BaseDatasetReader):
@@ -99,7 +98,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         """
         super().__init__(
             dataset, attributes, location_input, start_date, end_date)
-        self.results: List[PointTimelineValues] = []
+        self.results: List[DatasetTimelineValue] = []
 
     def _find_nearest_station_by_point(self, point: Point = None):
         p = point
@@ -172,42 +171,43 @@ class TahmoDatasetReader(BaseDatasetReader):
             date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
             station__in=nearest_stations
-        ).order_by('station', 'date_time', 'dataset_attribute')
-        # final result, group by point
+        ).order_by('date_time', 'station', 'dataset_attribute')
+        # final result, group by datetime
         self.results = []
-        curr_point = None
         curr_dt = None
         station_results = []
         # group by date_time
         measurement_dict = {}
-        for measurement in measurements:
-            if curr_point is None:
-                curr_point = measurement.station.geometry
-                curr_dt = measurement.date_time
-            elif curr_point != measurement.station.geometry:
-                station_results.append(
-                    DatasetTimelineValue(curr_dt, measurement_dict))
-                curr_dt = measurement.date_time
-                measurement_dict = {}
-                self.results.append(
-                    PointTimelineValues(curr_point, station_results)
-                )
-                curr_point = measurement.station.geometry
-                station_results = []
-            else:
-                if curr_dt != measurement.date_time:
-                    station_results.append(
-                        DatasetTimelineValue(curr_dt, measurement_dict))
-                    curr_dt = measurement.date_time
-                    measurement_dict = {}
-            measurement_dict[
-                measurement.dataset_attribute.attribute.variable_name
-            ] = measurement.value
-        station_results.append(
-            DatasetTimelineValue(curr_dt, measurement_dict))
-        self.results.append(
-            PointTimelineValues(curr_point, station_results)
-        )
+        # for measurement in measurements:
+        #     if curr_point is None:
+        #         curr_point = measurement.station.geometry
+        #         curr_dt = measurement.date_time
+        #     elif curr_point != measurement.station.geometry:
+        #         station_results.append(
+        #             DatasetTimelineValue(curr_dt, measurement_dict, curr_point))
+        #         curr_dt = measurement.date_time
+        #         measurement_dict = {}
+        #         self.results.append(
+        #             PointTimelineValues(curr_point, station_results)
+        #         )
+        #         curr_point = measurement.station.geometry
+        #         station_results = []
+
+        #     if curr_dt is None:
+        #         curr_dt = measurement.date_time
+        #     if curr_dt != measurement.date_time:
+        #         station_results.append(
+        #             DatasetTimelineValue(curr_dt, measurement_dict))
+        #         curr_dt = measurement.date_time
+        #         measurement_dict = {}
+        #     measurement_dict[
+        #         measurement.dataset_attribute.attribute.variable_name
+        #     ] = measurement.value
+        # station_results.append(
+        #     DatasetTimelineValue(curr_dt, measurement_dict))
+        # self.results.append(
+        #     PointTimelineValues(curr_point, station_results)
+        # )
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch results.

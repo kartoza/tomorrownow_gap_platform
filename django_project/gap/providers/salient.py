@@ -29,8 +29,7 @@ from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
     LocationDatasetReaderValue,
-    DatasetReaderValue2,
-    PointTimelineValues
+    DatasetReaderValue2
 )
 from gap.utils.netcdf import (
     BaseNetCDFReader
@@ -45,7 +44,7 @@ class SalientReaderValue(DatasetReaderValue2):
     date_variable = 'forecast_day'
 
     def __init__(
-            self, val: xrDataset | List[PointTimelineValues],
+            self, val: xrDataset | List[DatasetTimelineValue],
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute],
             forecast_date: np.datetime64) -> None:

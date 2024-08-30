@@ -259,7 +259,7 @@ class MeasurementAPI(APIView):
                     'No matching attribute found!'
                 )
             })
-        
+
         if output_format == 'csv':
             non_ensemble_count = dataset_attributes.filter(
                 ensembles=False
@@ -294,9 +294,11 @@ class MeasurementAPI(APIView):
         data = {}
         if location is None:
             return data
+
         # validate if json is only available for single location filter
         self.validate_output_format(location, output_format)
         # TODO: validate minimum/maximum area filter?
+
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
             dataset__is_internal_use=False,
@@ -308,8 +310,10 @@ class MeasurementAPI(APIView):
         ).filter(
             product_name__in=product_filter
         )
+        
+        # validate empty dataset_attributes
         self.validate_dataset_attributes(dataset_attributes, output_format)
-        # TODO: validate empty dataset_attributes
+
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
             if da.dataset.id in dataset_dict:
@@ -318,8 +322,7 @@ class MeasurementAPI(APIView):
                 reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
-        # TODO: validate if there are multiple dataset
-        # but the output type is not json
+
         if output_format == DatasetReaderOutputType.JSON:
             return Response(
                 status=200,
