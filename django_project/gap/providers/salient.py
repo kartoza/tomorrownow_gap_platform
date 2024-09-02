@@ -59,6 +59,8 @@ class SalientReaderValue(DatasetReaderValue):
         super().__init__(val, location_input, attributes)
 
     def _post_init(self):
+        if self.is_empty():
+            return
         if not self._is_xr_dataset:
             return
         # rename attributes and the forecast_day
@@ -107,11 +109,6 @@ class SalientReaderValue(DatasetReaderValue):
                     value_data[var_name] = (
                         v if not np.isnan(v) else None
                     )
-            # already been transformed in _post_init
-            # forecast_day = (
-            #     self.xr_dataset.forecast_date.values +
-            #     np.timedelta64(dt, 'D')
-            # )
             results.append(DatasetTimelineValue(
                 dt,
                 value_data,
@@ -293,6 +290,9 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         ds = self.open_dataset(zarr_file)
         # get latest forecast date
         self.latest_forecast_date = ds['forecast_date'][-1].values
+        dt_test = np.datetime64(start_date)
+        if np.datetime64(start_date) < self.latest_forecast_date:
+            return
         val = self.read_variables(ds, start_date, end_date)
         if val is None:
             return

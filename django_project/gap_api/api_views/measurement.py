@@ -168,6 +168,10 @@ class MeasurementAPI(APIView):
             'output_type', DatasetReaderOutputType.JSON)
         return product.lower()
 
+    def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
+        reader.read()
+        return reader.get_data_values()
+
     def _read_data_as_json(
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> DatasetReaderValue:
@@ -187,8 +191,10 @@ class MeasurementAPI(APIView):
             'results': []
         }
         for reader in reader_dict.values():
-            reader.read()
-            values = reader.get_data_values().to_json()
+            reader_value = self._read_data(reader)
+            if reader_value.is_empty():
+                return None
+            values = reader_value.to_json()
             if values:
                 data['metadata']['dataset'].append({
                     'provider': reader.dataset.provider.name,
@@ -201,10 +207,11 @@ class MeasurementAPI(APIView):
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> Response:
         reader: BaseDatasetReader = list(reader_dict.values())[0]
-        reader.read()
-        data_value = reader.get_data_values()
+        reader_value = self._read_data(reader)
+        if reader_value.is_empty():
+            return None
         response = StreamingHttpResponse(
-            data_value.to_netcdf_stream(), content_type='application/x-netcdf'
+            reader_value.to_netcdf_stream(), content_type='application/x-netcdf'
         )
         response['Content-Disposition'] = 'attachment; filename="data.nc"'
 
@@ -214,10 +221,11 @@ class MeasurementAPI(APIView):
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> Response:
         reader: BaseDatasetReader = list(reader_dict.values())[0]
-        reader.read()
-        data_value = reader.get_data_values()
+        reader_value = self._read_data(reader)
+        if reader_value.is_empty():
+            return None
         response = StreamingHttpResponse(
-            data_value.to_csv_stream(), content_type='text/csv')
+            reader_value.to_csv_stream(), content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="data.csv"'
         return response
 
@@ -225,10 +233,11 @@ class MeasurementAPI(APIView):
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> Response:
         reader: BaseDatasetReader = list(reader_dict.values())[0]
-        reader.read()
-        data_value = reader.get_data_values()
+        reader_value = self._read_data(reader)
+        if reader_value.is_empty():
+            return None
         response = StreamingHttpResponse(
-            data_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
+            reader_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
         response['Content-Disposition'] = 'attachment; filename="data.txt"'
         return response
 
@@ -331,23 +340,33 @@ class MeasurementAPI(APIView):
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
 
+        response = None
         if output_format == DatasetReaderOutputType.JSON:
-            return Response(
+            response = Response(
                 status=200,
                 data=self._read_data_as_json(dataset_dict, start_dt, end_dt)
             )
         elif output_format == DatasetReaderOutputType.NETCDF:
-            return self._read_data_as_netcdf(dataset_dict, start_dt, end_dt)
+            response = self._read_data_as_netcdf(dataset_dict, start_dt, end_dt)
         elif output_format == DatasetReaderOutputType.CSV:
-            return self._read_data_as_csv(dataset_dict, start_dt, end_dt)
+            response = self._read_data_as_csv(dataset_dict, start_dt, end_dt)
         elif output_format == DatasetReaderOutputType.ASCII:
-            return self._read_data_as_ascii(dataset_dict, start_dt, end_dt)
+            response = self._read_data_as_ascii(dataset_dict, start_dt, end_dt)
+        else:
+            raise ValidationError({
+                'Invalid Request Parameter': (
+                    f'Incorrect output_type value: {output_format}'
+                )
+            })
 
-        raise ValidationError({
-            'Invalid Request Parameter': (
-                f'Incorrect output_type value: {output_format}'
+        if response is None:
+            return Response(
+                status=404,
+                data={
+                    'detail': 'No wheather data is found for given queries.'
+                }
             )
-        })
+        return response
 
     @swagger_auto_schema(
         operation_id='get-measurement',

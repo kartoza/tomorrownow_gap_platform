@@ -235,6 +235,8 @@ class DatasetReaderValue:
 
     def _post_init(self):
         """Rename source variable into attribute name."""
+        if self.is_empty():
+            return
         if not self._is_xr_dataset:
             return
         renamed_dict = {}
@@ -266,8 +268,8 @@ class DatasetReaderValue:
         :return: True if empty dataset or empty list
         :rtype: bool
         """
-        if self._is_xr_dataset:
-            return self._val is None
+        if self._val is None:
+            return True
         return len(self.values) == 0
 
     def _to_dict(self) -> dict:
@@ -420,15 +422,14 @@ class BaseDatasetReader:
 
     def read(self):
         """Read values from dataset."""
-        today = datetime.now(tz=pytz.UTC)
         if self.dataset.type.type == CastType.HISTORICAL:
             self.read_historical_data(
                 self.start_date,
-                self.end_date if self.end_date < today else today
+                self.end_date
             )
-        elif self.end_date >= today:
+        elif self.dataset.type.type == CastType.FORECAST:
             self.read_forecast_data(
-                self.start_date if self.start_date >= today else today,
+                self.start_date,
                 self.end_date
             )
 
