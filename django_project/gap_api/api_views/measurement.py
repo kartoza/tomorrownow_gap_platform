@@ -380,6 +380,10 @@ class MeasurementAPI(APIView):
 
     @swagger_auto_schema(
         operation_id='get-measurement',
+        operation_description=(
+            "Fetch weather data using either a single point or bounding box "
+            "and attribute filters."
+        ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
             *api_parameters,
@@ -411,11 +415,15 @@ class MeasurementAPI(APIView):
         }
     )
     def get(self, request, *args, **kwargs):
-        """Fetch weather data by single point or bounding box."""
+        """Fetch weather data by a single point or bounding box."""
         return self.get_response_data()
 
     @swagger_auto_schema(
         operation_id='get-measurement-by-geom',
+        operation_description=(
+            "Fetch weather data using either a polygon or list of point "
+            "and attribute filters."
+        ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
             *api_parameters
