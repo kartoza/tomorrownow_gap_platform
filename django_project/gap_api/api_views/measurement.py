@@ -344,10 +344,13 @@ class MeasurementAPI(APIView):
 
         response = None
         if output_format == DatasetReaderOutputType.JSON:
-            response = Response(
-                status=200,
-                data=self._read_data_as_json(dataset_dict, start_dt, end_dt)
-            )
+            data_value = self._read_data_as_json(
+                dataset_dict, start_dt, end_dt)
+            if data_value:
+                response = Response(
+                    status=200,
+                    data=data_value
+                )
         elif output_format == DatasetReaderOutputType.NETCDF:
             response = self._read_data_as_netcdf(
                 dataset_dict, start_dt, end_dt)

@@ -163,9 +163,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         view = MeasurementAPI.as_view()
         request = self._get_measurement_request()
         response = view(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('metadata', response.data)
-        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.status_code, 404)
 
     @patch('gap_api.api_views.measurement.get_reader_from_dataset')
     def test_read_historical_data(self, mocked_reader):
