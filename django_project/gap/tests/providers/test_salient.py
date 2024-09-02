@@ -8,11 +8,13 @@ Tomorrow Now GAP.
 from django.test import TestCase
 from datetime import datetime
 import xarray as xr
+import numpy as np
+import pandas as pd
 from django.contrib.gis.geos import Point, MultiPoint
 from unittest.mock import Mock, patch
 
 from core.settings.utils import absolute_path
-from gap.models import DatasetAttribute
+from gap.models import DatasetAttribute, Dataset
 from gap.utils.reader import (
     DatasetReaderInput,
     LocationInputType,
@@ -21,8 +23,9 @@ from gap.utils.reader import (
 from gap.utils.netcdf import (
     NetCDFProvider,
 )
-from gap.providers import (
-    SalientNetCDFReader
+from gap.providers.salient import (
+    SalientNetCDFReader,
+    SalientReaderValue
 )
 from gap.factories import (
     ProviderFactory,
@@ -31,6 +34,124 @@ from gap.factories import (
     AttributeFactory,
     DataSourceFileFactory
 )
+
+
+class TestSalientReaderValue(TestCase):
+    """Unit test for class SalientReaderValue."""
+
+    fixtures = [
+        '2.provider.json',
+        '3.observation_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
+    def setUp(self):
+        """Set TestSalientReaderValue class."""
+        self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
+        # Mocking DatasetAttribute
+        self.attribute = DatasetAttribute.objects.filter(
+            dataset=self.dataset,
+            attribute__variable_name='temperature'
+        ).first()
+
+        # Creating mock DatasetReaderInput
+        point = Point(30, 10, srid=4326)
+        self.mock_location_input = DatasetReaderInput.from_point(point)
+
+        # Creating filtered xarray dataset
+        forecast_days = np.array([0, 1, 2])
+        lats = np.array([10, 20])
+        lons = np.array([30, 40])
+        temperature_data = np.random.rand(
+            len(forecast_days), len(lats), len(lons))
+
+        self.mock_xr_dataset = xr.Dataset(
+            {
+                "temp": (
+                    ["forecast_day_idx", "lat", "lon"], temperature_data
+                ),
+            },
+            coords={
+                "forecast_day_idx": forecast_days,
+                "lat": lats,
+                "lon": lons,
+            }
+        )
+        # Mock forecast_date
+        self.forecast_date = np.datetime64('2023-01-01')
+        variables = [
+            'forecast_day_idx',
+            'temp'
+        ]
+        self.mock_xr_dataset = self.mock_xr_dataset[variables].sel(
+            lat=point.y,
+            lon=point.x, method='nearest'
+        ).where(
+            (self.mock_xr_dataset['forecast_day_idx'] >= 0) &
+            (self.mock_xr_dataset['forecast_day_idx'] <= 1),
+            drop=True)
+
+        # SalientReaderValue initialization with xarray dataset
+        self.salient_reader_value_xr = SalientReaderValue(
+            val=self.mock_xr_dataset,
+            location_input=self.mock_location_input,
+            attributes=[self.attribute],
+            forecast_date=self.forecast_date,
+            is_from_zarr=True
+        )
+
+    def test_initialization(self):
+        """Test initialization method."""
+        self.assertEqual(
+            self.salient_reader_value_xr.forecast_date, self.forecast_date)
+        self.assertTrue(self.salient_reader_value_xr._is_from_zarr)
+        self.assertTrue(self.salient_reader_value_xr._is_xr_dataset)
+
+    def test_post_init(self):
+        """Test post initialization method."""
+        # Check if the renaming happened correctly
+        self.assertIn(
+            'forecast_day', self.salient_reader_value_xr.xr_dataset.coords)
+        self.assertIn(
+            'temperature', self.salient_reader_value_xr.xr_dataset.data_vars)
+        self.assertNotIn(
+            'forecast_day_idx', self.salient_reader_value_xr.xr_dataset.coords
+        )
+
+        # Check if forecast_day has been updated to actual dates
+        forecast_days = pd.date_range('2023-01-01', periods=2)
+        xr_forecast_days = pd.to_datetime(
+            self.salient_reader_value_xr.xr_dataset.forecast_day.values)
+        pd.testing.assert_index_equal(
+            pd.Index(xr_forecast_days), forecast_days)
+
+    def test_is_empty(self):
+        """Test is_empty method."""
+        self.assertFalse(self.salient_reader_value_xr.is_empty())
+
+    def test_to_json_with_point_type(self):
+        """Test convert to_json with point."""
+        result = self.salient_reader_value_xr.to_json()
+        self.assertIn('geometry', result)
+        self.assertIn('data', result)
+        self.assertIsInstance(result['data'], list)
+
+    def test_to_json_with_non_point_type(self):
+        """Test convert to_json with exception."""
+        self.mock_location_input.type = 'polygon'
+        with self.assertRaises(TypeError):
+            self.salient_reader_value_xr.to_json()
+
+    def test_xr_dataset_to_dict(self):
+        """Test convert xarray dataset to dict."""
+        result_dict = self.salient_reader_value_xr._xr_dataset_to_dict()
+        self.assertIn('geometry', result_dict)
+        self.assertIn('data', result_dict)
+        self.assertIsInstance(result_dict['data'], list)
 
 
 class TestSalientNetCDFReader(TestCase):
