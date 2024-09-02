@@ -8,7 +8,6 @@ Tomorrow Now GAP.
 import json
 from typing import List
 from datetime import datetime
-from django.contrib.gis.geos import Point
 import numpy as np
 import xarray as xr
 from xarray.core.dataset import Dataset as xrDataset
@@ -42,6 +41,15 @@ class CBAMReaderValue(DatasetReaderValue):
             self, val: xrDataset | List[DatasetTimelineValue],
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute]) -> None:
+        """Initialize CBAMReaderValue class.
+
+        :param val: value that has been read
+        :type val: xrDataset | List[DatasetTimelineValue]
+        :param location_input: location input query
+        :type location_input: DatasetReaderInput
+        :param attributes: list of dataset attributes
+        :type attributes: List[DatasetAttribute]
+        """
         super().__init__(val, location_input, attributes)
 
     def _xr_dataset_to_dict(self) -> dict:

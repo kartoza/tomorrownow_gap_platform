@@ -26,13 +26,11 @@ from gap.utils.reader import (
 
 
 class CSVBuffer:
-    """An object that implements just the write method of the file-like
-    interface.
-    """
+    """An object that implements the write method of file-like interface."""
+
     def write(self, value):
         """Return the string to write."""
         yield value
-
 
 
 class TahmoReaderValue(DatasetReaderValue):
@@ -46,11 +44,29 @@ class TahmoReaderValue(DatasetReaderValue):
             attributes: List[DatasetAttribute],
             start_date: datetime,
             end_date: datetime) -> None:
+        """Initialize TahmoReaderValue class.
+
+        :param val: value that has been read
+        :type val: List[DatasetTimelineValue]
+        :param location_input: location input query
+        :type location_input: DatasetReaderInput
+        :param attributes: list of dataset attributes
+        :type attributes: List[DatasetAttribute]
+        """
         super().__init__(val, location_input, attributes)
         self.start_date = start_date
         self.end_date = end_date
 
     def to_csv_stream(self, suffix='.csv', separator=','):
+        """Generate csv bytes stream.
+
+        :param suffix: file extension, defaults to '.csv'
+        :type suffix: str, optional
+        :param separator: separator, defaults to ','
+        :type separator: str, optional
+        :yield: bytes of csv file
+        :rtype: bytes
+        """
         headers = [
             'date',
             'lat',
@@ -173,7 +189,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         ).order_by('date_time', 'station', 'dataset_attribute')
         # final result, group by datetime
         self.results = []
-        
+
         iter_dt = None
         iter_loc = None
         # group by location and date_time
@@ -183,17 +199,19 @@ class TahmoDatasetReader(BaseDatasetReader):
                 iter_dt = measurement.date_time
                 iter_loc = measurement.station.geometry
             elif (
-                iter_loc != measurement.station.geometry or 
+                iter_loc != measurement.station.geometry or
                 iter_dt != measurement.date_time
             ):
-                self.results.append(DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
+                self.results.append(
+                    DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
                 iter_dt = measurement.date_time
                 iter_loc = measurement.station.geometry
                 dt_loc_val = {}
             dt_loc_val[
                 measurement.dataset_attribute.attribute.variable_name
             ] = measurement.value
-        self.results.append(DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
+        self.results.append(
+            DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.

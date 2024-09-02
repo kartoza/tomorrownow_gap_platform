@@ -13,7 +13,6 @@ from typing import List
 
 import pytz
 import requests
-from django.contrib.gis.geos import Point
 
 from gap.models import (
     Provider,
@@ -298,7 +297,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         if self.warnings:
             logger.warn(f'Tomorrow.io API warnings: {len(self.warnings)}')
             logger.warn(json.dumps(self.warnings))
-        return DatasetReaderValue(self.results, self.location_input, self.attributes)
+        return DatasetReaderValue(
+            self.results, self.location_input, self.attributes)
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.

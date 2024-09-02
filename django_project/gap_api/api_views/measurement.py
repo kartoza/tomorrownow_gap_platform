@@ -232,16 +232,34 @@ class MeasurementAPI(APIView):
         response['Content-Disposition'] = 'attachment; filename="data.txt"'
         return response
 
-    def validate_output_format(self, location: DatasetReaderInput, output_format):
+    def validate_output_format(
+            self, location: DatasetReaderInput, output_format):
+        """Validate output format.
+
+        :param location: location input filter
+        :type location: DatasetReaderInput
+        :param output_format: output type/format
+        :type output_format: str
+        :raises ValidationError: invalid request
+        """
         if output_format == DatasetReaderOutputType.JSON:
             if location.type != LocationInputType.POINT:
                 raise ValidationError({
                     'Invalid Request Parameter': (
-                        'Output format json is only available for single point query!'
+                        'Output format json is only available '
+                        'for single point query!'
                     )
                 })
 
     def validate_dataset_attributes(self, dataset_attributes, output_format):
+        """Validate the attributes for the query.
+
+        :param dataset_attributes: dataset attribute list
+        :type dataset_attributes: List[DatasetAttribute]
+        :param output_format: output type/format
+        :type output_format: str
+        :raises ValidationError: invalid request
+        """
         if len(dataset_attributes) == 0:
             raise ValidationError({
                 'Invalid Request Parameter': (
@@ -259,7 +277,8 @@ class MeasurementAPI(APIView):
             if ensemble_count > 0 and non_ensemble_count > 0:
                 raise ValidationError({
                     'Invalid Request Parameter': (
-                        f'Attribute with ensemble cannot be mixed with non-ensemble'
+                        'Attribute with ensemble cannot be mixed '
+                        'with non-ensemble'
                     )
                 })
 
@@ -299,7 +318,7 @@ class MeasurementAPI(APIView):
         ).filter(
             product_name__in=product_filter
         )
-        
+
         # validate empty dataset_attributes
         self.validate_dataset_attributes(dataset_attributes, output_format)
 

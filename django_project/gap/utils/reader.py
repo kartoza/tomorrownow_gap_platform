@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 import json
-from typing import Union, List, Dict
+from typing import Union, List
 import numpy as np
 from datetime import datetime
 import pytz
@@ -209,6 +209,7 @@ class DatasetTimelineValue:
 
 
 class DatasetReaderValue:
+    """Class that represents the value after reading dataset."""
 
     date_variable = 'date'
     chunk_size_in_bytes = 81920  # 80KB chunks
@@ -217,6 +218,15 @@ class DatasetReaderValue:
             self, val: Union[xrDataset, List[DatasetTimelineValue]],
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute]) -> None:
+        """Initialize DatasetReaderValue class.
+
+        :param val: value that has been read
+        :type val: Union[xrDataset, List[DatasetTimelineValue]]
+        :param location_input: location input query
+        :type location_input: DatasetReaderInput
+        :param attributes: list of dataset attributes
+        :type attributes: List[DatasetAttribute]
+        """
         self._val = val
         self._is_xr_dataset = isinstance(val, xrDataset)
         self.location_input = location_input
@@ -234,10 +244,20 @@ class DatasetReaderValue:
 
     @property
     def xr_dataset(self) -> xrDataset:
+        """Return the value as xarray Dataset.
+
+        :return: xarray dataset object
+        :rtype: xrDataset
+        """
         return self._val
 
     @property
     def values(self) -> List[DatasetTimelineValue]:
+        """Return the value as list of dataset timeline value.
+
+        :return: list values
+        :rtype: List[DatasetTimelineValue]
+        """
         return self._val
 
     def is_empty(self) -> bool:
@@ -305,7 +325,15 @@ class DatasetReaderValue:
                     yield chunk
 
     def to_csv_stream(self, suffix='.csv', separator=','):
-        """Generate csv bytes stream."""
+        """Generate csv bytes stream.
+
+        :param suffix: file extension, defaults to '.csv'
+        :type suffix: str, optional
+        :param separator: separator, defaults to ','
+        :type separator: str, optional
+        :yield: bytes of csv file
+        :rtype: bytes
+        """
         dim_order = [self.date_variable]
         reordered_cols = [
             attribute.attribute.variable_name for attribute in self.attributes

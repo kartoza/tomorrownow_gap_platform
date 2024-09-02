@@ -8,7 +8,6 @@ Tomorrow Now GAP.
 import json
 from typing import List
 from datetime import datetime
-from django.contrib.gis.geos import Point
 import numpy as np
 import regionmask
 import xarray as xr
@@ -46,6 +45,15 @@ class SalientReaderValue(DatasetReaderValue):
             attributes: List[DatasetAttribute],
             forecast_date: np.datetime64,
             is_from_zarr: bool = True) -> None:
+        """Initialize SalientReaderValue class.
+
+        :param val: value that has been read
+        :type val: xrDataset | List[DatasetTimelineValue]
+        :param location_input: location input query
+        :type location_input: DatasetReaderInput
+        :param attributes: list of dataset attributes
+        :type attributes: List[DatasetAttribute]
+        """
         self.forecast_date = forecast_date
         self._is_from_zarr = is_from_zarr
         super().__init__(val, location_input, attributes)
@@ -58,7 +66,7 @@ class SalientReaderValue(DatasetReaderValue):
         if self._is_from_zarr:
             renamed_dict = {
                 'forecast_day_idx': 'forecast_day'
-            }   
+            }
         for attr in self.attributes:
             renamed_dict[attr.source] = attr.attribute.variable_name
         self._val = self._val.rename(renamed_dict)

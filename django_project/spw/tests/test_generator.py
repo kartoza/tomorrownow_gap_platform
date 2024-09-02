@@ -5,7 +5,7 @@ Tomorrow Now GAP.
 .. note:: UnitTest for Plumber functions.
 """
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 import pytz
 from django.contrib.gis.geos import Point
@@ -20,7 +20,6 @@ from gap.providers.tio import (
 )
 from gap.utils.reader import (
     DatasetReaderInput,
-    DatasetReaderValue,
     DatasetTimelineValue
 )
 from spw.factories import (
