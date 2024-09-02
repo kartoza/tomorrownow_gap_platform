@@ -9,6 +9,7 @@ from typing import List
 from datetime import datetime
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
+from rest_framework.exceptions import ValidationError
 
 from gap.models import (
     Dataset,
@@ -89,6 +90,18 @@ class TahmoReaderValue(DatasetReaderValue):
                 else:
                     data.append('')
             yield bytes(','.join(data) + '\n', 'utf-8')
+
+    def to_netcdf_stream(self):
+        """Generate NetCDF.
+
+        :raises ValidationError: Not supported for Tahmo Dataset
+        """
+        raise ValidationError({
+            'Invalid Request Parameter': (
+                'Output format netcdf is not available '
+                'for Tahmo Observation Dataset!'
+            )
+        })
 
 
 class TahmoDatasetReader(BaseDatasetReader):

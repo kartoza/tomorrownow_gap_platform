@@ -118,7 +118,7 @@ class MeasurementAPI(APIView):
         :rtype: DatasetReaderInput
         """
         if self.request.method == 'POST':
-            features = self.request.data['features']
+            features = self.request.data.get('features', [])
             geom = None
             point_list = []
             for geojson in features:
@@ -129,7 +129,11 @@ class MeasurementAPI(APIView):
                     break
                 point_list.append(geom[0])
             if geom is None:
-                raise TypeError('Unknown geometry type!')
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Unknown geometry type!'
+                    )
+                })
             if isinstance(geom, (MultiPolygon, Polygon)):
                 return DatasetReaderInput(
                     geom, LocationInputType.POLYGON)
