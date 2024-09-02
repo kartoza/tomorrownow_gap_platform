@@ -7,12 +7,13 @@ Tomorrow Now GAP.
 
 
 import os
-import warnings
+import logging
 import requests
 import pandas as pd
 
 
-CHUNK_DOWNLOAD_SIZE = 100 * 1024 * 1024
+logger = logging.getLogger(__name__)
+CHUNK_DOWNLOAD_SIZE = 250 * 1024 * 1024
 
 
 def patch_download_query(
@@ -82,18 +83,20 @@ def patch_download_query(
                 if strict:
                     raise e
                 else:
-                    warnings.warn(f"Error downloading {query}: {e}")
+                    logger.error(f"Error downloading {query}:")
+                    logger.error(e)
                     return pd.NA
             with open(file_name, "wb" if format == "nc" else "w") as f:
-                if format == "nc":
-                    # use chunk download the files
-                    for chunk in result.iter_content(
-                        chunk_size=CHUNK_DOWNLOAD_SIZE
-                    ):
-                        if chunk:  # Filter out keep-alive new chunks
+                # use chunk download the files
+                for chunk in result.iter_content(
+                    chunk_size=CHUNK_DOWNLOAD_SIZE
+                ):
+                    if chunk:  # Filter out keep-alive new chunks
+                        print(f'chunk here {chunk}')
+                        if format == "nc":
                             f.write(chunk)
-                else:
-                    f.write(result.text)
+                        else:
+                            f.write(chunk.decode('utf-8'))
     elif verbose:
         print(f"File {file_name} already exists")
 
