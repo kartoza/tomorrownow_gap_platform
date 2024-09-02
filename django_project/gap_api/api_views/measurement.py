@@ -211,7 +211,8 @@ class MeasurementAPI(APIView):
         if reader_value.is_empty():
             return None
         response = StreamingHttpResponse(
-            reader_value.to_netcdf_stream(), content_type='application/x-netcdf'
+            reader_value.to_netcdf_stream(),
+            content_type='application/x-netcdf'
         )
         response['Content-Disposition'] = 'attachment; filename="data.nc"'
 
@@ -237,7 +238,8 @@ class MeasurementAPI(APIView):
         if reader_value.is_empty():
             return None
         response = StreamingHttpResponse(
-            reader_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
+            reader_value.to_csv_stream('.txt', '\t'),
+            content_type='text/ascii')
         response['Content-Disposition'] = 'attachment; filename="data.txt"'
         return response
 
@@ -347,7 +349,8 @@ class MeasurementAPI(APIView):
                 data=self._read_data_as_json(dataset_dict, start_dt, end_dt)
             )
         elif output_format == DatasetReaderOutputType.NETCDF:
-            response = self._read_data_as_netcdf(dataset_dict, start_dt, end_dt)
+            response = self._read_data_as_netcdf(
+                dataset_dict, start_dt, end_dt)
         elif output_format == DatasetReaderOutputType.CSV:
             response = self._read_data_as_csv(dataset_dict, start_dt, end_dt)
         elif output_format == DatasetReaderOutputType.ASCII:

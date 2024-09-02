@@ -22,6 +22,10 @@ from gap.utils.reader import (
 )
 from gap_api.api_views.measurement import MeasurementAPI
 from gap.utils.reader import BaseDatasetReader, LocationInputType
+from gap.factories import (
+    StationFactory,
+    MeasurementFactory
+)
 
 
 class MockDatasetReader(BaseDatasetReader):
@@ -236,4 +240,89 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         response = view(request)
         self.assertEqual(response.status_code, 200)
         mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertEqual(response['content-type'], 'text/csv')
+        mocked_reader.reset_mock()
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='ascii'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertEqual(response['content-type'], 'text/ascii')
+        mocked_reader.reset_mock()
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='netcdf'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertEqual(response['content-type'], 'application/x-netcdf')
+        # invalid output_type
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='sdfsdf'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)
+
+    @patch('gap_api.api_views.measurement.get_reader_from_dataset')
+    def test_validate_dataset_attributes(self, mocked_reader):
+        """Test validate dataset attributes ensembles."""
+        view = MeasurementAPI.as_view()
+        mocked_reader.return_value = MockDatasetReader
+        dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
+        attribute1 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='temperature_anom'
+        ).first()
+        attribute2 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='temperature_clim'
+        ).first()
+        attribs = [
+            attribute1.attribute.variable_name,
+            attribute2.attribute.variable_name
+        ]
+        request = self._get_measurement_request(
+            attributes=','.join(attribs),
+            product='seasonal_forecast',
+            output_type='csv'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('ensemble', response.data['Invalid Request Parameter'])
+
+    def test_read_from_tahmo(self):
+        """Test validate dataset attributes ensembles."""
+        view = MeasurementAPI.as_view()
+        dataset = Dataset.objects.get(name='Tahmo Ground Observational')
+        p = Point(x=26.97, y=-12.56, srid=4326)
+        station = StationFactory.create(
+            geometry=p,
+            provider=dataset.provider
+        )
+        attribute1 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='min_relative_humidity'
+        ).first()
+        dt = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=station,
+            dataset_attribute=attribute1,
+            date_time=dt,
+            value=100
+        )
+        attribs = [
+            attribute1.attribute.variable_name
+        ]
+        request = self._get_measurement_request(
+            attributes=','.join(attribs),
+            product='observations',
+            output_type='csv'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'text/csv')
