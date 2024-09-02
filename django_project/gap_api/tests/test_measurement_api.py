@@ -40,10 +40,11 @@ class MockDatasetReader(BaseDatasetReader):
         else:
             p = self.location_input.point
         return DatasetReaderValue(
-            p,
             [DatasetTimelineValue(self.start_date, {
                 'test': 100
-            })]
+            }, p)],
+            DatasetReaderInput.from_point(p),
+            self.attributes
         )
 
 

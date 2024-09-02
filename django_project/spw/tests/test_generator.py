@@ -5,7 +5,7 @@ Tomorrow Now GAP.
 .. note:: UnitTest for Plumber functions.
 """
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 
 import pytz
 from django.contrib.gis.geos import Point
@@ -128,21 +128,20 @@ class TestSPWFetchDataFunctions(TestCase):
         self.end_dt = self.dt_now
 
     @patch.object(TomorrowIODatasetReader, 'read')
-    @patch.object(TomorrowIODatasetReader, 'get_data_values')
-    def test_fetch_timelines_data(self, mocked_get_data_values, mocked_read):
+    @patch.object(TomorrowIODatasetReader, 'get_raw_results')
+    def test_fetch_timelines_data(self, mocked_results, mocked_read):
         """Test fetch timelines data for SPW."""
         mocked_read.side_effect = MagicMock()
-        mocked_get_data_values.return_value = (
-            DatasetReaderValue(self.location_input.point, [
-                DatasetTimelineValue(
-                    datetime(2023, 7, 20),
-                    {
-                        'total_evapotranspiration_flux': 10,
-                        'total_rainfall': 5
-                    }
-                )
-            ])
-        )
+        mocked_results.return_value = [
+            DatasetTimelineValue(
+                datetime(2023, 7, 20),
+                {
+                    'total_evapotranspiration_flux': 10,
+                    'total_rainfall': 5
+                },
+                self.location_input.point
+            )
+        ]
         result = _fetch_timelines_data(
             self.location_input, self.attrs, self.start_dt, self.end_dt
         )
@@ -159,17 +158,17 @@ class TestSPWFetchDataFunctions(TestCase):
         self.assertEqual(result, expected_result)
 
     @patch.object(TomorrowIODatasetReader, 'read')
-    @patch.object(TomorrowIODatasetReader, 'get_data_values')
-    def test_fetch_ltn_data(self, mocked_get_data_values, mocked_read):
+    @patch.object(TomorrowIODatasetReader, 'get_raw_results')
+    def test_fetch_ltn_data(self, mocked_results, mocked_read):
         """Test fetch ltn data for SPW."""
         mocked_read.side_effect = MagicMock()
-        mocked_get_data_values.return_value = (
-            DatasetReaderValue(self.location_input.point, [
-                DatasetTimelineValue(
-                    datetime(2023, 7, 20),
-                    {'total_evapotranspiration_flux': 8, 'total_rainfall': 3})
-            ])
-        )
+        mocked_results.return_value = [
+            DatasetTimelineValue(
+                datetime(2023, 7, 20),
+                {'total_evapotranspiration_flux': 8, 'total_rainfall': 3},
+                self.location_input.point
+            )
+        ]
         # Initial historical data
         historical_dict = {
             '07-20': {

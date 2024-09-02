@@ -208,16 +208,7 @@ class DatasetTimelineValue:
         }
 
 
-class PointTimelineValues:
-
-    def __init__(
-            self, location: Point,
-            values: List[DatasetTimelineValue]) -> None:
-        self.location = location
-        self.values = values
-
-
-class DatasetReaderValue2:
+class DatasetReaderValue:
 
     date_variable = 'date'
     chunk_size_in_bytes = 81920  # 80KB chunks
@@ -345,58 +336,6 @@ class DatasetReaderValue2:
                     yield chunk
 
 
-class DatasetReaderValue:
-    """Class representing all values from reader."""
-
-    def __init__(
-            self, location: Point,
-            results: List[DatasetTimelineValue]) -> None:
-        """Initialize DatasetReaderValue object.
-
-        :param location: point to the observed station/grid cell
-        :type location: Point
-        :param results: Data value list
-        :type results: List[DatasetTimelineValue]
-        """
-        self.location = location
-        self.results = results
-
-    def to_dict(self):
-        """Convert into dict.
-
-        :return: Dictionary of metadata and data
-        :rtype: dict
-        """
-        if self.location is None:
-            return {}
-        return {
-            'geometry': json.loads(self.location.json),
-            'data': [result.to_dict() for result in self.results]
-        }
-
-
-class LocationDatasetReaderValue(DatasetReaderValue):
-    """Class representing data values for multiple locations."""
-
-    def __init__(
-            self, results: Dict[Point, List[DatasetTimelineValue]]) -> None:
-        """Initialize LocationDatasetReaderValue."""
-        super().__init__(None, [])
-        self.results = results
-
-    def to_dict(self):
-        """Convert into dict.
-
-        :return: Dictionary of metadata and data
-        :rtype: dict
-        """
-        location_data = []
-        for location, values in self.results.items():
-            val = DatasetReaderValue(location, values)
-            location_data.append(val.to_dict())
-        return location_data
-
-
 class BaseDatasetReader:
     """Base class for Dataset Reader."""
 
@@ -472,15 +411,6 @@ class BaseDatasetReader:
         :rtype: DatasetReaderValue
         """
         pass
-
-    def get_data_values2(self) -> DatasetReaderValue2:
-        """Fetch data values from dataset.
-
-        :return: Data Value.
-        :rtype: DatasetReaderValue
-        """
-        pass
-
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.

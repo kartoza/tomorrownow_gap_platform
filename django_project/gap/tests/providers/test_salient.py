@@ -15,8 +15,8 @@ from core.settings.utils import absolute_path
 from gap.models import DatasetAttribute
 from gap.utils.reader import (
     DatasetReaderInput,
-    LocationDatasetReaderValue,
-    LocationInputType
+    LocationInputType,
+    DatasetReaderValue
 )
 from gap.utils.netcdf import (
     NetCDFProvider,
@@ -108,13 +108,14 @@ class TestSalientNetCDFReader(TestCase):
                 DatasetReaderInput.from_point(p), dt1, dt2)
             reader.read_forecast_data(dt1, dt2)
             self.assertEqual(len(reader.xrDatasets), 1)
-            data_value = reader.get_data_values()
+            data_value = reader.get_data_values().to_json()
             mock_open.assert_called_once()
-            self.assertEqual(len(data_value.results), 3)
+            result_data = data_value['data']
+            self.assertEqual(len(result_data), 3)
             self.assertAlmostEqual(
-                data_value.results[0].values['temp_clim'], 19.461235, 6)
+                result_data[0]['values']['temp_clim'], 19.461235, 6)
             self.assertEqual(
-                len(data_value.results[0].values['precip_anom']), 50)
+                len(result_data[0]['values']['precip_anom']), 50)
 
     def test_read_from_bbox(self):
         """Test for reading forecast data using bbox."""
@@ -144,15 +145,18 @@ class TestSalientNetCDFReader(TestCase):
             self.assertEqual(len(reader.xrDatasets), 1)
             data_value = reader.get_data_values()
             mock_open.assert_called_once()
-            self.assertTrue(isinstance(data_value, LocationDatasetReaderValue))
-            self.assertEqual(len(data_value.results), 2)
-            self.assertIn(p, data_value.results)
-            val = data_value.results[p]
-            self.assertEqual(len(val), 3)
+            self.assertTrue(isinstance(data_value, DatasetReaderValue))
+            self.assertTrue(isinstance(data_value._val, xr.Dataset))
+            dataset = data_value.xr_dataset
+            # temp_clim
+            val = dataset['temp_clim'].sel(lat=p.y, lon=p.x)
+            self.assertEqual(len(val['forecast_day']), 3)
             self.assertAlmostEqual(
-                val[0].values['temp_clim'], 19.461235, 6)
-            self.assertEqual(
-                len(val[0].values['precip_anom']), 50)
+                val.values[0], 19.461235, 6)
+            # precip_anom
+            val = dataset['precip_anom'].sel(lat=p.y, lon=p.x)
+            self.assertEqual(len(val['forecast_day']), 3)
+            self.assertEqual(len(val.values[:, 0]), 50)
 
     def test_read_from_points(self):
         """Test for reading forecast data using points."""
@@ -182,6 +186,15 @@ class TestSalientNetCDFReader(TestCase):
             self.assertEqual(len(reader.xrDatasets), 1)
             data_value = reader.get_data_values()
             mock_open.assert_called_once()
-            self.assertTrue(isinstance(data_value, LocationDatasetReaderValue))
-            self.assertEqual(len(data_value.results), 2)
-            self.assertIn(p, data_value.results)
+            self.assertTrue(isinstance(data_value, DatasetReaderValue))
+            self.assertTrue(isinstance(data_value._val, xr.Dataset))
+            dataset = data_value.xr_dataset
+            # temp_clim
+            val = dataset['temp_clim'].sel(lat=p.y, lon=p.x)
+            self.assertEqual(len(val['forecast_day']), 3)
+            self.assertAlmostEqual(
+                val.values[0], 19.461235, 6)
+            # precip_anom
+            val = dataset['precip_anom'].sel(lat=p.y, lon=p.x)
+            self.assertEqual(len(val['forecast_day']), 3)
+            self.assertEqual(len(val.values[:, 0]), 50)

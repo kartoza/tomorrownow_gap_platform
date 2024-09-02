@@ -21,7 +21,6 @@ from gap.models import Provider, Dataset, DatasetAttribute
 from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
-    LocationDatasetReaderValue,
     DatasetReaderInput,
     LocationInputType
 )
@@ -32,7 +31,7 @@ from gap.utils.netcdf import (
 )
 from gap.providers import (
     CBAMNetCDFReader,
-    SalientNetCDFReader,
+    SalientZarrReader,
     CBAMZarrReader,
     get_reader_from_dataset
 )
@@ -118,11 +117,15 @@ class TestDaterangeInc(TestCase):
 class TestDatasetTimelineValue(TestCase):
     """Unit test for class DatasetTimelineValue."""
 
+    def setUp(self):
+        """Set test for TestDatasetTimelineValue class."""
+        self.point = Point(0, 0)
+
     def test_to_dict_with_datetime(self):
         """Test to_dict with python datetime object."""
         dt = datetime(2023, 7, 16, 12, 0, 0)
         values = {"temperature": 25}
-        dtv = DatasetTimelineValue(dt, values)
+        dtv = DatasetTimelineValue(dt, values, self.point)
         expected = {
             'datetime': '2023-07-16T12:00:00',
             'values': values
@@ -133,7 +136,7 @@ class TestDatasetTimelineValue(TestCase):
         """Test to_dict with numpy datetime64 object."""
         dt = np.datetime64('2023-07-16T12:00:00')
         values = {"temperature": 25}
-        dtv = DatasetTimelineValue(dt, values)
+        dtv = DatasetTimelineValue(dt, values, self.point)
         expected = {
             'datetime': np.datetime_as_string(dt, unit='s', timezone='UTC'),
             'values': values
@@ -142,7 +145,7 @@ class TestDatasetTimelineValue(TestCase):
 
     def test_to_dict_with_none_datetime(self):
         """Test to_dict with empty datetime."""
-        dtv = DatasetTimelineValue(None, {"temperature": 25})
+        dtv = DatasetTimelineValue(None, {"temperature": 25}, self.point)
         expected = {
             'datetime': '',
             'values': {"temperature": 25}
@@ -153,43 +156,28 @@ class TestDatasetTimelineValue(TestCase):
 class TestDatasetReaderValue(TestCase):
     """Unit test for class DatasetReaderValue."""
 
+    def setUp(self):
+        """Set test for TestDatasetReaderValue class."""
+        self.point = Point(0, 0)
+
     def test_to_dict_with_location(self):
         """Test to_dict with location."""
         location = Point(1, 1)
+        location_input = DatasetReaderInput.from_point(location)
         dtv = DatasetTimelineValue(
-            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25})
-        drv = DatasetReaderValue(location, [dtv])
+            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25}, self.point)
+        drv = DatasetReaderValue([dtv], location_input, [])
         expected = {
             'geometry': json.loads(location.json),
             'data': [dtv.to_dict()]
         }
-        self.assertEqual(drv.to_dict(), expected)
+        self.assertEqual(drv._to_dict(), expected)
 
     def test_to_dict_with_none_location(self):
         """Test to_dict with empty location."""
-        drv = DatasetReaderValue(None, [])
+        drv = DatasetReaderValue([], None, [])
         expected = {}
-        self.assertEqual(drv.to_dict(), expected)
-
-
-class TestLocationDatasetReaderValue(TestCase):
-    """Unit test for LocationDatasetReaderValue class."""
-
-    def test_to_dict(self):
-        """Test to_dict method returrning dictionary."""
-        location1 = Point(1, 1)
-        location2 = Point(2, 2)
-        dtv1 = DatasetTimelineValue(
-            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25})
-        dtv2 = DatasetTimelineValue(
-            datetime(2023, 7, 16, 13, 0, 0), {"temperature": 26})
-        results = {location1: [dtv1], location2: [dtv2]}
-        ldrv = LocationDatasetReaderValue(results)
-        expected = [
-            DatasetReaderValue(location1, [dtv1]).to_dict(),
-            DatasetReaderValue(location2, [dtv2]).to_dict()
-        ]
-        self.assertEqual(ldrv.to_dict(), expected)
+        self.assertEqual(drv._to_dict(), expected)
 
 
 class TestDatasetReaderInput(TestCase):
@@ -388,7 +376,7 @@ class TestCBAMNetCDFReader(TestCase):
         dataset2 = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.SALIENT))
         reader = get_reader_from_dataset(dataset2)
-        self.assertEqual(reader, SalientNetCDFReader)
+        self.assertEqual(reader, SalientZarrReader)
         # invalid type
         dataset3 = DatasetFactory.create()
         with self.assertRaises(TypeError):

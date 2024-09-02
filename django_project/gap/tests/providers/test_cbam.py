@@ -84,49 +84,8 @@ class TestCBAMNetCDFReader(TestCase):
             reader.read_historical_data(dt, dt)
             mock_open.assert_called_once()
             self.assertEqual(len(reader.xrDatasets), 1)
-            data_value = reader.get_data_values()
-            self.assertEqual(len(data_value.results), 1)
+            data_value = reader.get_data_values().to_json()
+            self.assertEqual(len(data_value['data']), 1)
             self.assertAlmostEqual(
-                data_value.results[0].values['max_temperature'],
+                data_value['data'][0]['values']['max_temperature'],
                 33.371735, 6)
-
-    def test_get_data_values_from_multiple_locations(self):
-        """Test get data values from several locations."""
-        dt = datetime(2019, 11, 1, 0, 0, 0)
-        p = Point(x=26.97, y=-12.56)
-        attr1 = DatasetAttributeFactory.create(
-            dataset=self.dataset,
-            source='var1'
-        )
-        attr2 = DatasetAttributeFactory.create(
-            dataset=self.dataset,
-            source='var2'
-        )
-        reader = CBAMNetCDFReader(
-            self.dataset, [attr1, attr2],
-            DatasetReaderInput.from_point(p),
-            dt, dt)
-        date_variable = 'time'
-        date_values = [datetime(2020, 1, 1), datetime(2020, 1, 2)]
-        data_var1 = [[[10, 20], [30, 40]], [[50, 60], [70, 80]]]
-        data_var2 = [[[90, 100], [110, 120]], [[130, 140], [150, 160]]]
-
-        val = xr.Dataset(
-            {
-                'var1': (['time', 'lat', 'lon'], data_var1),
-                'var2': (['time', 'lat', 'lon'], data_var2)
-            },
-            coords={'time': date_values, 'lat': [0, 1], 'lon': [0, 1]}
-        )
-
-        locations = [Point(0, 0), Point(1, 1), Point(0, 1), Point(1, 0)]
-
-        reader.date_variable = date_variable
-        result = reader._get_data_values_from_multiple_locations(
-            val, locations, 2, 2)
-        self.assertIn(locations[0], result.results)
-        self.assertIn(locations[1], result.results)
-        self.assertIn(locations[2], result.results)
-        self.assertIn(locations[3], result.results)
-        data = result.results[locations[3]]
-        self.assertEqual(len(data), 2)

@@ -20,9 +20,8 @@ from gap.utils.reader import (
     LocationInputType,
     DatasetReaderInput,
     DatasetTimelineValue,
-    DatasetReaderValue,
     BaseDatasetReader,
-    DatasetReaderValue2
+    DatasetReaderValue
 )
 
 
@@ -36,7 +35,7 @@ class CSVBuffer:
 
 
 
-class TahmoReaderValue(DatasetReaderValue2):
+class TahmoReaderValue(DatasetReaderValue):
     """Class that convert Tahmo Dataset to TimelineValues."""
 
     date_variable = 'date'
@@ -174,50 +173,29 @@ class TahmoDatasetReader(BaseDatasetReader):
         ).order_by('date_time', 'station', 'dataset_attribute')
         # final result, group by datetime
         self.results = []
-        curr_dt = None
-        station_results = []
-        # group by date_time
-        measurement_dict = {}
-        # for measurement in measurements:
-        #     if curr_point is None:
-        #         curr_point = measurement.station.geometry
-        #         curr_dt = measurement.date_time
-        #     elif curr_point != measurement.station.geometry:
-        #         station_results.append(
-        #             DatasetTimelineValue(curr_dt, measurement_dict, curr_point))
-        #         curr_dt = measurement.date_time
-        #         measurement_dict = {}
-        #         self.results.append(
-        #             PointTimelineValues(curr_point, station_results)
-        #         )
-        #         curr_point = measurement.station.geometry
-        #         station_results = []
-
-        #     if curr_dt is None:
-        #         curr_dt = measurement.date_time
-        #     if curr_dt != measurement.date_time:
-        #         station_results.append(
-        #             DatasetTimelineValue(curr_dt, measurement_dict))
-        #         curr_dt = measurement.date_time
-        #         measurement_dict = {}
-        #     measurement_dict[
-        #         measurement.dataset_attribute.attribute.variable_name
-        #     ] = measurement.value
-        # station_results.append(
-        #     DatasetTimelineValue(curr_dt, measurement_dict))
-        # self.results.append(
-        #     PointTimelineValues(curr_point, station_results)
-        # )
+        
+        iter_dt = None
+        iter_loc = None
+        # group by location and date_time
+        dt_loc_val = {}
+        for measurement in measurements:
+            if iter_dt is None:
+                iter_dt = measurement.date_time
+                iter_loc = measurement.station.geometry
+            elif (
+                iter_loc != measurement.station.geometry or 
+                iter_dt != measurement.date_time
+            ):
+                self.results.append(DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
+                iter_dt = measurement.date_time
+                iter_loc = measurement.station.geometry
+                dt_loc_val = {}
+            dt_loc_val[
+                measurement.dataset_attribute.attribute.variable_name
+            ] = measurement.value
+        self.results.append(DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
 
     def get_data_values(self) -> DatasetReaderValue:
-        """Fetch results.
-
-        :return: Data Value.
-        :rtype: DatasetReaderValue
-        """
-        return None
-
-    def get_data_values2(self) -> DatasetReaderValue2:
         """Fetch data values from dataset.
 
         :return: Data Value.

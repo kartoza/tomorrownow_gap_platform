@@ -22,12 +22,9 @@ from gap.models import (
     DatasetStore
 )
 from gap.utils.reader import (
-    LocationInputType,
     DatasetReaderInput,
     DatasetTimelineValue,
-    DatasetReaderValue,
-    LocationDatasetReaderValue,
-    DatasetReaderValue2
+    DatasetReaderValue
 )
 from gap.utils.netcdf import (
     daterange_inc,
@@ -36,7 +33,7 @@ from gap.utils.netcdf import (
 from gap.utils.zarr import BaseZarrReader
 
 
-class CBAMReaderValue(DatasetReaderValue2):
+class CBAMReaderValue(DatasetReaderValue):
     """Class that convert CBAM Dataset to TimelineValues."""
 
     date_variable = 'date'
@@ -71,7 +68,8 @@ class CBAMReaderValue(DatasetReaderValue2):
                 )
             results.append(DatasetTimelineValue(
                 dt,
-                value_data
+                value_data,
+                self.location_input.point
             ))
         return {
             'geometry': json.loads(self.location_input.point.json),
@@ -127,100 +125,18 @@ class CBAMNetCDFReader(BaseNetCDFReader):
                 continue
             self.xrDatasets.append(val)
 
-    def _get_data_values_from_single_location(
-            self, point: Point, val: xrDataset) -> DatasetReaderValue:
-        """Read data values from xrDataset.
-
-        :param point: grid cell from the query
-        :type point: Point
-        :param val: dataset to be read
-        :type val: xrDataset
-        :return: Data Values
-        :rtype: DatasetReaderValue
-        """
-        results = []
-        for dt_idx, dt in enumerate(val[self.date_variable].values):
-            value_data = {}
-            for attribute in self.attributes:
-                v = val[attribute.source].values[dt_idx]
-                value_data[attribute.attribute.variable_name] = (
-                    v if not np.isnan(v) else None
-                )
-            results.append(DatasetTimelineValue(
-                dt,
-                value_data
-            ))
-        return DatasetReaderValue(point, results)
-
-    def _get_data_values_from_multiple_locations(
-            self, val: xrDataset, locations: List[Point],
-            lat_dim: int, lon_dim: int) -> DatasetReaderValue:
-        """Read data values from xrDataset from list of locations.
-
-        :param val: dataset to be read
-        :type val: xrDataset
-        :param locations: list of location
-        :type locations: List[Point]
-        :param lat_dim: latitude dimension
-        :type lat_dim: int
-        :param lon_dim: longitude dimension
-        :type lon_dim: int
-        :return: Data Values
-        :rtype: DatasetReaderValue
-        """
-        results = {}
-        for dt_idx, dt in enumerate(val[self.date_variable].values):
-            idx_lat_lon = 0
-            for idx_lat in range(lat_dim):
-                for idx_lon in range(lon_dim):
-                    value_data = {}
-                    for attribute in self.attributes:
-                        v = val[attribute.source].values[
-                            dt_idx, idx_lat, idx_lon]
-                        value_data[attribute.attribute.variable_name] = (
-                            v if not np.isnan(v) else None
-                        )
-                    loc = locations[idx_lat_lon]
-                    if loc in results:
-                        results[loc].append(DatasetTimelineValue(
-                            dt,
-                            value_data
-                        ))
-                    else:
-                        results[loc] = [DatasetTimelineValue(
-                            dt,
-                            value_data
-                        )]
-                    idx_lat_lon += 1
-        return LocationDatasetReaderValue(results)
-
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from list of xArray Dataset object.
 
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        if len(self.xrDatasets) == 0:
-            return DatasetReaderValue(None, [])
-        val = xr.combine_nested(
-            self.xrDatasets, concat_dim=[self.date_variable])
-        locations, lat_dim, lon_dim = self.find_locations(val)
-        if self.location_input.type != LocationInputType.POINT:
-            return self._get_data_values_from_multiple_locations(
-                val, locations, lat_dim, lon_dim
-            )
-        return self._get_data_values_from_single_location(locations[0], val)
-
-    def get_data_values2(self) -> DatasetReaderValue2:
-        """Fetch data values from dataset.
-
-        :return: Data Value.
-        :rtype: DatasetReaderValue
-        """
         val = None
-        if len(self.xrDatasets) > 0:
+        if len(self.xrDatasets) > 1:
             val = xr.combine_nested(
                 self.xrDatasets, concat_dim=[self.date_variable])
+        elif len(self.xrDatasets) == 1:
+            val = self.xrDatasets[0]
         return CBAMReaderValue(val, self.location_input, self.attributes)
 
     def _read_variables_by_point(
@@ -436,7 +352,7 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
             return
         self.xrDatasets.append(val)
 
-    def get_data_values2(self) -> DatasetReaderValue2:
+    def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
 
         :return: Data Value.

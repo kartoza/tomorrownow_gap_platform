@@ -168,17 +168,6 @@ class MeasurementAPI(APIView):
             'output_type', DatasetReaderOutputType.JSON)
         return product.lower()
 
-    def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
-        """Read data from given reader.
-
-        :param reader: Dataset Reader
-        :type reader: BaseDatasetReader
-        :return: data value
-        :rtype: DatasetReaderValue
-        """
-        reader.read()
-        return reader.get_data_values()
-
     def _read_data_as_json(
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime) -> DatasetReaderValue:
@@ -199,7 +188,7 @@ class MeasurementAPI(APIView):
         }
         for reader in reader_dict.values():
             reader.read()
-            values = reader.get_data_values2().to_json()
+            values = reader.get_data_values().to_json()
             if values:
                 data['metadata']['dataset'].append({
                     'provider': reader.dataset.provider.name,
@@ -213,7 +202,7 @@ class MeasurementAPI(APIView):
             start_dt: datetime, end_dt: datetime) -> Response:
         reader: BaseDatasetReader = list(reader_dict.values())[0]
         reader.read()
-        data_value = reader.get_data_values2()
+        data_value = reader.get_data_values()
         response = StreamingHttpResponse(
             data_value.to_netcdf_stream(), content_type='application/x-netcdf'
         )
@@ -226,7 +215,7 @@ class MeasurementAPI(APIView):
             start_dt: datetime, end_dt: datetime) -> Response:
         reader: BaseDatasetReader = list(reader_dict.values())[0]
         reader.read()
-        data_value = reader.get_data_values2()
+        data_value = reader.get_data_values()
         response = StreamingHttpResponse(
             data_value.to_csv_stream(), content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="data.csv"'
@@ -237,7 +226,7 @@ class MeasurementAPI(APIView):
             start_dt: datetime, end_dt: datetime) -> Response:
         reader: BaseDatasetReader = list(reader_dict.values())[0]
         reader.read()
-        data_value = reader.get_data_values2()
+        data_value = reader.get_data_values()
         response = StreamingHttpResponse(
             data_value.to_csv_stream('.txt', '\t'), content_type='text/ascii')
         response['Content-Disposition'] = 'attachment; filename="data.txt"'
