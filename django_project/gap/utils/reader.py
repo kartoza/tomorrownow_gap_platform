@@ -318,7 +318,7 @@ class DatasetReaderValue:
                 suffix=".nc", delete=True, delete_on_close=False)
         ) as tmp_file:
             self.xr_dataset.to_netcdf(
-                tmp_file.name, format='h5netcdf', engine='netcdf4')
+                tmp_file.name, format='NETCDF4', engine='h5netcdf')
             with open(tmp_file.name, 'rb') as f:
                 while True:
                     chunk = f.read(self.chunk_size_in_bytes)
