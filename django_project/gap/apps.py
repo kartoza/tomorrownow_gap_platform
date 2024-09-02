@@ -18,4 +18,7 @@ class GAPConfig(AppConfig):
     def ready(self):
         """App ready handler."""
         from gap.tasks.crop_insight import generate_crop_plan  # noqa
-        pass
+        from salientsdk.login_api import download_query  # noqa
+        from gap.utils.salient import patch_download_query
+        import salientsdk.login_api
+        salientsdk.login_api.download_query = patch_download_query

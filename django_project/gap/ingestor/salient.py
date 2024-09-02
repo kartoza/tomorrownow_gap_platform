@@ -195,7 +195,7 @@ class SalientCollector(BaseIngestor):
             date=self._get_date_config(),
             members=50,
             force=False,
-            verbose=False,
+            verbose=True,
         )
 
         self._store_as_netcdf_file(fcst_file, self._get_date_config())
