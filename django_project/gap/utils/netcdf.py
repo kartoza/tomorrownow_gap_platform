@@ -251,6 +251,10 @@ class BaseNetCDFReader(BaseDatasetReader):
             end_dt: np.datetime64) -> xrDataset:
         return None
 
+    def _has_ensembles(self):
+        attr = [a for a in self.attributes if a.ensembles]
+        return len(attr) > 0
+
     def read_variables(
             self, dataset: xrDataset, start_date: datetime = None,
             end_date: datetime = None) -> xrDataset:
@@ -265,6 +269,8 @@ class BaseNetCDFReader(BaseDatasetReader):
         end_dt = np.datetime64(end_date, 'ns')
         variables = [a.source for a in self.attributes]
         variables.append(self.date_variable)
+        if self._has_ensembles():
+            variables.append('ensemble')
         result: xrDataset = None
         try:
             if self.location_input.type == LocationInputType.BBOX:

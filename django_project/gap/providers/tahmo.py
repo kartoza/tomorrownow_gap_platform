@@ -9,6 +9,7 @@ from typing import List
 from datetime import datetime
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
+from rest_framework.exceptions import ValidationError
 
 from gap.models import (
     Dataset,
@@ -20,10 +21,87 @@ from gap.utils.reader import (
     LocationInputType,
     DatasetReaderInput,
     DatasetTimelineValue,
-    DatasetReaderValue,
     BaseDatasetReader,
-    LocationDatasetReaderValue
+    DatasetReaderValue
 )
+
+
+class CSVBuffer:
+    """An object that implements the write method of file-like interface."""
+
+    def write(self, value):
+        """Return the string to write."""
+        yield value
+
+
+class TahmoReaderValue(DatasetReaderValue):
+    """Class that convert Tahmo Dataset to TimelineValues."""
+
+    date_variable = 'date'
+
+    def __init__(
+            self, val: List[DatasetTimelineValue],
+            location_input: DatasetReaderInput,
+            attributes: List[DatasetAttribute],
+            start_date: datetime,
+            end_date: datetime) -> None:
+        """Initialize TahmoReaderValue class.
+
+        :param val: value that has been read
+        :type val: List[DatasetTimelineValue]
+        :param location_input: location input query
+        :type location_input: DatasetReaderInput
+        :param attributes: list of dataset attributes
+        :type attributes: List[DatasetAttribute]
+        """
+        super().__init__(val, location_input, attributes)
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def to_csv_stream(self, suffix='.csv', separator=','):
+        """Generate csv bytes stream.
+
+        :param suffix: file extension, defaults to '.csv'
+        :type suffix: str, optional
+        :param separator: separator, defaults to ','
+        :type separator: str, optional
+        :yield: bytes of csv file
+        :rtype: bytes
+        """
+        headers = [
+            'date',
+            'lat',
+            'lon'
+        ]
+        for attr in self.attributes:
+            headers.append(attr.attribute.variable_name)
+        yield bytes(','.join(headers) + '\n', 'utf-8')
+
+        for val in self.values:
+            data = [
+                val.get_datetime_repr('%Y-%m-%d'),
+                str(val.location.y),
+                str(val.location.x)
+            ]
+            for attr in self.attributes:
+                var_name = attr.attribute.variable_name
+                if var_name in val.values:
+                    data.append(str(val.values[var_name]))
+                else:
+                    data.append('')
+            yield bytes(','.join(data) + '\n', 'utf-8')
+
+    def to_netcdf_stream(self):
+        """Generate NetCDF.
+
+        :raises ValidationError: Not supported for Tahmo Dataset
+        """
+        raise ValidationError({
+            'Invalid Request Parameter': (
+                'Output format netcdf is not available '
+                'for Tahmo Observation Dataset!'
+            )
+        })
 
 
 class TahmoDatasetReader(BaseDatasetReader):
@@ -48,7 +126,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         """
         super().__init__(
             dataset, attributes, location_input, start_date, end_date)
-        self.results = {}
+        self.results: List[DatasetTimelineValue] = []
 
     def _find_nearest_station_by_point(self, point: Point = None):
         p = point
@@ -121,46 +199,40 @@ class TahmoDatasetReader(BaseDatasetReader):
             date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
             station__in=nearest_stations
-        ).order_by('station', 'date_time', 'dataset_attribute')
-        # final result, group by point
-        self.results = {}
-        curr_point = None
-        curr_dt = None
-        station_results = []
-        # group by date_time
-        measurement_dict = {}
+        ).order_by('date_time', 'station', 'dataset_attribute')
+        # final result, group by datetime
+        self.results = []
+
+        iter_dt = None
+        iter_loc = None
+        # group by location and date_time
+        dt_loc_val = {}
         for measurement in measurements:
-            if curr_point is None:
-                curr_point = measurement.station.geometry
-                curr_dt = measurement.date_time
-            elif curr_point != measurement.station.geometry:
-                station_results.append(
-                    DatasetTimelineValue(curr_dt, measurement_dict))
-                curr_dt = measurement.date_time
-                measurement_dict = {}
-                self.results[curr_point] = station_results
-                curr_point = measurement.station.geometry
-                station_results = []
-            else:
-                if curr_dt != measurement.date_time:
-                    station_results.append(
-                        DatasetTimelineValue(curr_dt, measurement_dict))
-                    curr_dt = measurement.date_time
-                    measurement_dict = {}
-            measurement_dict[
+            if iter_dt is None:
+                iter_dt = measurement.date_time
+                iter_loc = measurement.station.geometry
+            elif (
+                iter_loc != measurement.station.geometry or
+                iter_dt != measurement.date_time
+            ):
+                self.results.append(
+                    DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
+                iter_dt = measurement.date_time
+                iter_loc = measurement.station.geometry
+                dt_loc_val = {}
+            dt_loc_val[
                 measurement.dataset_attribute.attribute.variable_name
             ] = measurement.value
-        station_results.append(
-            DatasetTimelineValue(curr_dt, measurement_dict))
-        self.results[curr_point] = station_results
+        self.results.append(
+            DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
 
     def get_data_values(self) -> DatasetReaderValue:
-        """Fetch results.
+        """Fetch data values from dataset.
 
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        if len(self.results.keys()) == 1:
-            key = list(self.results.keys())[0]
-            return DatasetReaderValue(key, self.results[key])
-        return LocationDatasetReaderValue(self.results)
+        return TahmoReaderValue(
+            self.results, self.location_input, self.attributes,
+            self.start_date, self.end_date
+        )

@@ -24,8 +24,7 @@ from gap.factories import (
 )
 from gap.utils.reader import (
     DatasetReaderInput,
-    LocationInputType,
-    LocationDatasetReaderValue
+    LocationInputType
 )
 
 
@@ -100,9 +99,10 @@ class TestTahmoReader(TestCase):
             ), dt, dt)
         reader.read_historical_data(dt, dt)
         data_value = reader.get_data_values()
-        self.assertEqual(len(data_value.results), 1)
+        results = data_value.to_json()
+        self.assertEqual(len(results['data']), 1)
         self.assertEqual(
-            data_value.results[0].values['surface_air_temperature'],
+            results['data'][0]['values']['surface_air_temperature'],
             100)
 
     def test_read_historical_data_multiple_locations(self):
@@ -139,9 +139,4 @@ class TestTahmoReader(TestCase):
             self.dataset, [self.dataset_attr], location_input, dt1, dt2)
         reader.read_historical_data(dt1, dt2)
         data_value = reader.get_data_values()
-        self.assertTrue(isinstance(data_value, LocationDatasetReaderValue))
-        self.assertEqual(len(data_value.results), 2)
-        self.assertIn(p, data_value.results)
-        self.assertIn(self.station.geometry, data_value.results)
-        results = data_value.results[self.station.geometry]
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(data_value._val), 3)

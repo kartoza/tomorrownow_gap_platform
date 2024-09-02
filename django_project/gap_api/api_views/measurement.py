@@ -14,12 +14,15 @@ from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
+from django.http import StreamingHttpResponse
 from django.db.models.functions import Lower
 from django.contrib.gis.geos import (
     GEOSGeometry,
     Point,
     MultiPoint,
-    MultiPolygon
+    MultiPolygon,
+    Polygon
 )
 
 from gap.models import (
@@ -30,7 +33,8 @@ from gap.utils.reader import (
     LocationInputType,
     DatasetReaderInput,
     DatasetReaderValue,
-    BaseDatasetReader
+    BaseDatasetReader,
+    DatasetReaderOutputType
 )
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
@@ -69,6 +73,18 @@ class MeasurementAPI(APIView):
             ],
             default='historical_reanalysis'
         ),
+        openapi.Parameter(
+            'output_type', openapi.IN_QUERY,
+            description='Returned format',
+            type=openapi.TYPE_STRING,
+            enum=[
+                DatasetReaderOutputType.JSON,
+                DatasetReaderOutputType.NETCDF,
+                DatasetReaderOutputType.CSV,
+                DatasetReaderOutputType.ASCII
+            ],
+            default=DatasetReaderOutputType.JSON
+        ),
     ]
 
     def _get_attribute_filter(self):
@@ -102,19 +118,23 @@ class MeasurementAPI(APIView):
         :rtype: DatasetReaderInput
         """
         if self.request.method == 'POST':
-            features = self.request.data['features']
+            features = self.request.data.get('features', [])
             geom = None
             point_list = []
             for geojson in features:
                 geom = GEOSGeometry(
                     json.dumps(geojson['geometry']), srid=4326
                 )
-                if isinstance(geom, MultiPolygon):
+                if isinstance(geom, (MultiPolygon, Polygon)):
                     break
                 point_list.append(geom[0])
             if geom is None:
-                raise TypeError('Unknown geometry type!')
-            if isinstance(geom, MultiPolygon):
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Unknown geometry type!'
+                    )
+                })
+            if isinstance(geom, (MultiPolygon, Polygon)):
                 return DatasetReaderInput(
                     geom, LocationInputType.POLYGON)
             return DatasetReaderInput(
@@ -142,7 +162,23 @@ class MeasurementAPI(APIView):
             return ['historical_reanalysis']
         return [product.lower()]
 
+    def _get_format_filter(self):
+        """Get format filter in the request parameters.
+
+        :return: List of product type lowercase
+        :rtype: List[str]
+        """
+        product = self.request.GET.get(
+            'output_type', DatasetReaderOutputType.JSON)
+        return product.lower()
+
     def _read_data(self, reader: BaseDatasetReader) -> DatasetReaderValue:
+        reader.read()
+        return reader.get_data_values()
+
+    def _read_data_as_json(
+            self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> DatasetReaderValue:
         """Read data from given reader.
 
         :param reader: Dataset Reader
@@ -150,10 +186,118 @@ class MeasurementAPI(APIView):
         :return: data value
         :rtype: DatasetReaderValue
         """
-        reader.read()
-        return reader.get_data_values()
+        data = {
+            'metadata': {
+                'start_date': start_dt.isoformat(timespec='seconds'),
+                'end_date': end_dt.isoformat(timespec='seconds'),
+                'dataset': []
+            },
+            'results': []
+        }
+        for reader in reader_dict.values():
+            reader_value = self._read_data(reader)
+            if reader_value.is_empty():
+                return None
+            values = reader_value.to_json()
+            if values:
+                data['metadata']['dataset'].append({
+                    'provider': reader.dataset.provider.name,
+                    'attributes': reader.get_attributes_metadata()
+                })
+                data['results'].append(values)
+        return data
 
-    def get_response_data(self):
+    def _read_data_as_netcdf(
+            self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> Response:
+        reader: BaseDatasetReader = list(reader_dict.values())[0]
+        reader_value = self._read_data(reader)
+        if reader_value.is_empty():
+            return None
+        response = StreamingHttpResponse(
+            reader_value.to_netcdf_stream(),
+            content_type='application/x-netcdf'
+        )
+        response['Content-Disposition'] = 'attachment; filename="data.nc"'
+
+        return response
+
+    def _read_data_as_csv(
+            self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> Response:
+        reader: BaseDatasetReader = list(reader_dict.values())[0]
+        reader_value = self._read_data(reader)
+        if reader_value.is_empty():
+            return None
+        response = StreamingHttpResponse(
+            reader_value.to_csv_stream(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="data.csv"'
+        return response
+
+    def _read_data_as_ascii(
+            self, reader_dict: Dict[int, BaseDatasetReader],
+            start_dt: datetime, end_dt: datetime) -> Response:
+        reader: BaseDatasetReader = list(reader_dict.values())[0]
+        reader_value = self._read_data(reader)
+        if reader_value.is_empty():
+            return None
+        response = StreamingHttpResponse(
+            reader_value.to_csv_stream('.txt', '\t'),
+            content_type='text/ascii')
+        response['Content-Disposition'] = 'attachment; filename="data.txt"'
+        return response
+
+    def validate_output_format(
+            self, location: DatasetReaderInput, output_format):
+        """Validate output format.
+
+        :param location: location input filter
+        :type location: DatasetReaderInput
+        :param output_format: output type/format
+        :type output_format: str
+        :raises ValidationError: invalid request
+        """
+        if output_format == DatasetReaderOutputType.JSON:
+            if location.type != LocationInputType.POINT:
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Output format json is only available '
+                        'for single point query!'
+                    )
+                })
+
+    def validate_dataset_attributes(self, dataset_attributes, output_format):
+        """Validate the attributes for the query.
+
+        :param dataset_attributes: dataset attribute list
+        :type dataset_attributes: List[DatasetAttribute]
+        :param output_format: output type/format
+        :type output_format: str
+        :raises ValidationError: invalid request
+        """
+        if len(dataset_attributes) == 0:
+            raise ValidationError({
+                'Invalid Request Parameter': (
+                    'No matching attribute found!'
+                )
+            })
+
+        if output_format == 'csv':
+            non_ensemble_count = dataset_attributes.filter(
+                ensembles=False
+            ).count()
+            ensemble_count = dataset_attributes.filter(
+                ensembles=True
+            ).count()
+            if ensemble_count > 0 and non_ensemble_count > 0:
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Attribute with ensemble cannot be mixed '
+                        'with non-ensemble'
+                    )
+                })
+
+    def get_response_data(self) -> Response:
         """Read data from dataset.
 
         :return: Dictionary of metadata and data
@@ -169,12 +313,19 @@ class MeasurementAPI(APIView):
             self._get_date_filter('end_date'),
             time.max, tzinfo=pytz.UTC
         )
+        output_format = self._get_format_filter()
         data = {}
         if location is None:
             return data
+
+        # validate if json is only available for single location filter
+        self.validate_output_format(location, output_format)
+        # TODO: validate minimum/maximum area filter?
+
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
-            dataset__is_internal_use=False
+            dataset__is_internal_use=False,
+            attribute__is_active=True
         )
         product_filter = self._get_product_filter()
         dataset_attributes = dataset_attributes.annotate(
@@ -182,6 +333,10 @@ class MeasurementAPI(APIView):
         ).filter(
             product_name__in=product_filter
         )
+
+        # validate empty dataset_attributes
+        self.validate_dataset_attributes(dataset_attributes, output_format)
+
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
             if da.dataset.id in dataset_dict:
@@ -190,23 +345,38 @@ class MeasurementAPI(APIView):
                 reader = get_reader_from_dataset(da.dataset)
                 dataset_dict[da.dataset.id] = reader(
                     da.dataset, [da], location, start_dt, end_dt)
-        data = {
-            'metadata': {
-                'start_date': start_dt.isoformat(timespec='seconds'),
-                'end_date': end_dt.isoformat(timespec='seconds'),
-                'dataset': []
-            },
-            'results': []
-        }
-        for reader in dataset_dict.values():
-            values = self._read_data(reader).to_dict()
-            if values:
-                data['metadata']['dataset'].append({
-                    'provider': reader.dataset.provider.name,
-                    'attributes': reader.get_attributes_metadata()
-                })
-                data['results'].append(values)
-        return data
+
+        response = None
+        if output_format == DatasetReaderOutputType.JSON:
+            data_value = self._read_data_as_json(
+                dataset_dict, start_dt, end_dt)
+            if data_value:
+                response = Response(
+                    status=200,
+                    data=data_value
+                )
+        elif output_format == DatasetReaderOutputType.NETCDF:
+            response = self._read_data_as_netcdf(
+                dataset_dict, start_dt, end_dt)
+        elif output_format == DatasetReaderOutputType.CSV:
+            response = self._read_data_as_csv(dataset_dict, start_dt, end_dt)
+        elif output_format == DatasetReaderOutputType.ASCII:
+            response = self._read_data_as_ascii(dataset_dict, start_dt, end_dt)
+        else:
+            raise ValidationError({
+                'Invalid Request Parameter': (
+                    f'Incorrect output_type value: {output_format}'
+                )
+            })
+
+        if response is None:
+            return Response(
+                status=404,
+                data={
+                    'detail': 'No wheather data is found for given queries.'
+                }
+            )
+        return response
 
     @swagger_auto_schema(
         operation_id='get-measurement',
@@ -242,10 +412,7 @@ class MeasurementAPI(APIView):
     )
     def get(self, request, *args, **kwargs):
         """Fetch measurement data by attributes and date range filter."""
-        return Response(
-            status=200,
-            data=self.get_response_data()
-        )
+        return self.get_response_data()
 
     @swagger_auto_schema(
         operation_id='get-measurement-by-geom',
@@ -272,7 +439,4 @@ class MeasurementAPI(APIView):
     )
     def post(self, request, *args, **kwargs):
         """Fetch measurement data by polygon/points."""
-        return Response(
-            status=200,
-            data=self.get_response_data()
-        )
+        return self.get_response_data()

@@ -199,9 +199,8 @@ def _fetch_timelines_data(
     reader = TomorrowIODatasetReader(
         dataset, attrs, location_input, start_dt, end_dt)
     reader.read()
-    values = reader.get_data_values()
     results = {}
-    for val in values.results:
+    for val in reader.get_raw_results():
         month_day = val.get_datetime_repr('%m-%d')
         val_dict = val.to_dict()['values']
         data = {
@@ -243,8 +242,7 @@ def _fetch_ltn_data(
         dataset, attrs, location_input, start_dt, end_dt
     )
     reader.read()
-    values = reader.get_data_values()
-    for val in values.results:
+    for val in reader.get_raw_results():
         month_day = val.get_datetime_repr('%m-%d')
         if month_day in historical_dict:
             data = historical_dict[month_day]

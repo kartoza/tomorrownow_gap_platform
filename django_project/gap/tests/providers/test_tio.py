@@ -125,8 +125,9 @@ class TestTomorrowIODatasetReader(TestCase):
         self.assertEqual(len(self.reader.warnings), 1)
         # test get_data_values
         reader_value = self.reader.get_data_values()
-        self.assertEqual(reader_value.location, self.location_input.point)
-        self.assertEqual(len(reader_value.results), 1)
+        self.assertEqual(
+            reader_value.location_input.point, self.location_input.point)
+        self.assertEqual(len(reader_value._val), 1)
         # mock 400 error
         mock_response = {
             'type': 'Unknown',
@@ -144,8 +145,9 @@ class TestTomorrowIODatasetReader(TestCase):
         self.assertEqual(len(self.reader.errors), 1)
         # test get_data_values
         reader_value = self.reader.get_data_values()
-        self.assertEqual(reader_value.location, self.location_input.point)
-        self.assertEqual(len(reader_value.results), 0)
+        self.assertEqual(
+            reader_value.location_input.point, self.location_input.point)
+        self.assertEqual(len(reader_value._val), 0)
 
     @requests_mock.Mocker()
     @patch('os.environ.get', return_value='dummy_api_key')

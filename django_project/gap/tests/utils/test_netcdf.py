@@ -11,6 +11,7 @@ from django.test import TestCase
 from datetime import datetime
 import numpy as np
 import xarray as xr
+import pandas as pd
 from django.contrib.gis.geos import (
     Point, GeometryCollection, Polygon, MultiPolygon,
     MultiPoint
@@ -21,7 +22,6 @@ from gap.models import Provider, Dataset, DatasetAttribute
 from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
-    LocationDatasetReaderValue,
     DatasetReaderInput,
     LocationInputType
 )
@@ -32,7 +32,7 @@ from gap.utils.netcdf import (
 )
 from gap.providers import (
     CBAMNetCDFReader,
-    SalientNetCDFReader,
+    SalientZarrReader,
     CBAMZarrReader,
     get_reader_from_dataset
 )
@@ -118,11 +118,15 @@ class TestDaterangeInc(TestCase):
 class TestDatasetTimelineValue(TestCase):
     """Unit test for class DatasetTimelineValue."""
 
+    def setUp(self):
+        """Set test for TestDatasetTimelineValue class."""
+        self.point = Point(0, 0)
+
     def test_to_dict_with_datetime(self):
         """Test to_dict with python datetime object."""
         dt = datetime(2023, 7, 16, 12, 0, 0)
         values = {"temperature": 25}
-        dtv = DatasetTimelineValue(dt, values)
+        dtv = DatasetTimelineValue(dt, values, self.point)
         expected = {
             'datetime': '2023-07-16T12:00:00',
             'values': values
@@ -133,7 +137,7 @@ class TestDatasetTimelineValue(TestCase):
         """Test to_dict with numpy datetime64 object."""
         dt = np.datetime64('2023-07-16T12:00:00')
         values = {"temperature": 25}
-        dtv = DatasetTimelineValue(dt, values)
+        dtv = DatasetTimelineValue(dt, values, self.point)
         expected = {
             'datetime': np.datetime_as_string(dt, unit='s', timezone='UTC'),
             'values': values
@@ -142,7 +146,7 @@ class TestDatasetTimelineValue(TestCase):
 
     def test_to_dict_with_none_datetime(self):
         """Test to_dict with empty datetime."""
-        dtv = DatasetTimelineValue(None, {"temperature": 25})
+        dtv = DatasetTimelineValue(None, {"temperature": 25}, self.point)
         expected = {
             'datetime': '',
             'values': {"temperature": 25}
@@ -153,43 +157,115 @@ class TestDatasetTimelineValue(TestCase):
 class TestDatasetReaderValue(TestCase):
     """Unit test for class DatasetReaderValue."""
 
+    fixtures = [
+        '2.provider.json',
+        '3.observation_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
+    def setUp(self):
+        """Set test for TestDatasetReaderValue class."""
+        self.point = Point(0, 0)
+        self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
+        self.attribute = DatasetAttribute.objects.filter(
+            dataset=self.dataset,
+            attribute__variable_name='max_temperature'
+        ).first()
+
+        # Creating mock xarray dataset
+        dates = pd.date_range("2021-01-01", periods=10)
+        lats = np.array([10, 20])
+        lons = np.array([30, 40])
+        temperature_data = np.random.rand(len(dates), len(lats), len(lons))
+        self.mock_xr_dataset = xr.Dataset(
+            {
+                "max_total_temperature": (
+                    ["date", "lat", "lon"], temperature_data),
+            },
+            coords={
+                "date": dates,
+                "lat": lats,
+                "lon": lons,
+            }
+        )
+
+        point2 = Point(1, 1, srid=4326)
+        self.mock_location_input = DatasetReaderInput.from_point(point2)
+        # DatasetReaderValue initialization with xarray dataset
+        self.dataset_reader_value_xr = DatasetReaderValue(
+            val=self.mock_xr_dataset,
+            location_input=self.mock_location_input,
+            attributes=[self.attribute]
+        )
+
+        # DatasetReaderValue initialization with list
+        self.dataset_reader_value_list = DatasetReaderValue(
+            val=[],
+            location_input=self.mock_location_input,
+            attributes=[self.attribute]
+        )
+
     def test_to_dict_with_location(self):
         """Test to_dict with location."""
         location = Point(1, 1)
+        location_input = DatasetReaderInput.from_point(location)
         dtv = DatasetTimelineValue(
-            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25})
-        drv = DatasetReaderValue(location, [dtv])
+            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25}, self.point)
+        drv = DatasetReaderValue([dtv], location_input, [])
         expected = {
             'geometry': json.loads(location.json),
             'data': [dtv.to_dict()]
         }
-        self.assertEqual(drv.to_dict(), expected)
+        self.assertEqual(drv._to_dict(), expected)
 
     def test_to_dict_with_none_location(self):
         """Test to_dict with empty location."""
-        drv = DatasetReaderValue(None, [])
+        drv = DatasetReaderValue([], None, [])
         expected = {}
-        self.assertEqual(drv.to_dict(), expected)
+        self.assertEqual(drv._to_dict(), expected)
 
+    def test_initialization_with_xr_dataset(self):
+        """Test init with xarray dataset."""
+        self.assertTrue(self.dataset_reader_value_xr._is_xr_dataset)
 
-class TestLocationDatasetReaderValue(TestCase):
-    """Unit test for LocationDatasetReaderValue class."""
+    def test_initialization_with_list(self):
+        """Test init with list."""
+        self.assertFalse(self.dataset_reader_value_list._is_xr_dataset)
+        self.assertEqual(self.dataset_reader_value_list.values, [])
 
-    def test_to_dict(self):
-        """Test to_dict method returrning dictionary."""
-        location1 = Point(1, 1)
-        location2 = Point(2, 2)
-        dtv1 = DatasetTimelineValue(
-            datetime(2023, 7, 16, 12, 0, 0), {"temperature": 25})
-        dtv2 = DatasetTimelineValue(
-            datetime(2023, 7, 16, 13, 0, 0), {"temperature": 26})
-        results = {location1: [dtv1], location2: [dtv2]}
-        ldrv = LocationDatasetReaderValue(results)
-        expected = [
-            DatasetReaderValue(location1, [dtv1]).to_dict(),
-            DatasetReaderValue(location2, [dtv2]).to_dict()
-        ]
-        self.assertEqual(ldrv.to_dict(), expected)
+    def test_is_empty(self):
+        """Test check value is empty."""
+        self.assertFalse(self.dataset_reader_value_xr.is_empty())
+        self.assertTrue(self.dataset_reader_value_list.is_empty())
+
+    def test_to_json_with_point_type(self):
+        """Test empty convert to json."""
+        result = self.dataset_reader_value_list.to_json()
+        self.assertEqual(result, {})
+
+    def test_to_json_with_non_point_type(self):
+        """Test invalid convert to json."""
+        self.mock_location_input.type = 'polygon'
+        with self.assertRaises(TypeError):
+            self.dataset_reader_value_list.to_json()
+
+    def test_to_csv_stream(self):
+        """Test convert to csv."""
+        csv_stream = self.dataset_reader_value_xr.to_csv_stream()
+        csv_data = list(csv_stream)
+        self.assertIsNotNone(csv_data)
+        data = str(csv_data[0], encoding='utf-8').splitlines()
+        self.assertEqual(len(data), 41)
+
+    def test_to_netcdf_stream(self):
+        """Test convert to netcdf."""
+        d = self.dataset_reader_value_xr.to_netcdf_stream()
+        res = list(d)
+        self.assertIsNotNone(res)
 
 
 class TestDatasetReaderInput(TestCase):
@@ -388,7 +464,7 @@ class TestCBAMNetCDFReader(TestCase):
         dataset2 = DatasetFactory.create(
             provider=ProviderFactory(name=NetCDFProvider.SALIENT))
         reader = get_reader_from_dataset(dataset2)
-        self.assertEqual(reader, SalientNetCDFReader)
+        self.assertEqual(reader, SalientZarrReader)
         # invalid type
         dataset3 = DatasetFactory.create()
         with self.assertRaises(TypeError):

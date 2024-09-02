@@ -13,7 +13,6 @@ from typing import List
 
 import pytz
 import requests
-from django.contrib.gis.geos import Point
 
 from gap.models import (
     Provider,
@@ -290,15 +289,16 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :rtype: DatasetReaderValue
         """
         if self.location_input.type != LocationInputType.POINT:
-            return DatasetReaderValue(Point(x=0, y=0, srid=4326), [])
+            return DatasetReaderValue([], self.location_input, self.attributes)
         if not self.is_success():
             logger.error(f'Tomorrow.io API errors: {len(self.errors)}')
             logger.error(json.dumps(self.errors))
-            return DatasetReaderValue(self.location_input.point, [])
+            return DatasetReaderValue([], self.location_input, self.attributes)
         if self.warnings:
             logger.warn(f'Tomorrow.io API warnings: {len(self.warnings)}')
             logger.warn(json.dumps(self.warnings))
-        return DatasetReaderValue(self.location_input.point, self.results)
+        return DatasetReaderValue(
+            self.results, self.location_input, self.attributes)
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -413,7 +413,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
                 )
             value_list.append(DatasetTimelineValue(
                 start_dt,
-                value_data
+                value_data,
+                self.location_input.point
             ))
         warnings = data.get('warnings', None)
         if warnings:
@@ -430,3 +431,11 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :rtype: bool
         """
         return self.errors is None
+
+    def get_raw_results(self) -> List[DatasetTimelineValue]:
+        """Get the raw results of dataset timeline values.
+
+        :return: list of dataset timeline values
+        :rtype: List[DatasetTimelineValue]
+        """
+        return self.results
