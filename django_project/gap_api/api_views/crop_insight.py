@@ -100,7 +100,7 @@ class CropPlanAPI(APIView):
         }
     )
     def get(self, request, *args, **kwargs):
-        """Fetch measurement data by attributes and date range filter."""
+        """Fetch crop plan insight data by attributes and date range filter."""
         # output format
         output_format = request.GET.get('format', self.outputs[0])
 

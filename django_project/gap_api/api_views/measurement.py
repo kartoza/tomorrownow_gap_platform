@@ -373,7 +373,7 @@ class MeasurementAPI(APIView):
             return Response(
                 status=404,
                 data={
-                    'detail': 'No wheather data is found for given queries.'
+                    'detail': 'No weather data is found for given queries.'
                 }
             )
         return response
@@ -402,7 +402,7 @@ class MeasurementAPI(APIView):
         responses={
             200: openapi.Schema(
                 description=(
-                    'Measurement data'
+                    'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
@@ -411,7 +411,7 @@ class MeasurementAPI(APIView):
         }
     )
     def get(self, request, *args, **kwargs):
-        """Fetch measurement data by attributes and date range filter."""
+        """Fetch weather data by single point or bounding box."""
         return self.get_response_data()
 
     @swagger_auto_schema(
@@ -429,7 +429,7 @@ class MeasurementAPI(APIView):
         responses={
             200: openapi.Schema(
                 description=(
-                    'Measurement data'
+                    'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
@@ -438,5 +438,5 @@ class MeasurementAPI(APIView):
         }
     )
     def post(self, request, *args, **kwargs):
-        """Fetch measurement data by polygon/points."""
+        """Fetch weather data by polygon/points."""
         return self.get_response_data()
