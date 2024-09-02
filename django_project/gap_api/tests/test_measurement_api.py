@@ -10,14 +10,15 @@ from datetime import datetime
 from typing import List
 from django.urls import reverse
 from unittest.mock import patch
-from django.contrib.gis.geos import Polygon, MultiPolygon
+from django.contrib.gis.geos import Polygon, MultiPolygon, Point
 
 from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
 from gap.models import DatasetAttribute, Dataset
 from gap.utils.reader import (
     DatasetReaderValue,
     DatasetTimelineValue,
-    DatasetReaderInput
+    DatasetReaderInput,
+    DatasetReaderOutputType
 )
 from gap_api.api_views.measurement import MeasurementAPI
 from gap.utils.reader import BaseDatasetReader, LocationInputType
@@ -28,15 +29,17 @@ class MockDatasetReader(BaseDatasetReader):
 
     def __init__(self, dataset, attributes: List[DatasetAttribute],
                  location_input: DatasetReaderInput, start_date: datetime,
-                 end_date: datetime) -> None:
+                 end_date: datetime,
+                 output_type=DatasetReaderOutputType.JSON) -> None:
         """Initialize MockDatasetReader class."""
         super().__init__(
-            dataset, attributes, location_input, start_date, end_date)
+            dataset, attributes, location_input,
+            start_date, end_date, output_type)
 
     def get_data_values(self) -> DatasetReaderValue:
         """Override data values with a mock object."""
         if self.location_input.type == LocationInputType.POLYGON:
-            p = self.location_input.polygon[0]
+            p = Point(0, 0)
         else:
             p = self.location_input.point
         return DatasetReaderValue(
@@ -53,7 +56,8 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
 
     def _get_measurement_request(
             self, lat=-2.215, lon=29.125, attributes='max_temperature',
-            start_dt='2024-04-01', end_dt='2024-04-04', product=None):
+            start_dt='2024-04-01', end_dt='2024-04-04', product=None,
+            output_type='json'):
         """Get request for Measurement API.
 
         :param lat: latitude, defaults to -2.215
@@ -75,6 +79,7 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         request_params = (
             f'?lat={lat}&lon={lon}&attributes={attributes}'
             f'&start_date={start_dt}&end_date={end_dt}'
+            f'&output_type={output_type}'
         )
         if product:
             request_params = request_params + f'&product={product}'
@@ -88,7 +93,8 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
 
     def _post_measurement_request(
             self, lat=-2.215, lon=29.125, attributes='max_temperature',
-            start_dt='2024-04-01', end_dt='2024-04-04', product=None):
+            start_dt='2024-04-01', end_dt='2024-04-04', product=None,
+            output_type='json'):
         """Get request for Measurement API.
 
         :param lat: latitude, defaults to -2.215
@@ -108,8 +114,9 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         :rtype: WSGIRequest
         """
         request_params = (
-            f'?lat={lat}&lon={lon}&attributes={attributes}'
+            f'?attributes={attributes}'
             f'&start_date={start_dt}&end_date={end_dt}'
+            f'&output_type={output_type}'
         )
         if product:
             request_params = request_params + f'&product={product}'
@@ -194,10 +201,8 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             product='test_empty'
         )
         response = view(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('metadata', response.data)
-        self.assertIn('results', response.data)
-        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)
 
     @patch('gap_api.api_views.measurement.get_reader_from_dataset')
     def test_read_historical_data_by_polygon(self, mocked_reader):
@@ -218,12 +223,17 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             attribute2.attribute.variable_name
         ]
         request = self._post_measurement_request(
-            attributes=','.join(attribs)
+            attributes=','.join(attribs),
+            output_type='json'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='csv'
         )
         response = view(request)
         self.assertEqual(response.status_code, 200)
         mocked_reader.assert_called_once_with(attribute1.dataset)
-        self.assertIn('metadata', response.data)
-        self.assertIn('results', response.data)
-        results = response.data['results']
-        self.assertEqual(len(results), 1)
+        self.assertEqual(response['content-type'], 'text/csv')
