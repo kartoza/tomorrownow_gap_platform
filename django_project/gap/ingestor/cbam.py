@@ -151,20 +151,29 @@ class CBAMIngestor(BaseIngestor):
         }
 
         # get zarr data source file
-        self.datasource_file, self.created = (
-            DataSourceFile.objects.get_or_create(
-                name='cbam.zarr',
-                dataset=self.dataset,
-                format=DatasetStore.ZARR,
-                defaults={
-                    'created_on': timezone.now(),
-                    'start_date_time': timezone.now(),
-                    'end_date_time': (
-                        timezone.now() - datetime.timedelta(days=20 * 365)
-                    )
-                }
+        datasourcefile_id = self.get_config('datasourcefile_id')
+        if datasourcefile_id:
+            self.datasource_file = DataSourceFile.objects.get(
+                id=datasourcefile_id)
+            self.created = self.get_config(
+                'datasourcefile_zarr_exists', False)
+        else:
+            datasourcefile_name = self.get_config(
+                'datasourcefile_name', 'cbam.zarr')
+            self.datasource_file, self.created = (
+                DataSourceFile.objects.get_or_create(
+                    name=datasourcefile_name,
+                    dataset=self.dataset,
+                    format=DatasetStore.ZARR,
+                    defaults={
+                        'created_on': timezone.now(),
+                        'start_date_time': timezone.now(),
+                        'end_date_time': (
+                            timezone.now() - datetime.timedelta(days=20 * 365)
+                        )
+                    }
+                )
             )
-        )
 
         # min+max are the BBOX that GAP processes
         # inc and original_min comes from CBAM netcdf file

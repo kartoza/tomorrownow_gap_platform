@@ -37,6 +37,21 @@ class BaseIngestor:
         self.session.refresh_from_db()
         return self.session.is_cancelled
 
+    def get_config(self, name: str, default_value = None):
+        """Get config from session.
+
+        :param name: config name
+        :type name: str
+        :param default_value: default value if config does not exist,
+            defaults to None
+        :type default_value: any, optional
+        :return: config value or default_value
+        :rtype: any
+        """
+        if self.session.additional_config is None:
+            return default_value
+        return self.session.additional_config.get(name, default_value)
+
 
 def ingestor_revoked_handler(bg_task: BackgroundTask):
     """Event handler when ingestor task is cancelled by celery.
