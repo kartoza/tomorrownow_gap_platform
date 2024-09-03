@@ -17,6 +17,7 @@ from django.core.mail import EmailMessage
 from django.utils import timezone
 
 from core.group_email_receiver import crop_plan_receiver
+from core.models.background_task import BackgroundTask, TaskStatus
 from core.models.common import Definition
 from gap.models import Farm
 from gap.models.lookup import RainfallClassification
@@ -409,8 +410,60 @@ class CropInsightRequest(models.Model):
         null=True, blank=True
     )
 
+    @property
+    def background_task(self):
+        """Return background task."""
+        return BackgroundTask.objects.filter(
+            context_id=self.id,
+            task_name__in=['generate_insight_report', 'generate_crop_plan']
+        ).last()
+
+    @property
+    def background_task_running(self):
+        """Return background task."""
+        return BackgroundTask.objects.filter(
+            context_id=self.id,
+            task_name__in=['generate_insight_report', 'generate_crop_plan'],
+            status__in=[
+                TaskStatus.PENDING, TaskStatus.QUEUED, TaskStatus.RUNNING
+            ]
+        )
+
+    @staticmethod
+    def today_reports():
+        """Return query of today reports."""
+        now = timezone.now()
+        return CropInsightRequest.objects.filter(requested_date=now.date())
+
+    @property
+    def skip_run(self):
+        """Skip run process."""
+        if self.background_task_running.count() >= 2:
+            return True
+        if self.background_task and self.background_task.status in [
+            TaskStatus.COMPLETED
+        ]:
+            return True
+
+        now = timezone.now()
+        if self.requested_date != now.date():
+            return True
+        return False
+
+    def update_note(self, message):
+        """Update the notes."""
+        if self.background_task:
+            self.background_task.progress_text = message
+            self.background_task.save()
+        self.notes = message
+        self.save()
+
     def generate_report(self):
         """Generate reports."""
+        from spw.generator.crop_insight import CropInsightFarmGenerator
+        if self.skip_run:
+            return
+
         output = []
 
         # If farm is empty, put empty farm
@@ -420,6 +473,11 @@ class CropInsightRequest(models.Model):
 
         # Get farms
         for farm in farms:
+            # If it has farm id, generate spw
+            if farm.unique_id:
+                self.update_note('Generating SPW for farm: {}'.format(farm))
+                CropInsightFarmGenerator(farm).generate_spw()
+
             data = CropPlanData(
                 farm, self.requested_date,
                 forecast_fields=[
@@ -434,6 +492,7 @@ class CropInsightRequest(models.Model):
             output.append([val for key, val in data.items()])
 
         # Render csv
+        self.update_note('Generate CSV')
         csv_content = ''
 
         # Replace header

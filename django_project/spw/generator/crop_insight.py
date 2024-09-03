@@ -22,10 +22,10 @@ from spw.generator.main import (
 class CropInsightFarmGenerator:
     """Insight Farm Generator."""
 
-    def __init__(self, farm: Farm):
+    def __init__(self, farm: Farm, requested_date=date.today()):
         """Init Generator."""
         self.farm = farm
-        self.today = date.today()
+        self.today = requested_date
         self.tomorrow = self.today + timedelta(days=1)
 
     def generate_spw(self):

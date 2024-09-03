@@ -104,7 +104,7 @@ class FarmCropVarietyAdmin(admin.ModelAdmin):
 def generate_insight_report_action(modeladmin, request, queryset):
     """Generate insight report."""
     for query in queryset:
-        generate_insight_report(query.id)
+        generate_insight_report.delay(query.id)
     modeladmin.message_user(
         request,
         'Process will be started in background!',
@@ -116,7 +116,10 @@ def generate_insight_report_action(modeladmin, request, queryset):
 class CropInsightRequestAdmin(admin.ModelAdmin):
     """Admin for CropInsightRequest."""
 
-    list_display = ('requested_date', 'farm_list', 'file_url')
+    list_display = (
+        'requested_date', 'farm_list', 'file_url', 'last_task_status',
+        'running_bg_task_ids'
+    )
     filter_horizontal = ('farms',)
     actions = (generate_insight_report_action,)
     readonly_fields = ('file',)
@@ -137,3 +140,14 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
                 f'target="__blank__">{obj.file.url}</a>'
             )
         return '-'
+
+    def last_task_status(self, obj: CropInsightRequest):
+        """Return task status."""
+        bg_task = obj.background_task
+        if bg_task:
+            return bg_task.status
+        return None
+
+    def running_bg_task_ids(self, obj: CropInsightRequest):
+        """Return ids of background tasks that are running."""
+        return [bg.id for bg in obj.background_task_running]
