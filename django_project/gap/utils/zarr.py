@@ -124,4 +124,4 @@ class BaseZarrReader(BaseNetCDFReader):
         zarr_url = self.get_zarr_base_url(self.s3)
         zarr_url += f'{source_file.name}'
         s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
-        return xr.open_zarr(s3_mapper)
+        return xr.open_zarr(s3_mapper, consolidated=True)

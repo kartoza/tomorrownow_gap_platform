@@ -215,6 +215,7 @@ class CBAMIngestor(BaseIngestor):
         new_date = pd.date_range(f'{date.isoformat()}', periods=1)
         dataset = dataset.assign_coords(date=new_date)
         del dataset.attrs['Date']
+
         # Generate the new latitude and longitude arrays
         min_lat = find_start_latlng(self.lat_metadata)
         min_lon = find_start_latlng(self.lon_metadata)
@@ -230,19 +231,32 @@ class CBAMIngestor(BaseIngestor):
             lat=new_lat, lon=new_lon, method='nearest',
             tolerance=self.reindex_tolerance
         )
+
+        # generate the zarr_url
         zarr_url = (
             BaseZarrReader.get_zarr_base_url(self.s3) +
             self.datasource_file.name
         )
+
+        # create chunks for data variables
+        encoding = {
+            'date': {
+                'units': f'days since {date.isoformat()}',
+                'chunks': 10 * 366  # 10 years
+            }
+        }
+        chunks = (50, 300, 300)
+        for var_name, da in expanded_ds.data_vars.items():
+            encoding[var_name] = {
+                'chunks': chunks
+            }
+
+        # store to zarr
         if self.created:
             self.created = False
             expanded_ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
-                storage_options=self.s3_options, encoding={
-                    'date': {
-                        'units': f'days since {date.isoformat()}'
-                    }
-                }
+                storage_options=self.s3_options, encoding=encoding
             )
         else:
             expanded_ds.to_zarr(
