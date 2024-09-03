@@ -283,7 +283,8 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         self.xrDatasets = []
         zarr_file = DataSourceFile.objects.filter(
             dataset=self.dataset,
-            format=DatasetStore.ZARR
+            format=DatasetStore.ZARR,
+            is_latest=True
         ).order_by('id').last()
         if zarr_file is None:
             return

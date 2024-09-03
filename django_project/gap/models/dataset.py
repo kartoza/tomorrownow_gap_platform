@@ -105,3 +105,5 @@ class DataSourceFile(models.Model):
         ),
         max_length=512
     )
+    is_latest = models.BooleanField(default=False)
+    metadata = models.JSONField(blank=True, default=dict, null=True)
