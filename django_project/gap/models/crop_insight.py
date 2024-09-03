@@ -342,7 +342,6 @@ class CropPlanData:
         spw = FarmSuitablePlantingWindowSignal.objects.filter(
             farm=self.farm,
             generated_date=self.generated_date
-
         ).first()
         if spw:
             try:
@@ -446,8 +445,12 @@ class CropInsightRequest(models.Model):
             return True
 
         now = timezone.now()
-        if self.requested_date != now.date():
-            return True
+        try:
+            if self.requested_date.date() != now.date():
+                return True
+        except AttributeError:
+            if self.requested_date != now.date():
+                return True
         return False
 
     def update_note(self, message):
@@ -474,7 +477,7 @@ class CropInsightRequest(models.Model):
         # Get farms
         for farm in farms:
             # If it has farm id, generate spw
-            if farm.unique_id:
+            if farm.pk:
                 self.update_note('Generating SPW for farm: {}'.format(farm))
                 CropInsightFarmGenerator(farm).generate_spw()
 

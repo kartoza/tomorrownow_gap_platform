@@ -233,6 +233,19 @@ class TestCropInsightGenerator(TestCase):
         self.assertEqual(
             forecast.farmshorttermforecastdata_set.count(), 55
         )
+        # For farm 3
+        mock_fetch_ltn_data.return_value = {}
+        mock_execute_spw_model.return_value = (
+            True, {
+                'metadata': {
+                    'test': 'abcdef'
+                },
+                'goNoGo': '',
+                'nearDaysLTNPercent': [10.0],
+                'nearDaysCurPercent': [60.0],
+            }
+        )
+        mock_fetch_timelines_data.return_value = {}
 
         # Crop insight report
         self.request = CropInsightRequestFactory.create()
@@ -299,9 +312,8 @@ class TestCropInsightGenerator(TestCase):
                 row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
-    @patch('gap.models.crop_insight.CropInsightRequest.generate_report')
     def test_generate_crop_plan(
-            self, mock_generate_report, mock_generate_spw
+            self, mock_generate_spw
     ):
         """Test generate crop plan for all farms."""
         generate_crop_plan()
@@ -309,7 +321,6 @@ class TestCropInsightGenerator(TestCase):
             CropInsightRequest.objects.count(), 1
         )
         self.assertEqual(mock_generate_spw.call_count, 3)
-        mock_generate_report.assert_called_once()
 
     def test_email_send(self):
         """Test email send when report created."""

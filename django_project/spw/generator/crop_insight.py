@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from datetime import date, datetime, timedelta
 
 import pytz
+from django.db import transaction
 
 from gap.models.crop_insight import (
     FarmSuitablePlantingWindowSignal, FarmShortTermForecast,
@@ -29,6 +30,14 @@ class CropInsightFarmGenerator:
         self.tomorrow = self.today + timedelta(days=1)
 
     def generate_spw(self):
+        """Generate spw.
+
+        Do atomic because need all data to be saved.
+        """
+        with transaction.atomic():
+            self._generate_spw()
+
+    def _generate_spw(self):
         """Generate Farm SPW."""
         # Check already being generated, no regenereated!
         if FarmSuitablePlantingWindowSignal.objects.filter(
