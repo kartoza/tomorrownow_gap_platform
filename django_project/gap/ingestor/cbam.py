@@ -223,7 +223,8 @@ class CBAMIngestor(BaseIngestor):
         """
         new_date = pd.date_range(f'{date.isoformat()}', periods=1)
         dataset = dataset.assign_coords(date=new_date)
-        del dataset.attrs['Date']
+        if 'Date' in dataset.attrs:
+            del dataset.attrs['Date']
 
         # Generate the new latitude and longitude arrays
         min_lat = find_start_latlng(self.lat_metadata)
