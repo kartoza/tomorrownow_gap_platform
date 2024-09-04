@@ -336,8 +336,7 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
     ):
         """Test CBAM store_as_zarr method."""
         dt = date(2023, 1, 1)
-        
-        # Create a dataset
+
         # Create a sample xarray dataset
         lat = np.arange(-12.5969, 16 + 0.03574368, 0.03574368)
         lon = np.arange(26.9665, 52 + 0.036006329, 0.036006329)
@@ -357,7 +356,7 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
                 'lon': lon
             }
         )
-        
+
         # Mock the return values of find_start_latlng
         mock_find_start_latlng.side_effect = [-27, 21.8]
 
@@ -372,7 +371,7 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
             'AWS_ACCESS_KEY_ID': 'test_access_key',
             'AWS_SECRET_ACCESS_KEY': 'test_secret_key'
         }
-        
+
         # Act
         instance.store_as_zarr(dataset, dt)
 
