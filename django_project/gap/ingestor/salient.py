@@ -229,20 +229,29 @@ class SalientIngestor(BaseIngestor):
         self.metadata = {}
 
         # get zarr data source file
-        self.datasource_file, self.created = (
-            DataSourceFile.objects.get_or_create(
-                name='salient.zarr',
-                dataset=self.dataset,
-                format=DatasetStore.ZARR,
-                defaults={
-                    'created_on': timezone.now(),
-                    'start_date_time': timezone.now(),
-                    'end_date_time': (
-                        timezone.now()
-                    )
-                }
+        datasourcefile_id = self.get_config('datasourcefile_id')
+        if datasourcefile_id:
+            self.datasource_file = DataSourceFile.objects.get(
+                id=datasourcefile_id)
+            self.created = not self.get_config(
+                'datasourcefile_zarr_exists', True)
+        else:
+            datasourcefile_name = self.get_config(
+                'datasourcefile_name', 'salient.zarr')
+            self.datasource_file, self.created = (
+                DataSourceFile.objects.get_or_create(
+                    name=datasourcefile_name,
+                    dataset=self.dataset,
+                    format=DatasetStore.ZARR,
+                    defaults={
+                        'created_on': timezone.now(),
+                        'start_date_time': timezone.now(),
+                        'end_date_time': (
+                            timezone.now()
+                        )
+                    }
+                )
             )
-        )
 
         # min+max are the BBOX that GAP processes
         # inc and original_min comes from Salient netcdf file

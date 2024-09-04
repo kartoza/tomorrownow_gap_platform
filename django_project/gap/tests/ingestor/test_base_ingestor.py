@@ -34,3 +34,19 @@ class BaseIngestorTest(TestCase):
         ingestor_revoked_handler(bg_task)
         session.refresh_from_db()
         self.assertEqual(session.status, IngestorSessionStatus.CANCELLED)
+
+    def test_get_config(self):
+        """Test get_config method."""
+        session = IngestorSession.objects.create()
+        session.additional_config = None
+        session.save()
+        ingestor = BaseIngestor(
+            IngestorSession.objects.get(id=session.id), '/tmp')
+        self.assertFalse(ingestor.get_config('test_config'))
+        session.additional_config = {
+            'test_config': 100
+        }
+        session.save()
+        ingestor = BaseIngestor(
+            IngestorSession.objects.get(id=session.id), '/tmp')
+        self.assertEqual(ingestor.get_config('test_config'), 100)

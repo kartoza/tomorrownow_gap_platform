@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from unittest.mock import patch, MagicMock
 from datetime import datetime, date, time
 import numpy as np
+import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
 from django.test import TestCase
 
@@ -174,6 +175,40 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
         self.assertEqual(ingestor.s3_options['key'], 'test_access_key')
         self.assertTrue(ingestor.datasource_file)
+        self.assertEqual(ingestor.datasource_file.name, 'cbam.zarr')
+        self.assertTrue(ingestor.created)
+
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')
+    def test_init_with_existing_source(
+        self, mock_get_s3_client_kwargs, mock_get_s3_variables
+    ):
+        """Test init method with existing DataSourceFile."""
+        datasource = DataSourceFileFactory.create(
+            dataset=self.dataset,
+            format=DatasetStore.ZARR,
+            name='cbam_test.zarr'
+        )
+        mock_get_s3_variables.return_value = {
+            'AWS_ACCESS_KEY_ID': 'test_access_key',
+            'AWS_SECRET_ACCESS_KEY': 'test_secret_key'
+        }
+        mock_get_s3_client_kwargs.return_value = {
+            'endpoint_url': 'https://test-endpoint.com'
+        }
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            additional_config={
+                'datasourcefile_id': datasource.id,
+                'datasourcefile_zarr_exists': True
+            }
+        )
+        ingestor = CBAMIngestor(session)
+        self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
+        self.assertEqual(ingestor.s3_options['key'], 'test_access_key')
+        self.assertTrue(ingestor.datasource_file)
+        self.assertEqual(ingestor.datasource_file.name, datasource.name)
+        self.assertFalse(ingestor.created)
 
     def test_find_start_latlng(self):
         """Test find start latlng function."""
@@ -292,3 +327,65 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         ingestor.run()
 
         ingestor.store_as_zarr.assert_not_called()
+
+    @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
+    @patch('gap.utils.netcdf.find_start_latlng')
+    @patch('xarray.core.dataset.Dataset.to_zarr')
+    def test_store_as_zarr(
+        self, mock_to_zarr, mock_find_start_latlng, mock_get_zarr_base_url
+    ):
+        """Test CBAM store_as_zarr method."""
+        dt = date(2023, 1, 1)
+
+        # Create a sample xarray dataset
+        lat = np.arange(-12.5969, 16 + 0.03574368, 0.03574368)
+        lon = np.arange(26.9665, 52 + 0.036006329, 0.036006329)
+        date_range = pd.date_range('2023-01-01', periods=1)
+
+        temperature_data = np.random.rand(len(date_range), len(lat), len(lon))
+        dataset = xrDataset(
+            {
+                'max_total_temperature': (
+                    ['date', 'lat', 'lon'],
+                    temperature_data
+                )
+            },
+            coords={
+                'date': date_range,
+                'lat': lat,
+                'lon': lon
+            }
+        )
+
+        # Mock the return values of find_start_latlng
+        mock_find_start_latlng.side_effect = [-27, 21.8]
+
+        # Mock zarr base URL
+        mock_get_zarr_base_url.return_value = 's3://bucket/'
+
+        # Create instance of CBAMIngestor
+        session = IngestorSession.objects.create()
+        instance = CBAMIngestor(session=session)
+        instance.created = True  # Simulate that Zarr file doesn't exist yet
+        instance.s3 = {
+            'AWS_ACCESS_KEY_ID': 'test_access_key',
+            'AWS_SECRET_ACCESS_KEY': 'test_secret_key'
+        }
+
+        # Act
+        instance.store_as_zarr(dataset, dt)
+
+        # Assert
+        assert 'Date' not in dataset.attrs
+
+        zarr_url = 's3://bucket/cbam.zarr'
+        mock_to_zarr.assert_called_once_with(
+            zarr_url,
+            mode='w',
+            consolidated=True,
+            storage_options=instance.s3_options,
+            encoding={
+                'date': {'units': 'days since 2023-01-01', 'chunks': 90},
+                'max_total_temperature': {'chunks': (90, 300, 300)}
+            }
+        )

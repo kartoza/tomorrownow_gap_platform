@@ -12,7 +12,7 @@ import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
 from django.test import TestCase
 
-from gap.models import Dataset, DataSourceFile
+from gap.models import Dataset, DataSourceFile, DatasetStore
 from gap.models.ingestor import (
     IngestorSession,
     IngestorType,
@@ -148,6 +148,38 @@ class TestSalientCollector(SalientIngestorBaseTest):
 
 class TestSalientIngestor(SalientIngestorBaseTest):
     """Salient ingestor test case."""
+
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')
+    def test_init_with_existing_source(
+        self, mock_get_s3_client_kwargs, mock_get_s3_variables
+    ):
+        """Test init method with existing DataSourceFile."""
+        datasource = DataSourceFileFactory.create(
+            dataset=self.dataset,
+            format=DatasetStore.ZARR,
+            name='salient_test.zarr'
+        )
+        mock_get_s3_variables.return_value = {
+            'AWS_ACCESS_KEY_ID': 'test_access_key',
+            'AWS_SECRET_ACCESS_KEY': 'test_secret_key'
+        }
+        mock_get_s3_client_kwargs.return_value = {
+            'endpoint_url': 'https://test-endpoint.com'
+        }
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.SALIENT,
+            additional_config={
+                'datasourcefile_id': datasource.id,
+                'datasourcefile_zarr_exists': True
+            }
+        )
+        ingestor = SalientIngestor(session)
+        self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
+        self.assertEqual(ingestor.s3_options['key'], 'test_access_key')
+        self.assertTrue(ingestor.datasource_file)
+        self.assertEqual(ingestor.datasource_file.name, datasource.name)
+        self.assertFalse(ingestor.created)
 
     @patch('gap.utils.netcdf.NetCDFMediaS3')
     @patch('gap.utils.zarr.BaseZarrReader')

@@ -93,32 +93,51 @@ class TestCBAMZarrReader(TestCase):
         'MINIO_GAP_AWS_BUCKET_NAME': 'test-bucket',
         'MINIO_GAP_AWS_DIR_PREFIX': 'test-prefix/'
     })
-    @patch('fsspec.get_mapper')
     @patch('xarray.open_zarr')
-    def test_open_dataset(self, mock_open_zarr, mock_get_mapper):
+    @patch('fsspec.filesystem')
+    @patch('s3fs.S3FileSystem')
+    def test_open_dataset(
+        self, mock_s3fs, mock_fsspec_filesystem, mock_open_zarr
+    ):
         """Test open zarr dataset function."""
-        # Mocking the dependencies
-        mock_mapper = MagicMock()
-        mock_get_mapper.return_value = mock_mapper
+        # Mock the s3fs.S3FileSystem constructor
+        mock_s3fs_instance = MagicMock()
+        mock_s3fs.return_value = mock_s3fs_instance
+
+        # Mock the fsspec.filesystem constructor
+        mock_fs_instance = MagicMock()
+        mock_fsspec_filesystem.return_value = mock_fs_instance
+
+        # Mock the xr.open_zarr function
         mock_dataset = MagicMock(spec=xrDataset)
         mock_open_zarr.return_value = mock_dataset
 
-        source_file = DataSourceFile(name='test.zarr')
+        source_file = DataSourceFile(name='test_dataset.zarr')
         self.reader.setup_reader()
         result = self.reader.open_dataset(source_file)
 
         # Assertions to ensure the method is called correctly
-        mock_get_mapper.assert_called_once_with(
-            's3://test-bucket/test-prefix/test.zarr',
+        assert result == mock_dataset
+        mock_s3fs.assert_called_once_with(
             key='test_access_key',
             secret='test_secret_key',
-            client_kwargs={
-                'endpoint_url': 'https://test-endpoint.com',
-                'region_name': 'us-test-1'
-            }
+            endpoint_url='https://test-endpoint.com'
         )
-        mock_open_zarr.assert_called_once_with(mock_mapper)
-        self.assertEqual(result, mock_dataset)
+        cache_filename = 'test_dataset_zarr'
+        mock_fsspec_filesystem.assert_called_once_with(
+            'filecache',
+            target_protocol='s3',
+            target_options=self.reader.s3_options,
+            cache_storage=f'/tmp/{cache_filename}',
+            cache_check=10,
+            expiry_time=3600,
+            target_kwargs={'s3': mock_s3fs_instance}
+        )
+        mock_fs_instance.get_mapper.assert_called_once_with(
+            's3://test-bucket/test-prefix/test_dataset.zarr')
+        mock_open_zarr.assert_called_once_with(
+            mock_fs_instance.get_mapper.return_value,
+            consolidated=True)
 
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')

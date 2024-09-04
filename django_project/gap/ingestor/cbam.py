@@ -151,20 +151,29 @@ class CBAMIngestor(BaseIngestor):
         }
 
         # get zarr data source file
-        self.datasource_file, self.created = (
-            DataSourceFile.objects.get_or_create(
-                name='cbam.zarr',
-                dataset=self.dataset,
-                format=DatasetStore.ZARR,
-                defaults={
-                    'created_on': timezone.now(),
-                    'start_date_time': timezone.now(),
-                    'end_date_time': (
-                        timezone.now() - datetime.timedelta(days=20 * 365)
-                    )
-                }
+        datasourcefile_id = self.get_config('datasourcefile_id')
+        if datasourcefile_id:
+            self.datasource_file = DataSourceFile.objects.get(
+                id=datasourcefile_id)
+            self.created = not self.get_config(
+                'datasourcefile_zarr_exists', True)
+        else:
+            datasourcefile_name = self.get_config(
+                'datasourcefile_name', 'cbam.zarr')
+            self.datasource_file, self.created = (
+                DataSourceFile.objects.get_or_create(
+                    name=datasourcefile_name,
+                    dataset=self.dataset,
+                    format=DatasetStore.ZARR,
+                    defaults={
+                        'created_on': timezone.now(),
+                        'start_date_time': timezone.now(),
+                        'end_date_time': (
+                            timezone.now() - datetime.timedelta(days=20 * 365)
+                        )
+                    }
+                )
             )
-        )
 
         # min+max are the BBOX that GAP processes
         # inc and original_min comes from CBAM netcdf file
@@ -214,7 +223,9 @@ class CBAMIngestor(BaseIngestor):
         """
         new_date = pd.date_range(f'{date.isoformat()}', periods=1)
         dataset = dataset.assign_coords(date=new_date)
-        del dataset.attrs['Date']
+        if 'Date' in dataset.attrs:
+            del dataset.attrs['Date']
+
         # Generate the new latitude and longitude arrays
         min_lat = find_start_latlng(self.lat_metadata)
         min_lon = find_start_latlng(self.lon_metadata)
@@ -230,23 +241,37 @@ class CBAMIngestor(BaseIngestor):
             lat=new_lat, lon=new_lon, method='nearest',
             tolerance=self.reindex_tolerance
         )
+
+        # generate the zarr_url
         zarr_url = (
             BaseZarrReader.get_zarr_base_url(self.s3) +
             self.datasource_file.name
         )
+
+        # create chunks for data variables
+        date_chunksize = 3 * 30  # 3 months
+        encoding = {
+            'date': {
+                'units': f'days since {date.isoformat()}',
+                'chunks': date_chunksize
+            }
+        }
+        chunks = (date_chunksize, 300, 300)
+        for var_name, da in expanded_ds.data_vars.items():
+            encoding[var_name] = {
+                'chunks': chunks
+            }
+
+        # store to zarr
         if self.created:
             self.created = False
             expanded_ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
-                storage_options=self.s3_options, encoding={
-                    'date': {
-                        'units': f'days since {date.isoformat()}'
-                    }
-                }
+                storage_options=self.s3_options, encoding=encoding
             )
         else:
             expanded_ds.to_zarr(
-                zarr_url, mode='a', append_dim='date', consolidated=True,
+                zarr_url, mode='a-', append_dim='date', consolidated=True,
                 storage_options=self.s3_options
             )
 
@@ -331,8 +356,8 @@ class CBAMIngestor(BaseIngestor):
         # Run the ingestion
         try:
             self._run()
-            self.notes = json.dumps(self.metadata, default=str)
-            logger.info(f'Ingestor CBAM NetCDFFile: {self.notes}')
+            self.session.notes = json.dumps(self.metadata, default=str)
+            logger.info(f'Ingestor CBAM NetCDFFile: {self.session.notes}')
 
             # update datasourcefile
             if (

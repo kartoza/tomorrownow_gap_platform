@@ -350,8 +350,9 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
         self.setup_reader()
         zarr_file = DataSourceFile.objects.filter(
             dataset=self.dataset,
-            format=DatasetStore.ZARR
-        ).last()
+            format=DatasetStore.ZARR,
+            is_latest=True
+        ).order_by('id').last()
         if zarr_file is None:
             return
         ds = self.open_dataset(zarr_file)
