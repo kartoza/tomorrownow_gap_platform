@@ -117,20 +117,16 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
     """Admin for CropInsightRequest."""
 
     list_display = (
-        'requested_date', 'farm_list', 'file_url', 'last_task_status',
-        'running_bg_task_ids'
+        'requested_date', 'farm_count', 'file_url', 'last_task_status',
+        'background_tasks'
     )
     filter_horizontal = ('farms',)
     actions = (generate_insight_report_action,)
     readonly_fields = ('file',)
 
-    def farm_list(self, obj: CropInsightRequest):
+    def farm_count(self, obj: CropInsightRequest):
         """Return farm list."""
-        return [farm.unique_id for farm in obj.farms.all()]
-
-    def file(self, obj: CropInsightRequest):
-        """Return file path."""
-        return [farm.unique_id for farm in obj.farms.all()]
+        return obj.farms.count()
 
     def file_url(self, obj):
         """Return file url."""
@@ -143,11 +139,15 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
 
     def last_task_status(self, obj: CropInsightRequest):
         """Return task status."""
-        bg_task = obj.background_task
+        bg_task = obj.last_background_task
         if bg_task:
             return bg_task.status
         return None
 
-    def running_bg_task_ids(self, obj: CropInsightRequest):
+    def background_tasks(self, obj: CropInsightRequest):
         """Return ids of background tasks that are running."""
-        return [bg.id for bg in obj.background_task_running]
+        url = (
+            f"/admin/core/backgroundtask/?context_id__exact={obj.id}&"
+            f"task_name__in={','.join(CropInsightRequest.task_names)}"
+        )
+        return format_html(f'<a target="_blank" href={url}>link</a>')

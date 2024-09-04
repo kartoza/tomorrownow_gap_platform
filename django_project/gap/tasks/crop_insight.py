@@ -28,7 +28,7 @@ def generate_spw(farms_id: list):
 def generate_insight_report(_id: list):
     """Generate insight report."""
     request = CropInsightRequest.objects.get(id=_id)
-    request.generate_report()
+    request.run()
 
 
 @app.task(name="generate_crop_plan")
@@ -39,4 +39,4 @@ def generate_crop_plan():
     request = CropInsightRequest.objects.create(requested_by=user)
     request.farms.set(Farm.objects.all().order_by('id'))
     # generate report
-    request.generate_report()
+    request.run()

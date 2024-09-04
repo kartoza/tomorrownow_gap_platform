@@ -336,7 +336,7 @@ class TestCropInsightGenerator(TestCase):
                 "django.core.mail.EmailMessage.send", mock_send_fn
         ):
             request = CropInsightRequestFactory.create()
-            request.generate_report()
+            request.run()
 
             parent.assertEqual(len(self.recipients), 2)
             parent.assertEqual(

@@ -409,23 +409,30 @@ class CropInsightRequest(models.Model):
         null=True, blank=True
     )
 
+    task_names = ['generate_insight_report', 'generate_crop_plan']
+
     @property
-    def background_task(self):
+    def last_background_task(self) -> BackgroundTask:
         """Return background task."""
         return BackgroundTask.objects.filter(
             context_id=self.id,
-            task_name__in=['generate_insight_report', 'generate_crop_plan']
+            task_name__in=self.task_names
         ).last()
 
     @property
-    def background_task_running(self):
+    def background_tasks(self):
         """Return background task."""
         return BackgroundTask.objects.filter(
             context_id=self.id,
-            task_name__in=['generate_insight_report', 'generate_crop_plan'],
-            status__in=[
-                TaskStatus.PENDING, TaskStatus.QUEUED, TaskStatus.RUNNING
-            ]
+            task_name__in=self.task_names
+        )
+
+    @property
+    def background_task_running(self):
+        """Return background task that is running."""
+        return BackgroundTask.running_tasks().filter(
+            context_id=self.id,
+            task_name__in=self.task_names
         )
 
     @staticmethod
@@ -437,9 +444,16 @@ class CropInsightRequest(models.Model):
     @property
     def skip_run(self):
         """Skip run process."""
-        if self.background_task_running.count() >= 2:
+        background_task_running = self.background_task_running
+        last_running_background_task = background_task_running.last()
+        last_background_task = self.last_background_task
+        if last_running_background_task and (
+                last_running_background_task.id != last_background_task.id
+        ):
             return True
-        if self.background_task and self.background_task.status in [
+        if background_task_running.count() >= 2:
+            return True
+        if last_background_task and last_background_task.status in [
             TaskStatus.COMPLETED
         ]:
             return True
@@ -455,18 +469,21 @@ class CropInsightRequest(models.Model):
 
     def update_note(self, message):
         """Update the notes."""
-        if self.background_task:
-            self.background_task.progress_text = message
-            self.background_task.save()
+        if self.last_background_task:
+            self.last_background_task.progress_text = message
+            self.last_background_task.save()
         self.notes = message
         self.save()
 
-    def generate_report(self):
-        """Generate reports."""
-        from spw.generator.crop_insight import CropInsightFarmGenerator
+    def run(self):
+        """Run the generate report."""
         if self.skip_run:
             return
+        self._generate_report()
 
+    def _generate_report(self):
+        """Generate reports."""
+        from spw.generator.crop_insight import CropInsightFarmGenerator
         output = []
 
         # If farm is empty, put empty farm
