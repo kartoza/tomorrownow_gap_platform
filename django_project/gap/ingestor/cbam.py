@@ -155,8 +155,8 @@ class CBAMIngestor(BaseIngestor):
         if datasourcefile_id:
             self.datasource_file = DataSourceFile.objects.get(
                 id=datasourcefile_id)
-            self.created = self.get_config(
-                'datasourcefile_zarr_exists', False)
+            self.created = not self.get_config(
+                'datasourcefile_zarr_exists', True)
         else:
             datasourcefile_name = self.get_config(
                 'datasourcefile_name', 'cbam.zarr')
@@ -248,13 +248,14 @@ class CBAMIngestor(BaseIngestor):
         )
 
         # create chunks for data variables
+        date_chunksize = 3 * 30  # 3 months
         encoding = {
             'date': {
                 'units': f'days since {date.isoformat()}',
-                'chunks': 10 * 366  # 10 years
+                'chunks': date_chunksize
             }
         }
-        chunks = (50, 300, 300)
+        chunks = (date_chunksize, 300, 300)
         for var_name, da in expanded_ds.data_vars.items():
             encoding[var_name] = {
                 'chunks': chunks
@@ -269,7 +270,7 @@ class CBAMIngestor(BaseIngestor):
             )
         else:
             expanded_ds.to_zarr(
-                zarr_url, mode='a', append_dim='date', consolidated=True,
+                zarr_url, mode='a-', append_dim='date', consolidated=True,
                 storage_options=self.s3_options
             )
 
@@ -354,8 +355,8 @@ class CBAMIngestor(BaseIngestor):
         # Run the ingestion
         try:
             self._run()
-            self.notes = json.dumps(self.metadata, default=str)
-            logger.info(f'Ingestor CBAM NetCDFFile: {self.notes}')
+            self.session.notes = json.dumps(self.metadata, default=str)
+            logger.info(f'Ingestor CBAM NetCDFFile: {self.session.notes}')
 
             # update datasourcefile
             if (
