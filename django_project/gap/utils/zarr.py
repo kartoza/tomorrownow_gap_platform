@@ -7,11 +7,12 @@ Tomorrow Now GAP.
 
 import os
 import logging
+import s3fs
+import fsspec
 from typing import List
 from datetime import datetime
 import xarray as xr
 from xarray.core.dataset import Dataset as xrDataset
-import fsspec
 
 from gap.models import (
     Dataset,
@@ -121,7 +122,32 @@ class BaseZarrReader(BaseNetCDFReader):
         :return: xArray Dataset object
         :rtype: xrDataset
         """
+        # get zarr url
         zarr_url = self.get_zarr_base_url(self.s3)
         zarr_url += f'{source_file.name}'
-        s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
+
+        # create s3 filecache
+        s3_fs = s3fs.S3FileSystem(
+            key=self.s3.get('AWS_ACCESS_KEY_ID'),
+            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            endpoint_url=self.s3.get('AWS_ENDPOINT_URL')
+        )
+        cache_filename = source_file.name.replace('.', '_')
+        cache_filename = cache_filename.replace('/', '_')
+        fs = fsspec.filesystem(
+            'filecache',
+            target_protocol='s3',
+            target_options=self.s3_options,
+            cache_storage=f'/tmp/{cache_filename}',
+            cache_check=10,
+            expiry_time=3600,
+            target_kwargs={
+                's3': s3_fs
+            }
+        )
+
+        # create fsspec mapper file list
+        s3_mapper = fs.get_mapper(zarr_url)
+
+        # open zarr, use consolidated to read the metadata
         return xr.open_zarr(s3_mapper, consolidated=True)
