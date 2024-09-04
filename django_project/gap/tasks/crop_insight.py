@@ -40,3 +40,14 @@ def generate_crop_plan():
     request.farms.set(Farm.objects.all().order_by('id'))
     # generate report
     request.run()
+
+
+@app.task(name="retry_crop_plan_generators")
+def retry_crop_plan_generators():
+    """Retry crop plan generator.
+
+    This will run the crop plan generators but just run the is cancelled.
+    If it already has spw data, it will also be skipped.
+    """
+    for request in CropInsightRequest.today_reports():
+        request.run()

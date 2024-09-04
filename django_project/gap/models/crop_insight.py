@@ -447,15 +447,27 @@ class CropInsightRequest(models.Model):
         background_task_running = self.background_task_running
         last_running_background_task = background_task_running.last()
         last_background_task = self.last_background_task
+
+        # This rule is based on the second task that basically
+        # is already running
+        # So we need to check of other task is already running
+
+        # If there are already complete task
+        # Skip it
+        if self.background_tasks.filter(status=TaskStatus.COMPLETED):
+            return True
+
+        # If the last running background task is
+        # not same with last background task
+        # We skip it as the last running one is other task
         if last_running_background_task and (
                 last_running_background_task.id != last_background_task.id
         ):
             return True
+
+        # If there are already running task 2,
+        # the current task is skipped
         if background_task_running.count() >= 2:
-            return True
-        if last_background_task and last_background_task.status in [
-            TaskStatus.COMPLETED
-        ]:
             return True
 
         now = timezone.now()

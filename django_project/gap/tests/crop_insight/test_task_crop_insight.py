@@ -14,6 +14,7 @@ from core.factories import BackgroundTaskF
 from core.models.background_task import TaskStatus
 from gap.factories import CropInsightRequestFactory
 from gap.models import CropInsightRequest
+from gap.tasks.crop_insight import retry_crop_plan_generators
 
 
 class CropInsideTaskRUDTest(TestCase):
@@ -31,7 +32,7 @@ class CropInsideTaskRUDTest(TestCase):
         self.assertEqual(CropInsightRequest.today_reports().count(), 2)
 
     @patch('gap.models.crop_insight.CropInsightRequest._generate_report')
-    def test_is_running(self, mock_generate_report):
+    def test_running(self, mock_generate_report):
         """Test skip run."""
         # No skip running of no bg task
         report = self.Factory()
@@ -130,3 +131,109 @@ class CropInsideTaskRUDTest(TestCase):
         bg_task_2.save()
         report.run()
         self.assertEqual(mock_generate_report.call_count, 7)
+
+    @patch('gap.models.crop_insight.CropInsightRequest._generate_report')
+    def test_retry(self, mock_generate_report):
+        """Test skip run."""
+        # No skip running of no bg task
+        now = timezone.now()
+        report_1 = self.Factory()
+        report_2 = self.Factory()
+        report_3 = self.Factory()
+        report_4 = self.Factory()
+        report_5 = self.Factory()
+        report_6 = self.Factory()
+        report_7 = self.Factory()
+
+        # Report 8 is the older one
+        report_8 = self.Factory(
+            requested_date=now + datetime.timedelta(days=-1)
+        )
+
+        # Below is older tasks
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_1.id,
+            status=TaskStatus.PENDING
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_2.id,
+            status=TaskStatus.QUEUED
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_3.id,
+            status=TaskStatus.RUNNING
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_4.id,
+            status=TaskStatus.COMPLETED
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_5.id,
+            status=TaskStatus.CANCELLED
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_6.id,
+            status=TaskStatus.STOPPED
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_7.id,
+            status=TaskStatus.INVALIDATED
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_8.id,
+            status=TaskStatus.CANCELLED
+        )
+
+        # Below is new task that will be retried
+
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_1.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_2.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_3.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_4.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_5.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_6.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_7.id
+        )
+        BackgroundTaskF.create(
+            task_name='generate_crop_plan',
+            context_id=report_8.id
+        )
+
+        # Retry all
+        retry_crop_plan_generators()
+
+        # The report that will be retried are
+        # all of today report that are
+        # - CANCELLED
+        # - STOPPED
+        # - INVALIDATED
+        # It should be report 5, 6 and 7
+        self.assertEqual(mock_generate_report.call_count, 3)
