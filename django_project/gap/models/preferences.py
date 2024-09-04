@@ -51,6 +51,13 @@ class Preferences(SingletonModel):
         blank=True
     )
 
+    # Documentations
+    documentation_url = models.URLField(
+        default='https://kartoza.github.io/tomorrownow_gap/',
+        null=True,
+        blank=True
+    )
+
     class Meta:  # noqa: D106
         verbose_name_plural = "preferences"
 
