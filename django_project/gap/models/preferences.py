@@ -6,6 +6,8 @@ Tomorrow Now GAP.
 
 """
 
+from datetime import datetime, tzinfo
+
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Polygon
 
@@ -31,7 +33,7 @@ def area_of_interest_default():
     return Polygon(coordinates)
 
 
-def crop_plan_config_default():
+def crop_plan_config_default() -> dict:
     """Return dictionary for crop plan config."""
     return {
         'lat_lon_decimal_digits': -1,
@@ -63,3 +65,22 @@ class Preferences(SingletonModel):
 
     def __str__(self):
         return 'Preferences'
+
+    @staticmethod
+    def lat_lon_decimal_digits() -> int:
+        """Return decimal digits for latitude and longitude."""
+        crop_plan_conf = Preferences.load().crop_plan_config
+        return crop_plan_conf.get(
+            'lat_lon_decimal_digits',
+            crop_plan_config_default()['lat_lon_decimal_digits']
+        )
+
+    @staticmethod
+    def east_africa_timezone() -> tzinfo:
+        """Return east african time zone."""
+        crop_plan_conf = Preferences.load().crop_plan_config
+        timezone = crop_plan_conf.get(
+            'tz',
+            crop_plan_config_default()['tz']
+        )
+        return datetime.strptime(timezone, "%z").tzinfo
