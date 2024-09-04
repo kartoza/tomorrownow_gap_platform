@@ -291,8 +291,7 @@ class CropPlanData:
         self.phone_number = self.farm.phone_number
 
         # load farm lat lon
-        crop_plan_conf = Preferences.load().crop_plan_config
-        lat_lon_digits = crop_plan_conf.get('lat_lon_decimal_digits', -1)
+        lat_lon_digits = Preferences.lat_lon_decimal_digits()
         geometry = farm.geometry
         self.latitude = ''
         self.longitude = ''
@@ -399,15 +398,26 @@ class CropInsightRequest(models.Model):
     requested_by = models.ForeignKey(
         User, on_delete=models.CASCADE
     )
-    requested_date = models.DateField(
+    requested_at = models.DateTimeField(
         default=timezone.now,
-        help_text='Date when the request is made'
+        help_text='The time when the request is made'
     )
     farms = models.ManyToManyField(Farm)
     file = models.FileField(
         upload_to=ingestor_file_path,
         null=True, blank=True
     )
+
+    @property
+    def title(self) -> str:
+        """Return the title of the request."""
+        east_africa_timezone = Preferences.east_africa_timezone()
+        east_africa_time = self.requested_at.astimezone(east_africa_timezone)
+        return (
+            "GAP - Crop Plan Generator Results - "
+            f"{east_africa_time.strftime('%A-%d-%m-%Y')} "
+            f"({east_africa_timezone})"
+        )
 
     def generate_report(self):
         """Generate reports."""
@@ -421,7 +431,7 @@ class CropInsightRequest(models.Model):
         # Get farms
         for farm in farms:
             data = CropPlanData(
-                farm, self.requested_date,
+                farm, self.requested_at.date(),
                 forecast_fields=[
                     'rainAccumulationSum', 'precipitationProbability',
                     'rainAccumulationType'
@@ -451,10 +461,7 @@ class CropInsightRequest(models.Model):
 
         # Send email
         email = EmailMessage(
-            subject=(
-                "GAP - Crop Plan Generator Results - "
-                f"{self.requested_date.strftime('%A-%d-%m-%Y')}"
-            ),
+            subject=self.title,
             body='''
 Hi everyone,
 

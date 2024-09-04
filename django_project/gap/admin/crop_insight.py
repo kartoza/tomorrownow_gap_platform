@@ -116,7 +116,7 @@ def generate_insight_report_action(modeladmin, request, queryset):
 class CropInsightRequestAdmin(admin.ModelAdmin):
     """Admin for CropInsightRequest."""
 
-    list_display = ('requested_date', 'farm_list', 'file_url')
+    list_display = ('requested_at', 'farm_list', 'file_url')
     filter_horizontal = ('farms',)
     actions = (generate_insight_report_action,)
     readonly_fields = ('file',)
