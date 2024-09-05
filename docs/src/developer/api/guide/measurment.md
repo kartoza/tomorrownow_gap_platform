@@ -148,3 +148,7 @@ Click on the GET API it will show the attribute to enter to get the data. Click 
 **Example of response:**
 
 ![GET API RESPONSE](./img/api-guide-7.png)
+
+**Example of Python Code To Access the API**
+
+![Python code to access API](./img/api-guide-8.png)
