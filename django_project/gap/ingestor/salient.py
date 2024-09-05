@@ -512,7 +512,6 @@ class SalientIngestor(BaseIngestor):
                     non_ensemble_chunks if var_name.endswith('_clim') else
                     ensemble_chunks
                 )
-                
             }
 
         if self.created:
