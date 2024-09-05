@@ -13,7 +13,7 @@ license: This program is free software; you can redistribute it and/or modify it
 
 **Project Overview**
 
-TomorrowNow.org is partnering with the BMGF to develop and assess new weather technologies to support the seed breeding ecosystem in East Africa. The "Next-Gen" project focuses on adopting new or next-generation technologies to improve data access and quality.
+TomorrowNow.org is partnering with the Bill and Melinda Gates Foundation (BMGF) to develop and assess new weather technologies to support the seed breeding ecosystem in East Africa. The "Next-Gen" project focuses on adopting new or next-generation technologies to improve data access and quality.
 
 **Goals**
 
@@ -51,11 +51,11 @@ Click on the close button or cross button to close the authorisation form.
 
 ![Close](./img/api-guide-3.png)
 
-**Examples of Usage of the TomorrowNow API**
+**Examples of Usage of the OSIRIS II API**
 
 Please note that the data in the examples provided below DO NOT reflect the actual data in TomorrowNow.
 
-## Accessing the TomorrowNow API
+## Accessing the OSIRIS II API
 
 To use the API click on the API either 1️⃣ GET or 2️⃣ POST API you want to use.
 
