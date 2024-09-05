@@ -291,7 +291,10 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         # Create a mock dataset
         mock_dataset = xrDataset(
             {
-                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+                'temp': (
+                    ('forecast_day', 'ensemble', 'lat', 'lon'),
+                    np.random.rand(1, 50, 2, 2)
+                ),
             },
             coords={
                 'forecast_day': pd.date_range('2024-08-28', periods=1),
@@ -340,7 +343,10 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         # Mock the open_dataset return value
         mock_dataset = xrDataset(
             {
-                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+                'temp': (
+                    ('forecast_day', 'ensemble', 'lat', 'lon'),
+                    np.random.rand(1, 50, 2, 2)
+                ),
             },
             coords={
                 'forecast_day': pd.date_range('2024-08-28', periods=1),
