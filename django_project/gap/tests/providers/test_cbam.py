@@ -110,7 +110,7 @@ class TestCBAMZarrReader(TestCase):
     ]
 
     def setUp(self):
-        """Setup test cbam zarr reader."""
+        """Set test cbam zarr reader."""
         self.dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
         self.attribute1 = DatasetAttribute.objects.filter(
             dataset=self.dataset,
