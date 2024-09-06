@@ -32,6 +32,9 @@ app = Celery('GAP')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
+# use max task = 1 to avoid memory leak from numpy/ingestor
+app.conf.worker_max_tasks_per_child = 1
+
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
