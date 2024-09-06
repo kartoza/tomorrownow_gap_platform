@@ -34,6 +34,7 @@ def area_of_interest_default():
 
 
 def area_of_salient_default():
+    """Return polygon default for salient collector."""
     coordinates = [
         (41.89, 3.98),
         (35.08, 4.87),

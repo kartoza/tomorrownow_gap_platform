@@ -148,6 +148,7 @@ class IngestorSession(BaseSession):
     collectors = models.ManyToManyField(CollectorSession, blank=True)
 
     def __init__(self, *args, trigger_task=True, **kwargs):
+        """Initialize IngestorSession class."""
         super().__init__(*args, **kwargs)
         # Set the temporary attribute
         self._trigger_task = trigger_task
