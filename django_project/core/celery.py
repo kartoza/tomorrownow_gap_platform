@@ -52,8 +52,8 @@ app.conf.beat_schedule = {
     },
     'salient-collector-session': {
         'task': 'salient_collector_session',
-        # Run everyday at 6am East Africa Time or 02:00 UTC
-        'schedule': crontab(minute='0', hour='2'),
+        # Run every Monday 02:00 UTC
+        'schedule': crontab(minute='0', hour='2', day_of_week='1'),
     },
 }
 

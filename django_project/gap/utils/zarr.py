@@ -150,8 +150,8 @@ class BaseZarrReader(BaseNetCDFReader):
             target_protocol='s3',
             target_options=self.s3_options,
             cache_storage=self.get_zarr_cache_dir(source_file.name),
-            cache_check=10,
-            expiry_time=3600,
+            cache_check=3600,
+            expiry_time=86400,
             target_kwargs={
                 's3': s3_fs
             }
@@ -159,6 +159,12 @@ class BaseZarrReader(BaseNetCDFReader):
 
         # create fsspec mapper file list
         s3_mapper = fs.get_mapper(zarr_url)
-
+        drop_variables = []
+        if source_file.metadata:
+            drop_variables = source_file.metadata.get(
+                'drop_variables', [])
         # open zarr, use consolidated to read the metadata
-        return xr.open_zarr(s3_mapper, consolidated=True)
+        ds = xr.open_zarr(
+            s3_mapper, consolidated=True, drop_variables=drop_variables)
+
+        return ds
