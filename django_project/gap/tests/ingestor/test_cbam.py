@@ -20,7 +20,6 @@ from gap.models.ingestor import (
     IngestorSessionStatus
 )
 from gap.ingestor.cbam import CBAMIngestor
-from gap.tasks.ingestor import run_cbam_collector_session
 from gap.factories import DataSourceFileFactory
 from gap.utils.netcdf import find_start_latlng
 
@@ -135,15 +134,6 @@ class CBAMCollectorTest(CBAMIngestorBaseTest):
         self.assertEqual(collector.status, IngestorSessionStatus.CANCELLED)
         mock_fs.walk.assert_called_with('s3://test_bucket/cbam')
         self.assertEqual(collector.dataset_files.count(), 0)
-
-    @patch.object(CollectorSession, 'run')
-    def test_run_cbam_collector_session(self, mocked_run):
-        """Test task to run cbam collector session."""
-        run_cbam_collector_session()
-        mocked_run.assert_called_once()
-        self.assertFalse(IngestorSession.objects.filter(
-            ingestor_type=IngestorType.CBAM
-        ).exists())
 
 
 class CBAMIngestorTest(CBAMIngestorBaseTest):

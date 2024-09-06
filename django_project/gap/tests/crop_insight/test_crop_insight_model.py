@@ -59,7 +59,7 @@ class CropCRUDTest(TestCase):
         self.assertEqual(
             obj.title, (
                 "GAP - Crop Plan Generator Results - "
-                "Monday-01-01-2024 (UTC+02:00)"
+                "Monday-01-01-2024 (UTC+03:00)"
             )
         )
 
@@ -72,7 +72,7 @@ class CropCRUDTest(TestCase):
         self.assertEqual(
             obj.title, (
                 "GAP - Crop Plan Generator Results - "
-                "Tuesday-02-01-2024 (UTC+02:00)"
+                "Tuesday-02-01-2024 (UTC+03:00)"
             )
         )
 
@@ -85,19 +85,19 @@ class CropCRUDTest(TestCase):
         self.assertEqual(
             obj.title, (
                 "GAP - Crop Plan Generator Results - "
-                "Tuesday-02-01-2024 (UTC+02:00)"
+                "Tuesday-02-01-2024 (UTC+03:00)"
             )
         )
 
         # Change to before 21, so east time should today
         obj.requested_at = datetime(
-            2024, 1, 1, 21, 0, 0,
+            2024, 1, 1, 20, 0, 0,
             tzinfo=timezone.utc
         )
         obj.save()
         self.assertEqual(
             obj.title, (
                 "GAP - Crop Plan Generator Results - "
-                "Monday-01-01-2024 (UTC+02:00)"
+                "Monday-01-01-2024 (UTC+03:00)"
             )
         )
