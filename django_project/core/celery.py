@@ -47,8 +47,13 @@ app.conf.beat_scheduler = 'django_celery_beat.schedulers.DatabaseScheduler'
 app.conf.beat_schedule = {
     'generate-crop-plan': {
         'task': 'generate_crop_plan',
-        # Run everyday at 2am East Africa Time or 23:00 UTC
+        # Run everyday at 01:30 UTC or 04:30 EAT
         'schedule': crontab(minute='30', hour='1'),
+    },
+    'salient-collector-session': {
+        'task': 'salient_collector_session',
+        # Run everyday at 6am East Africa Time or 02:00 UTC
+        'schedule': crontab(minute='0', hour='2'),
     },
 }
 

@@ -33,11 +33,28 @@ def area_of_interest_default():
     return Polygon(coordinates)
 
 
+def area_of_salient_default():
+    coordinates = [
+        (41.89, 3.98),
+        (35.08, 4.87),
+        (30.92, 3.57),
+        (28.66, -2.48),
+        (31.13, -8.62),
+        (34.6, -11.74),
+        (40.65, -10.68),
+        (39.34, -4.73),
+        (41.56, -1.64),
+        (41.9, 3.98),
+        (41.89, 3.98)
+    ]
+    return Polygon(coordinates)
+
+
 def crop_plan_config_default() -> dict:
     """Return dictionary for crop plan config."""
     return {
         'lat_lon_decimal_digits': -1,
-        'tz': '+02:00'  # East Africa Time
+        'tz': '+03:00'  # East Africa Time
     }
 
 
@@ -51,6 +68,12 @@ class Preferences(SingletonModel):
     crop_plan_config = models.JSONField(
         default=crop_plan_config_default,
         blank=True
+    )
+
+    # salient config
+    salient_area = models.PolygonField(
+        srid=4326, default=area_of_salient_default,
+        help_text='Area that Salient collector will use to pull the data'
     )
 
     # Documentations

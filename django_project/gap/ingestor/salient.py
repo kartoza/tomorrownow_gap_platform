@@ -84,11 +84,9 @@ class SalientCollector(BaseIngestor):
 
     def _get_coords(self):
         """Retrieve polygon coordinates."""
-        # TODO: we need to verify on dev whether
-        # it's possible to request for whole GAP AoI
         return self.session.additional_config.get(
             'coords',
-            list(Preferences.load().area_of_interest.coords[0])
+            list(Preferences.load().salient_area.coords[0])
         )
 
     def _convert_forecast_date(self, date_str: str):

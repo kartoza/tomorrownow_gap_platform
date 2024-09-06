@@ -147,12 +147,17 @@ class IngestorSession(BaseSession):
 
     collectors = models.ManyToManyField(CollectorSession, blank=True)
 
+    def __init__(self, *args, trigger_task=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the temporary attribute
+        self._trigger_task = trigger_task
+
     def save(self, *args, **kwargs):
         """Override ingestor save."""
         from gap.tasks import run_ingestor_session  # noqa
         created = self.pk is None
         super(IngestorSession, self).save(*args, **kwargs)
-        if created:
+        if created and self._trigger_task:
             run_ingestor_session.delay(self.id)
 
     def _run(self, working_dir):
