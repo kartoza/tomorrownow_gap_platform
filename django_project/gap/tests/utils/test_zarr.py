@@ -122,6 +122,9 @@ class TestCBAMZarrReader(TestCase):
         mock_open_zarr.return_value = mock_dataset
 
         source_file = DataSourceFile(name='test_dataset.zarr')
+        source_file.metadata = {
+            'drop_variables': ['test']
+        }
         self.reader.setup_reader()
         result = self.reader.open_dataset(source_file)
 
@@ -138,15 +141,15 @@ class TestCBAMZarrReader(TestCase):
             target_protocol='s3',
             target_options=self.reader.s3_options,
             cache_storage=f'/tmp/{cache_filename}',
-            cache_check=10,
-            expiry_time=3600,
+            cache_check=3600,
+            expiry_time=86400,
             target_kwargs={'s3': mock_s3fs_instance}
         )
         mock_fs_instance.get_mapper.assert_called_once_with(
             's3://test-bucket/test-prefix/test_dataset.zarr')
         mock_open_zarr.assert_called_once_with(
             mock_fs_instance.get_mapper.return_value,
-            consolidated=True)
+            consolidated=True, drop_variables=['test'])
 
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')
