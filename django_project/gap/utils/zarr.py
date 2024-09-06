@@ -105,6 +105,19 @@ class BaseZarrReader(BaseNetCDFReader):
             zarr_url += '/'
         return zarr_url
 
+    @classmethod
+    def get_zarr_cache_dir(cls, zarr_filename: str) -> str:
+        """Get the directory for zarr cache.
+
+        :param zarr_filename: DataSourceFile name
+        :type zarr_filename: str
+        :return: Path to the zarr cache
+        :rtype: str
+        """
+        cache_filename = zarr_filename.replace('.', '_')
+        cache_filename = cache_filename.replace('/', '_')
+        return f'/tmp/{cache_filename}'
+
     def setup_reader(self):
         """Initialize s3fs."""
         self.s3 = self.get_s3_variables()
@@ -132,13 +145,11 @@ class BaseZarrReader(BaseNetCDFReader):
             secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
             endpoint_url=self.s3.get('AWS_ENDPOINT_URL')
         )
-        cache_filename = source_file.name.replace('.', '_')
-        cache_filename = cache_filename.replace('/', '_')
         fs = fsspec.filesystem(
             'filecache',
             target_protocol='s3',
             target_options=self.s3_options,
-            cache_storage=f'/tmp/{cache_filename}',
+            cache_storage=self.get_zarr_cache_dir(source_file.name),
             cache_check=10,
             expiry_time=3600,
             target_kwargs={
