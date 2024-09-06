@@ -136,9 +136,9 @@ Please note that the data in the examples provided below DO NOT reflect the actu
 
 To use the API click on the API either 1️⃣ GET or 2️⃣ POST API you want to use.
 
-![Measurment API](./img/api-guide-4.png)
+![Measurement API](./img/api-guide-4.png)
 
-For example GET API:
+**GET API:**
 
 Click on the GET API it will show the attribute to enter to get the data. Click on the 1️⃣ `Try it out` button, to fill the detailed in the 2️⃣ available fields. After filling the details click on the 3️⃣ `Exicute` button, to run the API.
 
@@ -152,3 +152,28 @@ Click on the GET API it will show the attribute to enter to get the data. Click 
 **Example of Python Code To Access the API**
 
 ![Python code to access API](./img/api-guide-8.png)
+
+**POST API:**
+
+Create data using the POST API. Click on the 1️⃣ measurement POST API to view the usage option. Click on the 2️⃣ `Try it out` button, to enable the fields to enter the attributes.
+
+![POST API](./img/api-guide-9.png)
+
+Fill the attributes in the 1️⃣ available fields. After filling the details click on the 2️⃣ `Exicute` button, to run the API.
+
+![POST API](./img/api-guide-10.png)
+
+**Example of response:**
+
+![POST API RESPONSE](./img/api-guide-11.png)
+
+## Error codes
+
+| Response code | Message | Reason |
+|---------------|---------|--------|
+| 400 | Unknown geometry type! | Use geometry with type Polygon/Multipolygon/MultiPoint to make a request using POST method |
+| 400 | Output format json is only available for single point query! | JSON output is only available for GET method with singe point query. Please use csv/netcdf output format! |
+| 400 | No matching attribute found! | The attribute list cannot be found in the product type. |
+| 400 | Attribute with ensemble cannot be mixed with non-ensemble | When requesting for product type seasonal_forecast and output is csv, the attribute that is in ensemble (50-values) cannot be requested with the attribute that does not have ensemble. Please use netcdf output format instead! |
+| 400 | Incorrect output type | Use either json, csv, netcdf or ascii |
+| 404 | No weather data is found for given queries | |
