@@ -84,11 +84,9 @@ class SalientCollector(BaseIngestor):
 
     def _get_coords(self):
         """Retrieve polygon coordinates."""
-        # TODO: we need to verify on dev whether
-        # it's possible to request for whole GAP AoI
         return self.session.additional_config.get(
             'coords',
-            list(Preferences.load().area_of_interest.coords[0])
+            list(Preferences.load().salient_area.coords[0])
         )
 
     def _convert_forecast_date(self, date_str: str):
@@ -216,6 +214,14 @@ class SalientCollector(BaseIngestor):
 class SalientIngestor(BaseIngestor):
     """Ingestor for Salient seasonal forecast data."""
 
+    default_chunks = {
+        'ensemble': 50,
+        'forecast_day': 20,
+        'lat': 20,
+        'lon': 20
+    }
+    forecast_date_chunk = 10
+
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize SalientIngestor."""
         super().__init__(session, working_dir)
@@ -305,7 +311,8 @@ class SalientIngestor(BaseIngestor):
         if not netcdf_url.endswith('/'):
             netcdf_url += '/'
         netcdf_url += f'{source_file.name}'
-        return xr.open_dataset(fs.open(netcdf_url))
+        return xr.open_dataset(
+            fs.open(netcdf_url), chunks=self.default_chunks)
 
     def _update_zarr_source_file(self, forecast_date: datetime.date):
         """Update zarr DataSourceFile start and end datetime.
@@ -382,7 +389,9 @@ class SalientIngestor(BaseIngestor):
             self._update_zarr_source_file(forecast_date)
 
             # delete netcdf datasource file
-            self._remove_temporary_source_file(source_file, file_path)
+            remove_temp_file = self.get_config('remove_temp_file', True)
+            if remove_temp_file:
+                self._remove_temporary_source_file(source_file, file_path)
 
             total_files += 1
             forecast_dates.append(forecast_date.isoformat())
@@ -407,8 +416,20 @@ class SalientIngestor(BaseIngestor):
             f'{forecast_date.isoformat()}', periods=1)
         data_vars = {}
         for var_name, da in dataset.data_vars.items():
-            # Initialize the data_var with the empty array
-            data_vars[var_name] = da.expand_dims('forecast_date', axis=0)
+            if var_name.endswith('_clim'):
+                data_vars[var_name] = da.expand_dims(
+                    'forecast_date',
+                    axis=0
+                ).chunk({
+                    'forecast_day': self.default_chunks['forecast_day'],
+                    'lat': self.default_chunks['lat'],
+                    'lon': self.default_chunks['lon']
+                })
+            else:
+                data_vars[var_name] = da.expand_dims(
+                    'forecast_date',
+                    axis=0
+                ).chunk(self.default_chunks)
 
         # Create the dataset
         zarr_ds = xr.Dataset(
@@ -448,21 +469,60 @@ class SalientIngestor(BaseIngestor):
             tolerance=self.reindex_tolerance
         )
 
+        # rechunk the dataset
+        expanded_ds = expanded_ds.chunk({
+            'forecast_date': self.forecast_date_chunk,
+            'ensemble': self.default_chunks['ensemble'],
+            'forecast_day_idx': self.default_chunks['forecast_day'],
+            'lat': self.default_chunks['lat'],
+            'lon': self.default_chunks['lon']
+        })
+
         # write to zarr
         zarr_url = (
             BaseZarrReader.get_zarr_base_url(self.s3) +
             self.datasource_file.name
         )
+
+        # set chunks for each data var
+        ensemble_chunks = (
+            self.forecast_date_chunk,
+            self.default_chunks['ensemble'],
+            self.default_chunks['forecast_day'],
+            self.default_chunks['lat'],
+            self.default_chunks['lon']
+        )
+        non_ensemble_chunks = (
+            self.forecast_date_chunk,
+            self.default_chunks['forecast_day'],
+            self.default_chunks['lat'],
+            self.default_chunks['lon']
+        )
+        encoding = {
+            'forecast_date': {
+                'chunks': self.forecast_date_chunk
+            }
+        }
+        var_name: str
+        for var_name, da in expanded_ds.data_vars.items():
+            encoding[var_name] = {
+                'chunks': (
+                    non_ensemble_chunks if var_name.endswith('_clim') else
+                    ensemble_chunks
+                )
+            }
+
         if self.created:
             expanded_ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
-                storage_options=self.s3_options
+                storage_options=self.s3_options,
+                encoding=encoding
             )
         else:
             expanded_ds.to_zarr(
-                zarr_url, mode='a', append_dim='forecast_date',
+                zarr_url, mode='a-', append_dim='forecast_date',
                 consolidated=True,
-                storage_options=self.s3_options
+                storage_options=self.s3_options,
             )
 
     def run(self):

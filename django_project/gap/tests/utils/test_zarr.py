@@ -8,18 +8,27 @@ Tomorrow Now GAP.
 from django.test import TestCase
 from datetime import datetime
 from xarray.core.dataset import Dataset as xrDataset
+from django.contrib import messages
 from django.contrib.gis.geos import (
     Point
 )
 from unittest.mock import MagicMock, patch
 
-from gap.models import Provider, Dataset, DatasetAttribute, DataSourceFile
+from gap.models import (
+    Provider, Dataset, DatasetAttribute, DataSourceFile,
+    DatasetStore
+)
 from gap.utils.reader import (
     DatasetReaderInput
 )
 from gap.providers import (
     CBAMZarrReader,
 )
+from gap.admin.main import (
+    load_source_zarr_cache,
+    clear_source_zarr_cache
+)
+from gap.factories import DataSourceFileFactory
 
 
 class TestCBAMZarrReader(TestCase):
@@ -113,6 +122,9 @@ class TestCBAMZarrReader(TestCase):
         mock_open_zarr.return_value = mock_dataset
 
         source_file = DataSourceFile(name='test_dataset.zarr')
+        source_file.metadata = {
+            'drop_variables': ['test']
+        }
         self.reader.setup_reader()
         result = self.reader.open_dataset(source_file)
 
@@ -129,15 +141,15 @@ class TestCBAMZarrReader(TestCase):
             target_protocol='s3',
             target_options=self.reader.s3_options,
             cache_storage=f'/tmp/{cache_filename}',
-            cache_check=10,
-            expiry_time=3600,
+            cache_check=3600,
+            expiry_time=86400,
             target_kwargs={'s3': mock_s3fs_instance}
         )
         mock_fs_instance.get_mapper.assert_called_once_with(
             's3://test-bucket/test-prefix/test_dataset.zarr')
         mock_open_zarr.assert_called_once_with(
             mock_fs_instance.get_mapper.return_value,
-            consolidated=True)
+            consolidated=True, drop_variables=['test'])
 
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')
@@ -163,4 +175,76 @@ class TestCBAMZarrReader(TestCase):
         self.assertEqual(
             self.reader.s3_options['client_kwargs']['endpoint_url'],
             'https://test-endpoint.com'
+        )
+
+
+class TestAdminZarrFileActions(TestCase):
+    """Test for actions for Zarr DataSourceFile."""
+
+    fixtures = [
+        '2.provider.json',
+        '3.observation_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
+    @patch('gap.utils.zarr.BaseZarrReader.open_dataset')
+    @patch('gap.utils.zarr.BaseZarrReader.setup_reader')
+    def test_load_source_zarr_cache(
+        self, mock_setup_reader, mock_open_dataset
+    ):
+        """Test load cache for DataSourceFile zarr."""
+        # Mock the queryset with a Zarr file
+        data_source = DataSourceFileFactory.create(
+            format=DatasetStore.ZARR,
+            name='test.zarr'
+        )
+        mock_queryset = [data_source]
+
+        # Mock the modeladmin and request objects
+        mock_modeladmin = MagicMock()
+        mock_request = MagicMock()
+
+        # Call the load_source_zarr_cache function
+        load_source_zarr_cache(mock_modeladmin, mock_request, mock_queryset)
+
+        # Assertions
+        mock_setup_reader.assert_called_once()
+        mock_open_dataset.assert_called_once_with(data_source)
+        mock_modeladmin.message_user.assert_called_once_with(
+            mock_request, 'test.zarr zarr cache has been loaded!',
+            messages.SUCCESS
+        )
+
+    @patch('shutil.rmtree')
+    @patch('os.path.exists')
+    def test_clear_source_zarr_cache(self, mock_os_path_exists, mock_rmtree):
+        """Test clear cache DataSourceFile zarr."""
+        # Mock the queryset with a Zarr file
+        data_source = DataSourceFileFactory.create(
+            format=DatasetStore.ZARR,
+            name='test.zarr'
+        )
+        mock_queryset = [data_source]
+
+        # Mock os.path.exists to return True
+        mock_os_path_exists.return_value = True
+
+        # Mock the modeladmin and request objects
+        mock_modeladmin = MagicMock()
+        mock_request = MagicMock()
+
+        # Call the clear_source_zarr_cache function
+        clear_source_zarr_cache(mock_modeladmin, mock_request, mock_queryset)
+
+        # Assertions
+        mock_os_path_exists.assert_called_once_with('/tmp/test_zarr')
+        mock_rmtree.assert_called_once_with('/tmp/test_zarr')
+        mock_modeladmin.message_user.assert_called_once_with(
+            mock_request,
+            '/tmp/test_zarr has been cleared!',
+            messages.SUCCESS
         )

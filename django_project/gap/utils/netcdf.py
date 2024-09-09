@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 import os
 import logging
+import traceback
 from typing import List
 from math import ceil
 from datetime import datetime, timedelta
@@ -292,6 +293,7 @@ class BaseNetCDFReader(BaseDatasetReader):
                 f'date {start_date} - {end_date} with vars: {variables}'
             )
             logger.error(ex)
+            logger.error(traceback.format_exc())
         return result
 
     def find_locations(self, val: xrDataset) -> List[Point]:

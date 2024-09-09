@@ -4,16 +4,19 @@ Tomorrow Now GAP.
 
 .. note:: Admins
 """
-from django.contrib import admin
+import os
+import shutil
+from django.contrib import admin, messages
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     Attribute, Country, Provider, Measurement, Station, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
-    DatasetType, Unit, Village, CollectorSession
+    DatasetType, Unit, Village, CollectorSession, DatasetStore
 )
 from gap.tasks.collector import run_collector_session
 from gap.tasks.ingestor import run_ingestor_session
+from gap.utils.zarr import BaseZarrReader
 
 
 @admin.register(Unit)
@@ -147,15 +150,68 @@ class CollectorSessionAdmin(admin.ModelAdmin):
         return obj.dataset_files.count()
 
 
+@admin.action(description='Load zarr cache')
+def load_source_zarr_cache(modeladmin, request, queryset):
+    """Load DataSourceFile zarr cache."""
+    name = None
+    for query in queryset:
+        if query.format != DatasetStore.ZARR:
+            continue
+        name = query.name
+        reader = BaseZarrReader(query.dataset, [], None, None, None)
+        reader.setup_reader()
+        reader.open_dataset(query)
+        break
+    if name is not None:
+        modeladmin.message_user(
+            request,
+            f'{name} zarr cache has been loaded!',
+            messages.SUCCESS
+        )
+    else:
+        modeladmin.message_user(
+            request,
+            'Please select zarr data source!',
+            messages.WARNING
+        )
+
+
+@admin.action(description='Clear zarr cache')
+def clear_source_zarr_cache(modeladmin, request, queryset):
+    """Clear DataSourceFile zarr cache."""
+    name = None
+    for query in queryset:
+        if query.format != DatasetStore.ZARR:
+            continue
+        name = query.name
+        zarr_path = BaseZarrReader.get_zarr_cache_dir(name)
+        if os.path.exists(zarr_path):
+            shutil.rmtree(zarr_path)
+        break
+    if name is not None:
+        modeladmin.message_user(
+            request,
+            f'{zarr_path} has been cleared!',
+            messages.SUCCESS
+        )
+    else:
+        modeladmin.message_user(
+            request,
+            'Please select zarr data source!',
+            messages.WARNING
+        )
+
+
 @admin.register(DataSourceFile)
 class DataSourceFileAdmin(admin.ModelAdmin):
     """DataSourceFile admin."""
 
     list_display = (
         'name', 'dataset', 'format', 'start_date_time',
-        'end_date_time', 'created_on'
+        'end_date_time', 'is_latest', 'created_on'
     )
-    list_filter = ('dataset',)
+    list_filter = ('dataset', 'format', 'is_latest')
+    actions = (load_source_zarr_cache, clear_source_zarr_cache,)
 
 
 @admin.register(Village)

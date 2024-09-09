@@ -20,6 +20,7 @@ from gap.models.ingestor import (
 )
 from gap.ingestor.salient import SalientIngestor, SalientCollector
 from gap.factories import DataSourceFileFactory
+from gap.tasks.ingestor import run_salient_collector_session
 
 
 class SalientIngestorBaseTest(TestCase):
@@ -144,6 +145,34 @@ class TestSalientCollector(SalientIngestorBaseTest):
         with self.assertRaises(Exception):
             self.collector.run()
         self.assertEqual(mock_logger.error.call_count, 2)
+
+    @patch('gap.models.ingestor.CollectorSession.dataset_files')
+    @patch('gap.models.ingestor.CollectorSession.run')
+    @patch('gap.tasks.ingestor.run_ingestor_session.delay')
+    def test_run_salient_collector_session(
+        self, mock_ingestor, mock_collector, mock_count
+    ):
+        """Test run salient collector session."""
+        mock_count.count.return_value = 0
+        run_salient_collector_session()
+        # assert
+        mock_collector.assert_called_once()
+        mock_ingestor.assert_not_called()
+
+        mock_collector.reset_mock()
+        mock_ingestor.reset_mock()
+        # test with collector result
+        mock_count.count.return_value = 1
+        run_salient_collector_session()
+
+        # assert
+        session = IngestorSession.objects.filter(
+            ingestor_type=IngestorType.SALIENT,
+        ).last()
+        self.assertTrue(session)
+        self.assertEqual(session.collectors.count(), 1)
+        mock_collector.assert_called_once()
+        mock_ingestor.assert_called_once_with(session.id)
 
 
 class TestSalientIngestor(SalientIngestorBaseTest):
@@ -291,7 +320,10 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         # Create a mock dataset
         mock_dataset = xrDataset(
             {
-                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+                'temp': (
+                    ('forecast_day', 'ensemble', 'lat', 'lon'),
+                    np.random.rand(1, 50, 2, 2)
+                ),
             },
             coords={
                 'forecast_day': pd.date_range('2024-08-28', periods=1),
@@ -340,7 +372,10 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         # Mock the open_dataset return value
         mock_dataset = xrDataset(
             {
-                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+                'temp': (
+                    ('forecast_day', 'ensemble', 'lat', 'lon'),
+                    np.random.rand(1, 50, 2, 2)
+                ),
             },
             coords={
                 'forecast_day': pd.date_range('2024-08-28', periods=1),

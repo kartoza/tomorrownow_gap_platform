@@ -19,6 +19,7 @@ class PreferencesAdmin(admin.ModelAdmin):
             None, {
                 'fields': (
                     'area_of_interest',
+                    'salient_area'
                 )
             }
         ),
