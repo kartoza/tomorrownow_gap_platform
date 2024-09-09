@@ -1,387 +1,475 @@
 [
-{
+  {
     "model": "gap.attribute",
     "pk": 1,
     "fields": {
-        "name": "Air Temperature Min",
-        "description": null,
-        "variable_name": "min_air_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Air Temperature Min",
+      "description": null,
+      "variable_name": "min_air_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 2,
     "fields": {
-        "name": "Air Temperature Max",
-        "description": null,
-        "variable_name": "max_air_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Air Temperature Max",
+      "description": null,
+      "variable_name": "max_air_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 3,
     "fields": {
-        "name": "Air Temperature Average",
-        "description": null,
-        "variable_name": "average_air_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Air Temperature Average",
+      "description": null,
+      "variable_name": "average_air_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 4,
     "fields": {
-        "name": "Relative Humidity Min",
-        "description": null,
-        "variable_name": "min_relative_humidity",
-        "unit": 6,
-        "is_active": true
+      "name": "Relative Humidity Min",
+      "description": null,
+      "variable_name": "min_relative_humidity",
+      "unit": 6,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 5,
     "fields": {
-        "name": "Relative Humidity Max",
-        "description": null,
-        "variable_name": "max_relative_humidity",
-        "unit": 6,
-        "is_active": true
+      "name": "Relative Humidity Max",
+      "description": null,
+      "variable_name": "max_relative_humidity",
+      "unit": 6,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 6,
     "fields": {
-        "name": "Solar radiation",
-        "description": null,
-        "variable_name": "solar_radiation",
-        "unit": 7,
-        "is_active": true
+      "name": "Solar radiation",
+      "description": null,
+      "variable_name": "solar_radiation",
+      "unit": 7,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 7,
     "fields": {
-        "name": "Precipitation",
-        "description": null,
-        "variable_name": "precipitation",
-        "unit": 4,
-        "is_active": true
+      "name": "Precipitation",
+      "description": null,
+      "variable_name": "precipitation",
+      "unit": 4,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 8,
     "fields": {
-        "name": "Total Evapotranspiration Flux",
-        "description": "Total Evapotranspiration flux with respect to grass cover (0000:2300)",
-        "variable_name": "total_evapotranspiration_flux",
-        "unit": 1,
-        "is_active": true
+      "name": "Total Evapotranspiration Flux",
+      "description": "Total Evapotranspiration flux with respect to grass cover (0000:2300)",
+      "variable_name": "total_evapotranspiration_flux",
+      "unit": 1,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 9,
     "fields": {
-        "name": "Max Temperature",
-        "description": "Maximum temperature (0000:2300)",
-        "variable_name": "max_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Max Temperature",
+      "description": "Maximum temperature (0000:2300)",
+      "variable_name": "max_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 10,
     "fields": {
-        "name": "Max Night Temperature",
-        "description": "Maximum night-time temperature (1900:0500)",
-        "variable_name": "max_night_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Max Night Temperature",
+      "description": "Maximum night-time temperature (1900:0500)",
+      "variable_name": "max_night_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 11,
     "fields": {
-        "name": "Average Solar Irradiance",
-        "description": "Average hourly solar irradiance reaching the surface (0600:1800)",
-        "variable_name": "average_solar_irradiance",
-        "unit": 3,
-        "is_active": true
+      "name": "Average Solar Irradiance",
+      "description": "Average hourly solar irradiance reaching the surface (0600:1800)",
+      "variable_name": "average_solar_irradiance",
+      "unit": 3,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 12,
     "fields": {
-        "name": "Total Solar Irradiance",
-        "description": "Total solar irradiance reaching the surface (0000:2300)",
-        "variable_name": "total_solar_irradiance",
-        "unit": 3,
-        "is_active": true
+      "name": "Total Solar Irradiance",
+      "description": "Total solar irradiance reaching the surface (0000:2300)",
+      "variable_name": "total_solar_irradiance",
+      "unit": 3,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 13,
     "fields": {
-        "name": "Min Night Temperature",
-        "description": "Minimum night-time temperature (1900:0500)",
-        "variable_name": "min_night_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Min Night Temperature",
+      "description": "Minimum night-time temperature (1900:0500)",
+      "variable_name": "min_night_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 14,
     "fields": {
-        "name": "Max Day Temperature",
-        "description": "Maximum day-time temperature (0600:1800)",
-        "variable_name": "max_day_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Max Day Temperature",
+      "description": "Maximum day-time temperature (0600:1800)",
+      "variable_name": "max_day_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 15,
     "fields": {
-        "name": "Total Rainfall",
-        "description": "Total rainfall (0000:2300)",
-        "variable_name": "total_rainfall",
-        "unit": 1,
-        "is_active": true
+      "name": "Total Rainfall",
+      "description": "Total rainfall (0000:2300)",
+      "variable_name": "total_rainfall",
+      "unit": 1,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 16,
     "fields": {
-        "name": "Min Day Temperature",
-        "description": "Minumum day-time temperature (0600:1800)",
-        "variable_name": "min_day_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Min Day Temperature",
+      "description": "Minumum day-time temperature (0600:1800)",
+      "variable_name": "min_day_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 17,
     "fields": {
-        "name": "Min Temperature",
-        "description": "Minumum temperature (0000:2300)",
-        "variable_name": "min_temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Min Temperature",
+      "description": "Minumum temperature (0000:2300)",
+      "variable_name": "min_temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 18,
     "fields": {
-        "name": "Precipitation Climatology",
-        "description": null,
-        "variable_name": "precipitation_clim",
-        "unit": 4,
-        "is_active": true
+      "name": "Precipitation Climatology",
+      "description": null,
+      "variable_name": "precipitation_clim",
+      "unit": 4,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 19,
     "fields": {
-        "name": "Temperature Climatology",
-        "description": null,
-        "variable_name": "temperature_clim",
-        "unit": 5,
-        "is_active": true
+      "name": "Temperature Climatology",
+      "description": null,
+      "variable_name": "temperature_clim",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 20,
     "fields": {
-        "name": "Precipitation Anomaly",
-        "description": null,
-        "variable_name": "precipitation_anom",
-        "unit": 4,
-        "is_active": true
+      "name": "Precipitation Anomaly",
+      "description": null,
+      "variable_name": "precipitation_anom",
+      "unit": 4,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 21,
     "fields": {
-        "name": "Temperature Anomaly",
-        "description": null,
-        "variable_name": "temperature_anom",
-        "unit": 5,
-        "is_active": true
+      "name": "Temperature Anomaly",
+      "description": null,
+      "variable_name": "temperature_anom",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 22,
     "fields": {
-        "name": "Precipitation",
-        "description": null,
-        "variable_name": "precip",
-        "unit": 4,
-        "is_active": false
+      "name": "Precipitation",
+      "description": null,
+      "variable_name": "precip",
+      "unit": 4,
+      "is_active": false
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 23,
     "fields": {
-        "name": "Temperature",
-        "description": null,
-        "variable_name": "temperature",
-        "unit": 5,
-        "is_active": true
+      "name": "Temperature",
+      "description": null,
+      "variable_name": "temperature",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 24,
     "fields": {
-        "name": "Min Temperature Climatology",
-        "description": "Minimum temperature climatology",
-        "variable_name": "min_temperature_clim",
-        "unit": 5,
-        "is_active": true
+      "name": "Min Temperature Climatology",
+      "description": "Minimum temperature climatology",
+      "variable_name": "min_temperature_clim",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 25,
     "fields": {
-        "name": "Min Temperature Anomaly",
-        "description": "Minimum temperature anomaly",
-        "variable_name": "min_temperature_anom",
-        "unit": 5,
-        "is_active": true
+      "name": "Min Temperature Anomaly",
+      "description": "Minimum temperature anomaly",
+      "variable_name": "min_temperature_anom",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 26,
     "fields": {
-        "name": "Max Temperature Climatology",
-        "description": "Maximum temperature climatology",
-        "variable_name": "max_temperature_clim",
-        "unit": 5,
-        "is_active": true
+      "name": "Max Temperature Climatology",
+      "description": "Maximum temperature climatology",
+      "variable_name": "max_temperature_clim",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 27,
     "fields": {
-        "name": "Max Temperature Anomaly",
-        "description": "Maximum temperature anomaly",
-        "variable_name": "max_temperature_anom",
-        "unit": 5,
-        "is_active": true
+      "name": "Max Temperature Anomaly",
+      "description": "Maximum temperature anomaly",
+      "variable_name": "max_temperature_anom",
+      "unit": 5,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 28,
     "fields": {
-        "name": "Relative Humidity",
-        "description": "Relative humidity",
-        "variable_name": "relative_humidity",
-        "unit": 6,
-        "is_active": true
+      "name": "Relative Humidity",
+      "description": "Relative humidity",
+      "variable_name": "relative_humidity",
+      "unit": 6,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 29,
     "fields": {
-        "name": "Relative Humidity Climatology",
-        "description": "Relative humidity climatology",
-        "variable_name": "relative_humidity_clim",
-        "unit": 6,
-        "is_active": true
+      "name": "Relative Humidity Climatology",
+      "description": "Relative humidity climatology",
+      "variable_name": "relative_humidity_clim",
+      "unit": 6,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 30,
     "fields": {
-        "name": "Relative Humidity Anomaly",
-        "description": "Relative humidity anomaly",
-        "variable_name": "relative_humidity_anom",
-        "unit": 6,
-        "is_active": true
+      "name": "Relative Humidity Anomaly",
+      "description": "Relative humidity anomaly",
+      "variable_name": "relative_humidity_anom",
+      "unit": 6,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 31,
     "fields": {
-        "name": "Solar Radiation Climatology",
-        "description": "Solar radiation climatology",
-        "variable_name": "solar_radiation_clim",
-        "unit": 7,
-        "is_active": true
+      "name": "Solar Radiation Climatology",
+      "description": "Solar radiation climatology",
+      "variable_name": "solar_radiation_clim",
+      "unit": 7,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 32,
     "fields": {
-        "name": "Solar Radiation Anomaly",
-        "description": "Solar radiation anomaly",
-        "variable_name": "solar_radiation_anom",
-        "unit": 7,
-        "is_active": true
+      "name": "Solar Radiation Anomaly",
+      "description": "Solar radiation anomaly",
+      "variable_name": "solar_radiation_anom",
+      "unit": 7,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 33,
     "fields": {
-        "name": "Wind Speed",
-        "description": "Wind speed",
-        "variable_name": "wind_speed",
-        "unit": 8,
-        "is_active": true
+      "name": "Wind Speed",
+      "description": "Wind speed",
+      "variable_name": "wind_speed",
+      "unit": 8,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 34,
     "fields": {
-        "name": "Wind Speed Climatology",
-        "description": "Wind speed climatology",
-        "variable_name": "wind_speed_clim",
-        "unit": 8,
-        "is_active": true
+      "name": "Wind Speed Climatology",
+      "description": "Wind speed climatology",
+      "variable_name": "wind_speed_clim",
+      "unit": 8,
+      "is_active": true
     }
-},
-{
+  },
+  {
     "model": "gap.attribute",
     "pk": 35,
     "fields": {
-        "name": "Wind Speed Anomaly",
-        "description": "Wind speed anomaly",
-        "variable_name": "wind_speed_anom",
-        "unit": 8,
-        "is_active": true
+      "name": "Wind Speed Anomaly",
+      "description": "Wind speed anomaly",
+      "variable_name": "wind_speed_anom",
+      "unit": 8,
+      "is_active": true
     }
-}
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 36,
+    "fields": {
+      "name": "Precipitation Probability",
+      "description": "",
+      "variable_name": "precipitation_probability",
+      "unit": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 37,
+    "fields": {
+      "name": "Relative Humidity Mean",
+      "description": "The mean relative humidity (between 0 and 1) in the day",
+      "variable_name": "mean_relative_humidity",
+      "unit": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 38,
+    "fields": {
+      "name": "Mean Day Temperature",
+      "description": "Daily mean temperature",
+      "variable_name": "mean_day_temperature",
+      "unit": 5,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 39,
+    "fields": {
+      "name": "Precipitation Total",
+      "description": "Precipitation total",
+      "variable_name": "precipitation_total",
+      "unit": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 40,
+    "fields": {
+      "name": "Sea Level Pressure",
+      "description": "",
+      "variable_name": "sea_level_pressure",
+      "unit": 10,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 41,
+    "fields": {
+      "name": "Wind Speed Min",
+      "description": "Wind speed Min",
+      "variable_name": "wind_speed_min",
+      "unit": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 42,
+    "fields": {
+      "name": "Wind Speed Max",
+      "description": "Wind Speed Max",
+      "variable_name": "wind_speed_max",
+      "unit": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 43,
+    "fields": {
+      "name": "Wind Heading",
+      "description": "",
+      "variable_name": "wind_heading",
+      "unit": 11,
+      "is_active": true
+    }
+  }
 ]

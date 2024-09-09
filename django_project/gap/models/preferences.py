@@ -60,6 +60,14 @@ class Preferences(SingletonModel):
         blank=True
     )
 
+    # Arable
+    arable_api_url = models.CharField(
+        max_length=256,
+        default='https://api.arable.cloud/api/v2',
+        null=True,
+        blank=True
+    )
+
     class Meta:  # noqa: D106
         verbose_name_plural = "preferences"
 

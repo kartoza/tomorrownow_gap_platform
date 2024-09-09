@@ -62,5 +62,21 @@
       "name": "kWh/m2/day",
       "description": null
     }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 10,
+    "fields": {
+      "name": "kPa",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 11,
+    "fields": {
+      "name": "degree",
+      "description": ""
+    }
   }
 ]

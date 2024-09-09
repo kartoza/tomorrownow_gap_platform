@@ -20,7 +20,7 @@ from gap.models.ingestor import (
     IngestorSessionStatus
 )
 from gap.ingestor.cbam import CBAMIngestor
-from gap.tasks.ingestor import run_cbam_collector_session
+from gap.tasks.collector import run_cbam_collector_session
 from gap.factories import DataSourceFileFactory
 from gap.utils.netcdf import find_start_latlng
 

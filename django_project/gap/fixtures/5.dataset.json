@@ -50,5 +50,18 @@
       "store_type": "ZARR",
       "is_internal_use": false
     }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 5,
+    "fields": {
+      "name": "Arable Ground Observational",
+      "description": null,
+      "provider": 5,
+      "type": 4,
+      "time_step": "DAILY",
+      "store_type": "TABLE",
+      "is_internal_use": false
+    }
   }
 ]
