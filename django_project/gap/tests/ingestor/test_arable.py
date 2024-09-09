@@ -84,7 +84,6 @@ class ArableIngestorTest(BaseTestWithPatchResponses, TestCase):
 
     def setUp(self):
         """Init test case."""
-
         # Init kenya Country
         shp_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),

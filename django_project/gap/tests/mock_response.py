@@ -1,3 +1,9 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Mock response.
+"""
 import json
 
 import responses
