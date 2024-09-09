@@ -109,7 +109,7 @@ class IngestorSessionProgressInline(admin.TabularInline):
 def trigger_ingestor_session(modeladmin, request, queryset):
     """Run Ingestor Session."""
     for query in queryset:
-        run_ingestor_session(query.id)
+        run_ingestor_session.delay(query.id)
 
 
 @admin.register(IngestorSession)

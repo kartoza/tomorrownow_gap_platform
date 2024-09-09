@@ -33,10 +33,10 @@
       "historical_sites": null,
       "type": "Type 1",
       "sensors": [],
-      "id": "A00",
-      "org_id": "A00",
+      "id": "Device 1",
+      "org_id": "Device 1",
       "owner_id": null,
-      "name": "A00 Device 1"
+      "name": "A00"
     },
     {
       "current_location": {
@@ -71,20 +71,20 @@
       "historical_sites": null,
       "type": "Type 1",
       "sensors": [],
-      "id": "A01",
-      "org_id": "A01",
+      "id": "Device 2",
+      "org_id": "Device 2",
       "owner_id": null,
-      "name": "A01 Device 1"
+      "name": "A01"
     },
     {
       "current_location": {},
       "historical_sites": [],
       "type": "Type 1",
       "sensors": [],
-      "id": "A0X",
+      "id": "Device death",
       "org_id": "A0X",
       "owner_id": null,
-      "name": "A0X Device death"
+      "name": "A0X"
     }
   ]
 }

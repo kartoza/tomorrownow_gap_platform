@@ -14,7 +14,7 @@ from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import ApiKeyNotFoundException
 from gap.models import (
     Provider, Station, ObservationType, CollectorSession, Dataset, DatasetType,
-    DatasetTimeStep, DatasetStore, Country
+    DatasetTimeStep, DatasetStore, Country, Measurement
 )
 from gap.models.preferences import Preferences
 
@@ -35,6 +35,7 @@ class ArableAPI:
             raise Exception('Base URL for arable is not set.')
 
         self.DEVICES = f'{base_url}/devices'
+        self.DATA = f'{base_url}/data/daily'
 
 
 class ArableIngestor(BaseIngestor):
@@ -63,7 +64,11 @@ class ArableIngestor(BaseIngestor):
             store_type=DatasetStore.TABLE
         )
 
-    def get(self, url, params=None, page=1):
+        self.attributes = {}
+        for dataset_attr in self.dataset.datasetattribute_set.all():
+            self.attributes[dataset_attr.source] = dataset_attr.id
+
+    def get(self, url, params=None, page=1, is_pagination=True):
         """Request the API."""
         if params is None:
             params = {}
@@ -71,7 +76,9 @@ class ArableIngestor(BaseIngestor):
         if not self.api_key:
             raise ApiKeyNotFoundException()
 
-        params['page'] = page
+        if is_pagination:
+            params['page'] = page
+
         response = requests.get(
             url, params=params, headers={
                 'Authorization': f'Apikey {self.api_key}'
@@ -79,9 +86,56 @@ class ArableIngestor(BaseIngestor):
         )
 
         if response.status_code == 200:
-            return response.json()['items'] + self.get(url, params, page + 1)
+            if is_pagination:
+                return response.json()['items'] + self.get(
+                    url, params, page + 1, is_pagination=is_pagination
+                )
+            else:
+                return response.json()
         else:
             return []
+
+    @staticmethod
+    def last_iso_date_time(station: Station) -> str | None:
+        """Last date measurements of station."""
+        first_measurement = Measurement.objects.filter(
+            station=station
+        ).order_by('-date_time').first()
+        if first_measurement:
+            return first_measurement.date_time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        return None
+
+    def get_data(self, station: Station):
+        """Get data of the given station."""
+        keys = list(self.attributes.keys()) + ['time']
+        keys.sort()
+        params = {
+            'device': station.name,
+            'select': ','.join(keys)
+        }
+        last_time = ArableIngestor.last_iso_date_time(station)
+        if last_time:
+            params['start_time'] = last_time
+        data = self.get(
+            ArableAPI().DATA, params=params, is_pagination=False
+        )
+        for row in data:
+            for source, attr_id in self.attributes.items():
+                try:
+                    value = row[source]
+                    if value is not None:
+                        Measurement.objects.get_or_create(
+                            station=station,
+                            dataset_attribute_id=attr_id,
+                            date_time=row['time'],
+                            defaults={
+                                'value': value
+                            }
+                        )
+                except KeyError:
+                    pass
 
     def run(self):
         """Run the ingestor."""
@@ -90,7 +144,6 @@ class ArableIngestor(BaseIngestor):
         # Get stations or devices
         devices = self.get(ArableAPI().DEVICES)
         for device in devices:
-
             # Skip device that does not have location
             try:
                 point = Point(
@@ -110,7 +163,7 @@ class ArableIngestor(BaseIngestor):
                 country = None
 
             # Create station
-            Station.objects.get_or_create(
+            station, _ = Station.objects.get_or_create(
                 code=device['id'],
                 provider=self.provider,
                 defaults={
@@ -120,3 +173,6 @@ class ArableIngestor(BaseIngestor):
                     'observation_type': self.obs_type,
                 }
             )
+
+            # Get station data
+            self.get_data(station)

@@ -1,0 +1,53 @@
+[
+  {
+    "et": 4.8,
+    "max_rh": 0.89,
+    "maxt": 23.7,
+    "mean_rh": 0.71,
+    "meant": 17.8,
+    "min_rh": 0.53,
+    "mint": 12.8,
+    "precip": 0.0,
+    "prate": null,
+    "slp": 101.7,
+    "wind_heading": null,
+    "wind_speed": null,
+    "wind_speed_max": null,
+    "wind_speed_min": null,
+    "time": "2024-01-01T00:00:00Z"
+  },
+  {
+    "et": 4.6,
+    "max_rh": 1.0,
+    "maxt": 24.3,
+    "mean_rh": 0.8,
+    "meant": 16.5,
+    "min_rh": 0.49,
+    "mint": 13.4,
+    "precip": 36.2,
+    "prate": null,
+    "slp": 101.9,
+    "wind_heading": null,
+    "wind_speed": null,
+    "wind_speed_max": null,
+    "wind_speed_min": null,
+    "time": "2024-01-02T00:00:00Z"
+  },
+  {
+    "et": 5.1,
+    "max_rh": 1.0,
+    "maxt": 23.3,
+    "mean_rh": 0.83,
+    "meant": 17.2,
+    "min_rh": 0.6,
+    "mint": 13.0,
+    "precip": 0.3,
+    "prate": null,
+    "slp": 101.7,
+    "wind_heading": null,
+    "wind_speed": null,
+    "wind_speed_max": null,
+    "wind_speed_min": null,
+    "time": "2024-01-03T00:00:00Z"
+  }
+]
