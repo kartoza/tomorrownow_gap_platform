@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0016_datasourcefile_is_latest_datasourcefile_metadata'),
+        ('gap', '0017_preferences_salient_area'),
     ]
 
     operations = [
