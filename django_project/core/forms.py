@@ -15,7 +15,7 @@ User = get_user_model()
 class CreateAuthToken(AuthToken):
     """Create auth token admin."""
 
-    class Meta:
+    class Meta:  # noqa: D106
         app_label = 'knox'
         proxy = True
 
