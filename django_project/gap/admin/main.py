@@ -28,7 +28,7 @@ class AttributeAdmin(admin.ModelAdmin):
     """Attribute admin."""
 
     list_display = (
-        'id', 'name', 'description', 'variable_name', 'unit',
+        'name', 'description', 'variable_name', 'unit',
     )
     search_fields = ('name',)
 
@@ -71,7 +71,7 @@ class DatasetAttributeAdmin(admin.ModelAdmin):
     """DatasetAttribute admin."""
 
     list_display = (
-        'id', 'dataset', 'attribute', 'source', 'source_unit',
+        'dataset', 'attribute', 'source', 'source_unit',
     )
     list_filter = ('dataset',)
 
