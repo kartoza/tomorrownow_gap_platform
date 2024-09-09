@@ -11,6 +11,7 @@ from celery.utils.serialization import strtobool
 from celery.worker.control import inspect_command
 from django.utils import timezone
 
+
 logger = logging.getLogger(__name__)
 
 # set the default Django settings module for the 'celery' program.
