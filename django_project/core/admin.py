@@ -117,7 +117,6 @@ class CreateAuthTokenAdmin(admin.ModelAdmin):
         form = super(
             CreateAuthTokenAdmin, self
         ).get_form(request, obj, **kwargs)
-        form.user = request.user
         form.request = request
         return form
 

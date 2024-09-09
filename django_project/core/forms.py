@@ -37,8 +37,11 @@ class CreateKnoxTokenForm(forms.ModelForm):
         obj, token = AuthToken.objects.create(
             user=instance.user
         )
-        messages.add_message(
-            self.request, messages.SUCCESS,
-            f'The new token has been generated, please copy : {token}'
-        )
+        try:
+            messages.add_message(
+                self.request, messages.SUCCESS,
+                f'The new token has been generated, please copy : {token}'
+            )
+        except AttributeError:
+            pass
         return obj
