@@ -55,6 +55,45 @@
     "model": "gap.dataset",
     "pk": 5,
     "fields": {
+      "name": "Tomorrow.io Historical Reanalysis",
+      "description": "",
+      "provider": 4,
+      "type": 1,
+      "time_step": "DAILY",
+      "store_type": "EXT_API",
+      "is_internal_use": true
+    }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 6,
+    "fields": {
+      "name": "Tomorrow.io Short-term Forecast",
+      "description": "",
+      "provider": 4,
+      "type": 2,
+      "time_step": "DAILY",
+      "store_type": "EXT_API",
+      "is_internal_use": true
+    }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 7,
+    "fields": {
+      "name": "Tomorrow.io Long Term Normals (20 years)",
+      "description": "",
+      "provider": 4,
+      "type": 6,
+      "time_step": "DAILY",
+      "store_type": "EXT_API",
+      "is_internal_use": true
+    }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 8,
+    "fields": {
       "name": "Arable Ground Observational",
       "description": null,
       "provider": 5,

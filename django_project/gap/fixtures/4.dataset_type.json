@@ -38,5 +38,25 @@
       "type": "historical",
       "variable_name": "observations"
     }
+  },
+  {
+    "model": "gap.datasettype",
+    "pk": 5,
+    "fields": {
+      "name": "Airborne Observational",
+      "description": "",
+      "type": "historical",
+      "variable_name": "default"
+    }
+  },
+  {
+    "model": "gap.datasettype",
+    "pk": 6,
+    "fields": {
+      "name": "Long Term Normals (20 years)",
+      "description": "",
+      "type": "historical",
+      "variable_name": "default"
+    }
   }
 ]
