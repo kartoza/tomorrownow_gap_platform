@@ -7,10 +7,11 @@ Tomorrow Now GAP.
 import os
 
 from django.contrib.gis.gdal import DataSource
-from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import GEOSGeometry, Point
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
+from gap.factories.farm import FarmFactory, Farm
 from gap.ingestor.exceptions import FileNotFoundException
 from gap.ingestor.grid import Keys
 from gap.models.grid import Grid
@@ -20,10 +21,8 @@ from gap.models.ingestor import (
 from gap.models.station import Country
 
 
-class FarmIngestorTest(TestCase):
-    """Farm ingestor test case."""
-
-    fixtures = []
+class GridIngestorTest(TestCase):
+    """Grid ingestor test case."""
 
     def setUp(self):
         """Init test case."""
@@ -41,6 +40,21 @@ class FarmIngestorTest(TestCase):
                 iso_a3=feature['iso_a3'],
                 geometry=geometry
             )
+        FarmFactory(
+            geometry=Point(35.558753743230838, 0.010459215860272)
+        )
+        FarmFactory(
+            geometry=Point(35.587536235482737, 0.012895828960962)
+        )
+        FarmFactory(
+            geometry=Point(35.593780056553257, 0.042744339444414)
+        )
+        FarmFactory(
+            geometry=Point(35.587536236482737, 0.012895828960962)
+        )
+        FarmFactory(
+            geometry=Point(35.593780056563257, 0.042744339444414)
+        )
 
     def test_no_file(self):
         """Test no file ingestor."""
@@ -147,3 +161,15 @@ class FarmIngestorTest(TestCase):
             [grid.geometry.centroid.y, grid.geometry.centroid.x],
             [0.047935, 35.59049]
         )
+
+        # check farm
+        farms = Farm.objects.all()
+        self.assertEqual(farms.count(), 5)
+        for farm in farms:
+            self.assertIsNotNone(farm.grid)
+
+        self.assertEqual(farms[0].grid.id, grids[0].id)
+        self.assertEqual(farms[1].grid.id, grids[1].id)
+        self.assertEqual(farms[2].grid.id, grids[2].id)
+        self.assertEqual(farms[3].grid.id, grids[1].id)
+        self.assertEqual(farms[4].grid.id, grids[2].id)
