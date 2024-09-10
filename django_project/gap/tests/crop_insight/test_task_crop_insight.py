@@ -26,9 +26,9 @@ class CropInsideTaskRUDTest(TestCase):
     def test_today_reports(self):
         """Test query today reports."""
         now = timezone.now()
-        self.Factory(requested_date=now)
-        self.Factory(requested_date=now)
-        self.Factory(requested_date=now + datetime.timedelta(days=-1))
+        self.Factory(requested_at=now)
+        self.Factory(requested_at=now)
+        self.Factory(requested_at=now + datetime.timedelta(days=-1))
         self.assertEqual(CropInsightRequest.today_reports().count(), 2)
 
     @patch('gap.models.crop_insight.CropInsightRequest._generate_report')
@@ -147,7 +147,7 @@ class CropInsideTaskRUDTest(TestCase):
 
         # Report 8 is the older one
         report_8 = self.Factory(
-            requested_date=now + datetime.timedelta(days=-1)
+            requested_at=now + datetime.timedelta(days=-1)
         )
 
         # Below is older tasks

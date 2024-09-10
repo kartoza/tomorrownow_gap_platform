@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 import json
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -438,7 +438,10 @@ class CropInsightRequest(models.Model):
     def today_reports():
         """Return query of today reports."""
         now = timezone.now()
-        return CropInsightRequest.objects.filter(requested_date=now.date())
+        return CropInsightRequest.objects.filter(
+            requested_at__gte=now.date(),
+            requested_at__lte=now.date() + timedelta(days=1),
+        )
 
     @property
     def skip_run(self):
@@ -471,10 +474,10 @@ class CropInsightRequest(models.Model):
 
         now = timezone.now()
         try:
-            if self.requested_date.date() != now.date():
+            if self.requested_at.date() != now.date():
                 return True
         except AttributeError:
-            if self.requested_date != now.date():
+            if self.requested_at != now.date():
                 return True
         return False
 
@@ -503,7 +506,7 @@ class CropInsightRequest(models.Model):
             f"({east_africa_timezone})"
         )
 
-    def generate_report(self):
+    def _generate_report(self):
         """Generate reports."""
         from spw.generator.crop_insight import CropInsightFarmGenerator
         output = []

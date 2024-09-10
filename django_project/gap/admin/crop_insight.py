@@ -117,7 +117,7 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
     """Admin for CropInsightRequest."""
 
     list_display = (
-        'requested_date', 'farm_count', 'file_url', 'last_task_status',
+        'requested_at', 'farm_count', 'file_url', 'last_task_status',
         'background_tasks'
     )
     filter_horizontal = ('farms',)
