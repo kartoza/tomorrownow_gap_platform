@@ -1,0 +1,2 @@
+locationids,latitude,longitude,country,elevation,shapewkt,name
+0001,0.01207255,35.55413517,Kenya,2661,"POLYGOND ((35.5S3596 0.03,35.57DD231 0.03,35.57231 -0.00586,35.53596 -0.00586,35.53596 0.03))",Baringo
