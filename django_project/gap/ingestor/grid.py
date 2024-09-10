@@ -80,7 +80,7 @@ class GridIngestor(BaseIngestor):
                 raise FileIsNotCorrectException(
                     f'Row {idx + HEADER_IDX + 2} does not have {e}'
                 )
-            except GEOSException as e:
+            except GEOSException:
                 raise Exception(
                     f'Row {idx + HEADER_IDX + 2} : wkt is not correct'
                 )

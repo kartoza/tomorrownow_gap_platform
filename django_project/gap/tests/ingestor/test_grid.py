@@ -103,7 +103,7 @@ class FarmIngestorTest(TestCase):
         session.delete()
         self.assertEqual(
             session.notes,
-            f"Row 2 : wkt is not correct"
+            "Row 2 : wkt is not correct"
         )
         self.assertEqual(session.status, IngestorSessionStatus.FAILED)
 
