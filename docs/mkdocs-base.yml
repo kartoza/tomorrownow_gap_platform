@@ -53,5 +53,6 @@ nav:
             - Edit Record in Table: administrator/manual/django-change-record.md
     - Developers:
         - developer/index.md
+        - Architecture: developer/architecture.md
         - Data model: developer/data-model.md
         - Hyrax Configuration: developer/hyrax-config.md
