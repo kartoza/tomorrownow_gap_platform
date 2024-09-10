@@ -143,38 +143,6 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             }
         )
 
-        for key, val in TIO_VARIABLES.items():
-            attr = val.get_gap_attribute()
-            # add to dataset attribute
-            DatasetAttribute.objects.get_or_create(
-                dataset=ds_historical,
-                attribute=attr,
-                source=key,
-                source_unit=attr.unit
-            )
-            DatasetAttribute.objects.get_or_create(
-                dataset=ds_forecast,
-                attribute=attr,
-                source=key,
-                source_unit=attr.unit
-            )
-            DatasetAttribute.objects.get_or_create(
-                dataset=ds_ltn,
-                attribute=attr,
-                source=key,
-                source_unit=attr.unit
-            )
-
-        # For shorterm forecast
-        for key, val in TIO_SHORT_TERM_FORCAST_VARIABLES.items():
-            attr = val.get_gap_attribute()
-            DatasetAttribute.objects.get_or_create(
-                dataset=ds_forecast,
-                attribute=attr,
-                source=key,
-                source_unit=attr.unit
-            )
-
     def _is_ltn_request(self):
         """Check if the request is for Long Term Normal (LTN) request."""
         return (
