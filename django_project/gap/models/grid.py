@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 from django.contrib.gis.db import models
+from django.contrib.gis.geos import Point
 
 from core.models.common import Definition
 from gap.models.common import Country
@@ -26,3 +27,10 @@ class Grid(Definition):
         Country, on_delete=models.SET_NULL,
         null=True, blank=True
     )
+
+    @staticmethod
+    def get_grids_by_point(point: Point):
+        """Get grids by point."""
+        return Grid.objects.filter(
+            geometry__contains=point
+        )

@@ -12,7 +12,7 @@ from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import (
     FileNotFoundException, FileIsNotCorrectException
 )
-from gap.models import IngestorSession, Grid, Country
+from gap.models import IngestorSession, Grid, Country, Farm
 
 HEADER_IDX = 0
 
@@ -100,5 +100,9 @@ class GridIngestor(BaseIngestor):
         # Run the ingestion
         try:
             self._run()
+
+            # Assign farm to a grid
+            for farm in Farm.objects.all():
+                farm.assign_grid()
         except Exception as e:
             raise Exception(e)

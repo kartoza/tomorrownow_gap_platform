@@ -68,7 +68,20 @@ class Farm(models.Model):
     def __str__(self):
         return self.unique_id
 
+    def save(self, *args, **kwargs):
+        """Override ingestor save."""
+        from gap.tasks import run_ingestor_session  # noqa
+        super(Farm, self).save(*args, **kwargs)
+        self.assign_grid()
+
     @property
     def farm_id(self):
         """Return farm's unique id."""
         return self.unique_id
+
+    def assign_grid(self):
+        """Assign grid to farm."""
+        if not self.grid:
+            self.grid = Grid.get_grids_by_point(self.geometry).first()
+            if self.grid:
+                self.save()

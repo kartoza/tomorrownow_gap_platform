@@ -25,4 +25,4 @@ class GridAdmin(admin.ModelAdmin):
 
     def longitude(self, obj: Grid):
         """Longitude of Grid."""
-        return obj.geometry.centroid.y
+        return obj.geometry.centroid.x
