@@ -342,9 +342,13 @@ class MeasurementAPI(APIView):
             if da.dataset.id in dataset_dict:
                 dataset_dict[da.dataset.id].add_attribute(da)
             else:
-                reader = get_reader_from_dataset(da.dataset)
-                dataset_dict[da.dataset.id] = reader(
-                    da.dataset, [da], location, start_dt, end_dt)
+                try:
+                    reader = get_reader_from_dataset(da.dataset)
+                    dataset_dict[da.dataset.id] = reader(
+                        da.dataset, [da], location, start_dt, end_dt
+                    )
+                except TypeError:
+                    pass
 
         response = None
         if output_format == DatasetReaderOutputType.JSON:

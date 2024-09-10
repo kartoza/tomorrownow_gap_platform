@@ -194,6 +194,12 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             'content-type': 'application/json'
         }
 
+    def geom_type_allowed(self):
+        """Return if geom type is allowed."""
+        return self.location_input.type in [
+            LocationInputType.POINT, LocationInputType.POLYGON
+        ]
+
     def _get_payload(
             self, start_date: datetime, end_date: datetime,
             is_ltn: bool = False):
@@ -215,10 +221,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         if (end_date - start_dt).total_seconds() < 24 * 3600:
             start_dt = start_dt - timedelta(days=1)
         payload = {
-            'location': (
-                f'{self.location_input.point.y}, '
-                f'{self.location_input.point.x}'
-            ),
+            'location': json.loads(self.location_input.geometry.geojson),
             'fields': [attr.source for attr in self.attributes],
             'timesteps': ['1d'],
             'units': 'metric',
@@ -247,7 +250,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         self.errors = None
         self.warnings = None
         today = datetime.now(tz=pytz.UTC)
-        if self.location_input.type != LocationInputType.POINT:
+        if not self.geom_type_allowed:
             return
         # handles:
         # - start_date=end_date
@@ -288,7 +291,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        if self.location_input.type != LocationInputType.POINT:
+        if not self.geom_type_allowed:
             return DatasetReaderValue([], self.location_input, self.attributes)
         if not self.is_success():
             logger.error(f'Tomorrow.io API errors: {len(self.errors)}')
@@ -414,7 +417,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             value_list.append(DatasetTimelineValue(
                 start_dt,
                 value_data,
-                self.location_input.point
+                self.location_input.geometry
             ))
         warnings = data.get('warnings', None)
         if warnings:

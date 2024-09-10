@@ -25,6 +25,13 @@ def generate_farm_spw(modeladmin, request, queryset):
     )
 
 
+@admin.action(description='Assign farm grid')
+def assign_farm_grid(modeladmin, request, queryset):
+    """Generate Farms SPW."""
+    for farm in queryset.all():
+        farm.assign_grid()
+
+
 @admin.register(FarmCategory)
 class FarmCategoryAdmin(AbstractDefinitionAdmin):
     """FarmCategory admin."""
@@ -45,12 +52,12 @@ class FarmAdmin(admin.ModelAdmin):
 
     list_display = (
         'unique_id', 'latitude', 'longitude',
-        'rsvp_status', 'category', 'crop'
+        'rsvp_status', 'category', 'crop', 'grid'
     )
     search_fields = ('unique_id',)
     filter = ('unique_id',)
     list_filter = ('rsvp_status', 'category', 'crop')
-    actions = (generate_farm_spw,)
+    actions = (generate_farm_spw, assign_farm_grid)
 
     def latitude(self, obj: Farm):
         """Latitude of farm."""

@@ -383,5 +383,93 @@
         "unit": 8,
         "is_active": true
     }
-}
+},
+  {
+    "model": "gap.attribute",
+    "pk": 36,
+    "fields": {
+      "name": "Precipitation Probability",
+      "description": "",
+      "variable_name": "precipitation_probability",
+      "unit": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 37,
+    "fields": {
+      "name": "Relative Humidity Mean",
+      "description": "The mean relative humidity (between 0 and 1) in the day",
+      "variable_name": "mean_relative_humidity",
+      "unit": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 38,
+    "fields": {
+      "name": "Mean Day Temperature",
+      "description": "Daily mean temperature",
+      "variable_name": "mean_day_temperature",
+      "unit": 5,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 39,
+    "fields": {
+      "name": "Precipitation Total",
+      "description": "Precipitation total",
+      "variable_name": "precipitation_total",
+      "unit": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 40,
+    "fields": {
+      "name": "Sea Level Pressure",
+      "description": "",
+      "variable_name": "sea_level_pressure",
+      "unit": 10,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 41,
+    "fields": {
+      "name": "Wind Speed Min",
+      "description": "Wind speed Min",
+      "variable_name": "wind_speed_min",
+      "unit": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 42,
+    "fields": {
+      "name": "Wind Speed Max",
+      "description": "Wind Speed Max",
+      "variable_name": "wind_speed_max",
+      "unit": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 43,
+    "fields": {
+      "name": "Wind Heading",
+      "description": "",
+      "variable_name": "wind_heading",
+      "unit": 11,
+      "is_active": true
+    }
+  }
 ]

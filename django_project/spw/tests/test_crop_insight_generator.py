@@ -17,6 +17,7 @@ from core.group_email_receiver import _group_crop_plan_receiver
 from gap.factories import PreferencesFactory
 from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory
+from gap.factories.grid import GridFactory
 from gap.models.crop_insight import (
     FarmSuitablePlantingWindowSignal, CropInsightRequest
 )
@@ -95,14 +96,28 @@ class TestCropInsightGenerator(TestCase):
 
     def setUp(self):
         """Set the test class."""
+        grid_1 = GridFactory()
+        grid_2 = GridFactory()
+        grid_3 = GridFactory()
         self.farm = FarmFactory.create(
-            geometry=Point(11.1111111, 10.111111111)
+            geometry=Point(11.1111111, 10.111111111),
+            grid=grid_1,
         )
         self.farm_2 = FarmFactory.create(
-            geometry=Point(22.22222222, 100.111111111)
+            geometry=Point(22.22222222, 100.111111111),
+            grid=grid_2
         )
         self.farm_3 = FarmFactory.create(
-            geometry=Point(50.22222222, 50.111111111)
+            geometry=Point(50.22222222, 50.111111111),
+            grid=grid_3,
+        )
+        self.farm_4 = FarmFactory.create(
+            geometry=Point(22.22222222, 100),
+            grid=grid_2,
+        )
+        self.farm_5 = FarmFactory.create(
+            geometry=Point(50.22222222, 50),
+            grid=grid_3,
         )
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
@@ -252,6 +267,8 @@ class TestCropInsightGenerator(TestCase):
         self.request.farms.add(self.farm)
         self.request.farms.add(self.farm_2)
         self.request.farms.add(self.farm_3)
+        self.request.farms.add(self.farm_4)
+        self.request.farms.add(self.farm_5)
         generate_insight_report(self.request.id)
         self.request.refresh_from_db()
         with self.request.file.open(mode='r') as csv_file:
@@ -309,6 +326,36 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[6], '')  # Precip (daily)
                     self.assertEqual(row[7], '')  # Precip % chance
                     self.assertEqual(row[8], '')  # Precip Type
+
+                # Farm 4 has same grid with farm 2
+                elif row_num == 5:
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm_4.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm_4.phone_number)
+                    self.assertEqual(row[2], '100.0')  # Latitude
+                    self.assertEqual(row[3], '22.2222')  # Longitude
+                    self.assertEqual(row[4], 'DO NOT PLANT')
+                    self.assertEqual(
+                        row[5], 'Wait for more positive forecast.'
+                    )
+                    self.assertEqual(row[6], '0.5')  # Precip (daily)
+                    self.assertEqual(row[7], '10.0')  # Precip % chance
+                    self.assertEqual(row[8], 'No Rain')  # Precip Type
+
+                # Farm 5 has same grid with farm 3
+                elif row_num == 6:
+                    # Farm Unique ID
+                    self.assertEqual(row[0], self.farm_5.unique_id)
+                    # Phone Number
+                    self.assertEqual(row[1], self.farm_5.phone_number)
+                    self.assertEqual(row[2], '50.0')  # Latitude
+                    self.assertEqual(row[3], '50.2222')  # Longitude
+                    self.assertEqual(row[4], '')
+                    self.assertEqual(row[5], '')
+                    self.assertEqual(row[6], '')  # Precip (daily)
+                    self.assertEqual(row[7], '')  # Precip % chance
+                    self.assertEqual(row[8], '')  # Precip Type
                 row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
@@ -320,7 +367,7 @@ class TestCropInsightGenerator(TestCase):
         self.assertEqual(
             CropInsightRequest.objects.count(), 1
         )
-        self.assertEqual(mock_generate_spw.call_count, 3)
+        self.assertEqual(mock_generate_spw.call_count, 5)
 
     def test_email_send(self):
         """Test email send when report created."""

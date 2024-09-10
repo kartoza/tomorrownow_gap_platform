@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, Polygon
 
 from core.models.common import Definition
 
@@ -40,6 +40,13 @@ class Country(Definition):
         """Get country by point."""
         return Country.objects.filter(
             geometry__contains=point
+        )
+
+    @staticmethod
+    def get_countries_by_polygon(polygon: Polygon):
+        """Get country by polygon."""
+        return Country.objects.filter(
+            geometry__intersects=polygon
         )
 
 

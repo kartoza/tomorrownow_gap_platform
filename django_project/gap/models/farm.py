@@ -9,6 +9,7 @@ from django.contrib.gis.db import models
 
 from core.models.common import Definition
 from gap.models.common import Village
+from gap.models.grid import Grid
 
 
 class FarmCategory(Definition):
@@ -59,10 +60,28 @@ class Farm(models.Model):
         max_length=255
     )
 
+    # The grid on the farm has failed
+    grid = models.ForeignKey(
+        Grid, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     def __str__(self):
         return self.unique_id
+
+    def save(self, *args, **kwargs):
+        """Override ingestor save."""
+        from gap.tasks import run_ingestor_session  # noqa
+        super(Farm, self).save(*args, **kwargs)
+        self.assign_grid()
 
     @property
     def farm_id(self):
         """Return farm's unique id."""
         return self.unique_id
+
+    def assign_grid(self):
+        """Assign grid to farm."""
+        if not self.grid:
+            self.grid = Grid.get_grids_by_point(self.geometry).first()
+            if self.grid:
+                self.save()

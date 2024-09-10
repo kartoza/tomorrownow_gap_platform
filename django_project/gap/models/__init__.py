@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from gap.models.common import *
 from gap.models.dataset import *
 from gap.models.farm import *
+from gap.models.grid import *
 from gap.models.ingestor import *
 from gap.models.lookup import *
 from gap.models.measurement import *

@@ -1,0 +1,90 @@
+{
+  "items": [
+    {
+      "current_location": {
+        "id": "A00",
+        "org_id": "A00",
+        "name": "A00 Device 2 | 2024-01-01 00:00:00",
+        "gps": [
+          39.57287,
+          -4.16602
+        ],
+        "gps_precision": 0.8,
+        "elev": 132,
+        "country": "KE",
+        "county": "Matuga",
+        "addr_city": "Waa",
+        "addr_state": "Kwale County",
+        "tags": [],
+        "time_offset": 0,
+        "start_date": "2024-01-01 00:00:00",
+        "device_name": "A00",
+        "radius": 1.0,
+        "state": "Confirmed",
+        "tz_name": "Africa/Nairobi",
+        "archived": false,
+        "sites": [
+          {
+            "id": "A00",
+            "name": "A00"
+          }
+        ]
+      },
+      "historical_sites": null,
+      "type": "Type 1",
+      "sensors": [],
+      "id": "Device 1",
+      "org_id": "Device 1",
+      "owner_id": null,
+      "name": "A00"
+    },
+    {
+      "current_location": {
+        "id": "A01",
+        "org_id": "A01",
+        "name": "A01 Device 2 | 2024-01-01 00:00:00",
+        "gps": [
+          35.30957,
+          0.20752
+        ],
+        "gps_precision": 0.69,
+        "elev": 2240,
+        "country": "KE",
+        "county": "Kilibwoni",
+        "addr_city": "Sochoi",
+        "addr_state": "Nandi County",
+        "tags": [],
+        "time_offset": 0,
+        "start_date": "2024-01-01 00:00:00",
+        "device_name": "A01",
+        "radius": 1.0,
+        "state": "Confirmed",
+        "tz_name": "Africa/Nairobi",
+        "archived": false,
+        "sites": [
+          {
+            "id": "A01",
+            "name": "A01"
+          }
+        ]
+      },
+      "historical_sites": null,
+      "type": "Type 1",
+      "sensors": [],
+      "id": "Device 2",
+      "org_id": "Device 2",
+      "owner_id": null,
+      "name": "A01"
+    },
+    {
+      "current_location": {},
+      "historical_sites": [],
+      "type": "Type 1",
+      "sensors": [],
+      "id": "Device death",
+      "org_id": "A0X",
+      "owner_id": null,
+      "name": "A0X"
+    }
+  ]
+}

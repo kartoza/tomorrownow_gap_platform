@@ -13,7 +13,7 @@ import pytz
 import tempfile
 from xarray.core.dataset import Dataset as xrDataset
 from django.contrib.gis.geos import (
-    Point, MultiPolygon, GeometryCollection, MultiPoint
+    Point, Polygon, MultiPolygon, GeometryCollection, MultiPoint, GEOSGeometry
 )
 
 from gap.models import (
@@ -129,6 +129,19 @@ class DatasetReaderInput:
             MultiPoint([point]), LocationInputType.POINT)
 
     @classmethod
+    def from_polygon(cls, polygon: Polygon):
+        """Create input from single point.
+
+        :param polygon: single polygon
+        :type polygon: Polygon
+        :return: DatasetReaderInput with Polygon type
+        :rtype: DatasetReaderInput
+        """
+        return DatasetReaderInput(
+            MultiPolygon([polygon]), LocationInputType.POLYGON
+        )
+
+    @classmethod
     def from_bbox(cls, bbox_list: List[float]):
         """Create input from bbox (xmin, ymin, xmax, ymax).
 
@@ -142,6 +155,16 @@ class DatasetReaderInput:
                 Point(x=bbox_list[0], y=bbox_list[1], srid=4326),
                 Point(x=bbox_list[2], y=bbox_list[3], srid=4326)
             ]), LocationInputType.BBOX)
+
+    @property
+    def geometry(self) -> GEOSGeometry:
+        """Return geometry of geom_collection."""
+        geometry = self.geom_collection
+        if self.type == LocationInputType.POINT:
+            geometry = self.point
+        elif self.type == LocationInputType.POLYGON:
+            geometry = self.geom_collection[0]
+        return geometry
 
 
 class DatasetReaderOutputType:
