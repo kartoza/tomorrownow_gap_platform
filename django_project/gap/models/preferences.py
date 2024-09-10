@@ -6,6 +6,8 @@ Tomorrow Now GAP.
 
 """
 
+from datetime import datetime, tzinfo
+
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Polygon
 
@@ -31,11 +33,29 @@ def area_of_interest_default():
     return Polygon(coordinates)
 
 
-def crop_plan_config_default():
+def area_of_salient_default():
+    """Return polygon default for salient collector."""
+    coordinates = [
+        (41.89, 3.98),
+        (35.08, 4.87),
+        (30.92, 3.57),
+        (28.66, -2.48),
+        (31.13, -8.62),
+        (34.6, -11.74),
+        (40.65, -10.68),
+        (39.34, -4.73),
+        (41.56, -1.64),
+        (41.9, 3.98),
+        (41.89, 3.98)
+    ]
+    return Polygon(coordinates)
+
+
+def crop_plan_config_default() -> dict:
     """Return dictionary for crop plan config."""
     return {
         'lat_lon_decimal_digits': -1,
-        'tz': '+02:00'  # East Africa Time
+        'tz': '+03:00'  # East Africa Time
     }
 
 
@@ -51,8 +71,40 @@ class Preferences(SingletonModel):
         blank=True
     )
 
+    # salient config
+    salient_area = models.PolygonField(
+        srid=4326, default=area_of_salient_default,
+        help_text='Area that Salient collector will use to pull the data'
+    )
+
+    # Documentations
+    documentation_url = models.URLField(
+        default='https://kartoza.github.io/tomorrownow_gap/',
+        null=True,
+        blank=True
+    )
+
     class Meta:  # noqa: D106
         verbose_name_plural = "preferences"
 
     def __str__(self):
         return 'Preferences'
+
+    @staticmethod
+    def lat_lon_decimal_digits() -> int:
+        """Return decimal digits for latitude and longitude."""
+        crop_plan_conf = Preferences.load().crop_plan_config
+        return crop_plan_conf.get(
+            'lat_lon_decimal_digits',
+            crop_plan_config_default()['lat_lon_decimal_digits']
+        )
+
+    @staticmethod
+    def east_africa_timezone() -> tzinfo:
+        """Return east african time zone."""
+        crop_plan_conf = Preferences.load().crop_plan_config
+        timezone = crop_plan_conf.get(
+            'tz',
+            crop_plan_config_default()['tz']
+        )
+        return datetime.strptime(timezone, "%z").tzinfo

@@ -1,0 +1,38 @@
+{% extends "drf-yasg/swagger-ui.html" %}
+
+{% block extra_styles %}
+    <style>
+      .topbar-wrapper .link:hover {
+        opacity: 0.5;
+      }
+
+      .topbar-wrapper .link:after {
+        content: 'Home' !important;
+        color: white;
+        cursor: pointer;
+      }
+
+      .topbar-wrapper .link img {
+        display: none !important;
+      }
+
+      .swagger-ui .topbar a {
+        display: block;
+        flex: 0;
+        margin-right: 200px;
+      }
+
+      .info .main {
+        margin-bottom: 0 !important;
+      }
+    </style>
+{% endblock %}
+{% block extra_scripts %}
+    <script>
+      setTimeout(function () {
+        const link = document.getElementsByClassName('topbar-wrapper')[0].getElementsByClassName('link')[0]
+        link.href = "/"
+        link.target = "_blank"
+      }, 500);
+    </script>
+{% endblock %}

@@ -7,11 +7,12 @@ Tomorrow Now GAP.
 
 import os
 import logging
+import s3fs
+import fsspec
 from typing import List
 from datetime import datetime
 import xarray as xr
 from xarray.core.dataset import Dataset as xrDataset
-import fsspec
 
 from gap.models import (
     Dataset,
@@ -104,6 +105,19 @@ class BaseZarrReader(BaseNetCDFReader):
             zarr_url += '/'
         return zarr_url
 
+    @classmethod
+    def get_zarr_cache_dir(cls, zarr_filename: str) -> str:
+        """Get the directory for zarr cache.
+
+        :param zarr_filename: DataSourceFile name
+        :type zarr_filename: str
+        :return: Path to the zarr cache
+        :rtype: str
+        """
+        cache_filename = zarr_filename.replace('.', '_')
+        cache_filename = cache_filename.replace('/', '_')
+        return f'/tmp/{cache_filename}'
+
     def setup_reader(self):
         """Initialize s3fs."""
         self.s3 = self.get_s3_variables()
@@ -121,7 +135,36 @@ class BaseZarrReader(BaseNetCDFReader):
         :return: xArray Dataset object
         :rtype: xrDataset
         """
+        # get zarr url
         zarr_url = self.get_zarr_base_url(self.s3)
         zarr_url += f'{source_file.name}'
-        s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
-        return xr.open_zarr(s3_mapper)
+
+        # create s3 filecache
+        s3_fs = s3fs.S3FileSystem(
+            key=self.s3.get('AWS_ACCESS_KEY_ID'),
+            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
+            endpoint_url=self.s3.get('AWS_ENDPOINT_URL')
+        )
+        fs = fsspec.filesystem(
+            'filecache',
+            target_protocol='s3',
+            target_options=self.s3_options,
+            cache_storage=self.get_zarr_cache_dir(source_file.name),
+            cache_check=3600,
+            expiry_time=86400,
+            target_kwargs={
+                's3': s3_fs
+            }
+        )
+
+        # create fsspec mapper file list
+        s3_mapper = fs.get_mapper(zarr_url)
+        drop_variables = []
+        if source_file.metadata:
+            drop_variables = source_file.metadata.get(
+                'drop_variables', [])
+        # open zarr, use consolidated to read the metadata
+        ds = xr.open_zarr(
+            s3_mapper, consolidated=True, drop_variables=drop_variables)
+
+        return ds

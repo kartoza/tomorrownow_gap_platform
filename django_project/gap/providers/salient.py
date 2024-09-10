@@ -283,7 +283,8 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         self.xrDatasets = []
         zarr_file = DataSourceFile.objects.filter(
             dataset=self.dataset,
-            format=DatasetStore.ZARR
+            format=DatasetStore.ZARR,
+            is_latest=True
         ).order_by('id').last()
         if zarr_file is None:
             return
@@ -337,12 +338,10 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         max_idx = self._get_forecast_day_idx(end_dt)
         return dataset[variables].sel(
             forecast_date=self.latest_forecast_date,
+            **{self.date_variable: slice(min_idx, max_idx)}
+        ).sel(
             lat=point.y,
-            lon=point.x, method='nearest').where(
-                (dataset[self.date_variable] >= min_idx) &
-                (dataset[self.date_variable] <= max_idx),
-                drop=True
-        )
+            lon=point.x, method='nearest')
 
     def _read_variables_by_bbox(
             self, dataset: xrDataset, variables: List[str],
@@ -370,13 +369,10 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         max_idx = self._get_forecast_day_idx(end_dt)
         # output results is in two dimensional array
         return dataset[variables].sel(
-            forecast_date=self.latest_forecast_date
-        ).where(
-            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
-            (dataset.lon >= lon_min) & (dataset.lon <= lon_max) &
-            (dataset[self.date_variable] >= min_idx) &
-            (dataset[self.date_variable] <= max_idx),
-            drop=True
+            forecast_date=self.latest_forecast_date,
+            lat=slice(lat_min, lat_max),
+            lon=slice(lon_min, lon_max),
+            **{self.date_variable: slice(min_idx, max_idx)}
         )
 
     def _read_variables_by_polygon(
@@ -406,11 +402,10 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
         # Mask the dataset
         return dataset[variables].sel(
-            forecast_date=self.latest_forecast_date
+            forecast_date=self.latest_forecast_date,
+            **{self.date_variable: slice(min_idx, max_idx)}
         ).where(
-            (mask == 0) &
-            (dataset[self.date_variable] >= min_idx) &
-            (dataset[self.date_variable] <= max_idx),
+            mask == 0,
             drop=True
         )
 
@@ -453,8 +448,9 @@ class SalientZarrReader(BaseZarrReader, SalientNetCDFReader):
         )
         # Apply the mask to the dataset
         return dataset[variables].sel(
-            forecast_date=self.latest_forecast_date
+            forecast_date=self.latest_forecast_date,
+            **{self.date_variable: slice(min_idx, max_idx)}
         ).where(
-            (mask_da) &
-            (dataset[self.date_variable] >= min_idx) &
-            (dataset[self.date_variable] <= max_idx), drop=True)
+            mask_da,
+            drop=True
+        )

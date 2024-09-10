@@ -237,11 +237,10 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
         """
         point = self.location_input.point
         return dataset[variables].sel(
+            **{self.date_variable: slice(start_dt, end_dt)}
+        ).sel(
             lat=point.y,
-            lon=point.x, method='nearest').where(
-                (dataset[self.date_variable] >= start_dt) &
-                (dataset[self.date_variable] <= end_dt),
-                drop=True
+            lon=point.x, method='nearest'
         )
 
     def _read_variables_by_bbox(
@@ -267,11 +266,11 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
         lon_min = points[0].x
         lon_max = points[1].x
         # output results is in two dimensional array
-        return dataset[variables].where(
-            (dataset.lat >= lat_min) & (dataset.lat <= lat_max) &
-            (dataset.lon >= lon_min) & (dataset.lon <= lon_max) &
-            (dataset[self.date_variable] >= start_dt) &
-            (dataset[self.date_variable] <= end_dt), drop=True)
+        return dataset[variables].sel(
+            lat=slice(lat_min, lat_max),
+            lon=slice(lon_min, lon_max),
+            **{self.date_variable: slice(start_dt, end_dt)}
+        )
 
     def _read_variables_by_polygon(
             self, dataset: xrDataset, variables: List[str],
@@ -296,12 +295,14 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
 
         # Create a mask using regionmask from the shapely polygon
         mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
-        # TODO: we should pass the non-NA indices from mask to find_locations
+
         # Mask the dataset
-        return dataset[variables].where(
-            (mask == 0) &
-            (dataset[self.date_variable] >= start_dt) &
-            (dataset[self.date_variable] <= end_dt), drop=True)
+        return dataset[variables].sel(
+            **{self.date_variable: slice(start_dt, end_dt)}
+        ).where(
+            mask == 0,
+            drop=True
+        )
 
     def _read_variables_by_points(
             self, dataset: xrDataset, variables: List[str],
@@ -334,10 +335,12 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
             }, dims=['lat', 'lon']
         )
         # Apply the mask to the dataset
-        return dataset[variables].where(
-            (mask_da) &
-            (dataset[self.date_variable] >= start_dt) &
-            (dataset[self.date_variable] <= end_dt), drop=True)
+        return dataset[variables].sel(
+            **{self.date_variable: slice(start_dt, end_dt)}
+        ).where(
+            mask_da,
+            drop=True
+        )
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -350,8 +353,9 @@ class CBAMZarrReader(BaseZarrReader, CBAMNetCDFReader):
         self.setup_reader()
         zarr_file = DataSourceFile.objects.filter(
             dataset=self.dataset,
-            format=DatasetStore.ZARR
-        ).last()
+            format=DatasetStore.ZARR,
+            is_latest=True
+        ).order_by('id').last()
         if zarr_file is None:
             return
         ds = self.open_dataset(zarr_file)

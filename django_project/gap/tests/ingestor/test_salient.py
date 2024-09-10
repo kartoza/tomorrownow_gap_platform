@@ -12,7 +12,7 @@ import pandas as pd
 from xarray.core.dataset import Dataset as xrDataset
 from django.test import TestCase
 
-from gap.models import Dataset, DataSourceFile
+from gap.models import Dataset, DataSourceFile, DatasetStore
 from gap.models.ingestor import (
     IngestorSession,
     IngestorType,
@@ -20,6 +20,7 @@ from gap.models.ingestor import (
 )
 from gap.ingestor.salient import SalientIngestor, SalientCollector
 from gap.factories import DataSourceFileFactory
+from gap.tasks.ingestor import run_salient_collector_session
 
 
 class SalientIngestorBaseTest(TestCase):
@@ -145,9 +146,69 @@ class TestSalientCollector(SalientIngestorBaseTest):
             self.collector.run()
         self.assertEqual(mock_logger.error.call_count, 2)
 
+    @patch('gap.models.ingestor.CollectorSession.dataset_files')
+    @patch('gap.models.ingestor.CollectorSession.run')
+    @patch('gap.tasks.ingestor.run_ingestor_session.delay')
+    def test_run_salient_collector_session(
+        self, mock_ingestor, mock_collector, mock_count
+    ):
+        """Test run salient collector session."""
+        mock_count.count.return_value = 0
+        run_salient_collector_session()
+        # assert
+        mock_collector.assert_called_once()
+        mock_ingestor.assert_not_called()
+
+        mock_collector.reset_mock()
+        mock_ingestor.reset_mock()
+        # test with collector result
+        mock_count.count.return_value = 1
+        run_salient_collector_session()
+
+        # assert
+        session = IngestorSession.objects.filter(
+            ingestor_type=IngestorType.SALIENT,
+        ).last()
+        self.assertTrue(session)
+        self.assertEqual(session.collectors.count(), 1)
+        mock_collector.assert_called_once()
+        mock_ingestor.assert_called_once_with(session.id)
+
 
 class TestSalientIngestor(SalientIngestorBaseTest):
     """Salient ingestor test case."""
+
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
+    @patch('gap.utils.zarr.BaseZarrReader.get_s3_client_kwargs')
+    def test_init_with_existing_source(
+        self, mock_get_s3_client_kwargs, mock_get_s3_variables
+    ):
+        """Test init method with existing DataSourceFile."""
+        datasource = DataSourceFileFactory.create(
+            dataset=self.dataset,
+            format=DatasetStore.ZARR,
+            name='salient_test.zarr'
+        )
+        mock_get_s3_variables.return_value = {
+            'AWS_ACCESS_KEY_ID': 'test_access_key',
+            'AWS_SECRET_ACCESS_KEY': 'test_secret_key'
+        }
+        mock_get_s3_client_kwargs.return_value = {
+            'endpoint_url': 'https://test-endpoint.com'
+        }
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.SALIENT,
+            additional_config={
+                'datasourcefile_id': datasource.id,
+                'datasourcefile_zarr_exists': True
+            }
+        )
+        ingestor = SalientIngestor(session)
+        self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
+        self.assertEqual(ingestor.s3_options['key'], 'test_access_key')
+        self.assertTrue(ingestor.datasource_file)
+        self.assertEqual(ingestor.datasource_file.name, datasource.name)
+        self.assertFalse(ingestor.created)
 
     @patch('gap.utils.netcdf.NetCDFMediaS3')
     @patch('gap.utils.zarr.BaseZarrReader')
@@ -259,7 +320,10 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         # Create a mock dataset
         mock_dataset = xrDataset(
             {
-                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+                'temp': (
+                    ('forecast_day', 'ensemble', 'lat', 'lon'),
+                    np.random.rand(1, 50, 2, 2)
+                ),
             },
             coords={
                 'forecast_day': pd.date_range('2024-08-28', periods=1),
@@ -308,7 +372,10 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         # Mock the open_dataset return value
         mock_dataset = xrDataset(
             {
-                'temp': (('lat', 'lon'), np.random.rand(2, 2)),
+                'temp': (
+                    ('forecast_day', 'ensemble', 'lat', 'lon'),
+                    np.random.rand(1, 50, 2, 2)
+                ),
             },
             coords={
                 'forecast_day': pd.date_range('2024-08-28', periods=1),
