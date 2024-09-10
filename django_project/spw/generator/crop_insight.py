@@ -15,7 +15,8 @@ from gap.models.crop_insight import (
 )
 from gap.models.farm import Farm
 from spw.generator.main import (
-    calculate_from_point, VAR_MAPPING_REVERSE, calculate_from_point_attrs
+    calculate_from_point, calculate_from_polygon, VAR_MAPPING_REVERSE,
+    calculate_from_point_attrs
 )
 
 
@@ -85,9 +86,14 @@ class CropInsightFarmGenerator:
         while not generated:
             print('Generating Farm SPW...')
             try:
-                output, historical_dict = calculate_from_point(
-                    self.farm.geometry
-                )
+                if self.farm.grid:
+                    output, historical_dict = calculate_from_polygon(
+                        self.farm.grid.geometry
+                    )
+                else:
+                    output, historical_dict = calculate_from_point(
+                        self.farm.geometry
+                    )
                 generated = True
             except Exception as e:
                 # When error, retry until 3 times

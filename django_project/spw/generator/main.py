@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from typing import List, Tuple
 
 import pytz
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, Polygon
 from django.utils import timezone
 
 from gap.models import Dataset, DatasetAttribute, CastType
@@ -81,16 +81,10 @@ def calculate_from_point_attrs():
     )
 
 
-def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
-    """Calculate SPW from given point.
-
-    :param point: Location to be queried
-    :type point: Point
-    :return: Output with GoNoGo classification
-    :rtype: Tuple[SPWOutput, dict]
-    """
-    TomorrowIODatasetReader.init_provider()
-    location_input = DatasetReaderInput.from_point(point)
+def _calculate_from_point(
+        point: Point, location_input
+) -> Tuple[SPWOutput, dict]:
+    """Calculate from point."""
     today = datetime.now(tz=pytz.UTC)
     start_dt = today - timedelta(days=37)
     end_dt = today + timedelta(days=14)
@@ -127,6 +121,32 @@ def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
             row.append(val.get(c, 0))
         rows.append(row)
     return _execute_spw_model(rows, point), historical_dict
+
+
+def calculate_from_point(point: Point) -> Tuple[SPWOutput, dict]:
+    """Calculate SPW from given point.
+
+    :param point: Location to be queried
+    :type point: Point
+    :return: Output with GoNoGo classification
+    :rtype: Tuple[SPWOutput, dict]
+    """
+    TomorrowIODatasetReader.init_provider()
+    location_input = DatasetReaderInput.from_point(point)
+    return _calculate_from_point(point, location_input)
+
+
+def calculate_from_polygon(polygon: Polygon) -> Tuple[SPWOutput, dict]:
+    """Calculate SPW from given point.
+
+    :param polygon: Location to be queried
+    :type polygon: Polygon
+    :return: Output with GoNoGo classification
+    :rtype: Tuple[SPWOutput, dict]
+    """
+    TomorrowIODatasetReader.init_provider()
+    location_input = DatasetReaderInput.from_polygon(polygon)
+    return _calculate_from_point(polygon.centroid, location_input)
 
 
 def _execute_spw_model(rows: List, point: Point) -> SPWOutput:
