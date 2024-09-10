@@ -37,4 +37,11 @@ class PreferencesAdmin(admin.ModelAdmin):
                 )
             }
         ),
+        (
+            'Arable', {
+                'fields': (
+                    'arable_api_url',
+                )
+            }
+        ),
     )

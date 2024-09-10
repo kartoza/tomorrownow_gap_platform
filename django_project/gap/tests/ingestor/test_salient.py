@@ -20,7 +20,7 @@ from gap.models.ingestor import (
 )
 from gap.ingestor.salient import SalientIngestor, SalientCollector
 from gap.factories import DataSourceFileFactory
-from gap.tasks.ingestor import run_salient_collector_session
+from gap.tasks.collector import run_salient_collector_session
 
 
 class SalientIngestorBaseTest(TestCase):

@@ -14,7 +14,8 @@ from gap.models import (
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
     DatasetType, Unit, Village, CollectorSession, DatasetStore
 )
-from gap.tasks.ingestor import run_collector_session
+from gap.tasks.collector import run_collector_session
+from gap.tasks.ingestor import run_ingestor_session
 from gap.utils.zarr import BaseZarrReader
 
 
@@ -107,6 +108,13 @@ class IngestorSessionProgressInline(admin.TabularInline):
     extra = 0
 
 
+@admin.action(description='Run Ingestor Session Task')
+def trigger_ingestor_session(modeladmin, request, queryset):
+    """Run Ingestor Session."""
+    for query in queryset:
+        run_ingestor_session.delay(query.id)
+
+
 @admin.register(IngestorSession)
 class IngestorSessionAdmin(admin.ModelAdmin):
     """IngestorSession admin."""
@@ -116,6 +124,7 @@ class IngestorSessionAdmin(admin.ModelAdmin):
     )
     list_filter = ('ingestor_type', 'status')
     inlines = (IngestorSessionProgressInline,)
+    actions = (trigger_ingestor_session,)
 
 
 @admin.action(description='Run Collector Session Task')

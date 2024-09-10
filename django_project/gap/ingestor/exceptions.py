@@ -19,3 +19,11 @@ class FileIsNotCorrectException(Exception):
 
     def __init__(self, message):  # noqa
         super().__init__(message)
+
+
+class ApiKeyNotFoundException(Exception):
+    """Api key not found."""
+
+    def __init__(self):  # noqa
+        self.message = 'Api key not found.'
+        super().__init__(self.message)

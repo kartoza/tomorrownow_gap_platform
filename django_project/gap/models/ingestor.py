@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import tempfile
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -29,6 +30,7 @@ class IngestorType:
     CBAM = 'CBAM'
     SALIENT = 'Salient'
     TOMORROWIO = 'Tomorrow.io'
+    ARABLE = 'Arable'
 
 
 class IngestorSessionStatus:
@@ -55,6 +57,7 @@ class BaseSession(models.Model):
             (IngestorType.CBAM, IngestorType.CBAM),
             (IngestorType.SALIENT, IngestorType.SALIENT),
             (IngestorType.TOMORROWIO, IngestorType.TOMORROWIO),
+            (IngestorType.ARABLE, IngestorType.ARABLE),
         ),
         max_length=512
     )
@@ -167,19 +170,26 @@ class IngestorSession(BaseSession):
         from gap.ingestor.farm import FarmIngestor
         from gap.ingestor.cbam import CBAMIngestor
         from gap.ingestor.salient import SalientIngestor
+        from gap.ingestor.arable import ArableIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
-            ingestor = TahmoIngestor(self, working_dir)
+            ingestor = TahmoIngestor
         elif self.ingestor_type == IngestorType.FARM:
-            ingestor = FarmIngestor(self, working_dir)
+            ingestor = FarmIngestor
         elif self.ingestor_type == IngestorType.CBAM:
-            ingestor = CBAMIngestor(self, working_dir)
+            ingestor = CBAMIngestor
         elif self.ingestor_type == IngestorType.SALIENT:
-            ingestor = SalientIngestor(self, working_dir)
+            ingestor = SalientIngestor
+        elif self.ingestor_type == IngestorType.ARABLE:
+            ingestor = ArableIngestor
 
         if ingestor:
-            ingestor.run()
+            ingestor(self, working_dir).run()
+        else:
+            raise Exception(
+                f'No Ingestor class for {self.ingestor_type}'
+            )
 
     def run(self):
         """Run the ingestor session."""
