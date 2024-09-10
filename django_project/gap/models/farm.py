@@ -9,6 +9,7 @@ from django.contrib.gis.db import models
 
 from core.models.common import Definition
 from gap.models.common import Village
+from gap.models.grid import Grid
 
 
 class FarmCategory(Definition):
@@ -57,6 +58,11 @@ class Farm(models.Model):
         null=True,
         blank=True,
         max_length=255
+    )
+
+    # The grid on the farm has failed
+    grid = models.ForeignKey(
+        Grid, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     def __str__(self):
