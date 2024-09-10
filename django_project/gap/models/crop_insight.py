@@ -265,9 +265,9 @@ class CropPlanData:
     @staticmethod
     def default_fields():
         """Return shortterm default fields."""
-        from gap.providers.tio import tomorrowio_shortterm_forcast_dataset
+        from gap.providers.tio import tomorrowio_shortterm_forecast_dataset
 
-        dataset = tomorrowio_shortterm_forcast_dataset()
+        dataset = tomorrowio_shortterm_forecast_dataset()
         forecast_fields = list(
             DatasetAttribute.objects.filter(
                 dataset=dataset
