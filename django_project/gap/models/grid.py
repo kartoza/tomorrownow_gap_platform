@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from django.contrib.gis.db import models
 
 from core.models.common import Definition
+from gap.models.common import Country
 
 
 class Grid(Definition):
@@ -21,3 +22,7 @@ class Grid(Definition):
         srid=4326
     )
     elevation = models.FloatField()
+    country = models.ForeignKey(
+        Country, on_delete=models.SET_NULL,
+        null=True, blank=True
+    )

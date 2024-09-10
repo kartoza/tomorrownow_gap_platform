@@ -29,6 +29,7 @@ class IngestorType:
     CBAM = 'CBAM'
     SALIENT = 'Salient'
     TOMORROWIO = 'Tomorrow.io'
+    GRID = 'Grid'
 
 
 class IngestorSessionStatus:
@@ -55,6 +56,7 @@ class BaseSession(models.Model):
             (IngestorType.CBAM, IngestorType.CBAM),
             (IngestorType.SALIENT, IngestorType.SALIENT),
             (IngestorType.TOMORROWIO, IngestorType.TOMORROWIO),
+            (IngestorType.GRID, IngestorType.GRID),
         ),
         max_length=512
     )
@@ -167,6 +169,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.farm import FarmIngestor
         from gap.ingestor.cbam import CBAMIngestor
         from gap.ingestor.salient import SalientIngestor
+        from gap.ingestor.grid import GridIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -177,6 +180,8 @@ class IngestorSession(BaseSession):
             ingestor = CBAMIngestor(self, working_dir)
         elif self.ingestor_type == IngestorType.SALIENT:
             ingestor = SalientIngestor(self, working_dir)
+        elif self.ingestor_type == IngestorType.GRID:
+            ingestor = GridIngestor(self, working_dir)
 
         if ingestor:
             ingestor.run()

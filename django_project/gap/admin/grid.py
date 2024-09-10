@@ -16,7 +16,7 @@ class GridAdmin(admin.ModelAdmin):
 
     list_display = (
         'unique_id', 'latitude', 'longitude',
-        'elevation', 'name'
+        'elevation', 'name', 'country'
     )
 
     def latitude(self, obj: Grid):
