@@ -14,7 +14,7 @@ from gap.factories.main import AttributeFactory
 from gap.models import (
     DatasetAttribute, FarmShortTermForecast, FarmShortTermForecastData
 )
-from gap.providers.tio import tomorrowio_shortterm_forcast_dataset
+from gap.providers.tio import tomorrowio_shortterm_forecast_dataset
 from gap_api.api_views.crop_insight import CropPlanAPI
 
 
@@ -34,7 +34,7 @@ class CropPlanAPITest(BaseAPIViewTest):
         """Init test class."""
         super().setUp()
 
-        ds_forecast = tomorrowio_shortterm_forcast_dataset()
+        ds_forecast = tomorrowio_shortterm_forecast_dataset()
         attr = AttributeFactory()
         self.farm = FarmFactory.create(
             unique_id='farm-1',
