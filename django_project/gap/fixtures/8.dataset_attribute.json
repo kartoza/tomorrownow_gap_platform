@@ -416,5 +416,159 @@
         "source_unit": 8,
         "ensembles": true
     }
-}
+},
+  {
+    "model": "gap.datasetattribute",
+    "pk": 39,
+    "fields": {
+      "dataset": 8,
+      "attribute": 8,
+      "source": "et",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 40,
+    "fields": {
+      "dataset": 8,
+      "attribute": 5,
+      "source": "max_rh",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 41,
+    "fields": {
+      "dataset": 8,
+      "attribute": 14,
+      "source": "maxt",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 42,
+    "fields": {
+      "dataset": 8,
+      "attribute": 37,
+      "source": "mean_rh",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 43,
+    "fields": {
+      "dataset": 8,
+      "attribute": 38,
+      "source": "meant",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 44,
+    "fields": {
+      "dataset": 8,
+      "attribute": 4,
+      "source": "min_rh",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 45,
+    "fields": {
+      "dataset": 8,
+      "attribute": 16,
+      "source": "mint",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 46,
+    "fields": {
+      "dataset": 8,
+      "attribute": 39,
+      "source": "precip",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 47,
+    "fields": {
+      "dataset": 8,
+      "attribute": 7,
+      "source": "prate",
+      "source_unit": 4,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 48,
+    "fields": {
+      "dataset": 8,
+      "attribute": 40,
+      "source": "slp",
+      "source_unit": 10,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 49,
+    "fields": {
+      "dataset": 8,
+      "attribute": 43,
+      "source": "wind_heading",
+      "source_unit": 11,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 50,
+    "fields": {
+      "dataset": 8,
+      "attribute": 33,
+      "source": "wind_speed",
+      "source_unit": 8,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 51,
+    "fields": {
+      "dataset": 8,
+      "attribute": 42,
+      "source": "wind_speed_max",
+      "source_unit": 8,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 52,
+    "fields": {
+      "dataset": 8,
+      "attribute": 41,
+      "source": "wind_speed_min",
+      "source_unit": 8,
+      "ensembles": false
+    }
+  }
 ]

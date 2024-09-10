@@ -10,9 +10,9 @@ from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group
 
 from core.celery import cancel_task
-from core.models.background_task import BackgroundTask
+from core.forms import CreateKnoxTokenForm, CreateAuthToken
 from core.group_email_receiver import crop_plan_receiver
-
+from core.models.background_task import BackgroundTask
 
 User = get_user_model()
 
@@ -102,3 +102,32 @@ class BackgroundTaskAdmin(admin.ModelAdmin):
     actions = [cancel_background_task]
     list_filter = ["status", "task_name"]
     list_per_page = 30
+
+
+@admin.register(CreateAuthToken)
+class CreateAuthTokenAdmin(admin.ModelAdmin):
+    """Create auth token."""
+
+    add_form = CreateKnoxTokenForm
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Get form of admin."""
+        if not obj:
+            self.form = self.add_form
+        form = super(
+            CreateAuthTokenAdmin, self
+        ).get_form(request, obj, **kwargs)
+        form.request = request
+        return form
+
+    def has_change_permission(self, request, obj=None):
+        """Return change permission."""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Return delete permission."""
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        """Return view permission."""
+        return False

@@ -11,6 +11,7 @@ from .utils import absolute_path
 INSTALLED_APPS = INSTALLED_APPS + (
     'rest_framework',
     'rest_framework_gis',
+    'knox',
     'webpack_loader',
     'guardian',
     'django_cleanup.apps.CleanupConfig',
@@ -32,7 +33,7 @@ WEBPACK_LOADER = {
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'knox.auth.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],

@@ -12,7 +12,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 from gap.ingestor.exceptions import FileNotFoundException
-from gap.models.ingestor import IngestorSession, IngestorSessionStatus
+from gap.models.ingestor import (
+    IngestorSession, IngestorSessionStatus, IngestorType
+)
 from gap.models.station import Station, Country
 
 
@@ -28,6 +30,7 @@ class TahmoIngestorTest(TestCase):
         '7.attribute.json',
         '8.dataset_attribute.json'
     ]
+    ingestor_type = IngestorType.TAHMO
 
     def setUp(self):
         """Init test case."""
@@ -48,8 +51,10 @@ class TahmoIngestorTest(TestCase):
 
     def test_no_file(self):
         """Test create provider object."""
-        session = IngestorSession.objects.create()
-        session.run()
+        session = IngestorSession.objects.create(
+            ingestor_type=self.ingestor_type
+        )
+        session.refresh_from_db()
         self.assertEqual(session.notes, FileNotFoundException().message)
         self.assertEqual(session.status, IngestorSessionStatus.FAILED)
 
@@ -62,9 +67,10 @@ class TahmoIngestorTest(TestCase):
         )
         _file = open(filepath, 'rb')
         session = IngestorSession.objects.create(
-            file=SimpleUploadedFile(_file.name, _file.read())
+            file=SimpleUploadedFile(_file.name, _file.read()),
+            ingestor_type=self.ingestor_type
         )
-        session.run()
+        session.refresh_from_db()
         self.assertEqual(
             session.ingestorsessionprogress_set.filter(
                 session=session,
