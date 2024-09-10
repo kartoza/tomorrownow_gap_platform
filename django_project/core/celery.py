@@ -1,8 +1,8 @@
 """Tomorrow Now GAP."""
 from __future__ import absolute_import, unicode_literals
 
-import os
 import logging
+import os
 
 from celery import Celery, signals
 from celery.result import AsyncResult
@@ -10,7 +10,6 @@ from celery.schedules import crontab
 from celery.utils.serialization import strtobool
 from celery.worker.control import inspect_command
 from django.utils import timezone
-
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +48,10 @@ app.conf.beat_schedule = {
         'task': 'generate_crop_plan',
         # Run everyday at 01:30 UTC or 04:30 EAT
         'schedule': crontab(minute='30', hour='1'),
+    },
+    'retry-crop-plan-generators': {
+        'task': 'retry_crop_plan_generators',
+        'schedule': crontab(minute='0', hour='*'),
     },
     'salient-collector-session': {
         'task': 'salient_collector_session',
@@ -297,7 +300,7 @@ def task_failure_handler(
 
 
 @signals.task_revoked.connect
-def task_revoked_handler(sender, request = None, **kwargs):
+def task_revoked_handler(sender, request=None, **kwargs):
     """Handle a cancelled task.
 
     :param sender: task sender

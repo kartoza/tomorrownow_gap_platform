@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 import json
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,6 +17,7 @@ from django.core.mail import EmailMessage
 from django.utils import timezone
 
 from core.group_email_receiver import crop_plan_receiver
+from core.models.background_task import BackgroundTask, TaskStatus
 from core.models.common import Definition
 from gap.models import Farm
 from gap.models.lookup import RainfallClassification
@@ -340,7 +341,6 @@ class CropPlanData:
         spw = FarmSuitablePlantingWindowSignal.objects.filter(
             farm=self.farm,
             generated_date=self.generated_date
-
         ).first()
         if spw:
             try:
@@ -408,6 +408,93 @@ class CropInsightRequest(models.Model):
         null=True, blank=True
     )
 
+    task_names = ['generate_insight_report', 'generate_crop_plan']
+
+    @property
+    def last_background_task(self) -> BackgroundTask:
+        """Return background task."""
+        return BackgroundTask.objects.filter(
+            context_id=self.id,
+            task_name__in=self.task_names
+        ).last()
+
+    @property
+    def background_tasks(self):
+        """Return background task."""
+        return BackgroundTask.objects.filter(
+            context_id=self.id,
+            task_name__in=self.task_names
+        )
+
+    @property
+    def background_task_running(self):
+        """Return background task that is running."""
+        return BackgroundTask.running_tasks().filter(
+            context_id=self.id,
+            task_name__in=self.task_names
+        )
+
+    @staticmethod
+    def today_reports():
+        """Return query of today reports."""
+        now = timezone.now()
+        return CropInsightRequest.objects.filter(
+            requested_at__gte=now.date(),
+            requested_at__lte=now.date() + timedelta(days=1),
+        )
+
+    @property
+    def skip_run(self):
+        """Skip run process."""
+        background_task_running = self.background_task_running
+        last_running_background_task = background_task_running.last()
+        last_background_task = self.last_background_task
+
+        # This rule is based on the second task that basically
+        # is already running
+        # So we need to check of other task is already running
+
+        # If there are already complete task
+        # Skip it
+        if self.background_tasks.filter(status=TaskStatus.COMPLETED):
+            return True
+
+        # If the last running background task is
+        # not same with last background task
+        # We skip it as the last running one is other task
+        if last_running_background_task and (
+                last_running_background_task.id != last_background_task.id
+        ):
+            return True
+
+        # If there are already running task 2,
+        # the current task is skipped
+        if background_task_running.count() >= 2:
+            return True
+
+        now = timezone.now()
+        try:
+            if self.requested_at.date() != now.date():
+                return True
+        except AttributeError:
+            if self.requested_at != now.date():
+                return True
+        return False
+
+    def update_note(self, message):
+        """Update the notes."""
+        if self.last_background_task:
+            self.last_background_task.progress_text = message
+            self.last_background_task.save()
+        self.notes = message
+        self.save()
+
+    def run(self):
+        """Run the generate report."""
+        if self.skip_run:
+            return
+        self._generate_report()
+
     @property
     def title(self) -> str:
         """Return the title of the request."""
@@ -419,8 +506,9 @@ class CropInsightRequest(models.Model):
             f"({east_africa_timezone})"
         )
 
-    def generate_report(self):
+    def _generate_report(self):
         """Generate reports."""
+        from spw.generator.crop_insight import CropInsightFarmGenerator
         output = []
 
         # If farm is empty, put empty farm
@@ -430,6 +518,11 @@ class CropInsightRequest(models.Model):
 
         # Get farms
         for farm in farms:
+            # If it has farm id, generate spw
+            if farm.pk:
+                self.update_note('Generating SPW for farm: {}'.format(farm))
+                CropInsightFarmGenerator(farm).generate_spw()
+
             data = CropPlanData(
                 farm, self.requested_at.date(),
                 forecast_fields=[
@@ -444,6 +537,7 @@ class CropInsightRequest(models.Model):
             output.append([val for key, val in data.items()])
 
         # Render csv
+        self.update_note('Generate CSV')
         csv_content = ''
 
         # Replace header

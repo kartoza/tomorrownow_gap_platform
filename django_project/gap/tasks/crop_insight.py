@@ -28,22 +28,26 @@ def generate_spw(farms_id: list):
 def generate_insight_report(_id: list):
     """Generate insight report."""
     request = CropInsightRequest.objects.get(id=_id)
-    request.generate_report()
+    request.run()
 
 
 @app.task(name="generate_crop_plan")
 def generate_crop_plan():
     """Generate crop plan for registered farms."""
-    farms = Farm.objects.all().order_by('id')
-    # generate crop insight for all farms
-    for farm in farms:
-        CropInsightFarmGenerator(farm).generate_spw()
     # create report request
-    request = CropInsightRequest.objects.create(
-        requested_by=User.objects.filter(
-            is_superuser=True
-        ).first()
-    )
-    request.farms.set(farms)
+    user = User.objects.filter(is_superuser=True).first()
+    request = CropInsightRequest.objects.create(requested_by=user)
+    request.farms.set(Farm.objects.all().order_by('id'))
     # generate report
-    request.generate_report()
+    request.run()
+
+
+@app.task(name="retry_crop_plan_generators")
+def retry_crop_plan_generators():
+    """Retry crop plan generator.
+
+    This will run the crop plan generators but just run the is cancelled.
+    If it already has spw data, it will also be skipped.
+    """
+    for request in CropInsightRequest.today_reports():
+        request.run()

@@ -104,7 +104,7 @@ class FarmCropVarietyAdmin(admin.ModelAdmin):
 def generate_insight_report_action(modeladmin, request, queryset):
     """Generate insight report."""
     for query in queryset:
-        generate_insight_report(query.id)
+        generate_insight_report.delay(query.id)
     modeladmin.message_user(
         request,
         'Process will be started in background!',
@@ -116,18 +116,17 @@ def generate_insight_report_action(modeladmin, request, queryset):
 class CropInsightRequestAdmin(admin.ModelAdmin):
     """Admin for CropInsightRequest."""
 
-    list_display = ('requested_at', 'farm_list', 'file_url')
+    list_display = (
+        'requested_at', 'farm_count', 'file_url', 'last_task_status',
+        'background_tasks'
+    )
     filter_horizontal = ('farms',)
     actions = (generate_insight_report_action,)
     readonly_fields = ('file',)
 
-    def farm_list(self, obj: CropInsightRequest):
+    def farm_count(self, obj: CropInsightRequest):
         """Return farm list."""
-        return [farm.unique_id for farm in obj.farms.all()]
-
-    def file(self, obj: CropInsightRequest):
-        """Return file path."""
-        return [farm.unique_id for farm in obj.farms.all()]
+        return obj.farms.count()
 
     def file_url(self, obj):
         """Return file url."""
@@ -137,3 +136,18 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
                 f'target="__blank__">{obj.file.url}</a>'
             )
         return '-'
+
+    def last_task_status(self, obj: CropInsightRequest):
+        """Return task status."""
+        bg_task = obj.last_background_task
+        if bg_task:
+            return bg_task.status
+        return None
+
+    def background_tasks(self, obj: CropInsightRequest):
+        """Return ids of background tasks that are running."""
+        url = (
+            f"/admin/core/backgroundtask/?context_id__exact={obj.id}&"
+            f"task_name__in={','.join(CropInsightRequest.task_names)}"
+        )
+        return format_html(f'<a target="_blank" href={url}>link</a>')

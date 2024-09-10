@@ -6,16 +6,15 @@ Tomorrow Now GAP.
 
 """
 
-
-import uuid
 import logging
-from traceback import format_tb
+import uuid
 from ast import literal_eval as make_tuple
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from django.conf import settings
-from django.utils import timezone
+from traceback import format_tb
 
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 
@@ -137,9 +136,24 @@ class BackgroundTask(models.Model):
         blank=True
     )
 
+    running_states = [
+        TaskStatus.PENDING, TaskStatus.QUEUED, TaskStatus.RUNNING
+    ]
+
     def __str__(self):
         """Get string representation."""
         return str(self.uuid)
+
+    @staticmethod
+    def running_tasks():
+        """Return all running tasks."""
+        return BackgroundTask.objects.filter(
+            status__in=BackgroundTask.running_states
+        )
+
+    def is_running(self):
+        """Check if task is running."""
+        return self.status in BackgroundTask.running_states
 
     @property
     def requester_name(self):
@@ -284,7 +298,7 @@ class BackgroundTask(models.Model):
             update_fields=['last_update', 'progress_text']
         )
 
-    def is_possible_interrupted(self, delta = 1800):
+    def is_possible_interrupted(self, delta=1800):
         """Check whether the task is stuck or being interrupted.
 
         This requires the task to send an update to BackgroundTask.
@@ -294,8 +308,8 @@ class BackgroundTask(models.Model):
         :rtype: bool
         """
         if (
-            self.status == TaskStatus.QUEUED or
-            self.status == TaskStatus.RUNNING
+                self.status == TaskStatus.QUEUED or
+                self.status == TaskStatus.RUNNING
         ):
             # check if last_update is more than 30mins than current date time
             if self.last_update:
