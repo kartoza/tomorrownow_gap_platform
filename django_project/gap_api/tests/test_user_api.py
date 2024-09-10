@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 from django.urls import reverse
+from knox.models import AuthToken
 
 from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
 from gap_api.api_views.user import UserInfo
@@ -39,3 +40,23 @@ class UserInfoAPITest(BaseAPIViewTest):
             response.data['first_name'], self.superuser.first_name
         )
         self.assertEqual(response.data['last_name'], self.superuser.last_name)
+
+    def test_get_user_with_token(self):
+        """Test get user info using token."""
+        view = UserInfo.as_view()
+        obj, token = AuthToken.objects.create(
+            user=self.user_1
+        )
+        headers = {'AUTHORIZATION': f'Token {token}'}
+        request = self.factory.get(
+            reverse('api:v1:user-info'),
+            headers=headers
+        )
+        request.resolver_match = FakeResolverMatchV1
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['username'], self.user_1.username)
+        self.assertEqual(
+            response.data['first_name'], self.user_1.first_name
+        )
+        self.assertEqual(response.data['last_name'], self.user_1.last_name)
