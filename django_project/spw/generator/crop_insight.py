@@ -5,10 +5,11 @@ Tomorrow Now GAP.
 .. note:: Farm SPW Generator.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytz
 from django.db import transaction
+from django.utils import timezone
 
 from gap.models.crop_insight import (
     FarmSuitablePlantingWindowSignal, FarmShortTermForecast,
@@ -24,10 +25,13 @@ from spw.generator.main import (
 class CropInsightFarmGenerator:
     """Insight Farm Generator."""
 
-    def __init__(self, farm: Farm, requested_date=date.today()):
+    def __init__(self, farm: Farm):
         """Init Generator."""
         self.farm = farm
-        self.today = requested_date
+        self.today = timezone.now()
+        self.today.replace(tzinfo=pytz.UTC)
+        self.today = self.today.date()
+
         self.tomorrow = self.today + timedelta(days=1)
         self.attributes = calculate_from_point_attrs()
 
