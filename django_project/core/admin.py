@@ -24,7 +24,8 @@ try:
     folder = absolute_path('')
     version_file = os.path.join(folder, '_version.txt')
     if os.path.exists(version_file):
-        version = f'({(open(version_file, 'rb').read()).decode("utf-8")})'
+        version_from_file = (open(version_file, 'rb').read()).decode("utf-8")
+        version = f'({version_from_file})'
 except Exception:
     pass
 
