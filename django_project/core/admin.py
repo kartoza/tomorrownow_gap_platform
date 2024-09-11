@@ -3,6 +3,8 @@ Tomorrow Now GAP.
 
 .. note:: Definition admin
 """
+import os
+
 from django import forms
 from django.contrib import admin
 from django.contrib.auth import get_user_model
@@ -13,8 +15,21 @@ from core.celery import cancel_task
 from core.forms import CreateKnoxTokenForm, CreateAuthToken
 from core.group_email_receiver import crop_plan_receiver
 from core.models.background_task import BackgroundTask
+from core.settings.utils import absolute_path
 
 User = get_user_model()
+
+version = ''
+try:
+    folder = absolute_path('')
+    version_file = os.path.join(folder, '_version.txt')
+    if os.path.exists(version_file):
+        version_from_file = (open(version_file, 'rb').read()).decode("utf-8")
+        version = f'({version_from_file})'
+except Exception:
+    pass
+
+admin.site.site_header = f'Django administration {version}'
 
 
 class AbstractDefinitionAdmin(admin.ModelAdmin):
