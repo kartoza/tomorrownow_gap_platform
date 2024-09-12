@@ -53,8 +53,6 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 
 ## Attributes Table
 
-Certainly. Here's the table with the "Source attribute name" column removed:
-
 | Product | Name | Description | Unit | API attribute name |
 |---------|------|-------------|------|---------------------|
 | **Seasonal Forecast** |
@@ -99,16 +97,6 @@ Certainly. Here's the table with the "Source attribute name" column removed:
 | Observation | Air Temperature Max | | °C | max_air_temperature |
 | Observation | Air Temperature Min | | °C | min_air_temperature |
 | **WIP** |
-| Short-term Forecast | Min Total Temperature | | °C | min_total_temperature |
-| Short-term Forecast | Min Day Temperature | | °C | min_day_temperature |
-| Short-term Forecast | Total Rainfall | | mm | total_rainfall |
-| Short-term Forecast | Max Day Temperature | | °C | max_day_temperature |
-| Short-term Forecast | Min Night Temperature | | °C | min_night_temperature |
-| Short-term Forecast | Total Solar Irradiance | | MJ/sqm | total_solar_irradiance |
-| Short-term Forecast | Average Solar Irradiance | | MJ/sqm | average_solar_irradiance |
-| Short-term Forecast | Max Night Temperature | | °C | max_night_temperature |
-| Short-term Forecast | Max Total Temperature | | °C | max_total_temperature |
-| Short-term Forecast | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
 | |
 
 
@@ -140,7 +128,7 @@ To use the API click on the API either 1️⃣ GET or 2️⃣ POST API you want 
 
 **GET API:**
 
-Click on the GET API it will show the attribute to enter to get the data. Click on the 1️⃣ `Try it out` button, to fill the detailed in the 2️⃣ available fields. After filling the details click on the 3️⃣ `Exicute` button, to run the API.
+Click on the GET API it will show the attribute to enter to get the data. Click on the 1️⃣ `Try it out` button, to fill the detailed in the 2️⃣ available fields. After filling the details click on the 3️⃣ `Execute` button, to run the API.
 
 ![GET API](./img/api-guide-5.png)
 ![GET API](./img/api-guide-6.png)
@@ -149,9 +137,58 @@ Click on the GET API it will show the attribute to enter to get the data. Click 
 
 ![GET API RESPONSE](./img/api-guide-7.png)
 
-**Example of Python Code To Access the API**
+**Available format types**
 
-![Python code to access API](./img/api-guide-8.png)
+### JSON 
+
+This type is only available for querying by single point.
+![JSON](./img/api-guide-7.png)
+
+###  CSV
+
+The user can download the file to check the response
+![CSV](./img/api-guide-12.png)
+
+### NETCDF
+
+The user can download the file to check the response
+![netcdf](./img/api-guide-13.png)
+
+To read/write the netcdf file user can refer to below link 
+https://docs.xarray.dev/en/stable/user-guide/io.html#netcdf
+
+**Example of codes to access the API**
+
+### Python
+
+
+import requests
+
+url = "https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+
+### CURL
+
+curl --location --request GET 'https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json'
+
+### JavaScript-JQuery
+
+var settings = {
+  "url": "https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json",
+  "method": "GET",
+  "timeout": 0,
+};
+
+$.ajax(settings).done(function (response) {
+  console.log(response);
+});
+
 
 **POST API:**
 
@@ -159,7 +196,7 @@ Create data using the POST API. Click on the 1️⃣ measurement POST API to vie
 
 ![POST API](./img/api-guide-9.png)
 
-Fill the attributes in the 1️⃣ available fields. After filling the details click on the 2️⃣ `Exicute` button, to run the API.
+Fill the attributes in the 1️⃣ available fields. After filling the details click on the 2️⃣ `Execute` button, to run the API.
 
 ![POST API](./img/api-guide-10.png)
 
