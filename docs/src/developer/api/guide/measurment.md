@@ -96,7 +96,6 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Observation | Air Temperature Average | | °C | average_air_temperature |
 | Observation | Air Temperature Max | | °C | max_air_temperature |
 | Observation | Air Temperature Min | | °C | min_air_temperature |
-| **WIP** |
 | |
 
 
@@ -179,7 +178,7 @@ curl --location --request GET 'https://tngap.dev.do.kartoza.com/api/v1/measureme
 
 ### JavaScript-JQuery
 
-var settings = {
+"var settings = {
   "url": "https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json",
   "method": "GET",
   "timeout": 0,
@@ -187,7 +186,7 @@ var settings = {
 
 $.ajax(settings).done(function (response) {
   console.log(response);
-});
+});"
 
 
 **POST API:**
