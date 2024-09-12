@@ -15,3 +15,4 @@ license: This program is free software; you can redistribute it and/or modify it
 
 This is the homepage for all developer related documentation.
 
+- The [API Guide](./api/guide/index.md), which aims to get you familiar with the APIs.
