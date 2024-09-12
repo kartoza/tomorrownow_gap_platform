@@ -10,20 +10,21 @@ copyright: Copyright 2023, TomorrowNow
 contact: danang@kartoza.com
 license: This program is free software; you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 ---
+# Architecture 
 
-# Architecture diagram
+## Architecture diagram
 
 ![gap architecture diagram](./diagram/gap-architecture.png)
 
 
-# Data flow diagram
+## Data flow diagram
 
 ![gap data flow diagram](./diagram/gap-data-flow.png)
 
 
-# Data ingestors
+## Data ingestors
 
-## CBAM historical reanalysis
+### CBAM historical reanalysis
 
 ![gap cbam ingestor](./diagram/gap-ingestor-cbam.png)
 
@@ -47,7 +48,7 @@ Data variables:
     total_solar_irradiance         (date, lat, lon) float32 18GB dask.array<chunksize=(90, 300, 300), meta=np.ndarray>
 ```
 
-## Salient seasonal forecast
+### Salient seasonal forecast
 
 ![gap salient ingestor](./diagram/gap-ingestor-salient.png)
 
@@ -79,7 +80,7 @@ Data variables: (12/21)
     wspd_clim         (forecast_date, forecast_day_idx, lat, lon) float32 16MB dask.array<chunksize=(2, 20, 20, 20), meta=np.ndarray>
 ```
 
-## Tomorrow.io short-term forecast
+### Tomorrow.io short-term forecast
 
 ![gap tomorrow.io ingestor](./diagram/gap-ingestor-tomorrowio.png)
 
@@ -103,18 +104,18 @@ Data variables: (12/21)
     wind_speed_avg                   (forecast_date, forecast_day_idx, lat, lon) float32 -MB dask.array<chunksize=(15, 15, 150, 110), meta=np.ndarray>
 ```
 
-## Tahmo ground observations
+### Tahmo ground observations
 
 ![gap tahmo ingestor](./diagram/gap-ingestor-tahmo.png)
 
-## Arable ground observations
+### Arable ground observations
 
 ![gap arable ingestor](./diagram/gap-ingestor-arable.png)
 
 
-# GAP Modules
+## GAP Modules
 
-## SPW data flow diagram
+### SPW data flow diagram
 
 ![gap spw](./diagram/gap-module-spw.png)
 
