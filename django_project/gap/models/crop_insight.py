@@ -280,7 +280,7 @@ class CropPlanData:
 
     @staticmethod
     def default_fields():
-        """This is default fields for Farm Plan Data."""
+        """Return default fields for Farm Plan Data."""
         return [
             'farmID',
             'phoneNumber',
@@ -530,7 +530,7 @@ class CropInsightRequest(models.Model):
         east_africa_time = self.requested_at.astimezone(east_africa_timezone)
         group = ''
         if self.farm_group:
-            group = f' {self.farm_group} - '
+            group = f' {self.farm_group} -'
         return (
             f"GAP - Crop Plan Generator Results -{group} "
             f"{east_africa_time.strftime('%A-%d-%m-%Y')} "

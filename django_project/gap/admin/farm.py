@@ -13,7 +13,7 @@ from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
 from gap.models.farm_group import FarmGroup, FarmGroupCropInsightField
-from gap.tasks.crop_insight import generate_spw
+from gap.tasks.crop_insight import generate_spw, generate_crop_plan
 
 
 class FarmGroupCropInsightFieldInline(admin.TabularInline):
@@ -30,6 +30,12 @@ def recreate_farm_group_fields(modeladmin, request, queryset):
         group.prepare_fields()
 
 
+@admin.action(description='Run crop insight')
+def run_crop_insight(modeladmin, request, queryset):
+    """Run crop insight."""
+    generate_crop_plan.delay()
+
+
 @admin.register(FarmGroup)
 class FarmGroupAdmin(AbstractDefinitionAdmin):
     """FarmGroup admin."""
@@ -40,7 +46,7 @@ class FarmGroupAdmin(AbstractDefinitionAdmin):
 
     filter_horizontal = ('farms', 'users')
     inlines = (FarmGroupCropInsightFieldInline,)
-    actions = (recreate_farm_group_fields,)
+    actions = (recreate_farm_group_fields, run_crop_insight)
     readonly_fields = ('displayed_headers',)
 
     def farm_count(self, obj: FarmGroup):
