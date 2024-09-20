@@ -6,12 +6,62 @@ Tomorrow Now GAP.
 """
 
 from django.contrib import admin, messages
+from django.utils.html import format_html
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
+from gap.models.farm_group import FarmGroup, FarmGroupCropInsightField
 from gap.tasks.crop_insight import generate_spw
+
+
+class FarmGroupCropInsightFieldInline(admin.TabularInline):
+    """Inline list for model output in FarmGroupCropInsightField."""
+
+    model = FarmGroupCropInsightField
+    extra = 0
+
+
+@admin.action(description='Recreate fields')
+def recreate_farm_group_fields(modeladmin, request, queryset):
+    """Recreate farm group fields."""
+    for group in queryset.all():
+        group.prepare_fields()
+
+
+@admin.register(FarmGroup)
+class FarmGroupAdmin(AbstractDefinitionAdmin):
+    """FarmGroup admin."""
+
+    list_display = (
+        'name', 'description', 'farm_count'
+    )
+
+    filter_horizontal = ('farms', 'users')
+    inlines = (FarmGroupCropInsightFieldInline,)
+    actions = (recreate_farm_group_fields,)
+    readonly_fields = ('displayed_headers',)
+
+    def farm_count(self, obj: FarmGroup):
+        """Return farm list."""
+        return obj.farms.count()
+
+    def displayed_headers(self, obj: FarmGroup):
+        """Display headers as a table."""
+        columns = "".join(
+            f'<td style="padding: 10px; border: 1px solid gray">{header}</td>'
+            for header in obj.headers
+        )
+        return format_html(
+            '<div style="width:1000px; overflow:auto;">'
+            '   <table>'
+            f"      <thead><tr>{columns}</tr>"
+            '   </table>'
+            '</div>'
+        )
+
+    displayed_headers.allow_tags = True
 
 
 @admin.action(description='Generate farms spw')

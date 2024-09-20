@@ -11,6 +11,7 @@ from factory.django import DjangoModelFactory
 from gap.models import (
     FarmCategory, FarmRSVPStatus, Farm
 )
+from gap.models.farm_group import FarmGroup
 
 
 class FarmCategoryFactory(DjangoModelFactory):
@@ -51,3 +52,12 @@ class FarmFactory(DjangoModelFactory):
     category = factory.SubFactory(FarmCategoryFactory)
     crop = factory.SubFactory('gap.factories.crop_insight.CropFactory')
     phone_number = '123-456-7936'
+
+
+class FarmGroupFactory(DjangoModelFactory):
+    """Factory class for FarmGroup model."""
+
+    class Meta:  # noqa
+        model = FarmGroup
+
+    name = factory.Sequence(lambda n: f'name-{n}')

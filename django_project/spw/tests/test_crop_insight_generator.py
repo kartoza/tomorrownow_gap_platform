@@ -14,13 +14,13 @@ from django.test import TestCase
 
 from core.factories import UserF
 from core.group_email_receiver import _group_crop_plan_receiver
-from gap.factories import PreferencesFactory
 from gap.factories.crop_insight import CropInsightRequestFactory
-from gap.factories.farm import FarmFactory
+from gap.factories.farm import FarmFactory, FarmGroupFactory
 from gap.factories.grid import GridFactory
 from gap.models.crop_insight import (
     FarmSuitablePlantingWindowSignal, CropInsightRequest
 )
+from gap.models.preferences import Preferences
 from gap.tasks.crop_insight import (
     generate_insight_report,
     generate_crop_plan
@@ -119,6 +119,10 @@ class TestCropInsightGenerator(TestCase):
             geometry=Point(50.22222222, 50),
             grid=grid_3,
         )
+        self.farm_group = FarmGroupFactory()
+        self.farm_group.farms.add(
+            self.farm, self.farm_2, self.farm_3, self.farm_4, self.farm_5
+        )
         self.r_model = RModelFactory.create(name='test')
         self.today = date.today()
         self.superuser = UserF.create(
@@ -131,8 +135,10 @@ class TestCropInsightGenerator(TestCase):
         self.user_1 = UserF(email='user_1@email.com')
         self.user_2 = UserF(email='user_2@email.com')
         self.user_3 = UserF(email='user_3@email.com')
+        self.user_4 = UserF(email='')
+        self.farm_group.users.add(self.user_1, self.user_2, self.user_3)
         group.user_set.add(self.user_1, self.user_2)
-        self.preferences = PreferencesFactory()
+        self.preferences = Preferences().load()
         self.preferences.crop_plan_config = {
             'lat_lon_decimal_digits': 4
         }
@@ -263,12 +269,9 @@ class TestCropInsightGenerator(TestCase):
         mock_fetch_timelines_data.return_value = {}
 
         # Crop insight report
-        self.request = CropInsightRequestFactory.create()
-        self.request.farms.add(self.farm)
-        self.request.farms.add(self.farm_2)
-        self.request.farms.add(self.farm_3)
-        self.request.farms.add(self.farm_4)
-        self.request.farms.add(self.farm_5)
+        self.request = CropInsightRequestFactory.create(
+            farm_group=self.farm_group
+        )
         generate_insight_report(self.request.id)
         self.request.refresh_from_db()
         with self.request.file.open(mode='r') as csv_file:
@@ -382,11 +385,16 @@ class TestCropInsightGenerator(TestCase):
         with patch(
                 "django.core.mail.EmailMessage.send", mock_send_fn
         ):
-            request = CropInsightRequestFactory.create()
+            FarmGroupFactory()
+            used_group = FarmGroupFactory()
+            used_group.users.add(parent.user_1, parent.user_2, parent.user_4)
+            request = CropInsightRequestFactory.create(
+                farm_group=used_group
+            )
             request.run()
 
             parent.assertEqual(len(self.recipients), 2)
             parent.assertEqual(
                 self.recipients,
-                [parent.user_1.email, parent.user_2.email]
+                [parent.user_2.email, parent.user_1.email]
             )

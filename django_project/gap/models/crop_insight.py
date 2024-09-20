@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
-import json
 import uuid
 from datetime import date, timedelta
 
@@ -16,10 +15,10 @@ from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
 from django.utils import timezone
 
-from core.group_email_receiver import crop_plan_receiver
 from core.models.background_task import BackgroundTask, TaskStatus
 from core.models.common import Definition
-from gap.models import Farm
+from gap.models.farm import Farm
+from gap.models.farm_group import FarmGroup
 from gap.models.lookup import RainfallClassification
 from gap.models.measurement import DatasetAttribute
 from gap.models.preferences import Preferences
@@ -263,7 +262,7 @@ class CropPlanData:
     """The report model for the Insight Request Report."""
 
     @staticmethod
-    def default_fields():
+    def forecast_default_fields():
         """Return shortterm default fields."""
         from gap.providers.tio import tomorrowio_shortterm_forecast_dataset
 
@@ -278,6 +277,18 @@ class CropPlanData:
         if 'rainAccumulationSum' in forecast_fields:
             forecast_fields.append('rainAccumulationType')
         return forecast_fields
+
+    @staticmethod
+    def default_fields():
+        """This is default fields for Farm Plan Data."""
+        return [
+            'farmID',
+            'phoneNumber',
+            'latitude',
+            'longitude',
+            'SPWTopMessage',
+            'SPWDescription',
+        ]
 
     def __init__(
             self, farm: Farm, generated_date: date, forecast_days: int = 13,
@@ -322,7 +333,7 @@ class CropPlanData:
 
         # Make default forecast_fields
         if not forecast_fields:
-            forecast_fields = CropPlanData.default_fields()
+            forecast_fields = CropPlanData.forecast_default_fields()
 
         self.forecast = self.forecast.filter(
             dataset_attribute__source__in=forecast_fields
@@ -330,6 +341,19 @@ class CropPlanData:
 
         self.forecast_fields = forecast_fields
         self.forecast_days = forecast_days
+
+    @staticmethod
+    def forecast_key(day_n, field):
+        """Return key for forecast field."""
+        return f'day{day_n}_{field}'
+
+    @staticmethod
+    def forecast_fields_used():
+        """Return list of forecast fields that being used by crop insight."""
+        return [
+            'rainAccumulationSum', 'precipitationProbability',
+            'rainAccumulationType'
+        ]
 
     @property
     def data(self) -> dict:
@@ -365,7 +389,7 @@ class CropPlanData:
         # Short term forecast data
         for idx in range(self.forecast_days):
             for field in self.forecast_fields:
-                output[f'day{idx + 1}_{field}'] = ''
+                output[CropPlanData.forecast_key(idx + 1, field)] = ''
 
         first_date = None
         if self.forecast.first():
@@ -376,7 +400,7 @@ class CropPlanData:
             for data in self.forecast:
                 var = data.dataset_attribute.source
                 day_n = (data.value_date - first_date).days + 1
-                output[f'day{day_n}_{var}'] = data.value
+                output[CropPlanData.forecast_key(day_n, var)] = data.value
 
                 if (var == 'rainAccumulationSum' and
                         'rainAccumulationType' in self.forecast_fields):
@@ -384,7 +408,9 @@ class CropPlanData:
                     _class = RainfallClassification.classify(data.value)
                     if _class:
                         output[
-                            f'day{day_n}_rainAccumulationType'
+                            CropPlanData.forecast_key(
+                                day_n, 'rainAccumulationType'
+                            )
                         ] = _class.name
         return output
 
@@ -402,7 +428,9 @@ class CropInsightRequest(models.Model):
         default=timezone.now,
         help_text='The time when the request is made'
     )
-    farms = models.ManyToManyField(Farm)
+    farm_group = models.ForeignKey(
+        FarmGroup, null=True, blank=True, on_delete=models.CASCADE
+    )
     file = models.FileField(
         upload_to=ingestor_file_path,
         null=True, blank=True
@@ -500,8 +528,11 @@ class CropInsightRequest(models.Model):
         """Return the title of the request."""
         east_africa_timezone = Preferences.east_africa_timezone()
         east_africa_time = self.requested_at.astimezone(east_africa_timezone)
+        group = ''
+        if self.farm_group:
+            group = f' {self.farm_group} - '
         return (
-            "GAP - Crop Plan Generator Results - "
+            f"GAP - Crop Plan Generator Results -{group} "
             f"{east_africa_time.strftime('%A-%d-%m-%Y')} "
             f"({east_africa_timezone})"
         )
@@ -509,12 +540,16 @@ class CropInsightRequest(models.Model):
     def _generate_report(self):
         """Generate reports."""
         from spw.generator.crop_insight import CropInsightFarmGenerator
-        output = []
 
         # If farm is empty, put empty farm
-        farms = self.farms.all()
-        if not farms.count():
-            farms = [Farm()]
+        farms = []
+        if self.farm_group:
+            farms = self.farm_group.farms.all()
+
+        output = [
+            self.farm_group.headers
+        ]
+        fields = self.farm_group.fields
 
         # Get farms
         for farm in farms:
@@ -532,21 +567,19 @@ class CropInsightRequest(models.Model):
             ).data
 
             # Create header
-            if len(output) == 0:
-                output.append(list(data.keys()))
-            output.append([val for key, val in data.items()])
+            row_data = []
+            for field in fields:
+                try:
+                    row_data.append(data[field.field])
+                except KeyError:
+                    row_data.append('')
+            output.append(row_data)
 
         # Render csv
         self.update_note('Generate CSV')
         csv_content = ''
 
-        # Replace header
-        output[0] = json.loads(
-            json.dumps(output[0]).
-            replace('rainAccumulationSum', 'mm').
-            replace('rainAccumulationType', 'Type').
-            replace('precipitationProbability', 'Chance')
-        )
+        # Save to csv
         for row in output:
             csv_content += ','.join(map(str, row)) + '\n'
         content_file = ContentFile(csv_content)
@@ -566,11 +599,7 @@ Please find the attached file for the crop plan generator results.
 Best regards
             ''',
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[
-                email for email in
-                crop_plan_receiver().values_list('email', flat=True)
-                if email
-            ]
+            to=self.farm_group.email_recipients()
         )
         email.attach(
             f'{self.unique_id}.csv',
