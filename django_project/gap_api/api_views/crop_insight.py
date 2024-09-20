@@ -6,9 +6,9 @@ Tomorrow Now GAP.
 """
 from datetime import datetime
 
+from django.conf import settings
 from django.db.utils import ProgrammingError
 from django.http import HttpResponseBadRequest
-from django.conf import settings
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -33,7 +33,7 @@ def default_fields():
     if settings.DEBUG:
         return
     try:
-        return CropPlanData.default_fields()
+        return CropPlanData.forecast_default_fields()
     except ProgrammingError:
         return []
 

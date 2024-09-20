@@ -117,16 +117,11 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
     """Admin for CropInsightRequest."""
 
     list_display = (
-        'requested_at', 'farm_count', 'file_url', 'last_task_status',
+        'requested_at', 'farm_group', 'file_url', 'last_task_status',
         'background_tasks'
     )
-    filter_horizontal = ('farms',)
     actions = (generate_insight_report_action,)
     readonly_fields = ('file',)
-
-    def farm_count(self, obj: CropInsightRequest):
-        """Return farm list."""
-        return obj.farms.count()
 
     def file_url(self, obj):
         """Return file url."""

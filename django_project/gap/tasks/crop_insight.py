@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from core.celery import app
 from gap.models.crop_insight import CropInsightRequest
 from gap.models.farm import Farm
+from gap.models.farm_group import FarmGroup
 from spw.generator.crop_insight import CropInsightFarmGenerator
 
 logger = get_task_logger(__name__)
@@ -36,10 +37,13 @@ def generate_crop_plan():
     """Generate crop plan for registered farms."""
     # create report request
     user = User.objects.filter(is_superuser=True).first()
-    request = CropInsightRequest.objects.create(requested_by=user)
-    request.farms.set(Farm.objects.all().order_by('id'))
-    # generate report
-    request.run()
+    for group in FarmGroup.objects.all():
+        request = CropInsightRequest.objects.create(
+            requested_by=user,
+            farm_group=group,
+        )
+        # generate report
+        request.run()
 
 
 @app.task(name="retry_crop_plan_generators")

@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from django.test import TestCase
 
-from gap.factories import CropInsightRequestFactory
+from gap.factories import CropInsightRequestFactory, FarmGroupFactory
 from gap.models import CropInsightRequest
 
 
@@ -50,7 +50,10 @@ class CropCRUDTest(TestCase):
 
     def test_title(self):
         """Test update object."""
-        obj = self.Factory()
+        group = FarmGroupFactory()
+        obj = self.Factory(
+            farm_group=group
+        )
         obj.requested_at = datetime(
             2024, 1, 1, 0, 0, 0,
             tzinfo=timezone.utc
@@ -58,7 +61,7 @@ class CropCRUDTest(TestCase):
         obj.save()
         self.assertEqual(
             obj.title, (
-                "GAP - Crop Plan Generator Results - "
+                f"GAP - Crop Plan Generator Results - {group.name} - "
                 "Monday-01-01-2024 (UTC+03:00)"
             )
         )
@@ -71,7 +74,7 @@ class CropCRUDTest(TestCase):
         obj.save()
         self.assertEqual(
             obj.title, (
-                "GAP - Crop Plan Generator Results - "
+                f"GAP - Crop Plan Generator Results - {group.name} - "
                 "Tuesday-02-01-2024 (UTC+03:00)"
             )
         )
@@ -84,7 +87,7 @@ class CropCRUDTest(TestCase):
         obj.save()
         self.assertEqual(
             obj.title, (
-                "GAP - Crop Plan Generator Results - "
+                f"GAP - Crop Plan Generator Results - {group.name} - "
                 "Tuesday-02-01-2024 (UTC+03:00)"
             )
         )
@@ -97,7 +100,7 @@ class CropCRUDTest(TestCase):
         obj.save()
         self.assertEqual(
             obj.title, (
-                "GAP - Crop Plan Generator Results - "
+                f"GAP - Crop Plan Generator Results - {group.name} - "
                 "Monday-01-01-2024 (UTC+03:00)"
             )
         )
