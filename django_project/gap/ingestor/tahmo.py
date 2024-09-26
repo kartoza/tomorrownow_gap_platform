@@ -18,7 +18,7 @@ from django.contrib.gis.geos import Point
 
 from gap.ingestor.exceptions import FileNotFoundException
 from gap.models import (
-    Provider, Station, ObservationType, Country,
+    Provider, Station, StationType, Country,
     IngestorSession, IngestorSessionProgress, IngestorSessionStatus,
     Measurement, Dataset, DatasetType, DatasetTimeStep,
     DatasetStore, DatasetAttribute
@@ -46,7 +46,7 @@ class TahmoIngestor(BaseIngestor):
         self.provider = Provider.objects.get(
             name='Tahmo'
         )
-        self.obs_type = ObservationType.objects.get(
+        self.station_type = StationType.objects.get(
             name='Ground Observations'
         )
         self.dataset_type = DatasetType.objects.get(
@@ -104,7 +104,7 @@ class TahmoIngestor(BaseIngestor):
                                         'name': data['name'],
                                         'geometry': point,
                                         'country': country,
-                                        'observation_type': self.obs_type,
+                                        'station_type': self.station_type,
                                     }
                                 )
                             except KeyError as e:

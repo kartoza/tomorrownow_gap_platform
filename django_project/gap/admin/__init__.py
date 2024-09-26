@@ -11,3 +11,4 @@ from gap.admin.grid import *
 from gap.admin.lookup import *
 from gap.admin.main import *
 from gap.admin.preferences import *
+from gap.admin.station import *

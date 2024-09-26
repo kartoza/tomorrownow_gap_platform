@@ -1,0 +1,18 @@
+[
+  {
+    "model": "gap.stationtype",
+    "pk": 1,
+    "fields": {
+      "name": "Ground Observations",
+      "description": null
+    }
+  },
+  {
+    "model": "gap.stationtype",
+    "pk": 2,
+    "fields": {
+      "name": "Disdrometer",
+      "description": null
+    }
+  }
+]
