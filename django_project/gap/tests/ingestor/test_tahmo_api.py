@@ -47,7 +47,38 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
     def mock_requests(self):
         """Mock requests."""
         preferences = Preferences.load()
-        return [
+        ingestor = TahmoAPIIngestor(IngestorSession())
+        patches = []
+        for key, value in ingestor.attributes.items():
+            if key == 'pr':
+                continue
+            for station_code in ['TD00001', 'TD00002']:
+                patches.append(
+                    PatchReqeust(
+                        (
+                            f'{preferences.tahmo_api_url}'
+                            f'/services/measurements/v2/'
+                            f'stations/{station_code}/measurements/raw?'
+                            f'start=2023-03-02T00%3A00%3A00Z&'
+                            f'end=2024-03-01T00%3A00%3A00Z&variable={key}'
+                        ),
+                        response={}
+                    )
+                )
+                patches.append(
+                    PatchReqeust(
+                        (
+                            f'{preferences.tahmo_api_url}'
+                            f'/services/measurements/v2/'
+                            f'stations/{station_code}/measurements/raw?'
+                            f'start=2023-06-02T00%3A00%3A00Z&'
+                            f'end=2024-06-01T00%3A00%3A00Z&variable={key}'
+                        ),
+                        response={}
+                    )
+                )
+
+        return patches + [
             # Devices API
             PatchReqeust(
                 f'{preferences.tahmo_api_url}/services/assets/v2/stations',
@@ -60,7 +91,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00001/measurements/raw?'
                     f'start=2023-03-02T00%3A00%3A00Z&'
-                    f'end=2024-03-01T00%3A00%3A00Z'
+                    f'end=2024-03-01T00%3A00%3A00Z&variable=pr'
                 ),
                 file_response=os.path.join(
                     self.responses_folder, 'TD00001.1.json'
@@ -71,7 +102,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00002/measurements/raw?'
                     f'start=2023-03-02T00%3A00%3A00Z&'
-                    f'end=2024-03-01T00%3A00%3A00Z'
+                    f'end=2024-03-01T00%3A00%3A00Z&variable=pr'
                 ),
                 file_response=os.path.join(
                     self.responses_folder, 'TD00001.1.json'
@@ -82,7 +113,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00001/measurements/raw?'
                     f'start=2024-03-01T00%3A00%3A00Z&'
-                    f'end=2024-06-01T00%3A00%3A00Z'
+                    f'end=2024-06-01T00%3A00%3A00Z&variable=pr'
                 ),
                 file_response=os.path.join(
                     self.responses_folder, 'TD00001.2.json'
@@ -93,7 +124,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00002/measurements/raw?'
                     f'start=2023-03-02T00%3A00%3A00Z&'
-                    f'end=2024-03-01T00%3A00%3A00Z'
+                    f'end=2024-03-01T00%3A00%3A00Z&variable=pr'
                 ),
                 file_response=os.path.join(
                     self.responses_folder, 'TD00001.1.json'
@@ -104,7 +135,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00002/measurements/raw?'
                     f'start=2024-03-01T00%3A00%3A00Z&'
-                    f'end=2024-06-01T00%3A00%3A00Z'
+                    f'end=2024-06-01T00%3A00%3A00Z&variable=pr'
                 ),
                 file_response=os.path.join(
                     self.responses_folder, 'TD00002.2.json'
@@ -185,7 +216,9 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         # check measurements
         self.assertEqual(station.measurement_set.count(), 3)
         self.assertEqual(
-            TahmoAPIIngestor.last_date_time(station),
+            TahmoAPIIngestor.last_date_time(
+                station, station.measurement_set.first().dataset_attribute
+            ),
             datetime(
                 2024, 3, 1, 0, 0, 0, tzinfo=timezone.utc
             )
@@ -200,7 +233,9 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         # check measurements
         self.assertEqual(station.measurement_set.count(), 3)
         self.assertEqual(
-            TahmoAPIIngestor.last_date_time(station),
+            TahmoAPIIngestor.last_date_time(
+                station, station.measurement_set.first().dataset_attribute
+            ),
             datetime(
                 2024, 3, 1, 0, 0, 0, tzinfo=timezone.utc
             )
@@ -221,7 +256,9 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         station = Station.objects.get(code='TD00001')
         self.assertEqual(station.measurement_set.count(), 4)
         self.assertEqual(
-            TahmoAPIIngestor.last_date_time(station),
+            TahmoAPIIngestor.last_date_time(
+                station, station.measurement_set.first().dataset_attribute
+            ),
             datetime(
                 2024, 4, 1, 0, 0, 0, tzinfo=timezone.utc
             )
@@ -230,7 +267,9 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         station = Station.objects.get(code='TD00002')
         self.assertEqual(station.measurement_set.count(), 4)
         self.assertEqual(
-            TahmoAPIIngestor.last_date_time(station),
+            TahmoAPIIngestor.last_date_time(
+                station, station.measurement_set.first().dataset_attribute
+            ),
             datetime(
                 2024, 4, 1, 0, 0, 0, tzinfo=timezone.utc
             )

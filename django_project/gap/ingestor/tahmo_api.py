@@ -16,8 +16,9 @@ from requests.auth import HTTPBasicAuth
 from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import EnvIsNotSetException
 from gap.models import (
-    Country, Provider, StationType, CollectorSession, Dataset, DatasetType,
-    DatasetTimeStep, DatasetStore, Station, Measurement
+    Country, Provider, StationType, IngestorSession, Dataset,
+    DatasetType, DatasetAttribute, DatasetTimeStep, DatasetStore, Station,
+    Measurement
 )
 from gap.models.preferences import Preferences
 
@@ -60,7 +61,8 @@ class TahmoAPI:
         )
 
     def measurements(
-            self, station: Station, start_date: datetime, end_date: datetime
+            self, station: Station, start_date: datetime, end_date: datetime,
+            variable: str
     ):
         """Retrieve all measurements."""
         url = (
@@ -72,14 +74,18 @@ class TahmoAPI:
             params={
                 "start": start_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
                 "end": end_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "variable": variable
             },
             auth=HTTPBasicAuth(self.username, self.password)
         )
         if response.status_code == 200:
             output = []
-            for result in response.json()['results']:
-                for series in result['series']:
-                    output += series['values']
+            try:
+                for result in response.json()['results']:
+                    for series in result['series']:
+                        output += series['values']
+            except KeyError:
+                pass
             return output
         raise Exception(
             f'{response.status_code}: {response.text} : {response.url}'
@@ -91,7 +97,7 @@ class TahmoAPIIngestor(BaseIngestor):
 
     api_key = None
 
-    def __init__(self, session: CollectorSession, working_dir: str = '/tmp'):
+    def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
         super().__init__(session, working_dir)
 
@@ -114,15 +120,16 @@ class TahmoAPIIngestor(BaseIngestor):
 
         self.attributes = {}
         for dataset_attr in self.dataset.datasetattribute_set.all():
-            self.attributes[dataset_attr.source] = dataset_attr.id
-
-        self.api = TahmoAPI()
+            self.attributes[dataset_attr.source] = dataset_attr
 
     @staticmethod
-    def last_date_time(station: Station) -> datetime:
+    def last_date_time(
+            station: Station, dataset_attribute: DatasetAttribute
+    ) -> datetime:
         """Last date measurements of station."""
         first_measurement = Measurement.objects.filter(
-            station=station
+            station=station,
+            dataset_attribute=dataset_attribute
         ).order_by('-date_time').first()
         if first_measurement:
             return first_measurement.date_time
@@ -130,7 +137,8 @@ class TahmoAPIIngestor(BaseIngestor):
 
     def run(self):
         """Run the ingestor."""
-        stations = self.api.stations
+        api = TahmoAPI()
+        stations = api.stations
         for station in stations:
             """Save station data."""
             # Skip device that does not have location
@@ -167,21 +175,24 @@ class TahmoAPIIngestor(BaseIngestor):
                 }
             )
             # Save measurements
-            start_date = TahmoAPIIngestor.last_date_time(station)
             end_date = timezone.now()
-            measurements = self.api.measurements(station, start_date, end_date)
-            for measurement in measurements:
-                try:
-                    if measurement[1] == 1 and measurement[4] is not None:
-                        Measurement.objects.get_or_create(
-                            station=station,
-                            dataset_attribute_id=self.attributes[
-                                measurement[5]
-                            ],
-                            date_time=measurement[0],
-                            defaults={
-                                'value': measurement[4]
-                            }
-                        )
-                except KeyError:
-                    pass
+            for variable, dataset_attribute in self.attributes.items():
+                start_date = TahmoAPIIngestor.last_date_time(
+                    station, dataset_attribute
+                )
+                measurements = api.measurements(
+                    station, start_date, end_date, variable
+                )
+                for measurement in measurements:
+                    try:
+                        if measurement[4] is not None:
+                            Measurement.objects.get_or_create(
+                                station=station,
+                                dataset_attribute=dataset_attribute,
+                                date_time=measurement[0],
+                                defaults={
+                                    'value': measurement[4]
+                                }
+                            )
+                    except KeyError:
+                        pass
