@@ -172,13 +172,16 @@ class TahmoAPIIngestor(BaseIngestor):
             measurements = self.api.measurements(station, start_date, end_date)
             for measurement in measurements:
                 try:
-                    Measurement.objects.get_or_create(
-                        station=station,
-                        dataset_attribute_id=self.attributes[measurement[5]],
-                        date_time=measurement[0],
-                        defaults={
-                            'value': measurement[4]
-                        }
-                    )
+                    if measurement[1] == 1 and measurement[4] is not None:
+                        Measurement.objects.get_or_create(
+                            station=station,
+                            dataset_attribute_id=self.attributes[
+                                measurement[5]
+                            ],
+                            date_time=measurement[0],
+                            defaults={
+                                'value': measurement[4]
+                            }
+                        )
                 except KeyError:
                     pass
