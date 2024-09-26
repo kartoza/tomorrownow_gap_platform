@@ -44,4 +44,11 @@ class PreferencesAdmin(admin.ModelAdmin):
                 )
             }
         ),
+        (
+            'Tahmo', {
+                'fields': (
+                    'tahmo_api_url',
+                )
+            }
+        ),
     )

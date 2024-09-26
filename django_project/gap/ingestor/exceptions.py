@@ -27,3 +27,11 @@ class ApiKeyNotFoundException(Exception):
     def __init__(self):  # noqa
         self.message = 'Api key not found.'
         super().__init__(self.message)
+
+
+class EnvIsNotSetException(Exception):
+    """Env is not set error."""
+
+    def __init__(self, ENV_KEY):  # noqa
+        self.message = f'{ENV_KEY} is not set.'
+        super().__init__(self.message)

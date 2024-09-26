@@ -24,7 +24,7 @@ class StationAdmin(admin.ModelAdmin):
     """Station admin."""
 
     list_display = (
-        'code', 'name', 'country', 'provider'
+        'code', 'name', 'station_type', 'country', 'provider'
     )
-    list_filter = ('provider', 'country')
+    list_filter = ('provider', 'station_type', 'country')
     search_fields = ('code', 'name')

@@ -1,0 +1,72 @@
+{
+  "apiVersion": "v2",
+  "method": "GET",
+  "data": [
+    {
+      "id": 2,
+      "code": "TD00002",
+      "status": 1,
+      "installationdate": "2024-01-01T00:00:00Z",
+      "elevationground": 2,
+      "location": {
+        "id": 1,
+        "name": "Device 2",
+        "type": "Device",
+        "timezone": "Africa/Nairobi",
+        "timezoneoffset": 0,
+        "address": "",
+        "city": "",
+        "state": "",
+        "countrycode": "KE",
+        "zipcode": "",
+        "latitude": -4.16602,
+        "longitude": 39.57287,
+        "elevationmsl": 1000,
+        "note": "{}",
+        "creatorid": 2,
+        "created": "2010-01-01T00:00:00.000000Z",
+        "updaterid": 2,
+        "updated": "2010-01-01T00:00:00.000000Z"
+      },
+      "sensorinstallations": null,
+      "dataloggerinstallations": null,
+      "creatorid": 2,
+      "created": "2010-01-01T00:00:00.000000Z",
+      "updaterid": 2,
+      "updated": "2010-01-01T00:00:00.000000Z"
+    },
+    {
+      "id": 1,
+      "code": "TD00001",
+      "status": 1,
+      "installationdate": "2024-01-01T00:00:00Z",
+      "elevationground": 2,
+      "location": {
+        "id": 2,
+        "name": "Device 1",
+        "type": "Device",
+        "timezone": "Africa/Nairobi",
+        "timezoneoffset": 0,
+        "address": "",
+        "city": "",
+        "state": "",
+        "countrycode": "KE",
+        "zipcode": "",
+        "latitude": 0.20752,
+        "longitude": 35.30957,
+        "elevationmsl": 1000,
+        "note": "{}",
+        "creatorid": 2,
+        "created": "2010-01-01T00:00:00.000000Z",
+        "updaterid": 2,
+        "updated": "2010-01-01T00:00:00.000000Z"
+      },
+      "sensorinstallations": null,
+      "dataloggerinstallations": null,
+      "creatorid": 2,
+      "created": "2010-01-01T00:00:00.000000Z",
+      "updaterid": 2,
+      "updated": "2010-01-01T00:00:00.000000Z"
+    }
+  ]
+}

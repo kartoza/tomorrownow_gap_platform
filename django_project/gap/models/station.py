@@ -49,6 +49,9 @@ class Station(Definition):
     station_type = models.ForeignKey(
         StationType, on_delete=models.CASCADE
     )
+    metadata = models.JSONField(
+        null=True, blank=True
+    )
 
     class Meta:  # noqa
         unique_together = ('code', 'provider')
