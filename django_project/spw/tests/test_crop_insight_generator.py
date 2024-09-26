@@ -392,9 +392,9 @@ class TestCropInsightGenerator(TestCase):
                 farm_group=used_group
             )
             request.run()
-
+            self.recipients.sort()
             parent.assertEqual(len(self.recipients), 2)
             parent.assertEqual(
                 self.recipients,
-                [parent.user_2.email, parent.user_1.email]
+                [parent.user_1.email, parent.user_2.email]
             )
