@@ -51,11 +51,13 @@ class FarmGroup(Definition):
         self.farmgroupcropinsightfield_set.all().delete()
         column_num = 1
         for default_field in CropPlanData.default_fields():
+            active = default_field in CropPlanData.default_fields_used()
             FarmGroupCropInsightField.objects.update_or_create(
                 farm_group=self,
                 field=default_field,
                 defaults={
-                    'column_number': column_num
+                    'column_number': column_num,
+                    'active': active
                 }
             )
             column_num += 1

@@ -78,10 +78,7 @@ class TestCropInsightGenerator(TestCase):
     ]
     csv_headers = [
         'farmID', 'phoneNumber', 'latitude', 'longitude', 'SPWTopMessage',
-        'SPWDescription', 'TooWet',
-        'last_4_days_mm',
-        'last_2_days_mm',
-        'today_tomorrow_mm',
+        'SPWDescription',
         'day1_mm', 'day1_Chance', 'day1_Type',
         'day2_mm', 'day2_Chance', 'day2_Type',
         'day3_mm', 'day3_Chance', 'day3_Type',
@@ -311,13 +308,9 @@ class TestCropInsightGenerator(TestCase):
                         'Both current forecast '
                         'historical rains have good signal to plant.'
                     )
-                    self.assertEqual(row[6], 'Likely too wet to plant')
-                    self.assertEqual(row[7], '80.0')  # last 4 days accum
-                    self.assertEqual(row[8], '60.0')  # last 2 days accum
-                    self.assertEqual(row[9], '40.0')  # Today tomorrow accum
-                    self.assertEqual(row[10], '10.0')  # Precip (daily)
-                    self.assertEqual(row[11], '50.0')  # Precip % chance
-                    self.assertEqual(row[12], 'Light rain')  # Precip Type
+                    self.assertEqual(row[6], '10.0')  # Precip (daily)
+                    self.assertEqual(row[7], '50.0')  # Precip % chance
+                    self.assertEqual(row[8], 'Light rain')  # Precip Type
 
                 # Farm 2
                 elif row_num == 3:
@@ -331,13 +324,9 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(
                         row[5], 'Wait for more positive forecast.'
                     )
-                    self.assertEqual(row[6], 'Too wet to plant')
-                    self.assertEqual(row[7], '100.0')  # last 4 days accum
-                    self.assertEqual(row[8], '80.0')  # last 2 days accum
-                    self.assertEqual(row[9], '80.0')  # Today tomorrow accum
-                    self.assertEqual(row[10], '0.5')  # Precip (daily)
-                    self.assertEqual(row[11], '10.0')  # Precip % chance
-                    self.assertEqual(row[12], 'No Rain')  # Precip Type
+                    self.assertEqual(row[6], '0.5')  # Precip (daily)
+                    self.assertEqual(row[7], '10.0')  # Precip % chance
+                    self.assertEqual(row[8], 'No Rain')  # Precip Type
 
                 # Farm 3
                 elif row_num == 4:
@@ -349,13 +338,9 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[3], '50.2222')  # Longitude
                     self.assertEqual(row[4], '')
                     self.assertEqual(row[5], '')
-                    self.assertEqual(row[6], '')
-                    self.assertEqual(row[7], '')  # last 4 days accum
-                    self.assertEqual(row[8], '')  # last 2 days accum
-                    self.assertEqual(row[9], '')  # Today tomorrow accum
-                    self.assertEqual(row[10], '')  # Precip (daily)
-                    self.assertEqual(row[11], '')  # Precip % chance
-                    self.assertEqual(row[12], '')  # Precip Type
+                    self.assertEqual(row[6], '')  # Precip (daily)
+                    self.assertEqual(row[7], '')  # Precip % chance
+                    self.assertEqual(row[8], '')  # Precip Type
 
                 # Farm 4 has same grid with farm 2
                 elif row_num == 5:
@@ -369,13 +354,9 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(
                         row[5], 'Wait for more positive forecast.'
                     )
-                    self.assertEqual(row[6], 'Too wet to plant')
-                    self.assertEqual(row[7], '100.0')  # last 4 days accum
-                    self.assertEqual(row[8], '80.0')  # last 2 days accum
-                    self.assertEqual(row[9], '80.0')  # Today tomorrow accum
-                    self.assertEqual(row[10], '0.5')  # Precip (daily)
-                    self.assertEqual(row[11], '10.0')  # Precip % chance
-                    self.assertEqual(row[12], 'No Rain')  # Precip Type
+                    self.assertEqual(row[6], '0.5')  # Precip (daily)
+                    self.assertEqual(row[7], '10.0')  # Precip % chance
+                    self.assertEqual(row[8], 'No Rain')  # Precip Type
 
                 # Farm 5 has same grid with farm 3
                 elif row_num == 6:
@@ -387,13 +368,9 @@ class TestCropInsightGenerator(TestCase):
                     self.assertEqual(row[3], '50.2222')  # Longitude
                     self.assertEqual(row[4], '')
                     self.assertEqual(row[5], '')
-                    self.assertEqual(row[6], '')
-                    self.assertEqual(row[7], '')  # last 4 days accum
-                    self.assertEqual(row[8], '')  # last 2 days accum
-                    self.assertEqual(row[9], '')  # Today tomorrow accum
-                    self.assertEqual(row[10], '')  # Precip (daily)
-                    self.assertEqual(row[11], '')  # Precip % chance
-                    self.assertEqual(row[12], '')  # Precip Type
+                    self.assertEqual(row[6], '')  # Precip (daily)
+                    self.assertEqual(row[7], '')  # Precip % chance
+                    self.assertEqual(row[8], '')  # Precip Type
                 row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')

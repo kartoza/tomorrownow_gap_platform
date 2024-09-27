@@ -311,6 +311,18 @@ class CropPlanData:
             'today_tomorrow_mm'
         ]
 
+    @staticmethod
+    def default_fields_used():
+        """Return list of default fields that being used by crop insight."""
+        return [
+            'farmID',
+            'phoneNumber',
+            'latitude',
+            'longitude',
+            'SPWTopMessage',
+            'SPWDescription'
+        ]
+
     def __init__(
             self, farm: Farm, generated_date: date, forecast_days: int = 13,
             forecast_fields: list = None

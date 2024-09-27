@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0023_alter_collectorsession_options_and_more'),
+        ('gap', '0024_alter_farm_category_alter_farm_rsvp_status'),
     ]
 
     operations = [
