@@ -92,6 +92,14 @@ class Preferences(SingletonModel):
         blank=True
     )
 
+    # Tahmo
+    tahmo_api_url = models.CharField(
+        max_length=256,
+        default='https://datahub.tahmo.org',
+        null=True,
+        blank=True
+    )
+
     class Meta:  # noqa: D106
         verbose_name_plural = "preferences"
 

@@ -6,11 +6,12 @@ Tomorrow Now GAP.
 """
 import os
 import shutil
+
 from django.contrib import admin, messages
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
-    Attribute, Country, Provider, Measurement, Station, IngestorSession,
+    Attribute, Country, Provider, Measurement, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
     DatasetType, Unit, Village, CollectorSession, DatasetStore
 )
@@ -88,17 +89,6 @@ class MeasurementAdmin(admin.ModelAdmin):
     )
     list_filter = ('station',)
     search_fields = ('name',)
-
-
-@admin.register(Station)
-class StationAdmin(admin.ModelAdmin):
-    """Station admin."""
-
-    list_display = (
-        'code', 'name', 'country', 'provider'
-    )
-    list_filter = ('provider', 'country')
-    search_fields = ('code', 'name')
 
 
 class IngestorSessionProgressInline(admin.TabularInline):

@@ -1,423 +1,423 @@
 [
-{
+  {
     "model": "gap.datasetattribute",
     "pk": 1,
     "fields": {
-        "dataset": 1,
-        "attribute": 1,
-        "source": "te_min",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 1,
+      "source": "te_min",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 2,
     "fields": {
-        "dataset": 1,
-        "attribute": 2,
-        "source": "te_max",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 2,
+      "source": "te_max",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 3,
     "fields": {
-        "dataset": 1,
-        "attribute": 3,
-        "source": "te_avg",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 3,
+      "source": "te_avg",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 4,
     "fields": {
-        "dataset": 1,
-        "attribute": 4,
-        "source": "rh_min",
-        "source_unit": 6,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 4,
+      "source": "rh_min",
+      "source_unit": 6,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 5,
     "fields": {
-        "dataset": 1,
-        "attribute": 5,
-        "source": "rh_max",
-        "source_unit": 6,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 5,
+      "source": "rh_max",
+      "source_unit": 6,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 6,
     "fields": {
-        "dataset": 1,
-        "attribute": 6,
-        "source": "ra_total",
-        "source_unit": 7,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 6,
+      "source": "ra_total",
+      "source_unit": 7,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 7,
     "fields": {
-        "dataset": 1,
-        "attribute": 7,
-        "source": "pr_total",
-        "source_unit": 4,
-        "ensembles": false
+      "dataset": 1,
+      "attribute": 7,
+      "source": "pr_total",
+      "source_unit": 4,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 8,
     "fields": {
-        "dataset": 2,
-        "attribute": 8,
-        "source": "total_evapotranspiration_flux",
-        "source_unit": 1,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 8,
+      "source": "total_evapotranspiration_flux",
+      "source_unit": 1,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 9,
     "fields": {
-        "dataset": 2,
-        "attribute": 9,
-        "source": "max_total_temperature",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 9,
+      "source": "max_total_temperature",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 10,
     "fields": {
-        "dataset": 2,
-        "attribute": 10,
-        "source": "max_night_temperature",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 10,
+      "source": "max_night_temperature",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 11,
     "fields": {
-        "dataset": 2,
-        "attribute": 11,
-        "source": "average_solar_irradiance",
-        "source_unit": 3,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 11,
+      "source": "average_solar_irradiance",
+      "source_unit": 3,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 12,
     "fields": {
-        "dataset": 2,
-        "attribute": 12,
-        "source": "total_solar_irradiance",
-        "source_unit": 3,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 12,
+      "source": "total_solar_irradiance",
+      "source_unit": 3,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 13,
     "fields": {
-        "dataset": 2,
-        "attribute": 13,
-        "source": "min_night_temperature",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 13,
+      "source": "min_night_temperature",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 14,
     "fields": {
-        "dataset": 2,
-        "attribute": 14,
-        "source": "max_day_temperature",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 14,
+      "source": "max_day_temperature",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 15,
     "fields": {
-        "dataset": 2,
-        "attribute": 15,
-        "source": "total_rainfall",
-        "source_unit": 1,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 15,
+      "source": "total_rainfall",
+      "source_unit": 1,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 16,
     "fields": {
-        "dataset": 2,
-        "attribute": 16,
-        "source": "min_day_temperature",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 16,
+      "source": "min_day_temperature",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 17,
     "fields": {
-        "dataset": 2,
-        "attribute": 17,
-        "source": "min_total_temperature",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 2,
+      "attribute": 17,
+      "source": "min_total_temperature",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 18,
     "fields": {
-        "dataset": 3,
-        "attribute": 18,
-        "source": "precip_clim",
-        "source_unit": 4,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 18,
+      "source": "precip_clim",
+      "source_unit": 4,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 19,
     "fields": {
-        "dataset": 3,
-        "attribute": 19,
-        "source": "temp_clim",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 19,
+      "source": "temp_clim",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 20,
     "fields": {
-        "dataset": 3,
-        "attribute": 20,
-        "source": "precip_anom",
-        "source_unit": 4,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 20,
+      "source": "precip_anom",
+      "source_unit": 4,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 21,
     "fields": {
-        "dataset": 3,
-        "attribute": 21,
-        "source": "temp_anom",
-        "source_unit": 5,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 21,
+      "source": "temp_anom",
+      "source_unit": 5,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 22,
     "fields": {
-        "dataset": 3,
-        "attribute": 7,
-        "source": "precip",
-        "source_unit": 4,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 7,
+      "source": "precip",
+      "source_unit": 4,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 23,
     "fields": {
-        "dataset": 3,
-        "attribute": 23,
-        "source": "temp",
-        "source_unit": 5,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 23,
+      "source": "temp",
+      "source_unit": 5,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 24,
     "fields": {
-        "dataset": 3,
-        "attribute": 17,
-        "source": "tmin",
-        "source_unit": 5,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 17,
+      "source": "tmin",
+      "source_unit": 5,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 25,
     "fields": {
-        "dataset": 3,
-        "attribute": 24,
-        "source": "tmin_clim",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 24,
+      "source": "tmin_clim",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 26,
     "fields": {
-        "dataset": 3,
-        "attribute": 25,
-        "source": "tmin_anom",
-        "source_unit": 5,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 25,
+      "source": "tmin_anom",
+      "source_unit": 5,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 27,
     "fields": {
-        "dataset": 3,
-        "attribute": 9,
-        "source": "tmax",
-        "source_unit": 5,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 9,
+      "source": "tmax",
+      "source_unit": 5,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 28,
     "fields": {
-        "dataset": 3,
-        "attribute": 26,
-        "source": "tmax_clim",
-        "source_unit": 5,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 26,
+      "source": "tmax_clim",
+      "source_unit": 5,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 29,
     "fields": {
-        "dataset": 3,
-        "attribute": 27,
-        "source": "tmax_anom",
-        "source_unit": 5,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 27,
+      "source": "tmax_anom",
+      "source_unit": 5,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 30,
     "fields": {
-        "dataset": 3,
-        "attribute": 28,
-        "source": "rh",
-        "source_unit": 6,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 28,
+      "source": "rh",
+      "source_unit": 6,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 31,
     "fields": {
-        "dataset": 3,
-        "attribute": 29,
-        "source": "rh_clim",
-        "source_unit": 6,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 29,
+      "source": "rh_clim",
+      "source_unit": 6,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 32,
     "fields": {
-        "dataset": 3,
-        "attribute": 30,
-        "source": "rh_anom",
-        "source_unit": 6,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 30,
+      "source": "rh_anom",
+      "source_unit": 6,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 33,
     "fields": {
-        "dataset": 3,
-        "attribute": 6,
-        "source": "tsi",
-        "source_unit": 9,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 6,
+      "source": "tsi",
+      "source_unit": 9,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 34,
     "fields": {
-        "dataset": 3,
-        "attribute": 31,
-        "source": "tsi_clim",
-        "source_unit": 9,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 31,
+      "source": "tsi_clim",
+      "source_unit": 9,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 35,
     "fields": {
-        "dataset": 3,
-        "attribute": 32,
-        "source": "tsi_anom",
-        "source_unit": 9,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 32,
+      "source": "tsi_anom",
+      "source_unit": 9,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 36,
     "fields": {
-        "dataset": 3,
-        "attribute": 33,
-        "source": "wspd",
-        "source_unit": 8,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 33,
+      "source": "wspd",
+      "source_unit": 8,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 37,
     "fields": {
-        "dataset": 3,
-        "attribute": 34,
-        "source": "wspd_clim",
-        "source_unit": 8,
-        "ensembles": false
+      "dataset": 3,
+      "attribute": 34,
+      "source": "wspd_clim",
+      "source_unit": 8,
+      "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 38,
     "fields": {
-        "dataset": 3,
-        "attribute": 35,
-        "source": "wspd_anom",
-        "source_unit": 8,
-        "ensembles": true
+      "dataset": 3,
+      "attribute": 35,
+      "source": "wspd_anom",
+      "source_unit": 8,
+      "ensembles": true
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 39,
     "fields": {
@@ -427,8 +427,8 @@
       "source_unit": 1,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 40,
     "fields": {
@@ -438,8 +438,8 @@
       "source_unit": 1,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 41,
     "fields": {
@@ -449,8 +449,8 @@
       "source_unit": 1,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 42,
     "fields": {
@@ -460,8 +460,8 @@
       "source_unit": 1,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 43,
     "fields": {
@@ -471,8 +471,8 @@
       "source_unit": 1,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 44,
     "fields": {
@@ -482,8 +482,8 @@
       "source_unit": 1,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 45,
     "fields": {
@@ -493,8 +493,8 @@
       "source_unit": 5,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 46,
     "fields": {
@@ -504,8 +504,8 @@
       "source_unit": 5,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 47,
     "fields": {
@@ -515,8 +515,8 @@
       "source_unit": 5,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 48,
     "fields": {
@@ -526,8 +526,8 @@
       "source_unit": 5,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 49,
     "fields": {
@@ -537,8 +537,8 @@
       "source_unit": 5,
       "ensembles": false
     }
-},
-{
+  },
+  {
     "model": "gap.datasetattribute",
     "pk": 50,
     "fields": {
@@ -548,18 +548,18 @@
       "source_unit": 5,
       "ensembles": false
     }
-},
-{
-  "model": "gap.datasetattribute",
-  "pk": 51,
-  "fields": {
-    "dataset": 6,
-    "attribute": 36,
-    "source": "precipitationProbability",
-    "source_unit": 6,
-    "ensembles": false
-  }
-},
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 51,
+    "fields": {
+      "dataset": 6,
+      "attribute": 36,
+      "source": "precipitationProbability",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
   {
     "model": "gap.datasetattribute",
     "pk": 52,
@@ -711,6 +711,171 @@
       "attribute": 41,
       "source": "wind_speed_min",
       "source_unit": 8,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 66,
+    "fields": {
+      "dataset": 9,
+      "attribute": 44,
+      "source": "ap",
+      "source_unit": 10,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 67,
+    "fields": {
+      "dataset": 9,
+      "attribute": 45,
+      "source": "dw",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 68,
+    "fields": {
+      "dataset": 9,
+      "attribute": 46,
+      "source": "ec",
+      "source_unit": 12,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 69,
+    "fields": {
+      "dataset": 9,
+      "attribute": 47,
+      "source": "ew",
+      "source_unit": 12,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 70,
+    "fields": {
+      "dataset": 9,
+      "attribute": 48,
+      "source": "ld",
+      "source_unit": 13,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 71,
+    "fields": {
+      "dataset": 9,
+      "attribute": 49,
+      "source": "ra",
+      "source_unit": 14,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 72,
+    "fields": {
+      "dataset": 9,
+      "attribute": 50,
+      "source": "sm",
+      "source_unit": 15,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 73,
+    "fields": {
+      "dataset": 9,
+      "attribute": 51,
+      "source": "st",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 74,
+    "fields": {
+      "dataset": 9,
+      "attribute": 52,
+      "source": "te",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 75,
+    "fields": {
+      "dataset": 9,
+      "attribute": 33,
+      "source": "ws",
+      "source_unit": 8,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 76,
+    "fields": {
+      "dataset": 9,
+      "attribute": 53,
+      "source": "wg",
+      "source_unit": 8,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 77,
+    "fields": {
+      "dataset": 9,
+      "attribute": 39,
+      "source": "cp",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 78,
+    "fields": {
+      "dataset": 9,
+      "attribute": 7,
+      "source": "pr",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 79,
+    "fields": {
+      "dataset": 9,
+      "attribute": 28,
+      "source": "rh",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 80,
+    "fields": {
+      "dataset": 9,
+      "attribute": 43,
+      "source": "wd",
+      "source_unit": 11,
       "ensembles": false
     }
   }

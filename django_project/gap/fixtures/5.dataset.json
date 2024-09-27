@@ -102,5 +102,18 @@
       "store_type": "TABLE",
       "is_internal_use": false
     }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 9,
+    "fields": {
+      "name": "Tahmo Disdrometer Observational",
+      "description": "Tahmo data that coming from API : https://datahub.tahmo.org/",
+      "provider": 1,
+      "type": 4,
+      "time_step": "DAILY",
+      "store_type": "TABLE",
+      "is_internal_use": false
+    }
   }
 ]

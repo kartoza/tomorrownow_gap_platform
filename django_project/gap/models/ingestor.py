@@ -32,6 +32,7 @@ class IngestorType:
     TOMORROWIO = 'Tomorrow.io'
     ARABLE = 'Arable'
     GRID = 'Grid'
+    TAHMO_API = 'Tahmo API'
 
 
 class IngestorSessionStatus:
@@ -49,6 +50,7 @@ class BaseSession(models.Model):
 
     class Meta:  # noqa: D106
         abstract = True
+        ordering = ['-run_at']
 
     ingestor_type = models.CharField(
         default=IngestorType.TAHMO,
@@ -60,6 +62,7 @@ class BaseSession(models.Model):
             (IngestorType.TOMORROWIO, IngestorType.TOMORROWIO),
             (IngestorType.ARABLE, IngestorType.ARABLE),
             (IngestorType.GRID, IngestorType.GRID),
+            (IngestorType.TAHMO_API, IngestorType.TAHMO_API),
         ),
         max_length=512
     )
@@ -174,6 +177,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.salient import SalientIngestor
         from gap.ingestor.grid import GridIngestor
         from gap.ingestor.arable import ArableIngestor
+        from gap.ingestor.tahmo_api import TahmoAPIIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -188,6 +192,8 @@ class IngestorSession(BaseSession):
             ingestor = ArableIngestor
         elif self.ingestor_type == IngestorType.GRID:
             ingestor = GridIngestor
+        elif self.ingestor_type == IngestorType.TAHMO_API:
+            ingestor = TahmoAPIIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()

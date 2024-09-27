@@ -78,5 +78,37 @@
       "name": "degree",
       "description": ""
     }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 12,
+    "fields": {
+      "name": "mS/cm",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 13,
+    "fields": {
+      "name": "km",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 14,
+    "fields": {
+      "name": "W/m2",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 15,
+    "fields": {
+      "name": "m3/m3",
+      "description": ""
+    }
   }
 ]
