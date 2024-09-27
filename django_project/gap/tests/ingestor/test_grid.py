@@ -59,7 +59,7 @@ class GridIngestorTest(TestCase):
     def test_no_file(self):
         """Test no file ingestor."""
         session = IngestorSession.objects.create(
-            ingestor_type=IngestorType.FARM
+            ingestor_type=IngestorType.GRID
         )
         session.run()
         self.assertEqual(session.notes, FileNotFoundException().message)

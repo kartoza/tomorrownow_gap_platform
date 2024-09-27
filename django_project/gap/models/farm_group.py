@@ -18,8 +18,12 @@ User = get_user_model()
 class FarmGroup(Definition):
     """Model representing group of farms."""
 
-    farms = models.ManyToManyField(Farm)
-    users = models.ManyToManyField(User)
+    farms = models.ManyToManyField(
+        Farm, blank=True, null=True
+    )
+    users = models.ManyToManyField(
+        User, blank=True, null=True
+    )
 
     def email_recipients(self) -> list:
         """Return list of email addresses of farm recipients."""

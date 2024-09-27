@@ -27,3 +27,11 @@ class ApiKeyNotFoundException(Exception):
     def __init__(self):  # noqa
         self.message = 'Api key not found.'
         super().__init__(self.message)
+
+
+class AdditionalConfigNotFoundException(Exception):
+    """Error when additional config is not found."""
+
+    def __init__(self, key):  # noqa
+        self.message = f'{key} is required in additional_config.'
+        super().__init__(self.message)
