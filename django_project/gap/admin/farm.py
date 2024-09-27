@@ -41,7 +41,7 @@ class FarmGroupAdmin(AbstractDefinitionAdmin):
     """FarmGroup admin."""
 
     list_display = (
-        'name', 'description', 'farm_count'
+        'id', 'name', 'description', 'farm_count'
     )
 
     filter_horizontal = ('farms', 'users')
