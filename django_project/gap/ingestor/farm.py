@@ -45,7 +45,7 @@ class FarmIngestor(BaseIngestor):
             self.farm_group = FarmGroup.objects.get(
                 id=session.additional_config['farm_group_id']
             )
-        except KeyError as e:
+        except KeyError:
             raise AdditionalConfigNotFoundException('farm_group_id')
         except FarmGroup.DoesNotExist:
             raise Exception('Farm group does not exist')
