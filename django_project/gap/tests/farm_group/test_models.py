@@ -48,7 +48,7 @@ class FarmGroupCRUDTest(TestCase):
         self.assertFalse(self.Model.objects.filter(id=_id).exists())
 
 
-class FarmGroupFUnctionalityCRUDTest(TestCase):
+class FarmGroupFunctionalityCRUDTest(TestCase):
     """Farm Group test case."""
 
     Factory = FarmGroupFactory

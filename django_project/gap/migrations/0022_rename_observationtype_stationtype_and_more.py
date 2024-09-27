@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0020_farmgroup_remove_cropinsightrequest_farms_and_more'),
+        ('gap', '0021_alter_farmgroup_farms_alter_farmgroup_users'),
     ]
 
     operations = [

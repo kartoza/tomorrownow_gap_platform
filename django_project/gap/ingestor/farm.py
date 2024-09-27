@@ -7,13 +7,15 @@ Tomorrow Now GAP.
 
 import pandas as pd
 
+from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import (
-    FileNotFoundException, FileIsNotCorrectException
+    FileNotFoundException, FileIsNotCorrectException,
+    AdditionalConfigNotFoundException
 )
 from gap.models import (
-    IngestorSession, Farm, Crop, FarmCategory, FarmRSVPStatus, Village
+    IngestorSession, Farm, FarmGroup, Crop, FarmCategory, FarmRSVPStatus,
+    Village
 )
-from gap.ingestor.base import BaseIngestor
 from gap.utils.dms import dms_string_to_point
 
 COLUMN_COUNT = 9
@@ -38,6 +40,15 @@ class FarmIngestor(BaseIngestor):
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
         super().__init__(session, working_dir)
+        self.farm_group = None
+        try:
+            self.farm_group = FarmGroup.objects.get(
+                id=session.additional_config['farm_group_id']
+            )
+        except KeyError:
+            raise AdditionalConfigNotFoundException('farm_group_id')
+        except FarmGroup.DoesNotExist:
+            raise Exception('Farm group does not exist')
 
     def _run(self):
         """Run the ingestor."""
@@ -67,7 +78,7 @@ class FarmIngestor(BaseIngestor):
                 village, _ = Village.objects.get_or_create(
                     name=row[Keys.VILLAGE_NAME]
                 )
-                Farm.objects.update_or_create(
+                farm, _ = Farm.objects.update_or_create(
                     unique_id=farm_id,
                     geometry=geometry,
                     defaults={
@@ -78,6 +89,7 @@ class FarmIngestor(BaseIngestor):
                         'phone_number': phone_number
                     }
                 )
+                self.farm_group.farms.add(farm)
             except KeyError as e:
                 raise FileIsNotCorrectException(
                     f'Row {idx + HEADER_IDX + 2} does not have {e}'

@@ -9,7 +9,10 @@ import os
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-from gap.ingestor.exceptions import FileNotFoundException
+from gap.factories import FarmGroupFactory
+from gap.ingestor.exceptions import (
+    FileNotFoundException, AdditionalConfigNotFoundException
+)
 from gap.ingestor.farm import Keys, Farm
 from gap.models.ingestor import (
     IngestorSession, IngestorSessionStatus, IngestorType
@@ -21,10 +24,57 @@ class FarmIngestorTest(TestCase):
 
     fixtures = []
 
+    def setUp(self) -> None:
+        """Set test class."""
+        self.farm_group = FarmGroupFactory()
+
+    def test_error_no_configuration(self):
+        """Test when ingestor error no farm_group_id."""
+        filepath = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'data', 'farms', 'ErrorColumn.xlsx'
+        )
+        _file = open(filepath, 'rb')
+        session = IngestorSession.objects.create(
+            file=SimpleUploadedFile(_file.name, _file.read()),
+            ingestor_type=IngestorType.FARM
+        )
+        session.run()
+        session.delete()
+        self.assertEqual(
+            session.notes,
+            AdditionalConfigNotFoundException('farm_group_id').message
+        )
+        self.assertEqual(session.status, IngestorSessionStatus.FAILED)
+
+    def test_error_farm_group_not_found(self):
+        """Test when ingestor error does not find farm_group_id."""
+        filepath = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'data', 'farms', 'ErrorColumn.xlsx'
+        )
+        _file = open(filepath, 'rb')
+        session = IngestorSession.objects.create(
+            file=SimpleUploadedFile(_file.name, _file.read()),
+            ingestor_type=IngestorType.FARM,
+            additional_config={
+                'farm_group_id': 0
+            }
+        )
+        session.run()
+        session.delete()
+        self.assertEqual(
+            session.notes, 'Farm group does not exist'
+        )
+        self.assertEqual(session.status, IngestorSessionStatus.FAILED)
+
     def test_no_file(self):
         """Test no file ingestor."""
         session = IngestorSession.objects.create(
-            ingestor_type=IngestorType.FARM
+            ingestor_type=IngestorType.FARM,
+            additional_config={
+                'farm_group_id': self.farm_group.id
+            }
         )
         session.run()
         self.assertEqual(session.notes, FileNotFoundException().message)
@@ -39,7 +89,10 @@ class FarmIngestorTest(TestCase):
         _file = open(filepath, 'rb')
         session = IngestorSession.objects.create(
             file=SimpleUploadedFile(_file.name, _file.read()),
-            ingestor_type=IngestorType.FARM
+            ingestor_type=IngestorType.FARM,
+            additional_config={
+                'farm_group_id': self.farm_group.id
+            }
         )
         session.run()
         session.delete()
@@ -57,7 +110,10 @@ class FarmIngestorTest(TestCase):
         _file = open(filepath, 'rb')
         session = IngestorSession.objects.create(
             file=SimpleUploadedFile(_file.name, _file.read()),
-            ingestor_type=IngestorType.FARM
+            ingestor_type=IngestorType.FARM,
+            additional_config={
+                'farm_group_id': self.farm_group.id
+            }
         )
         session.run()
         session.delete()
@@ -75,7 +131,10 @@ class FarmIngestorTest(TestCase):
         _file = open(filepath, 'rb')
         session = IngestorSession.objects.create(
             file=SimpleUploadedFile(_file.name, _file.read()),
-            ingestor_type=IngestorType.FARM
+            ingestor_type=IngestorType.FARM,
+            additional_config={
+                'farm_group_id': self.farm_group.id
+            }
         )
         session.run()
         self.assertEqual(
@@ -115,3 +174,7 @@ class FarmIngestorTest(TestCase):
         self.assertEqual(farms[2].crop.name, 'Wheat')
         self.assertEqual(farms[2].geometry.y, -0.2940277777777778)
         self.assertEqual(farms[2].geometry.x, 35.885)
+
+        # Farm in correct group
+        for farm in farms:
+            self.farm_group.farms.get(id=farm.id)

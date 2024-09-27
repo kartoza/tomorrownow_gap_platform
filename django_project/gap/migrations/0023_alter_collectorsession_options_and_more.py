@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0021_rename_observationtype_stationtype_and_more'),
+        ('gap', '0022_rename_observationtype_stationtype_and_more'),
     ]
 
     operations = [
