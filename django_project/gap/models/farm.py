@@ -43,10 +43,10 @@ class Farm(models.Model):
         srid=4326
     )
     rsvp_status = models.ForeignKey(
-        FarmRSVPStatus, on_delete=models.CASCADE
+        FarmRSVPStatus, on_delete=models.CASCADE, null=True, blank=True
     )
     category = models.ForeignKey(
-        FarmCategory, on_delete=models.CASCADE
+        FarmCategory, on_delete=models.CASCADE, null=True, blank=True
     )
     crop = models.ForeignKey(
         'gap.Crop', on_delete=models.SET_NULL, null=True, blank=True
