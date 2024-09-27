@@ -35,14 +35,29 @@ class CropInsightFarmGenerator:
         self.tomorrow = self.today + timedelta(days=1)
         self.attributes = calculate_from_point_attrs()
 
-    def save_spw(self, signal, farm: Farm):
+    def return_float(self, value):
+        """Return float value."""
+        try:
+            return float(value)
+        except ValueError:
+            return None
+
+    def save_spw(
+            self, farm: Farm, signal, too_wet_indicator, last_4_days,
+            last_2_days, today_tomorrow
+    ):
         """Save spw data."""
         # Save SPW
         FarmSuitablePlantingWindowSignal.objects.update_or_create(
             farm=farm,
             generated_date=self.today,
             defaults={
-                'signal': signal
+                'signal': signal,
+                'too_wet_indicator': too_wet_indicator,
+                'last_4_days': self.return_float(last_4_days),
+                'last_2_days': self.return_float(last_2_days),
+                'today_tomorrow': self.return_float(today_tomorrow)
+
             }
         )
 
@@ -124,5 +139,9 @@ class CropInsightFarmGenerator:
             farms = Farm.objects.filter(grid=self.farm.grid)
 
         for farm in farms:
-            self.save_spw(output.data.goNoGo, farm)
+            self.save_spw(
+                farm,
+                output.data.goNoGo, output.data.tooWet, output.data.last4Days,
+                output.data.last2Days, output.data.todayTomorrow
+            )
             self.save_shortterm_forecast(historical_dict, farm)

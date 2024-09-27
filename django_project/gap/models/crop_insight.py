@@ -171,7 +171,24 @@ class FarmSuitablePlantingWindowSignal(models.Model):
     )
     signal = models.CharField(
         max_length=512,
-        help_text='Signal value of Suitable Planting Window l.'
+        help_text='GoNoGo signals.'
+    )
+    too_wet_indicator = models.CharField(
+        max_length=512,
+        help_text='Too wet indicator.',
+        null=True, blank=True
+    )
+    last_4_days = models.FloatField(
+        help_text='The rain accumulationSum for last 4 days.',
+        null=True, blank=True
+    )
+    last_2_days = models.FloatField(
+        help_text='The rain accumulationSum for last 2 days.',
+        null=True, blank=True
+    )
+    today_tomorrow = models.FloatField(
+        help_text='The rain accumulationSum for today and tomorrow.',
+        null=True, blank=True
     )
 
     def __str__(self):
@@ -288,6 +305,10 @@ class CropPlanData:
             'longitude',
             'SPWTopMessage',
             'SPWDescription',
+            'TooWet',
+            'last_4_days_mm',
+            'last_2_days_mm',
+            'today_tomorrow_mm'
         ]
 
     def __init__(
@@ -362,6 +383,10 @@ class CropPlanData:
         # Spw data
         spw_top_message = ''
         spw_description = ''
+        too_wet = ''
+        last_4_days = ''
+        last_2_days = ''
+        today_tomorrow = ''
         spw = FarmSuitablePlantingWindowSignal.objects.filter(
             farm=self.farm,
             generated_date=self.generated_date
@@ -374,15 +399,31 @@ class CropPlanData:
             except SPWOutput.DoesNotExist:
                 spw_top_message = spw.signal
                 spw_description = ''
-        # ---------------------------------------
 
+            if spw.too_wet_indicator is not None:
+                too_wet = spw.too_wet_indicator
+            if spw.last_4_days is not None:
+                last_4_days = spw.last_4_days
+            if spw.last_2_days is not None:
+                last_2_days = spw.last_2_days
+            if spw.today_tomorrow is not None:
+                today_tomorrow = spw.today_tomorrow
+
+        # ---------------------------------------
+        # Check default_fields functions
+        default_fields = CropPlanData.default_fields()
         output = {
-            'farmID': self.farm.unique_id,
-            'phoneNumber': self.farm.phone_number,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'SPWTopMessage': spw_top_message,
-            'SPWDescription': spw_description,
+            default_fields[0]: self.farm.unique_id,
+            default_fields[1]: self.farm.phone_number,
+            default_fields[2]: self.latitude,
+            default_fields[3]: self.longitude,
+            default_fields[4]: spw_top_message,
+            default_fields[5]: spw_description,
+            default_fields[6]: too_wet,
+            default_fields[7]: last_4_days,
+            default_fields[8]: last_2_days,
+            default_fields[9]: today_tomorrow
+
         }
 
         # ----------------------------------------
