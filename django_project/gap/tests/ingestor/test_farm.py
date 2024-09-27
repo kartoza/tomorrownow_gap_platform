@@ -118,7 +118,7 @@ class FarmIngestorTest(TestCase):
         session.run()
         session.delete()
         self.assertEqual(
-            session.notes, "Row 3 : Invalid dms format"
+            session.notes, "Row 3 : Invalid latitude, longitude format"
         )
         self.assertEqual(session.status, IngestorSessionStatus.FAILED)
 

@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import pandas as pd
+from django.contrib.gis.geos import Point
 
 from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import (
@@ -50,6 +51,10 @@ class FarmIngestor(BaseIngestor):
         except FarmGroup.DoesNotExist:
             raise Exception('Farm group does not exist')
 
+    def is_not_empty(self, value):
+        """Check data is empty."""
+        return value and f'{value}' != 'nan'
+
     def _run(self):
         """Run the ingestor."""
         df = pd.read_excel(
@@ -66,18 +71,41 @@ class FarmIngestor(BaseIngestor):
         for idx, row in enumerate(data):
             try:
                 farm_id = row[Keys.FARM_ID]
-                phone_number = row[Keys.PHONE_NUMBER]
-                geometry = dms_string_to_point(row[Keys.GEOMETRY])
-                crop, _ = Crop.objects.get_or_create(name=row[Keys.CROP])
-                category, _ = FarmCategory.objects.get_or_create(
-                    name=row[Keys.CATEGORY]
-                )
-                rsvp_status, _ = FarmRSVPStatus.objects.get_or_create(
-                    name=row[Keys.RSVP]
-                )
-                village, _ = Village.objects.get_or_create(
-                    name=row[Keys.VILLAGE_NAME]
-                )
+
+                phone_number = None
+                if self.is_not_empty(row[Keys.PHONE_NUMBER]):
+                    phone_number = row[Keys.PHONE_NUMBER]
+
+                try:
+                    geometry = dms_string_to_point(row[Keys.GEOMETRY])
+                except ValueError:
+                    try:
+                        coords = [
+                            float(coord) for coord in
+                            row[Keys.GEOMETRY].split(',')
+                        ]
+                        geometry = Point(coords[1], coords[0])
+                    except ValueError:
+                        raise Exception('Invalid latitude, longitude format')
+
+                crop = None
+                if self.is_not_empty(row[Keys.CROP]):
+                    crop, _ = Crop.objects.get_or_create(name=row[Keys.CROP])
+                category = None
+                if self.is_not_empty(row[Keys.CATEGORY]):
+                    category, _ = FarmCategory.objects.get_or_create(
+                        name=row[Keys.CATEGORY]
+                    )
+                rsvp_status = None
+                if self.is_not_empty(row[Keys.RSVP]):
+                    rsvp_status, _ = FarmRSVPStatus.objects.get_or_create(
+                        name=row[Keys.RSVP]
+                    )
+                village = None
+                if self.is_not_empty(row[Keys.VILLAGE_NAME]):
+                    village, _ = Village.objects.get_or_create(
+                        name=row[Keys.VILLAGE_NAME]
+                    )
                 farm, _ = Farm.objects.update_or_create(
                     unique_id=farm_id,
                     geometry=geometry,
