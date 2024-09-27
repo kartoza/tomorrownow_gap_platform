@@ -19,10 +19,10 @@ class FarmGroup(Definition):
     """Model representing group of farms."""
 
     farms = models.ManyToManyField(
-        Farm, blank=True, null=True
+        Farm, blank=True
     )
     users = models.ManyToManyField(
-        User, blank=True, null=True
+        User, blank=True
     )
 
     def email_recipients(self) -> list:

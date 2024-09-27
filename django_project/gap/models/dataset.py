@@ -51,7 +51,7 @@ class DatasetTimeStep:
 
 
 class Dataset(Definition):
-    """Model representing dataset of measument collection."""
+    """Model representing dataset of measurement collection."""
 
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE

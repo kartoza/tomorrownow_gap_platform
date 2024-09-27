@@ -33,6 +33,7 @@ class IngestorType:
     ARABLE = 'Arable'
     GRID = 'Grid'
     TAHMO_API = 'Tahmo API'
+    TIO_FORECAST_COLLECTOR = 'Tio Forecast Collector'
 
 
 class IngestorSessionStatus:
@@ -63,6 +64,10 @@ class BaseSession(models.Model):
             (IngestorType.ARABLE, IngestorType.ARABLE),
             (IngestorType.GRID, IngestorType.GRID),
             (IngestorType.TAHMO_API, IngestorType.TAHMO_API),
+            (
+                IngestorType.TIO_FORECAST_COLLECTOR,
+                IngestorType.TIO_FORECAST_COLLECTOR
+            ),
         ),
         max_length=512
     )
@@ -109,12 +114,15 @@ class CollectorSession(BaseSession):
         """Run the collector session."""
         from gap.ingestor.cbam import CBAMCollector
         from gap.ingestor.salient import SalientCollector
+        from gap.ingestor.tio_shortterm import TioShortTermCollector
 
         ingestor = None
         if self.ingestor_type == IngestorType.CBAM:
             ingestor = CBAMCollector(self, working_dir)
         elif self.ingestor_type == IngestorType.SALIENT:
             ingestor = SalientCollector(self, working_dir)
+        elif self.ingestor_type == IngestorType.TIO_FORECAST_COLLECTOR:
+            ingestor = TioShortTermCollector(self, working_dir)
 
         if ingestor:
             ingestor.run()
