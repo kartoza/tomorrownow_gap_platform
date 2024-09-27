@@ -12,7 +12,7 @@ from core.models.common import Definition
 from gap.models.common import Country, Provider
 
 
-class ObservationType(Definition):
+class StationType(Definition):
     """Model representing an observation type."""
 
     pass
@@ -46,8 +46,11 @@ class Station(Definition):
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
     )
-    observation_type = models.ForeignKey(
-        ObservationType, on_delete=models.CASCADE
+    station_type = models.ForeignKey(
+        StationType, on_delete=models.CASCADE
+    )
+    metadata = models.JSONField(
+        null=True, blank=True
     )
 
     class Meta:  # noqa

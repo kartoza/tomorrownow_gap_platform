@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "statement_id": 0,
+      "series": [
+        {
+          "name": "raw",
+          "columns": [
+            "time",
+            "quality",
+            "sensor",
+            "station",
+            "value",
+            "variable"
+          ],
+          "values": [
+            [
+              "2024-04-01T00:00:00Z",
+              1,
+              "S000001",
+              "TD00001",
+              0,
+              "pr"
+            ],
+            [
+              "2024-04-01T00:00:00Z",
+              1,
+              "S000001",
+              "TD00001",
+              null,
+              "pr"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

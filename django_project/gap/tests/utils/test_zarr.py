@@ -183,7 +183,7 @@ class TestAdminZarrFileActions(TestCase):
 
     fixtures = [
         '2.provider.json',
-        '3.observation_type.json',
+        '3.station_type.json',
         '4.dataset_type.json',
         '5.dataset.json',
         '6.unit.json',

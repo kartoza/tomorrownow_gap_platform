@@ -23,17 +23,18 @@ def run_ingestor_session(_id: int):
         logger.error('Ingestor Session {} does not exists'.format(_id))
 
 
-@app.task(name='arable_ingestor_session')
-def run_arable_ingestor_session():
+@app.task(name='run_daily_ingestor')
+def run_daily_ingestor():
     """Run Ingestor for arable."""
-    session = IngestorSession.objects.filter(
-        ingestor_type=IngestorType.ARABLE
-    ).first()
-    if not session:
-        # When created, it is autorun
-        IngestorSession.objects.create(
-            ingestor_type=IngestorType.ARABLE
-        )
-    else:
-        # When not created, it is run manually
-        session.run()
+    for ingestor_type in [IngestorType.ARABLE, IngestorType.TAHMO_API]:
+        session = IngestorSession.objects.filter(
+            ingestor_type=ingestor_type
+        ).first()
+        if not session:
+            # When created, it is autorun
+            IngestorSession.objects.create(
+                ingestor_type=ingestor_type
+            )
+        else:
+            # When not created, it is run manually
+            session.run()

@@ -19,7 +19,7 @@ from gap.models import (
     Country,
     Station,
     Measurement,
-    ObservationType,
+    StationType,
     DatasetTimeStep,
     DatasetStore,
     DataSourceFile,
@@ -104,11 +104,11 @@ class DatasetAttributeFactory(DjangoModelFactory):
     source_unit = factory.SubFactory(UnitFactory)
 
 
-class ObservationTypeFactory(DjangoModelFactory):
-    """Factory class for ObservationType model."""
+class StationTypeFactory(DjangoModelFactory):
+    """Factory class for StationType model."""
 
     class Meta:  # noqa
-        model = ObservationType
+        model = StationType
 
     name = factory.Sequence(
         lambda n: f'observation-type-{n}'
@@ -148,7 +148,7 @@ class StationFactory(DjangoModelFactory):
     geometry = factory.LazyFunction(lambda: Point(0, 0))
     provider = factory.SubFactory(ProviderFactory)
     description = factory.Faker('text')
-    observation_type = factory.SubFactory(ObservationTypeFactory)
+    station_type = factory.SubFactory(StationTypeFactory)
 
 
 class MeasurementFactory(DjangoModelFactory):

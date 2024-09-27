@@ -12,7 +12,7 @@ from gap.models import (
     Country,
     Station,
     Measurement,
-    ObservationType,
+    StationType,
     CollectorSession,
     IngestorType
 )
@@ -22,7 +22,7 @@ from gap.factories import (
     CountryFactory,
     StationFactory,
     MeasurementFactory,
-    ObservationTypeFactory
+    StationTypeFactory
 )
 
 
@@ -90,38 +90,38 @@ class AttributeCRUDTest(TestCase):
         self.assertFalse(Attribute.objects.filter(id=attribute_id).exists())
 
 
-class ObservationTypeCRUDTest(TestCase):
+class StationTypeCRUDTest(TestCase):
     """Attribute test case."""
 
-    def test_create_observation_type(self):
+    def test_create_station_type(self):
         """Test create observation type object."""
-        observation_type = ObservationTypeFactory()
-        self.assertIsInstance(observation_type, ObservationType)
+        station_type = StationTypeFactory()
+        self.assertIsInstance(station_type, StationType)
         self.assertTrue(
-            ObservationType.objects.filter(id=observation_type.id).exists())
+            StationType.objects.filter(id=station_type.id).exists())
 
-    def test_read_observation_type(self):
-        """Test read observation_type object."""
-        observation_type = ObservationTypeFactory()
-        fetched_type = ObservationType.objects.get(id=observation_type.id)
-        self.assertEqual(observation_type, fetched_type)
+    def test_read_station_type(self):
+        """Test read station_type object."""
+        station_type = StationTypeFactory()
+        fetched_type = StationType.objects.get(id=station_type.id)
+        self.assertEqual(station_type, fetched_type)
 
-    def test_update_observation_type(self):
-        """Test update observation_type object."""
-        observation_type = ObservationTypeFactory()
+    def test_update_station_type(self):
+        """Test update station_type object."""
+        station_type = StationTypeFactory()
         new_name = "Updated Type Name"
-        observation_type.name = new_name
-        observation_type.save()
-        updated_type = ObservationType.objects.get(id=observation_type.id)
+        station_type.name = new_name
+        station_type.save()
+        updated_type = StationType.objects.get(id=station_type.id)
         self.assertEqual(updated_type.name, new_name)
 
-    def test_delete_observation_type(self):
-        """Test delete observation_type object."""
-        observation_type = ObservationTypeFactory()
-        observation_type_id = observation_type.id
-        observation_type.delete()
+    def test_delete_station_type(self):
+        """Test delete station_type object."""
+        station_type = StationTypeFactory()
+        station_type_id = station_type.id
+        station_type.delete()
         self.assertFalse(
-            ObservationType.objects.filter(id=observation_type_id).exists())
+            StationType.objects.filter(id=station_type_id).exists())
 
 
 class CountryCRUDTest(TestCase):

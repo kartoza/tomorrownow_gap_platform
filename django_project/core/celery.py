@@ -58,8 +58,9 @@ app.conf.beat_schedule = {
         # Run every Monday 02:00 UTC
         'schedule': crontab(minute='0', hour='2', day_of_week='1'),
     },
-    'arable-ingestor-session': {
-        'task': 'arable_ingestor_session',
+    # Run all ingestor session daily
+    'run-daily-ingestor-session': {
+        'task': 'run_daily_ingestor',
         # Run everyday at 00:00 UTC
         'schedule': crontab(minute='00', hour='00'),
     }

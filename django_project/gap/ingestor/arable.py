@@ -13,13 +13,13 @@ from django.contrib.gis.geos import Point
 from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import ApiKeyNotFoundException
 from gap.models import (
-    Provider, Station, ObservationType, CollectorSession, Dataset, DatasetType,
+    Provider, Station, StationType, IngestorSession, Dataset, DatasetType,
     DatasetTimeStep, DatasetStore, Country, Measurement
 )
 from gap.models.preferences import Preferences
 
 PROVIDER = 'Arable'
-OBSERVATION_TYPE = 'Ground Observations'
+STATION_TYPE = 'Ground Observations'
 DATASET_TYPE = 'Observations'
 DATASET_NAME = 'Arable Ground Observational'
 API_KEY_ENV_NAME = 'ARABLE_API_KEY'
@@ -43,15 +43,15 @@ class ArableIngestor(BaseIngestor):
 
     api_key = None
 
-    def __init__(self, session: CollectorSession, working_dir: str = '/tmp'):
+    def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
         super().__init__(session, working_dir)
 
         self.provider = Provider.objects.get(
             name=PROVIDER
         )
-        self.obs_type = ObservationType.objects.get(
-            name=OBSERVATION_TYPE
+        self.station_type = StationType.objects.get(
+            name=STATION_TYPE
         )
         self.dataset_type = DatasetType.objects.get(
             name=DATASET_TYPE
@@ -170,7 +170,7 @@ class ArableIngestor(BaseIngestor):
                     'name': device['name'],
                     'geometry': point,
                     'country': country,
-                    'observation_type': self.obs_type,
+                    'station_type': self.station_type,
                 }
             )
 

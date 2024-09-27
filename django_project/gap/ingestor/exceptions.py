@@ -29,6 +29,14 @@ class ApiKeyNotFoundException(Exception):
         super().__init__(self.message)
 
 
+class EnvIsNotSetException(Exception):
+    """Env is not set error."""
+
+    def __init__(self, ENV_KEY):  # noqa
+        self.message = f'{ENV_KEY} is not set.'
+        super().__init__(self.message)
+
+
 class AdditionalConfigNotFoundException(Exception):
     """Error when additional config is not found."""
 
