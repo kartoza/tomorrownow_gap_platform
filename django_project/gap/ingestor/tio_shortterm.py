@@ -10,9 +10,8 @@ import logging
 import os
 import traceback
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-import pytz
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -42,10 +41,10 @@ class TioShortTermCollector(BaseIngestor):
         """Initialize TioShortTermCollector."""
         super().__init__(session, working_dir)
         self.dataset = tomorrowio_shortterm_forecast_dataset()
-        today = datetime.now(tz=pytz.UTC).replace(
+        today = timezone.now().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
-        self.start_dt = today - timedelta(days=1)
+        self.start_dt = today
         self.end_dt = today + timedelta(days=14)
 
     def _run(self):
