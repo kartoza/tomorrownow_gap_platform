@@ -8,6 +8,9 @@ Tomorrow Now GAP.
 import io
 import zipfile
 
+import boto3
+from botocore.exceptions import ClientError
+from django.conf import settings
 from django.core.files.base import ContentFile
 from storages.backends.s3boto3 import S3Boto3Storage
 
@@ -53,3 +56,27 @@ def remove_s3_folder(s3_storage: S3Boto3Storage, folder_path: str):
     objects_to_delete = bucket.objects.filter(Prefix=folder_path)
     for obj in objects_to_delete:
         obj.delete()
+
+
+def create_s3_bucket(bucket_name, region=None):
+    """Create an S3 bucket in a specified region."""
+    # Create bucket
+    try:
+        s3_client = boto3.client(
+            's3',
+            region_name=region,
+            endpoint_url=settings.MINIO_AWS_ENDPOINT_URL,
+            aws_access_key_id=settings.MINIO_AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.MINIO_AWS_SECRET_ACCESS_KEY
+        )
+        if region is None:
+            s3_client.create_bucket(Bucket=bucket_name)
+        else:
+            location = {'LocationConstraint': region}
+            s3_client.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration=location
+            )
+    except ClientError as e:
+        return False
+    return True

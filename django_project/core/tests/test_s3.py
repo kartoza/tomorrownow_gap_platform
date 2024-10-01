@@ -6,15 +6,20 @@ Tomorrow Now GAP.
 """
 import os
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.test import TestCase
 
-from core.utils.s3 import zip_folder_in_s3, remove_s3_folder
+from core.utils.s3 import zip_folder_in_s3, remove_s3_folder, create_s3_bucket
 
 
 class TestS3Utilities(TestCase):
     """Test S3 utilities."""
+
+    def test_bucket_already_created(self):
+        """Test S3 bucket already created."""
+        self.assertFalse(create_s3_bucket(settings.MINIO_AWS_BUCKET_NAME))
 
     def test_zip_folder_in_s3(self):
         """Test zip folder in S3."""

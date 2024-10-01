@@ -47,17 +47,21 @@ AWS_TRANSFER_CONFIG = TransferConfig(
     use_threads=True,
     max_concurrency=10
 )
+MINIO_AWS_ACCESS_KEY_ID = os.environ.get("MINIO_AWS_ACCESS_KEY_ID")
+MINIO_AWS_SECRET_ACCESS_KEY = os.environ.get("MINIO_AWS_SECRET_ACCESS_KEY")
+MINIO_AWS_BUCKET_NAME = os.environ.get("MINIO_AWS_BUCKET_NAME")
+MINIO_AWS_ENDPOINT_URL = os.environ.get("MINIO_AWS_ENDPOINT_URL")
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
-            "access_key": os.environ.get("MINIO_AWS_ACCESS_KEY_ID"),
-            "secret_key": os.environ.get("MINIO_AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": os.environ.get("MINIO_AWS_BUCKET_NAME"),
+            "access_key": MINIO_AWS_ACCESS_KEY_ID,
+            "secret_key": MINIO_AWS_SECRET_ACCESS_KEY,
+            "bucket_name": MINIO_AWS_BUCKET_NAME,
             "file_overwrite": False,
             "max_memory_size": 300 * MB,  # 300MB
             "transfer_config": AWS_TRANSFER_CONFIG,
-            "endpoint_url": os.environ.get("MINIO_AWS_ENDPOINT_URL")
+            "endpoint_url": MINIO_AWS_ENDPOINT_URL
         },
     },
     "staticfiles": {
