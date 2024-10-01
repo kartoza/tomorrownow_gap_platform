@@ -42,8 +42,7 @@ def generate_crop_plan():
             requested_by=user,
             farm_group=group,
         )
-        # generate report
-        request.run()
+        generate_insight_report.delay(request.id)
 
 
 @app.task(name="retry_crop_plan_generators")
