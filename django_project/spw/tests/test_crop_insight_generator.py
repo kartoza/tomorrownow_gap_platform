@@ -18,7 +18,8 @@ from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory, FarmGroupFactory
 from gap.factories.grid import GridFactory
 from gap.models.crop_insight import (
-    FarmSuitablePlantingWindowSignal, CropInsightRequest
+    FarmSuitablePlantingWindowSignal, CropInsightRequest,
+    FarmGroupIsNotSetException
 )
 from gap.models.preferences import Preferences
 from gap.tasks.crop_insight import (
@@ -183,6 +184,10 @@ class TestCropInsightGenerator(TestCase):
                 'goNoGo': ['Plant NOW Tier 1b'],
                 'nearDaysLTNPercent': [10.0],
                 'nearDaysCurPercent': [60.0],
+                'tooWet': ['Likely too wet to plant'],
+                'last4Days': [80],
+                'last2Days': [60],
+                'todayTomorrow': [40],
             }
         )
         fetch_timelines_data_val = {}
@@ -233,6 +238,10 @@ class TestCropInsightGenerator(TestCase):
                 'goNoGo': ['Do NOT plant, DRY Tier 4b'],
                 'nearDaysLTNPercent': [10.0],
                 'nearDaysCurPercent': [60.0],
+                'tooWet': ['Too wet to plant'],
+                'last4Days': [100],
+                'last2Days': [80],
+                'todayTomorrow': [80],
             }
         )
         fetch_timelines_data_val = {}
@@ -264,9 +273,18 @@ class TestCropInsightGenerator(TestCase):
                 'goNoGo': '',
                 'nearDaysLTNPercent': [10.0],
                 'nearDaysCurPercent': [60.0],
+                'tooWet': '',
+                'last4Days': '',
+                'last2Days': '',
+                'todayTomorrow': '',
             }
         )
         mock_fetch_timelines_data.return_value = {}
+
+        # Farm group is required, raise error
+        with self.assertRaises(FarmGroupIsNotSetException):
+            request = CropInsightRequestFactory.create()
+            generate_insight_report(request.id)
 
         # Crop insight report
         self.request = CropInsightRequestFactory.create(
@@ -274,6 +292,10 @@ class TestCropInsightGenerator(TestCase):
         )
         generate_insight_report(self.request.id)
         self.request.refresh_from_db()
+
+        # Check the if of farm group in the path
+        self.assertTrue(f'{self.farm_group.id}/' in self.request.file.path)
+
         with self.request.file.open(mode='r') as csv_file:
             csv_reader = csv.reader(csv_file)
             row_num = 1

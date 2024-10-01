@@ -45,6 +45,10 @@ class RModelOutputType:
     DAYS_f6TO_F13 = 'days_f6to_f13'
     NEAR_DAYS_LTN_PERCENT = 'nearDaysLTNPercent'
     NEAR_DAYS_CUR_PERCENT = 'nearDaysCurPercent'
+    TOO_WET_STATUS = 'tooWet'
+    LAST_4_DAYS = 'last4Days'
+    LAST_2_DAYS = 'last2Days'
+    TODAY_TOMORROW = 'todayTomorrow'
 
 
 class RModelOutput(models.Model):
@@ -66,6 +70,14 @@ class RModelOutput(models.Model):
              RModelOutputType.NEAR_DAYS_LTN_PERCENT),
             (RModelOutputType.NEAR_DAYS_CUR_PERCENT,
              RModelOutputType.NEAR_DAYS_CUR_PERCENT),
+            (RModelOutputType.TOO_WET_STATUS,
+             RModelOutputType.TOO_WET_STATUS),
+            (RModelOutputType.LAST_4_DAYS,
+             RModelOutputType.LAST_4_DAYS),
+            (RModelOutputType.LAST_2_DAYS,
+             RModelOutputType.LAST_2_DAYS),
+            (RModelOutputType.TODAY_TOMORROW,
+             RModelOutputType.TODAY_TOMORROW),
         )
     )
     variable_name = models.CharField(max_length=100)
