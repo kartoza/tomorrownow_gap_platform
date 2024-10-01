@@ -247,9 +247,12 @@ class TestDatasetReaderValue(TestCase):
         result = self.dataset_reader_value_list.to_json()
         self.assertEqual(result, {})
 
-    def test_to_json_with_non_point_type(self):
+    def test_to_json_with_non_point_polygon_type(self):
         """Test invalid convert to json."""
         self.mock_location_input.type = 'polygon'
+        self.dataset_reader_value_list.to_json()
+
+        self.mock_location_input.type = 'bbox'
         with self.assertRaises(TypeError):
             self.dataset_reader_value_list.to_json()
 
