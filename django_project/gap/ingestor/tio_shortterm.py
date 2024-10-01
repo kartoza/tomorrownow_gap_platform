@@ -18,7 +18,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
 
-from core.utils.s3 import zip_folder_in_s3, remove_s3_folder
+from core.utils.s3 import zip_folder_in_s3
 from gap.ingestor.base import BaseIngestor
 from gap.models import (
     CastType, CollectorSession, DataSourceFile, DatasetStore, Grid
@@ -106,7 +106,6 @@ class TioShortTermCollector(BaseIngestor):
         zip_folder_in_s3(
             s3_storage, folder_path=folder, zip_file_name=zip_file
         )
-        remove_s3_folder(s3_storage, folder)
 
     def run(self):
         """Run Tio Short Term Ingestor."""

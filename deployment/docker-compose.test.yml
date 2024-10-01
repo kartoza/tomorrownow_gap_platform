@@ -3,11 +3,26 @@
 volumes:
   static-data:
   media-data:
+  minio-data:
 
 # Exactly the same as production but for dev env, we expose the port and uses
 # different port for the web.
 version: '3.4'
 services:
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z.fips
+    command: minio server /data --console-address ":9001"
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    environment:
+      - MINIO_ROOT_USER=minio_user
+      - MINIO_ROOT_PASSWORD=minio_password
+      - MINIO_HTTP_TRACE
+    volumes:
+      - minio-data:/data
+    restart: always
 
   dev:
     image: ${APP_IMAGE}:dev
@@ -15,6 +30,7 @@ services:
     links:
       - db
       - redis
+      - minio
     volumes:
       - static-data:/home/web/static
       - media-data:/home/web/media
@@ -41,6 +57,13 @@ services:
       - ADMIN_EMAIL=admin@example.com
       - SENTRY_DSN=
       - SENTRY_ENVIRONMENT=staging
+
+      # Minio
+      - MINIO_AWS_ACCESS_KEY_ID=minio_user
+      - MINIO_AWS_SECRET_ACCESS_KEY=minio_password
+      - MINIO_AWS_ENDPOINT_URL=http://minio:9000/
+      - MINIO_AWS_BUCKET_NAME=tomorrownow
+      - MINIO_AWS_DIR_PREFIX=dev/media
     entrypoint: [ ]
     ports:
       # for django test server

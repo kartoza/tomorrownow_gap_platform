@@ -294,7 +294,7 @@ class TestCropInsightGenerator(TestCase):
         self.request.refresh_from_db()
 
         # Check the if of farm group in the path
-        self.assertTrue(f'{self.farm_group.id}/' in self.request.file.path)
+        self.assertTrue(f'{self.farm_group.id}/' in self.request.file.name)
 
         with self.request.file.open(mode='r') as csv_file:
             csv_reader = csv.reader(csv_file)

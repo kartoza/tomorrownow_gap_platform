@@ -18,6 +18,9 @@ def zip_folder_in_s3(
     """Zip folder contents into a zip file on S3."""
     zip_buffer = io.BytesIO()
 
+    if s3_storage.exists(zip_file_name):
+        s3_storage.delete(zip_file_name)
+
     # Create buffer zip file
     with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
         # Get file list
@@ -37,6 +40,7 @@ def zip_folder_in_s3(
     # Save it to S3
     zip_buffer.seek(0)
     s3_storage.save(zip_file_name, ContentFile(zip_buffer.read()))
+    remove_s3_folder(s3_storage, folder_path)
 
 
 def remove_s3_folder(s3_storage: S3Boto3Storage, folder_path: str):
