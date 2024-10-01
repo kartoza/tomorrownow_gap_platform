@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 import os  # noqa
 
 from boto3.s3.transfer import TransferConfig
+
 from .contrib import *  # noqa
 from .utils import absolute_path
 
@@ -69,3 +70,5 @@ STORAGES = {
 STORAGE_DIR_PREFIX = os.environ.get("MINIO_AWS_DIR_PREFIX", "media")
 if STORAGE_DIR_PREFIX and not STORAGE_DIR_PREFIX.endswith("/"):
     STORAGE_DIR_PREFIX = f"{STORAGE_DIR_PREFIX}/"
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1500
