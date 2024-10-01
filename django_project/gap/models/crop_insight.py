@@ -4,7 +4,7 @@ Tomorrow Now GAP.
 
 .. note:: Models
 """
-
+import os.path
 import uuid
 from datetime import date, timedelta
 
@@ -25,6 +25,14 @@ from gap.models.preferences import Preferences
 from spw.models import SPWOutput
 
 User = get_user_model()
+
+
+class FarmGroupIsNotSetException(Exception):
+    """Farm group is not set."""
+
+    def __init__(self):  # noqa
+        self.message = 'Farm group is not set.'
+        super().__init__(self.message)
 
 
 def ingestor_file_path(instance, filename):
@@ -595,9 +603,10 @@ class CropInsightRequest(models.Model):
         from spw.generator.crop_insight import CropInsightFarmGenerator
 
         # If farm is empty, put empty farm
-        farms = []
         if self.farm_group:
             farms = self.farm_group.farms.all()
+        else:
+            raise FarmGroupIsNotSetException()
 
         output = [
             self.farm_group.headers
@@ -636,7 +645,10 @@ class CropInsightRequest(models.Model):
         for row in output:
             csv_content += ','.join(map(str, row)) + '\n'
         content_file = ContentFile(csv_content)
-        self.file.save(f'{self.unique_id}.csv', content_file)
+        self.file.save(
+            os.path.join(f'{self.farm_group.id}', f'{self.unique_id}.csv'),
+            content_file
+        )
         self.save()
 
         # Send email

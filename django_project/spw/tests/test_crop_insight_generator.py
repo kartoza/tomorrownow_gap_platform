@@ -18,7 +18,8 @@ from gap.factories.crop_insight import CropInsightRequestFactory
 from gap.factories.farm import FarmFactory, FarmGroupFactory
 from gap.factories.grid import GridFactory
 from gap.models.crop_insight import (
-    FarmSuitablePlantingWindowSignal, CropInsightRequest
+    FarmSuitablePlantingWindowSignal, CropInsightRequest,
+    FarmGroupIsNotSetException
 )
 from gap.models.preferences import Preferences
 from gap.tasks.crop_insight import (
@@ -280,12 +281,21 @@ class TestCropInsightGenerator(TestCase):
         )
         mock_fetch_timelines_data.return_value = {}
 
+        # Farm group is required, raise error
+        with self.assertRaises(FarmGroupIsNotSetException):
+            request = CropInsightRequestFactory.create()
+            generate_insight_report(request.id)
+
         # Crop insight report
         self.request = CropInsightRequestFactory.create(
             farm_group=self.farm_group
         )
         generate_insight_report(self.request.id)
         self.request.refresh_from_db()
+
+        # Check the if of farm group in the path
+        self.assertTrue(f'{self.farm_group.id}/' in self.request.file.path)
+
         with self.request.file.open(mode='r') as csv_file:
             csv_reader = csv.reader(csv_file)
             row_num = 1
