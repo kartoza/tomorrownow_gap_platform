@@ -77,6 +77,6 @@ def create_s3_bucket(bucket_name, region=None):
                 Bucket=bucket_name,
                 CreateBucketConfiguration=location
             )
-    except ClientError as e:
+    except ClientError:
         return False
     return True
