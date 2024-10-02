@@ -7,6 +7,8 @@ Tomorrow Now GAP.
 import json
 import os
 import zipfile
+from datetime import datetime
+from unittest.mock import patch
 
 import responses
 from django.conf import settings
@@ -14,6 +16,7 @@ from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import Polygon, GEOSGeometry
 from django.core.files.storage import default_storage
 from django.test import TestCase
+from django.utils import timezone
 
 from core.settings.utils import absolute_path
 from gap.factories.grid import GridFactory
@@ -22,9 +25,7 @@ from gap.models import (
     Country, IngestorSessionStatus, IngestorType
 )
 from gap.models.dataset import DataSourceFile
-from gap.models.ingestor import (
-    CollectorSession
-)
+from gap.models.ingestor import CollectorSession
 from gap.tests.mock_response import BaseTestWithPatchResponses, PatchReqeust
 
 
@@ -99,10 +100,18 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
         with zipfile.ZipFile(_file, 'r') as zip_file:
             self.assertEqual(len(zip_file.filelist), 0)
 
+    @patch('gap.ingestor.tio_shortterm.timezone')
     @responses.activate
-    def test_collector_one_grid(self):
+    def test_collector_one_grid(self, mock_timezone):
         """Testing collector."""
         self.init_mock_requests()
+        today = datetime(
+            2024, 10, 1, 6, 0, 0
+        )
+        today = timezone.make_aware(
+            today, timezone.get_default_timezone()
+        )
+        mock_timezone.now.return_value = today
         grid = GridFactory(
             geometry=Polygon(
                 (
@@ -115,7 +124,6 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
         )
         session.run()
         session.refresh_from_db()
-        print(session.notes)
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(DataSourceFile.objects.count(), 1)
         _file = default_storage.open(DataSourceFile.objects.first().name)
