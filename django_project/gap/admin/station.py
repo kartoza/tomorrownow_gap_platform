@@ -8,7 +8,7 @@ from django.contrib import admin
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
-    Station, StationType
+    Station, StationType, StationHistory
 )
 
 
@@ -28,3 +28,25 @@ class StationAdmin(admin.ModelAdmin):
     )
     list_filter = ('provider', 'station_type', 'country')
     search_fields = ('code', 'name')
+
+
+@admin.register(StationHistory)
+class StationHistoryAdmin(admin.ModelAdmin):
+    """Station admin."""
+
+    list_display = (
+        'station', 'provider', 'latitude', 'longitude', 'altitude', 'date_time'
+    )
+    list_filter = ('station', 'station')
+
+    def provider(self, obj: StationHistory):
+        """Return provider."""
+        return obj.station.provider
+
+    def latitude(self, obj: StationHistory):
+        """Return latitude."""
+        return obj.geometry.y
+
+    def longitude(self, obj: StationHistory):
+        """Return latitude."""
+        return obj.geometry.x

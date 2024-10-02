@@ -19,7 +19,7 @@ class StationType(Definition):
 
 
 class Station(Definition):
-    """Model representing a ground observation station.
+    """Model representing an observation station.
 
     Override Definition model that contains name and description .
 
@@ -43,6 +43,9 @@ class Station(Definition):
     geometry = models.PointField(
         srid=4326
     )
+    altitude = models.FloatField(
+        null=True, blank=True, help_text='Altitude in meters'
+    )
     provider = models.ForeignKey(
         Provider, on_delete=models.CASCADE
     )
@@ -55,3 +58,24 @@ class Station(Definition):
 
     class Meta:  # noqa
         unique_together = ('code', 'provider')
+
+
+class StationHistory(models.Model):
+    """Model representing station histories.
+
+    Override Definition model that contains name and description .
+    """
+
+    station = models.ForeignKey(
+        Station, on_delete=models.CASCADE
+    )
+    geometry = models.PointField(
+        srid=4326
+    )
+    altitude = models.FloatField(
+        null=True, blank=True, help_text='Altitude in meters'
+    )
+    date_time = models.DateTimeField()
+
+    class Meta:  # noqa
+        unique_together = ('station', 'date_time')

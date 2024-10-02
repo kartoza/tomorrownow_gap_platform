@@ -5,7 +5,7 @@ Tomorrow Now GAP.
 .. note:: Factory classes for Models
 """
 import factory
-from django.contrib.gis.geos import Point, MultiPolygon, Polygon
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from factory.django import DjangoModelFactory
 
 from gap.models import (
@@ -17,9 +17,6 @@ from gap.models import (
     Attribute,
     DatasetAttribute,
     Country,
-    Station,
-    Measurement,
-    StationType,
     DatasetTimeStep,
     DatasetStore,
     DataSourceFile,
@@ -104,18 +101,6 @@ class DatasetAttributeFactory(DjangoModelFactory):
     source_unit = factory.SubFactory(UnitFactory)
 
 
-class StationTypeFactory(DjangoModelFactory):
-    """Factory class for StationType model."""
-
-    class Meta:  # noqa
-        model = StationType
-
-    name = factory.Sequence(
-        lambda n: f'observation-type-{n}'
-    )
-    description = factory.Faker('text')
-
-
 class CountryFactory(DjangoModelFactory):
     """Factory class for Country model."""
 
@@ -130,37 +115,6 @@ class CountryFactory(DjangoModelFactory):
         )
     )
     description = factory.Faker('text')
-
-
-class StationFactory(DjangoModelFactory):
-    """Factory class for Station model."""
-
-    class Meta:  # noqa
-        model = Station
-
-    name = factory.Sequence(
-        lambda n: f'station-{n}'
-    )
-    code = factory.Sequence(
-        lambda n: f'code-{n}'
-    )
-    country = factory.SubFactory(CountryFactory)
-    geometry = factory.LazyFunction(lambda: Point(0, 0))
-    provider = factory.SubFactory(ProviderFactory)
-    description = factory.Faker('text')
-    station_type = factory.SubFactory(StationTypeFactory)
-
-
-class MeasurementFactory(DjangoModelFactory):
-    """Factory class for Measurement model."""
-
-    class Meta:  # noqa
-        model = Measurement
-
-    station = factory.SubFactory(StationFactory)
-    dataset_attribute = factory.SubFactory(DatasetAttributeFactory)
-    date_time = factory.Faker('date_time')
-    value = factory.Faker('pyfloat')
 
 
 class DataSourceFileFactory(DjangoModelFactory):
