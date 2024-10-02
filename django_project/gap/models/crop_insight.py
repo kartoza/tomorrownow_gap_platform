@@ -328,7 +328,11 @@ class CropPlanData:
             'latitude',
             'longitude',
             'SPWTopMessage',
-            'SPWDescription'
+            'SPWDescription',
+            'TooWet',
+            'last_4_days_mm',
+            'last_2_days_mm',
+            'today_tomorrow_mm'
         ]
 
     def __init__(
