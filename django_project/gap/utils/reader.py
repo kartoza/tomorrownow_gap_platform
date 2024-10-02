@@ -308,7 +308,7 @@ class DatasetReaderValue:
             return {}
 
         return {
-            'geometry': json.loads(self.location_input.point.json),
+            'geometry': json.loads(self.location_input.geometry.json),
             'data': [result.to_dict() for result in self.values]
         }
 
@@ -328,8 +328,10 @@ class DatasetReaderValue:
         :return: data dictionary
         :rtype: dict
         """
-        if self.location_input.type != LocationInputType.POINT:
-            raise TypeError('Location input type is not point!')
+        if self.location_input.type not in [
+            LocationInputType.POINT, LocationInputType.POLYGON
+        ]:
+            raise TypeError('Location input type is not point or polygon!')
         if self._is_xr_dataset:
             return self._xr_dataset_to_dict()
         return self._to_dict()

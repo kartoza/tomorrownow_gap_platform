@@ -586,6 +586,39 @@
     "model": "gap.attribute",
     "pk": 54,
     "fields": {
+      "name": "Humidity Maximum",
+      "description": "The concentration of water vapor present in the air",
+      "variable_name": "humidity_maximum",
+      "unit": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 55,
+    "fields": {
+      "name": "Humidity Minimum",
+      "description": "The total amount of shortwave radiation received from above by a surface horizontal to the ground",
+      "variable_name": "humidity_minimum",
+      "unit": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 56,
+    "fields": {
+      "name": "Wind speed average",
+      "description": "The fundamental atmospheric quantity caused by air moving from high to low pressure, usually due to changes in temperature (at 10m)",
+      "variable_name": "wind_speed_avg",
+      "unit": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 57,
+    "fields": {
       "name": "Specific Humidity",
       "description": "",
       "variable_name": "specific_humidity",
