@@ -14,5 +14,13 @@
       "name": "Disdrometer",
       "description": null
     }
+  },
+  {
+    "model": "gap.stationtype",
+    "pk": 3,
+    "fields": {
+      "name": "Balloon",
+      "description": null
+    }
   }
 ]

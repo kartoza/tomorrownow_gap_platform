@@ -115,5 +115,18 @@
       "store_type": "TABLE",
       "is_internal_use": false
     }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 10,
+    "fields": {
+      "name": "WindBorne Balloons Observations",
+      "description": "",
+      "provider": 6,
+      "type": 5,
+      "time_step": "DAILY",
+      "store_type": "TABLE",
+      "is_internal_use": false
+    }
   }
 ]

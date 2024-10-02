@@ -878,5 +878,82 @@
       "source_unit": 11,
       "ensembles": false
     }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 81,
+    "fields": {
+      "dataset": 6,
+      "attribute": 54,
+      "source": "humidityMax",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 82,
+    "fields": {
+      "dataset": 6,
+      "attribute": 55,
+      "source": "humidityMin",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 83,
+    "fields": {
+      "dataset": 6,
+      "attribute": 56,
+      "source": "windSpeedAvg",
+      "source_unit": 8,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 84,
+    "fields": {
+      "dataset": 10,
+      "attribute": 28,
+      "source": "humidity",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 85,
+    "fields": {
+      "dataset": 10,
+      "attribute": 57,
+      "source": "specific_humidity",
+      "source_unit": 16,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 86,
+    "fields": {
+      "dataset": 10,
+      "attribute": 44,
+      "source": "pressure",
+      "source_unit": 17,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 87,
+    "fields": {
+      "dataset": 10,
+      "attribute": 23,
+      "source": "temperature",
+      "source_unit": 5,
+      "ensembles": false
+    }
   }
 ]

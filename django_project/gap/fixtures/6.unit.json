@@ -110,5 +110,21 @@
       "name": "m3/m3",
       "description": ""
     }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 16,
+    "fields": {
+      "name": "mg/kg",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 17,
+    "fields": {
+      "name": "hPa",
+      "description": ""
+    }
   }
 ]
