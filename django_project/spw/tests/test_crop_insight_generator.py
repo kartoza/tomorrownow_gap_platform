@@ -292,6 +292,7 @@ class TestCropInsightGenerator(TestCase):
 
         # We mock the send email to get the attachments
         attachments = []
+
         def mock_send_fn(self, fail_silently=False):
             """Mock send messages."""
             for attachment in self.attachments:
