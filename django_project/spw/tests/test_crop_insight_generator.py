@@ -309,7 +309,7 @@ class TestCropInsightGenerator(TestCase):
             self.request.refresh_from_db()
 
             # Check the if of farm group in the path
-            self.assertTrue(f'{self.farm_group.id}/' in self.request.file.path)
+            self.assertTrue(f'{self.farm_group.id}/' in self.request.file.name)
 
             # Check the attachment on email
             self.assertEqual(attachments[0][0], self.request.filename)

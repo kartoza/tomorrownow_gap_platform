@@ -9,6 +9,7 @@ from django.conf import settings
 from django.test.runner import DiscoverRunner
 
 from core.celery import app as celery_app
+from core.utils.s3 import create_s3_bucket
 
 
 class CustomTestRunner(DiscoverRunner):
@@ -31,4 +32,5 @@ class CustomTestRunner(DiscoverRunner):
     def setup_test_environment(self, **kwargs):
         """Prepare test env."""
         CustomTestRunner.__disable_celery()
+        create_s3_bucket(settings.MINIO_AWS_BUCKET_NAME)
         super(CustomTestRunner, self).setup_test_environment(**kwargs)

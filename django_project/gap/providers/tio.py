@@ -60,8 +60,35 @@ TIO_VARIABLES = {
 TIO_SHORT_TERM_FORCAST_VARIABLES = {
     'precipitationProbability': DatasetVariable(
         'Precipitation Probability',
-        '',
+
+        (
+            'Probability of precipitation represents the chance of >0.0254 cm '
+            '(0.01 in.) of liquid equivalent precipitation at a radius '
+            'surrounding a point location over a specific period of time.'
+        ),
         '%', 'precipitation_probability'
+    ),
+    'humidityMax': DatasetVariable(
+        'Humidity Maximum',
+        'The concentration of water vapor present in the air',
+        '%', 'humidity_maximum'
+    ),
+    'humidityMin': DatasetVariable(
+        'Humidity Minimum',
+        (
+            'The total amount of shortwave radiation received '
+            'from above by a surface horizontal to the ground'
+        ),
+        '%', 'humidity_minimum'
+    ),
+    'windSpeedAvg': DatasetVariable(
+        'Wind speed average',
+        (
+            'The fundamental atmospheric quantity caused by air moving from '
+            'high to low pressure, usually due to changes in temperature '
+            '(at 10m)'
+        ),
+        'm/s', 'wind_speed_avg'
     )
 }
 

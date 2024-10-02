@@ -1,0 +1,193 @@
+{
+  "data": {
+    "timelines": [
+      {
+        "timestep": "1d",
+        "endTime": "2024-10-15T06:00:00Z",
+        "startTime": "2024-10-01T06:00:00Z",
+        "intervals": [
+          {
+            "startTime": "2024-10-01T06:00:00Z",
+            "values": {
+              "humidityMax": 84,
+              "humidityMin": 69,
+              "precipitationProbability": 0,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 24.38,
+              "windSpeedAvg": 4.77
+            }
+          },
+          {
+            "startTime": "2024-10-02T06:00:00Z",
+            "values": {
+              "humidityMax": 80,
+              "humidityMin": 71,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27,
+              "windSpeedAvg": 4.35
+            }
+          },
+          {
+            "startTime": "2024-10-03T06:00:00Z",
+            "values": {
+              "humidityMax": 79,
+              "humidityMin": 73,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27,
+              "windSpeedAvg": 5.58
+            }
+          },
+          {
+            "startTime": "2024-10-04T06:00:00Z",
+            "values": {
+              "humidityMax": 78,
+              "humidityMin": 72,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27,
+              "windSpeedAvg": 5.74
+            }
+          },
+          {
+            "startTime": "2024-10-05T06:00:00Z",
+            "values": {
+              "humidityMax": 76,
+              "humidityMin": 70,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27,
+              "windSpeedAvg": 5.09
+            }
+          },
+          {
+            "startTime": "2024-10-06T06:00:00Z",
+            "values": {
+              "humidityMax": 76,
+              "humidityMin": 72,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27,
+              "windSpeedAvg": 4.01
+            }
+          },
+          {
+            "startTime": "2024-10-07T06:00:00Z",
+            "values": {
+              "humidityMax": 76,
+              "humidityMin": 70,
+              "precipitationProbability": 0,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28.5,
+              "temperatureMin": 27,
+              "windSpeedAvg": 3.82
+            }
+          },
+          {
+            "startTime": "2024-10-08T06:00:00Z",
+            "values": {
+              "humidityMax": 78,
+              "humidityMin": 72,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27.5,
+              "windSpeedAvg": 4.12
+            }
+          },
+          {
+            "startTime": "2024-10-09T06:00:00Z",
+            "values": {
+              "humidityMax": 80,
+              "humidityMin": 74,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27.5,
+              "windSpeedAvg": 5.29
+            }
+          },
+          {
+            "startTime": "2024-10-10T06:00:00Z",
+            "values": {
+              "humidityMax": 80,
+              "humidityMin": 73,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27.5,
+              "windSpeedAvg": 4.96
+            }
+          },
+          {
+            "startTime": "2024-10-11T06:00:00Z",
+            "values": {
+              "humidityMax": 77,
+              "humidityMin": 68,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 29,
+              "temperatureMin": 27,
+              "windSpeedAvg": 4.1
+            }
+          },
+          {
+            "startTime": "2024-10-12T06:00:00Z",
+            "values": {
+              "humidityMax": 78,
+              "humidityMin": 70,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28.5,
+              "temperatureMin": 27,
+              "windSpeedAvg": 4.42
+            }
+          },
+          {
+            "startTime": "2024-10-13T06:00:00Z",
+            "values": {
+              "humidityMax": 78,
+              "humidityMin": 72,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 27.5,
+              "windSpeedAvg": 4.52
+            }
+          },
+          {
+            "startTime": "2024-10-14T06:00:00Z",
+            "values": {
+              "humidityMax": 78,
+              "humidityMin": 72,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 28,
+              "temperatureMin": 24.12,
+              "windSpeedAvg": 4.74
+            }
+          },
+          {
+            "startTime": "2024-10-15T06:00:00Z",
+            "values": {
+              "humidityMax": 77.83,
+              "humidityMin": 72.77,
+              "precipitationProbability": 5,
+              "rainAccumulationSum": 0,
+              "temperatureMax": 24.9,
+              "temperatureMin": 24.12,
+              "windSpeedAvg": 3.17
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
