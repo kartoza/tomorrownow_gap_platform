@@ -286,102 +286,116 @@ class TestCropInsightGenerator(TestCase):
             request = CropInsightRequestFactory.create()
             generate_insight_report(request.id)
 
-        # Crop insight report
-        self.request = CropInsightRequestFactory.create(
-            farm_group=self.farm_group
-        )
-        generate_insight_report(self.request.id)
-        self.request.refresh_from_db()
+        # We mock the send email to get the attachments
+        attachments = []
+        def mock_send_fn(self, fail_silently=False):
+            """Mock send messages."""
+            for attachment in self.attachments:
+                attachments.append(attachment)
+            return 0
 
-        # Check the if of farm group in the path
-        self.assertTrue(f'{self.farm_group.id}/' in self.request.file.path)
+        # Mock the send email
+        with patch("django.core.mail.EmailMessage.send", mock_send_fn):
+            # Crop insight report
+            self.request = CropInsightRequestFactory.create(
+                farm_group=self.farm_group
+            )
+            generate_insight_report(self.request.id)
+            self.request.refresh_from_db()
 
-        with self.request.file.open(mode='r') as csv_file:
-            csv_reader = csv.reader(csv_file)
-            row_num = 1
-            for row in csv_reader:
-                # Header
-                if row_num == 1:
-                    self.assertEqual(row, self.csv_headers)
+            # Check the if of farm group in the path
+            self.assertTrue(f'{self.farm_group.id}/' in self.request.file.path)
 
-                # Farm 1
-                elif row_num == 2:
-                    # Farm Unique ID
-                    self.assertEqual(row[0], self.farm.unique_id)
-                    # Phone Number
-                    self.assertEqual(row[1], self.farm.phone_number)
-                    self.assertEqual(row[2], '10.1111')  # Latitude
-                    self.assertEqual(row[3], '11.1111')  # Longitude
-                    self.assertEqual(row[4], 'Plant Now')
-                    self.assertEqual(
-                        row[5],
-                        'Both current forecast '
-                        'historical rains have good signal to plant.'
-                    )
-                    self.assertEqual(row[6], '10.0')  # Precip (daily)
-                    self.assertEqual(row[7], '50.0')  # Precip % chance
-                    self.assertEqual(row[8], 'Light rain')  # Precip Type
+            # Check the attachment on email
+            self.assertEqual(attachments[0][0], self.request.filename)
 
-                # Farm 2
-                elif row_num == 3:
-                    # Farm Unique ID
-                    self.assertEqual(row[0], self.farm_2.unique_id)
-                    # Phone Number
-                    self.assertEqual(row[1], self.farm_2.phone_number)
-                    self.assertEqual(row[2], '100.1111')  # Latitude
-                    self.assertEqual(row[3], '22.2222')  # Longitude
-                    self.assertEqual(row[4], 'DO NOT PLANT')
-                    self.assertEqual(
-                        row[5], 'Wait for more positive forecast.'
-                    )
-                    self.assertEqual(row[6], '0.5')  # Precip (daily)
-                    self.assertEqual(row[7], '10.0')  # Precip % chance
-                    self.assertEqual(row[8], 'No Rain')  # Precip Type
+            # Check the file content
+            with self.request.file.open(mode='r') as csv_file:
+                csv_reader = csv.reader(csv_file)
+                row_num = 1
+                for row in csv_reader:
+                    # Header
+                    if row_num == 1:
+                        self.assertEqual(row, self.csv_headers)
 
-                # Farm 3
-                elif row_num == 4:
-                    # Farm Unique ID
-                    self.assertEqual(row[0], self.farm_3.unique_id)
-                    # Phone Number
-                    self.assertEqual(row[1], self.farm_3.phone_number)
-                    self.assertEqual(row[2], '50.1111')  # Latitude
-                    self.assertEqual(row[3], '50.2222')  # Longitude
-                    self.assertEqual(row[4], '')
-                    self.assertEqual(row[5], '')
-                    self.assertEqual(row[6], '')  # Precip (daily)
-                    self.assertEqual(row[7], '')  # Precip % chance
-                    self.assertEqual(row[8], '')  # Precip Type
+                    # Farm 1
+                    elif row_num == 2:
+                        # Farm Unique ID
+                        self.assertEqual(row[0], self.farm.unique_id)
+                        # Phone Number
+                        self.assertEqual(row[1], self.farm.phone_number)
+                        self.assertEqual(row[2], '10.1111')  # Latitude
+                        self.assertEqual(row[3], '11.1111')  # Longitude
+                        self.assertEqual(row[4], 'Plant Now')
+                        self.assertEqual(
+                            row[5],
+                            'Both current forecast '
+                            'historical rains have good signal to plant.'
+                        )
+                        self.assertEqual(row[6], '10.0')  # Precip (daily)
+                        self.assertEqual(row[7], '50.0')  # Precip % chance
+                        self.assertEqual(row[8], 'Light rain')  # Precip Type
 
-                # Farm 4 has same grid with farm 2
-                elif row_num == 5:
-                    # Farm Unique ID
-                    self.assertEqual(row[0], self.farm_4.unique_id)
-                    # Phone Number
-                    self.assertEqual(row[1], self.farm_4.phone_number)
-                    self.assertEqual(row[2], '100.0')  # Latitude
-                    self.assertEqual(row[3], '22.2222')  # Longitude
-                    self.assertEqual(row[4], 'DO NOT PLANT')
-                    self.assertEqual(
-                        row[5], 'Wait for more positive forecast.'
-                    )
-                    self.assertEqual(row[6], '0.5')  # Precip (daily)
-                    self.assertEqual(row[7], '10.0')  # Precip % chance
-                    self.assertEqual(row[8], 'No Rain')  # Precip Type
+                    # Farm 2
+                    elif row_num == 3:
+                        # Farm Unique ID
+                        self.assertEqual(row[0], self.farm_2.unique_id)
+                        # Phone Number
+                        self.assertEqual(row[1], self.farm_2.phone_number)
+                        self.assertEqual(row[2], '100.1111')  # Latitude
+                        self.assertEqual(row[3], '22.2222')  # Longitude
+                        self.assertEqual(row[4], 'DO NOT PLANT')
+                        self.assertEqual(
+                            row[5], 'Wait for more positive forecast.'
+                        )
+                        self.assertEqual(row[6], '0.5')  # Precip (daily)
+                        self.assertEqual(row[7], '10.0')  # Precip % chance
+                        self.assertEqual(row[8], 'No Rain')  # Precip Type
 
-                # Farm 5 has same grid with farm 3
-                elif row_num == 6:
-                    # Farm Unique ID
-                    self.assertEqual(row[0], self.farm_5.unique_id)
-                    # Phone Number
-                    self.assertEqual(row[1], self.farm_5.phone_number)
-                    self.assertEqual(row[2], '50.0')  # Latitude
-                    self.assertEqual(row[3], '50.2222')  # Longitude
-                    self.assertEqual(row[4], '')
-                    self.assertEqual(row[5], '')
-                    self.assertEqual(row[6], '')  # Precip (daily)
-                    self.assertEqual(row[7], '')  # Precip % chance
-                    self.assertEqual(row[8], '')  # Precip Type
-                row_num += 1
+                    # Farm 3
+                    elif row_num == 4:
+                        # Farm Unique ID
+                        self.assertEqual(row[0], self.farm_3.unique_id)
+                        # Phone Number
+                        self.assertEqual(row[1], self.farm_3.phone_number)
+                        self.assertEqual(row[2], '50.1111')  # Latitude
+                        self.assertEqual(row[3], '50.2222')  # Longitude
+                        self.assertEqual(row[4], '')
+                        self.assertEqual(row[5], '')
+                        self.assertEqual(row[6], '')  # Precip (daily)
+                        self.assertEqual(row[7], '')  # Precip % chance
+                        self.assertEqual(row[8], '')  # Precip Type
+
+                    # Farm 4 has same grid with farm 2
+                    elif row_num == 5:
+                        # Farm Unique ID
+                        self.assertEqual(row[0], self.farm_4.unique_id)
+                        # Phone Number
+                        self.assertEqual(row[1], self.farm_4.phone_number)
+                        self.assertEqual(row[2], '100.0')  # Latitude
+                        self.assertEqual(row[3], '22.2222')  # Longitude
+                        self.assertEqual(row[4], 'DO NOT PLANT')
+                        self.assertEqual(
+                            row[5], 'Wait for more positive forecast.'
+                        )
+                        self.assertEqual(row[6], '0.5')  # Precip (daily)
+                        self.assertEqual(row[7], '10.0')  # Precip % chance
+                        self.assertEqual(row[8], 'No Rain')  # Precip Type
+
+                    # Farm 5 has same grid with farm 3
+                    elif row_num == 6:
+                        # Farm Unique ID
+                        self.assertEqual(row[0], self.farm_5.unique_id)
+                        # Phone Number
+                        self.assertEqual(row[1], self.farm_5.phone_number)
+                        self.assertEqual(row[2], '50.0')  # Latitude
+                        self.assertEqual(row[3], '50.2222')  # Longitude
+                        self.assertEqual(row[4], '')
+                        self.assertEqual(row[5], '')
+                        self.assertEqual(row[6], '')  # Precip (daily)
+                        self.assertEqual(row[7], '')  # Precip % chance
+                        self.assertEqual(row[8], '')  # Precip Type
+                    row_num += 1
 
     @patch('spw.generator.crop_insight.CropInsightFarmGenerator.generate_spw')
     def test_generate_crop_plan(
