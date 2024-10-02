@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Tahmo ingestor.
+.. note:: WindBorne Systems ingestor.
 """
 
 import os

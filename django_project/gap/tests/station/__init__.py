@@ -2,5 +2,5 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Farm tests
+.. note:: Station tests
 """

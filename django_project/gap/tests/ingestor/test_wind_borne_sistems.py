@@ -158,6 +158,30 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
             ),
             [10, 20, 30]
         )
+        self.assertEqual(
+            list(
+                first_station.measurement_set.filter(
+                    dataset_attribute__source='humidity'
+                ).values_list('value', flat=True)
+            ),
+            [1, 2, 3]
+        )
+        self.assertEqual(
+            list(
+                first_station.measurement_set.filter(
+                    dataset_attribute__source='specific_humidity'
+                ).values_list('value', flat=True)
+            ),
+            [2, 3, 4]
+        )
+        self.assertEqual(
+            list(
+                first_station.measurement_set.filter(
+                    dataset_attribute__source='temperature'
+                ).values_list('value', flat=True)
+            ),
+            [20, 30, 40]
+        )
         self.assertEqual(first_station.altitude, 30)
         self.assertEqual(
             list(

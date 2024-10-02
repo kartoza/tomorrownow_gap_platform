@@ -4,14 +4,14 @@
   "observations": [
     {
       "altitude": 30,
-      "humidity": 10,
+      "humidity": 3,
       "latitude": -1.130241,
       "longitude": 36.755561,
       "mission_id": "mission-1",
       "mission_name": "Mission 1",
       "pressure": 30,
-      "specific_humidity": 12,
-      "temperature": 12,
+      "specific_humidity": 4,
+      "temperature": 40,
       "timestamp": 1727481600
     },
     {
