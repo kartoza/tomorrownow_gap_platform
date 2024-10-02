@@ -33,6 +33,7 @@ class IngestorType:
     ARABLE = 'Arable'
     GRID = 'Grid'
     TAHMO_API = 'Tahmo API'
+    WIND_BORNE_SYSTEMS_API = 'WindBorne Systems API'
 
 
 class IngestorSessionStatus:
@@ -63,6 +64,10 @@ class BaseSession(models.Model):
             (IngestorType.ARABLE, IngestorType.ARABLE),
             (IngestorType.GRID, IngestorType.GRID),
             (IngestorType.TAHMO_API, IngestorType.TAHMO_API),
+            (
+                IngestorType.WIND_BORNE_SYSTEMS_API,
+                IngestorType.WIND_BORNE_SYSTEMS_API
+            ),
         ),
         max_length=512
     )
@@ -178,6 +183,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.grid import GridIngestor
         from gap.ingestor.arable import ArableIngestor
         from gap.ingestor.tahmo_api import TahmoAPIIngestor
+        from gap.ingestor.wind_borne_systems import WindBorneSystemsIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -194,6 +200,8 @@ class IngestorSession(BaseSession):
             ingestor = GridIngestor
         elif self.ingestor_type == IngestorType.TAHMO_API:
             ingestor = TahmoAPIIngestor
+        elif self.ingestor_type == IngestorType.WIND_BORNE_SYSTEMS_API:
+            ingestor = WindBorneSystemsIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()

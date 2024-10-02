@@ -38,7 +38,7 @@ class Station(Definition):
         max_length=512
     )
     country = models.ForeignKey(
-        Country, on_delete=models.CASCADE
+        Country, on_delete=models.CASCADE, null=True, blank=True
     )
     geometry = models.PointField(
         srid=4326
@@ -79,3 +79,4 @@ class StationHistory(models.Model):
 
     class Meta:  # noqa
         unique_together = ('station', 'date_time')
+        ordering = ('station', 'date_time')

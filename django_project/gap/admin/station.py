@@ -37,7 +37,7 @@ class StationHistoryAdmin(admin.ModelAdmin):
     list_display = (
         'station', 'provider', 'latitude', 'longitude', 'altitude', 'date_time'
     )
-    list_filter = ('station', 'station')
+    list_filter = ('station__provider', 'station')
 
     def provider(self, obj: StationHistory):
         """Return provider."""
