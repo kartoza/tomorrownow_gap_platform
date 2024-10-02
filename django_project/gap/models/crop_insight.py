@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 import os.path
 import uuid
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, tzinfo
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -328,7 +328,11 @@ class CropPlanData:
             'latitude',
             'longitude',
             'SPWTopMessage',
-            'SPWDescription'
+            'SPWDescription',
+            'TooWet',
+            'last_4_days_mm',
+            'last_2_days_mm',
+            'today_tomorrow_mm'
         ]
 
     def __init__(
@@ -585,10 +589,16 @@ class CropInsightRequest(models.Model):
         self._generate_report()
 
     @property
-    def title(self) -> str:
-        """Return the title of the request."""
+    def time_description(self) -> (tzinfo, datetime):
+        """Return time description."""
         east_africa_timezone = Preferences.east_africa_timezone()
         east_africa_time = self.requested_at.astimezone(east_africa_timezone)
+        return east_africa_timezone, east_africa_time
+
+    @property
+    def title(self) -> str:
+        """Return the title of the request."""
+        east_africa_timezone, east_africa_time = self.time_description
         group = ''
         if self.farm_group:
             group = f' {self.farm_group} -'
@@ -596,6 +606,18 @@ class CropInsightRequest(models.Model):
             f"GAP - Crop Plan Generator Results -{group} "
             f"{east_africa_time.strftime('%A-%d-%m-%Y')} "
             f"({east_africa_timezone})"
+        )
+
+    @property
+    def filename(self):
+        """Return the filename of the request."""
+        east_africa_timezone, east_africa_time = self.time_description
+        group = ''
+        if self.farm_group:
+            group = f' {self.farm_group} -'
+        return (
+            f"{group} {east_africa_time.strftime('%Y-%m-%d')} "
+            f'({self.unique_id}).csv'
         )
 
     def _generate_report(self):
@@ -646,7 +668,10 @@ class CropInsightRequest(models.Model):
             csv_content += ','.join(map(str, row)) + '\n'
         content_file = ContentFile(csv_content)
         self.file.save(
-            os.path.join(f'{self.farm_group.id}', f'{self.unique_id}.csv'),
+            os.path.join(
+                f'{self.farm_group.id}',
+                self.filename
+            ),
             content_file
         )
         self.save()
@@ -667,7 +692,7 @@ Best regards
             to=self.farm_group.email_recipients()
         )
         email.attach(
-            f'{self.unique_id}.csv',
+            self.filename,
             self.file.open('rb').read(),
             'text/csv'
         )
