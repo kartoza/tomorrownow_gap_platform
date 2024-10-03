@@ -6,23 +6,20 @@ Tomorrow Now GAP.
 """
 
 from django.test import TestCase
-from gap.models import (
-    Provider,
-    Attribute,
-    Country,
-    Station,
-    Measurement,
-    StationType,
-    CollectorSession,
-    IngestorType
-)
+
 from gap.factories import (
     ProviderFactory,
     AttributeFactory,
     CountryFactory,
-    StationFactory,
-    MeasurementFactory,
-    StationTypeFactory
+    MeasurementFactory
+)
+from gap.models import (
+    Provider,
+    Attribute,
+    Country,
+    Measurement,
+    CollectorSession,
+    IngestorType
 )
 
 
@@ -90,40 +87,6 @@ class AttributeCRUDTest(TestCase):
         self.assertFalse(Attribute.objects.filter(id=attribute_id).exists())
 
 
-class StationTypeCRUDTest(TestCase):
-    """Attribute test case."""
-
-    def test_create_station_type(self):
-        """Test create observation type object."""
-        station_type = StationTypeFactory()
-        self.assertIsInstance(station_type, StationType)
-        self.assertTrue(
-            StationType.objects.filter(id=station_type.id).exists())
-
-    def test_read_station_type(self):
-        """Test read station_type object."""
-        station_type = StationTypeFactory()
-        fetched_type = StationType.objects.get(id=station_type.id)
-        self.assertEqual(station_type, fetched_type)
-
-    def test_update_station_type(self):
-        """Test update station_type object."""
-        station_type = StationTypeFactory()
-        new_name = "Updated Type Name"
-        station_type.name = new_name
-        station_type.save()
-        updated_type = StationType.objects.get(id=station_type.id)
-        self.assertEqual(updated_type.name, new_name)
-
-    def test_delete_station_type(self):
-        """Test delete station_type object."""
-        station_type = StationTypeFactory()
-        station_type_id = station_type.id
-        station_type.delete()
-        self.assertFalse(
-            StationType.objects.filter(id=station_type_id).exists())
-
-
 class CountryCRUDTest(TestCase):
     """Country test case."""
 
@@ -154,38 +117,6 @@ class CountryCRUDTest(TestCase):
         country_id = country.id
         country.delete()
         self.assertFalse(Country.objects.filter(id=country_id).exists())
-
-
-class StationCRUDTest(TestCase):
-    """Station test case."""
-
-    def test_create_station(self):
-        """Test create station object."""
-        station = StationFactory()
-        self.assertIsInstance(station, Station)
-        self.assertTrue(Station.objects.filter(id=station.id).exists())
-
-    def test_read_station(self):
-        """Test read station object."""
-        station = StationFactory()
-        fetched_station = Station.objects.get(id=station.id)
-        self.assertEqual(station, fetched_station)
-
-    def test_update_station(self):
-        """Test update station object."""
-        station = StationFactory()
-        new_name = "Updated Station Name"
-        station.name = new_name
-        station.save()
-        updated_station = Station.objects.get(id=station.id)
-        self.assertEqual(updated_station.name, new_name)
-
-    def test_delete_station(self):
-        """Test delete station object."""
-        station = StationFactory()
-        station_id = station.id
-        station.delete()
-        self.assertFalse(Station.objects.filter(id=station_id).exists())
 
 
 class MeasurementCRUDTest(TestCase):

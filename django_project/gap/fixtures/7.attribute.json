@@ -476,7 +476,7 @@
     "model": "gap.attribute",
     "pk": 44,
     "fields": {
-      "name": "Atmospheric Aressure",
+      "name": "Atmospheric Pressure",
       "description": "",
       "variable_name": "atmospheric_pressure",
       "unit": 10,
@@ -612,6 +612,17 @@
       "description": "The fundamental atmospheric quantity caused by air moving from high to low pressure, usually due to changes in temperature (at 10m)",
       "variable_name": "wind_speed_avg",
       "unit": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 57,
+    "fields": {
+      "name": "Specific Humidity",
+      "description": "",
+      "variable_name": "specific_humidity",
+      "unit": 16,
       "is_active": true
     }
   }

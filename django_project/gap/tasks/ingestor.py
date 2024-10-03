@@ -26,7 +26,10 @@ def run_ingestor_session(_id: int):
 @app.task(name='run_daily_ingestor')
 def run_daily_ingestor():
     """Run Ingestor for arable."""
-    for ingestor_type in [IngestorType.ARABLE, IngestorType.TAHMO_API]:
+    for ingestor_type in [
+        IngestorType.ARABLE, IngestorType.TAHMO_API,
+        IngestorType.WIND_BORNE_SYSTEMS_API
+    ]:
         session = IngestorSession.objects.filter(
             ingestor_type=ingestor_type
         ).first()
