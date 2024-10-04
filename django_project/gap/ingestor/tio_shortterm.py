@@ -44,8 +44,10 @@ class TioShortTermCollector(BaseIngestor):
         today = timezone.now().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
-        self.start_dt = today
-        self.end_dt = today + timedelta(days=14)
+        # Retrieve D-6 to D+14
+        # Total days: 21
+        self.start_dt = today - timedelta(days=6)
+        self.end_dt = today + timedelta(days=15)
 
     def _run(self):
         """Run Salient ingestor."""
@@ -98,7 +100,8 @@ class TioShortTermCollector(BaseIngestor):
             values = reader.get_data_values()
 
             # Save the reasult to file
-            content = ContentFile(json.dumps(values.to_json(), indent=4))
+            content = ContentFile(
+                json.dumps(values.to_json(), separators=(',', ':')))
             s3_storage.save(bbox_filename, content)
 
         # Zip the folder
