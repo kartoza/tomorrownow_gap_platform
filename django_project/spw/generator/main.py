@@ -86,8 +86,8 @@ def _calculate_from_point(
 ) -> Tuple[SPWOutput, dict]:
     """Calculate from point."""
     today = datetime.now(tz=pytz.UTC)
-    start_dt = today - timedelta(days=37)
-    end_dt = today + timedelta(days=14)
+    start_dt = today - timedelta(days=38)
+    end_dt = today + timedelta(days=13)
     logger.info(
         f'Calculate SPW for {point} at Today: {today} - '
         f'start_dt: {start_dt} - end_dt: {end_dt}'

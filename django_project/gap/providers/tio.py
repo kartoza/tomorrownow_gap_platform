@@ -120,6 +120,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
 
     LONG_TERM_NORMALS_TYPE = 'Long Term Normals (20 years)'
     BASE_URL = 'https://api.tomorrow.io/v4'
+    HISTORICAL_MAX_DATES = 30
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
@@ -280,6 +281,16 @@ class TomorrowIODatasetReader(BaseDatasetReader):
                 self.end_date
             )
 
+    def _log_errors(self):
+        """Log any errors from the API."""
+        logger.error(f'Tomorrow.io API errors: {len(self.errors)}')
+        logger.error(json.dumps(self.errors))
+
+    def _log_warnings(self):
+        """Log any warnings from the API."""
+        logger.warning(f'Tomorrow.io API warnings: {len(self.warnings)}')
+        logger.warning(json.dumps(self.warnings))
+
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
 
@@ -289,14 +300,40 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         if not self.geom_type_allowed:
             return DatasetReaderValue([], self.location_input, self.attributes)
         if not self.is_success():
-            logger.error(f'Tomorrow.io API errors: {len(self.errors)}')
-            logger.error(json.dumps(self.errors))
+            self._log_errors()
             return DatasetReaderValue([], self.location_input, self.attributes)
         if self.warnings:
-            logger.warn(f'Tomorrow.io API warnings: {len(self.warnings)}')
-            logger.warn(json.dumps(self.warnings))
+            self._log_warnings()
         return DatasetReaderValue(
             self.results, self.location_input, self.attributes)
+
+    def _split_historical_date_ranges(self, start_date: datetime, end_date: datetime) -> List[dict]:
+        """Split date range for historical with max 30 days of each request.
+
+        :param start_date: start date of historical request
+        :type start_date: datetime
+        :param end_date: end date of historical request
+        :type end_date: datetime
+        :return: Date ranges with start_date and end_date attribute
+        :rtype: List[dict]
+        """
+        if start_date.date() == end_date.date():
+            return [{
+                'start_date': start_date,
+                'end_date': end_date
+            }]
+        date_ranges = []
+        iter_date = start_date
+        while iter_date < end_date:
+            iter_end_date = iter_date + timedelta(days=self.HISTORICAL_MAX_DATES)
+            if iter_end_date > end_date:
+                iter_end_date = end_date
+            date_ranges.append({
+                'start_date': iter_date,
+                'end_date': iter_end_date
+            })
+            iter_date = iter_end_date
+        return date_ranges
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -307,13 +344,16 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :type end_date: datetime
         """
         url = f'{self.BASE_URL}/historical?apikey={self._get_api_key()}'
-        payload = self._get_payload(start_date, end_date)
-        response = requests.post(
-            url, json=payload, headers=self._get_headers())
-        if response.status_code != 200:
-            self._get_error_from_response(response)
-            return
-        self.results.extend(self._parse_result(response.json()))
+        date_ranges = self._split_historical_date_ranges(start_date, end_date)
+        for date_range in date_ranges:
+            payload = self._get_payload(
+                date_range['start_date'], date_range['end_date'])
+            response = requests.post(
+                url, json=payload, headers=self._get_headers())
+            if response.status_code != 200:
+                self._get_error_from_response(response)
+                continue
+            self.results.extend(self._parse_result(response.json()))
 
     def read_forecast_data(self, start_date: datetime, end_date: datetime):
         """Read forecast data from dataset.
@@ -436,4 +476,6 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         :return: list of dataset timeline values
         :rtype: List[DatasetTimelineValue]
         """
+        if not self.is_success():
+            self._log_errors()
         return self.results
