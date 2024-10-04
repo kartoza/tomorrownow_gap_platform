@@ -9,14 +9,14 @@ import json
 import responses
 
 
-class PatchReqeust:
+class PatchRequest:
     """Request object for patch."""
 
     def __init__(
             self, url: str, response: dict = None, file_response: str = None,
             request_method='GET', status_code=200
     ):
-        """Initialize the PatchReqeust.
+        """Initialize the PatchRequest.
 
         :param url: URL to mock
         :param response: Response to be used as responses.
@@ -37,7 +37,7 @@ class BaseTestWithPatchResponses:
 
     mock_requests = []
 
-    def _mock_request(self, patch_request: PatchReqeust):
+    def _mock_request(self, patch_request: PatchRequest):
         """Mock response with file."""
         request_method = patch_request.request_method
         response = {}

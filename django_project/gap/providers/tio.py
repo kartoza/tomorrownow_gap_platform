@@ -125,13 +125,14 @@ class TomorrowIODatasetReader(BaseDatasetReader):
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
-            end_date: datetime) -> None:
+            end_date: datetime, verbose = False) -> None:
         """Initialize Dataset Reader."""
         super().__init__(
             dataset, attributes, location_input, start_date, end_date)
         self.errors = None
         self.warnings = None
         self.results = []
+        self.verbose = verbose
 
     @classmethod
     def init_provider(cls):
@@ -276,8 +277,11 @@ class TomorrowIODatasetReader(BaseDatasetReader):
                     self.end_date
                 )
         else:
+            min_available_timelines = today - timedelta(days=6)
             self.read_forecast_data(
-                self.start_date if self.start_date >= today else today,
+                self.start_date if
+                self.start_date >= min_available_timelines else
+                min_available_timelines,
                 self.end_date
             )
 
@@ -288,6 +292,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
 
     def _log_warnings(self):
         """Log any warnings from the API."""
+        if not self.verbose:
+            return
         logger.warning(f'Tomorrow.io API warnings: {len(self.warnings)}')
         logger.warning(json.dumps(self.warnings))
 

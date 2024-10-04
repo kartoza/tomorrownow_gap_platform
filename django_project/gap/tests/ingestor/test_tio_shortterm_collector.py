@@ -26,7 +26,7 @@ from gap.models import (
 )
 from gap.models.dataset import DataSourceFile
 from gap.models.ingestor import CollectorSession
-from gap.tests.mock_response import BaseTestWithPatchResponses, PatchReqeust
+from gap.tests.mock_response import BaseTestWithPatchResponses, PatchRequest
 
 
 class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
@@ -71,7 +71,7 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
         """Mock requests."""
         return [
             # Devices API
-            PatchReqeust(
+            PatchRequest(
                 f'https://api.tomorrow.io/v4/timelines?apikey={self.api_key}',
                 file_response=os.path.join(
                     self.responses_folder, 'test.json'
@@ -322,6 +322,19 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'humidity_maximum': 78,
                                 'humidity_minimum': 72,
                                 'wind_speed_avg': 4.74
+                            }
+                        },
+                        {
+                            "datetime": "2024-10-15T06:00:00+00:00",
+                            "values": {
+                                'total_rainfall': 0,
+                                'total_evapotranspiration_flux': None,
+                                'max_temperature': 24.9,
+                                'min_temperature': 24.12,
+                                'precipitation_probability': 5,
+                                'humidity_maximum': 77.83,
+                                'humidity_minimum': 72.77,
+                                'wind_speed_avg': 3.17
                             }
                         }
                     ]
