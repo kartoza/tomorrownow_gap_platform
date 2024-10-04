@@ -18,7 +18,7 @@ from gap.models import (
     Country, Station, Measurement,
     IngestorSession, IngestorSessionStatus, IngestorType
 )
-from gap.tests.mock_response import BaseTestWithPatchResponses, PatchReqeust
+from gap.tests.mock_response import BaseTestWithPatchResponses, PatchRequest
 
 
 class ArableIngestorTest(BaseTestWithPatchResponses, TestCase):
@@ -44,20 +44,20 @@ class ArableIngestorTest(BaseTestWithPatchResponses, TestCase):
         arable_api = ArableAPI()
         return [
             # Devices API
-            PatchReqeust(
+            PatchRequest(
                 arable_api.DEVICES + '?page=1',
                 file_response=os.path.join(
                     self.responses_folder, 'devices.json'
                 )
             ),
             # Devices API
-            PatchReqeust(
+            PatchRequest(
                 arable_api.DEVICES + '?page=2',
                 response={},
                 status_code=404
             ),
             # Data API
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{arable_api.DATA}?device=A00&'
                     'select=et,max_rh,maxt,mean_rh,meant,min_rh,mint,prate,'
@@ -69,7 +69,7 @@ class ArableIngestorTest(BaseTestWithPatchResponses, TestCase):
                 )
             ),
             # Data API
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{arable_api.DATA}?device=A01&'
                     'select=et,max_rh,maxt,mean_rh,meant,min_rh,mint,prate,'

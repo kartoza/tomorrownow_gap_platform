@@ -281,7 +281,7 @@ class TestTomorrowIODatasetReader(TestCase):
         self.reader.end_date = dt_now
         self.reader.dataset.type = DatasetType(
             type=CastType.FORECAST, name='TestForecast')
-        self.reader.start_date = dt_now - timedelta(days=1)
+        self.reader.start_date = dt_now - timedelta(days=7)
 
         # Call the read method
         with patch('gap.providers.tio.datetime') as mock_datetime:
@@ -290,7 +290,9 @@ class TestTomorrowIODatasetReader(TestCase):
 
         # Check that the correct method is called
         mock_read_forecast_data.assert_called_once()
-        self.assertEqual(mock_read_forecast_data.call_args[0][0], dt_now)
+        self.assertEqual(
+            mock_read_forecast_data.call_args[0][0],
+            dt_now - timedelta(days=6))
         self.assertEqual(
             mock_read_forecast_data.call_args[0][1], self.reader.end_date)
         mock_read_historical_data.assert_not_called()

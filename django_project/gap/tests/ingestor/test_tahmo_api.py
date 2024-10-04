@@ -23,7 +23,7 @@ from gap.models import (
     Country, Station, IngestorSession, IngestorSessionStatus, IngestorType
 )
 from gap.models.preferences import Preferences
-from gap.tests.mock_response import BaseTestWithPatchResponses, PatchReqeust
+from gap.tests.mock_response import BaseTestWithPatchResponses, PatchRequest
 
 
 class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
@@ -54,7 +54,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                 continue
             for station_code in ['TD00001', 'TD00002']:
                 patches.append(
-                    PatchReqeust(
+                    PatchRequest(
                         (
                             f'{preferences.tahmo_api_url}'
                             f'/services/measurements/v2/'
@@ -66,7 +66,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     )
                 )
                 patches.append(
-                    PatchReqeust(
+                    PatchRequest(
                         (
                             f'{preferences.tahmo_api_url}'
                             f'/services/measurements/v2/'
@@ -80,13 +80,13 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
 
         return patches + [
             # Devices API
-            PatchReqeust(
+            PatchRequest(
                 f'{preferences.tahmo_api_url}/services/assets/v2/stations',
                 file_response=os.path.join(
                     self.responses_folder, 'devices.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00001/measurements/raw?'
@@ -97,7 +97,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     self.responses_folder, 'TD00001.1.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00002/measurements/raw?'
@@ -108,7 +108,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     self.responses_folder, 'TD00001.1.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00001/measurements/raw?'
@@ -119,7 +119,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     self.responses_folder, 'TD00001.2.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00002/measurements/raw?'
@@ -130,7 +130,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     self.responses_folder, 'TD00001.1.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{preferences.tahmo_api_url}/services/measurements/v2/'
                     f'stations/TD00002/measurements/raw?'

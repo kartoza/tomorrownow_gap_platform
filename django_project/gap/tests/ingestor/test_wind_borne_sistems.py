@@ -20,7 +20,7 @@ from gap.ingestor.wind_borne_systems import (
 from gap.models import (
     Country, Station, IngestorSession, IngestorSessionStatus, IngestorType
 )
-from gap.tests.mock_response import BaseTestWithPatchResponses, PatchReqeust
+from gap.tests.mock_response import BaseTestWithPatchResponses, PatchRequest
 
 
 class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
@@ -45,7 +45,7 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         """Mock requests."""
         base_url = WindBorneSystemsAPI.base_url
         return [
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{base_url}/observations.json?'
                     f'include_ids=True&include_mission_name=True'
@@ -54,7 +54,7 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     self.responses_folder, 'since_1.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{base_url}/observations.json?'
                     f'include_ids=True&include_mission_name=True&'
@@ -64,7 +64,7 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                     self.responses_folder, 'since_2.json'
                 )
             ),
-            PatchReqeust(
+            PatchRequest(
                 (
                     f'{base_url}/observations.json?'
                     f'include_ids=True&include_mission_name=True&'
