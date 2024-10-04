@@ -307,7 +307,8 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         return DatasetReaderValue(
             self.results, self.location_input, self.attributes)
 
-    def _split_historical_date_ranges(self, start_date: datetime, end_date: datetime) -> List[dict]:
+    def _split_historical_date_ranges(
+            self, start_date: datetime, end_date: datetime) -> List[dict]:
         """Split date range for historical with max 30 days of each request.
 
         :param start_date: start date of historical request
@@ -325,7 +326,9 @@ class TomorrowIODatasetReader(BaseDatasetReader):
         date_ranges = []
         iter_date = start_date
         while iter_date < end_date:
-            iter_end_date = iter_date + timedelta(days=self.HISTORICAL_MAX_DATES)
+            iter_end_date = (
+                iter_date + timedelta(days=self.HISTORICAL_MAX_DATES)
+            )
             if iter_end_date > end_date:
                 iter_end_date = end_date
             date_ranges.append({
