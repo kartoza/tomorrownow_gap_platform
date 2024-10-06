@@ -9,6 +9,7 @@ import os
 import logging
 import s3fs
 import fsspec
+import shutil
 from typing import List
 from datetime import datetime
 import xarray as xr
@@ -168,3 +169,13 @@ class BaseZarrReader(BaseNetCDFReader):
             s3_mapper, consolidated=True, drop_variables=drop_variables)
 
         return ds
+
+    def clear_cache(self, source_file: DataSourceFile):
+        """Clear cache of zarr file.
+
+        :param source_file: DataSourceFile for the zarr
+        :type source_file: DataSourceFile
+        """
+        cache_dir = self.get_zarr_cache_dir(source_file.name)
+        if os.path.exists(cache_dir):
+            shutil.rmtree(cache_dir)
