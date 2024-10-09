@@ -529,7 +529,7 @@ class TioZarrReaderValue(DatasetReaderValue):
         # rename attributes and the forecast_day
         renamed_dict = {
             'forecast_day_idx': 'forecast_day'
-        }   
+        }
         for attr in self.attributes:
             renamed_dict[attr.source] = attr.attribute.variable_name
         self._val = self._val.rename(renamed_dict)
