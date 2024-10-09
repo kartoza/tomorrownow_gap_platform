@@ -41,6 +41,7 @@ from gap.providers.tio import tomorrowio_shortterm_forecast_dataset
 from gap.utils.reader import DatasetReaderInput
 from gap.utils.zarr import BaseZarrReader
 from gap.utils.netcdf import find_start_latlng
+from gap.utils.dask import execute_dask_compute
 
 
 logger = logging.getLogger(__name__)
@@ -315,18 +316,21 @@ class TioShortTermIngestor(BaseZarrIngestor):
         )
         if is_new_dataset:
             # write
-            ds.to_zarr(
+            x = ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
                 encoding=encoding,
-                storage_options=self.s3_options
+                storage_options=self.s3_options,
+                compute=False
             )
         else:
             # append
-            ds.to_zarr(
+            x = ds.to_zarr(
                 zarr_url, mode='a', append_dim='forecast_date',
                 consolidated=True,
-                storage_options=self.s3_options
+                storage_options=self.s3_options,
+                compute=False
             )
+        execute_dask_compute(x)
 
         # close dataset and remove empty_data
         ds.close()
@@ -469,7 +473,7 @@ class TioShortTermIngestor(BaseZarrIngestor):
             BaseZarrReader.get_zarr_base_url(self.s3) +
             self.datasource_file.name
         )
-        new_ds.to_zarr(
+        x = new_ds.to_zarr(
             zarr_url,
             mode='a',
             region={
@@ -482,8 +486,10 @@ class TioShortTermIngestor(BaseZarrIngestor):
                     nearest_lon_indices[0], nearest_lon_indices[-1] + 1)
             },
             storage_options=self.s3_options,
-            consolidated=True
+            consolidated=True,
+            compute=False
         )
+        execute_dask_compute(x)
 
     def _run(self):
         """Process the tio shortterm data into Zarr."""
