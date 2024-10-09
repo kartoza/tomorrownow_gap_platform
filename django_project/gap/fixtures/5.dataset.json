@@ -97,7 +97,7 @@
       "name": "Arable Ground Observational",
       "description": null,
       "provider": 5,
-      "type": 4,
+      "type": 8,
       "time_step": "DAILY",
       "store_type": "TABLE",
       "is_internal_use": false
@@ -110,7 +110,7 @@
       "name": "Tahmo Disdrometer Observational",
       "description": "Tahmo data that coming from API : https://datahub.tahmo.org/",
       "provider": 1,
-      "type": 4,
+      "type": 7,
       "time_step": "DAILY",
       "store_type": "TABLE",
       "is_internal_use": false
