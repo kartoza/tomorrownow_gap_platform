@@ -100,6 +100,15 @@ class Preferences(SingletonModel):
         blank=True
     )
 
+    # dask config
+    dask_threads_num = models.IntegerField(
+        default=2,
+        help_text=(
+            'Number of threads for dask parallel computation, '
+            'higher number will use more memory.'
+        )
+    )
+
     class Meta:  # noqa: D106
         verbose_name_plural = "preferences"
 

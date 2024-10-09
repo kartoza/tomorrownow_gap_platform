@@ -321,8 +321,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
     @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
     @patch('gap.utils.netcdf.find_start_latlng')
     @patch('xarray.core.dataset.Dataset.to_zarr')
+    @patch('gap.ingestor.cbam.execute_dask_compute')
     def test_store_as_zarr(
-        self, mock_to_zarr, mock_find_start_latlng, mock_get_zarr_base_url
+        self, mock_compute, mock_to_zarr, mock_find_start_latlng,
+        mock_get_zarr_base_url
     ):
         """Test CBAM store_as_zarr method."""
         dt = date(2023, 1, 1)
@@ -377,5 +379,7 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
             encoding={
                 'date': {'units': 'days since 2023-01-01', 'chunks': 90},
                 'max_total_temperature': {'chunks': (90, 300, 300)}
-            }
+            },
+            compute=False,
         )
+        mock_compute.assert_called_once()

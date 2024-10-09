@@ -304,11 +304,13 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         mock_get_mapper.assert_called_once()
         mock_open_zarr.assert_called_once()
 
+    @patch('gap.ingestor.salient.execute_dask_compute')
     @patch('xarray.Dataset.to_zarr')
     @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
     def test_store_as_zarr(
-        self, mock_get_s3_variables, mock_get_zarr_base_url, mock_to_zarr
+        self, mock_get_s3_variables, mock_get_zarr_base_url,
+        mock_to_zarr, mock_compute
     ):
         """Test store the dataset to zarr."""
         mock_get_s3_variables.return_value = {
@@ -345,7 +347,9 @@ class TestSalientIngestor(SalientIngestorBaseTest):
             mock_to_zarr.call_args[1]['storage_options'],
             self.ingestor.s3_options
         )
+        mock_compute.assert_called_once()
 
+    @patch('gap.ingestor.salient.execute_dask_compute')
     @patch('xarray.Dataset.to_zarr')
     @patch('gap.utils.zarr.BaseZarrReader.get_s3_variables')
     @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
@@ -356,7 +360,7 @@ class TestSalientIngestor(SalientIngestorBaseTest):
     def test_run(
         self, mock_storage_delete, mock_storage_exists, mock_s3_filesystem,
         mock_open_dataset, mock_get_zarr_base_url, mock_get_s3_variables,
-        mock_to_zarr
+        mock_to_zarr, mock_compute
     ):
         """Test Run Salient Ingestor."""
         # Set up mocks
@@ -394,3 +398,4 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         mock_storage_delete.assert_called_once_with(
             self.ingestor._get_s3_filepath(self.datasourcefile))
         mock_to_zarr.assert_called_once()
+        mock_compute.assert_called_once()
