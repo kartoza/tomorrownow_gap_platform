@@ -26,7 +26,7 @@ from xarray.core.dataset import Dataset as xrDataset
 import dask.array as da
 from django.utils import timezone
 from django.core.files.storage import default_storage
-from django.contrib.gis.db.models.functions import Centroid
+from django.contrib.gis.db.models.functions import Centroid, GeoHash as GH
 from django.db.models import F
 import geohash
 from memory_profiler import profile
@@ -57,10 +57,21 @@ class TomorrowIOIngestor(BaseIngestor):
 
     default_chunks = {
         'forecast_date': 10,
-        'forecast_day_idx': 22,
+        'forecast_day_idx': 21,
         'lat': 150,
         'lon': 110
     }
+
+    variables = [
+        'total_rainfall',
+        'total_evapotranspiration_flux',
+        'max_temperature',
+        'min_temperature',
+        'precipitation_probability',
+        'humidity_maximum',
+        'humidity_minimum',
+        'wind_speed_avg'
+    ]
 
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize SalientIngestor."""
@@ -131,22 +142,12 @@ class TomorrowIOIngestor(BaseIngestor):
             reader.clear_cache(self.datasource_file)
             if not self.datasource_file.metadata:
                 self.datasource_file.metadata = {}
-            self.datasource_file.metadata['drop_variables'] = [
-                'total_rainfall',
-                'total_evapotranspiration_flux',
-                'max_total_temperature',
-                'min_total_temperature',
-                'precipitation_probability',
-                'humidity_maximum',
-                'humidity_minimum',
-                'wind_speed_avg'
-            ]
+            self.datasource_file.metadata['drop_variables'] = (
+                self.variables
+            )
             ds = reader.open_dataset(self.datasource_file)
             self.existing_dates = ds.forecast_date.values
-            print('fetch dates')
             self.datasource_file.metadata['drop_variables'] = []
-        print(f'self.existing_dates {self.existing_dates}')
-        print(f'date check: {date}')
         np_date = np.datetime64(f'{date.isoformat()}')
         return np_date in self.existing_dates
  
@@ -184,28 +185,18 @@ class TomorrowIOIngestor(BaseIngestor):
             self.default_chunks['lat'],
             self.default_chunks['lon']
         )
-        variable_list = [
-            'total_rainfall',
-            'total_evapotranspiration_flux',
-            'max_total_temperature',
-            'min_total_temperature',
-            'precipitation_probability',
-            'humidity_maximum',
-            'humidity_minimum',
-            'wind_speed_avg'
-        ]
 
         # Create the Dataset
         forecast_date_array = pd.date_range(
             forecast_date.isoformat(), periods=1)
-        forecast_day_indices = np.arange(-7, 15, 1)
+        forecast_day_indices = np.arange(-6, 15, 1)
         data_vars = {}
         encoding = {
             'forecast_date': {
                 'chunks': self.default_chunks['forecast_date']
             }
         }
-        for var in variable_list:
+        for var in self.variables:
             empty_data = da.empty(empty_shape, chunks=chunks)
             data_vars[var] = (
                 ['forecast_date', 'forecast_day_idx', 'lat', 'lon'],
@@ -256,12 +247,12 @@ class TomorrowIOIngestor(BaseIngestor):
         ds.close()
         del ds
         del empty_data
-        # debug
-        time.sleep(2)
 
     def _is_sorted_and_incremented(self, arr):
         if not arr:  # Handle empty array case
             return False
+        if len(arr) == 1:
+            return True
         return all(arr[i] + 1 == arr[i + 1] for i in range(len(arr) - 1))
 
     def _transform_coordinates_array(self, coord_arr, coord_type) -> List[CoordMapping]:
@@ -288,7 +279,7 @@ class TomorrowIOIngestor(BaseIngestor):
 
         return results
 
-    def _update_by_region(self, forecast_date: datetime.date, lat_arr, lon_arr, new_data):
+    def _update_by_region(self, forecast_date: datetime.date, lat_arr: List[CoordMapping], lon_arr: List[CoordMapping], new_data):
         # open existing zarr
         zarr_url = (
             BaseZarrReader.get_zarr_base_url(self.s3) +
@@ -298,25 +289,17 @@ class TomorrowIOIngestor(BaseIngestor):
         ds = xr.open_zarr(s3_mapper, consolidated=True)
 
         # find index of forecast_date
-        new_forecast_date = np.datetime64(forecast_date.isoformat())
+        forecast_date_array = pd.date_range(
+            forecast_date.isoformat(), periods=1)
+        new_forecast_date = forecast_date_array[0]
         forecast_date_idx = np.where(ds['forecast_date'].values == new_forecast_date)[0][0]
 
         # find nearest lat and lon and its indices
-        nearest_lat_arr = []
-        nearest_lat_indices = []
-        for target_lat in lat_arr:
-            nearest_lat = ds['lat'].sel(lat=target_lat, method='nearest').item()
-            lat_idx = np.where(ds['lat'].values == nearest_lat)[0][0]
-            nearest_lat_arr.append(nearest_lat)
-            nearest_lat_indices.append(lat_idx)
+        nearest_lat_arr = [lat.nearest_val for lat in lat_arr]
+        nearest_lat_indices = [lat.nearest_idx for lat in lat_arr]
  
-        nearest_lon_arr = []
-        nearest_lon_indices = []
-        for target_lon in lon_arr:
-            nearest_lon = ds['lon'].sel(lon=target_lon, method='nearest').item()
-            lon_idx = np.where(ds['lon'].values == nearest_lon)[0][0]
-            nearest_lon_arr.append(nearest_lon)
-            nearest_lon_indices.append(lon_idx)
+        nearest_lon_arr = [lon.nearest_val for lon in lon_arr]
+        nearest_lon_indices = [lon.nearest_idx for lon in lon_arr]
 
         # ensure that the lat/lon indices are in correct order
         assert self._is_sorted_and_incremented(nearest_lat_indices) == True
@@ -335,25 +318,31 @@ class TomorrowIOIngestor(BaseIngestor):
                 'lon': nearest_lon_arr
             }
         )
-        print(new_ds)
+        # print(new_ds)
 
+        max_lat_idx = nearest_lat_indices[-1] + 1
+        max_lon_idx = nearest_lon_indices[-1] + 1
+
+        print(f'lat {slice(nearest_lat_indices[0], max_lat_idx)}')
+        print(f'lon {slice(nearest_lon_indices[0], max_lon_idx)}')
         # write the updated data to zarr
         new_ds.to_zarr(zarr_url, mode='a', region={
                 'forecast_date': slice(forecast_date_idx, forecast_date_idx + 1),
                 'forecast_day_idx': slice(None),
-                'lat': slice(nearest_lat_arr[0], nearest_lat_arr[-1]),
-                'lon': slice(nearest_lon_arr[0], nearest_lon_arr[-1])
+                'lat': slice(nearest_lat_indices[0], max_lat_idx),
+                'lon': slice(nearest_lon_indices[0], max_lon_idx)
             },
             storage_options=self.s3_options,
             consolidated=True
         )
 
+    @profile
     def _run(self):
 
         # TODO: find the forecast_date from data source file
         forecast_date  = datetime.date(2024, 10, 2)
-        if self.created:
-            self._append_new_forecast_date(forecast_date, True)
+        if not self.is_date_in_zarr(forecast_date):
+            self._append_new_forecast_date(forecast_date, self.created)
 
         # get lat and lon array from grids
         lat_arr = set()
@@ -376,23 +365,41 @@ class TomorrowIOIngestor(BaseIngestor):
 
         lat_arr = sorted(lat_arr)
         lon_arr = sorted(lon_arr)
-        print(f'lat {len(lat_arr)} lon {len(lon_arr)}')
-        print(f'total keys {len(grid_dict)}')
-        print(f'total grid: {grids.count()}')
-        print(f'Total time {time.time() - start_time} s')
 
         # transform lat lon arrays
-        start_time = time.time()
         lat_arr = self._transform_coordinates_array(lat_arr, 'lat')
         lon_arr = self._transform_coordinates_array(lon_arr, 'lon')
-        print(f'lat {len(lat_arr)} lon {len(lon_arr)}')
-        print(f'Total time {time.time() - start_time} s')
+
+        lat_indices = [lat.nearest_idx for lat in lat_arr]
+        lon_indices = [lon.nearest_idx for lon in lon_arr]
+        assert self._is_sorted_and_incremented(lat_indices) == True
+        assert self._is_sorted_and_incremented(lon_indices) == True
+
+        lat_slices = []
+        lon_slices = []
+        for lat_range in range(0, len(lat_arr), self.default_chunks['lat']):
+            max_idx = lat_range + self.default_chunks['lat']
+            lat_slices.append(
+                slice(lat_range, max_idx if max_idx < len(lat_arr) else len(lat_arr))
+            )
+        for lon_range in range(0, len(lon_arr), self.default_chunks['lon']):
+            max_idx = lon_range + self.default_chunks['lon']
+            lon_slices.append(
+                slice(lon_range, max_idx if max_idx < len(lon_arr) else len(lon_arr))
+            )
 
         # open zip file
         zip_source_file = DataSourceFile.objects.get(id=23)
         with default_storage.open(zip_source_file.name) as _file:
             with zipfile.ZipFile(_file, 'r') as zip_file:
-                pass
+                for lat_slice in lat_slices:
+                    for lon_slice in lon_slices:
+                        start_time = time.time()
+                        lat_chunks = lat_arr[lat_slice]
+                        lon_chunks = lon_arr[lon_slice]
+                        print(f'Processing chunks: lat {lat_slice} - lon {lon_slice}')
+                        self._process_tio_shortterm_data(forecast_date, lat_chunks, lon_chunks, grid_dict, zip_file)
+                        print(f'Total processing time {time.time() - start_time} s')
 
     def run(self):
         """Run TomorrowIO Ingestor."""
@@ -407,14 +414,56 @@ class TomorrowIOIngestor(BaseIngestor):
         finally:
             pass
 
-    def _process_tio_shortterm_data(self, lat_arr: List[CoordMapping], lon_arr: List[CoordMapping], grids: dict, zip_file: zipfile.ZipFile):
+    def _process_tio_shortterm_data(self, forecast_date: datetime.date, lat_arr: List[CoordMapping], lon_arr: List[CoordMapping], grids: dict, zip_file: zipfile.ZipFile):
+        print(f'processing: lat {len(lat_arr)} lon {len(lon_arr)}')
         zip_file_list = zip_file.namelist()
-        prev_lon_idx = -1
-        prev_lat_idx = -1
         count = 0
-        for lat in lat_arr:
-            for lon in lon_arr:
-                pass
+        data_shape = (1, self.default_chunks['forecast_day_idx'], len(lat_arr), len(lon_arr))
+        print(data_shape)
+        warnings = {
+            'missing_hash': 0,
+            'missing_json': 0,
+            'invalid_json': 0
+        }
+        new_data = {}
+        for variable in self.variables:
+            new_data[variable] = np.empty(data_shape)
+
+        for idx_lat, lat in enumerate(lat_arr):
+            for idx_lon, lon in enumerate(lon_arr):
+                grid_hash = geohash.encode(lat.value, lon.value, precision=8)
+                if grid_hash not in grids:
+                    warnings['missing_hash'] += 1
+                    continue
+
+                json_filename = f'grid-{grids[grid_hash]}.json'
+                if json_filename not in zip_file_list:
+                    warnings['missing_json'] += 1
+                    continue
+
+                with zip_file.open(json_filename) as _file:
+                    data = json.loads(_file.read().decode('utf-8'))
+                
+                if 'data' not in data:
+                    warnings['invalid_json'] += 1
+                    continue
+
+                forecast_day_idx = 0
+                for item in data['data']:
+                    values = item['values']
+                    for var in values:
+                        if var not in new_data:
+                            continue
+                        new_data[var][0, forecast_day_idx, idx_lat, idx_lon] = values[var]
+                    forecast_day_idx += 1
+                count += 1
+                if count % 2000 == 0:
+                    print(f'Total processed {count}')
+        self._update_by_region(forecast_date, lat_arr, lon_arr, new_data)
+        del new_data
+        print(f'Total write: {count} grids.')
+        print(warnings)
+        return warnings
 
     def verify(self):
         """Verify the resulting zarr file."""
@@ -425,127 +474,3 @@ class TomorrowIOIngestor(BaseIngestor):
         s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
         self.zarr_ds = xr.open_zarr(s3_mapper, consolidated=True)
         print(self.zarr_ds)
-
-    def _update(self):
-        zarr_url = (
-            BaseZarrReader.get_zarr_base_url(self.s3) +
-            self.datasource_file.name
-        )
-        s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
-        ds = xr.open_zarr(s3_mapper, consolidated=True)
-
-        new_forecast_date_str = '2024-07-09'
-        new_forecast_date = np.datetime64(new_forecast_date_str)
-        target_lat = -26.99
-        target_lon = 21.81
-        
-        # Use the `sel` method to find the nearest lat/lon
-        nearest_lat = ds['lat'].sel(lat=target_lat, method='nearest').item()
-        nearest_lon = ds['lon'].sel(lon=target_lon, method='nearest').item()
-
-        # Find the corresponding indices for the nearest lat/lon
-        lat_idx = np.where(ds['lat'].values == nearest_lat)[0][0]
-        lon_idx = np.where(ds['lon'].values == nearest_lon)[0][0]
-        print(f'lat {target_lat} idx {lat_idx}')
-        print(f'lon {target_lon} idx {lon_idx}')
-
-        # Prepare new data (this is example data; replace with your actual data)
-        empty_shape = (1, self.default_chunks['forecast_day_idx'], 1, 1)
-        new_data = {
-            'total_rainfall': np.empty(empty_shape),
-            'total_evapotranspiration_flux': np.empty(empty_shape),
-            'max_total_temperature': np.empty(empty_shape),
-            'min_total_temperature': np.empty(empty_shape),
-            'precipitation_probability': np.empty(empty_shape),
-            'humidity_maximum': np.empty(empty_shape),
-            'humidity_minimum': np.empty(empty_shape),
-            'wind_speed_avg': np.empty(empty_shape)
-        }
-
-        # Create the dataset with updated data for the region
-        data_vars = {
-            var: (['forecast_date', 'forecast_day_idx', 'lat', 'lon'], new_data[var]) for var in new_data
-        }
-
-        # Create a new dataset for appending to the selected forecast_date, lat, and lon
-        new_ds = xr.Dataset(
-            data_vars=data_vars,
-            coords={
-                'forecast_date': [new_forecast_date],
-                'forecast_day_idx': ds['forecast_day_idx'],
-                'lat': [nearest_lat],
-                'lon': [nearest_lon]
-            }
-        )
-        print(new_ds)
-
-        # Use the region keyword to append to the specific region in the Zarr store
-        new_ds.to_zarr(zarr_url, mode='a', region={
-                'forecast_date': slice(0, 1),  # Specify the forecast_date index range
-                'forecast_day_idx': slice(None),
-                'lat': slice(lat_idx, lat_idx + 1),   # Update the specific nearest lat
-                'lon': slice(lon_idx, lon_idx + 1)    # Update the specific nearest lon
-            },
-            storage_options=self.s3_options,
-            consolidated=True
-        )
-
-def test_ingestor():
-    session = IngestorSession.objects.get(id=22)
-    session.additional_config = {
-        'datasourcefile_id': 20,
-        'datasourcefile_zarr_exists': False
-    }
-    session.save()
-    ingestor = TomorrowIOIngestor(session)
-    ingestor._run()
-
-def test_append_forecast_date(year, month, day):
-    session = IngestorSession.objects.get(id=22)
-    session.additional_config = {
-        'datasourcefile_id': 20,
-        'datasourcefile_zarr_exists': True
-    }
-    session.save()
-    ingestor = TomorrowIOIngestor(session)
-    forecast_date  = datetime.date(year, month, day)
-    ingestor._append_new_forecast_date(forecast_date)
-
-def test_verify():
-    session = IngestorSession.objects.get(id=22)
-    session.additional_config = {
-        'datasourcefile_id': 20,
-        'datasourcefile_zarr_exists': True
-    }
-    session.save()
-    ingestor = TomorrowIOIngestor(session)
-    ingestor.verify()
-    # ds = ingestor.zarr_ds
-    # target_lat = -26.99
-    # target_lon = 51.99
-    
-    # val = ds['total_rainfall'].sel(
-    #     lat=target_lat,
-    #     lon=target_lon, method='nearest')
-    # print(val)
-    # print(val.values)
-
-def test_check_date():
-    session = IngestorSession.objects.get(id=22)
-    session.additional_config = {
-        'datasourcefile_id': 20,
-        'datasourcefile_zarr_exists': True
-    }
-    session.save()
-    ingestor = TomorrowIOIngestor(session)
-    ingestor.is_date_in_zarr(datetime.date(2024, 10, 2))
-
-def test_update():
-    session = IngestorSession.objects.get(id=22)
-    session.additional_config = {
-        'datasourcefile_id': 20,
-        'datasourcefile_zarr_exists': True
-    }
-    session.save()
-    ingestor = TomorrowIOIngestor(session)
-    ingestor._update()
