@@ -12,7 +12,6 @@ import logging
 import datetime
 import pytz
 import traceback
-import fsspec
 import s3fs
 import numpy as np
 import pandas as pd
@@ -27,7 +26,7 @@ from gap.models import (
     Dataset, DataSourceFile, DatasetStore,
     IngestorSession, CollectorSession, Preferences
 )
-from gap.ingestor.base import BaseIngestor
+from gap.ingestor.base import BaseIngestor, BaseZarrIngestor
 from gap.utils.netcdf import NetCDFMediaS3, find_start_latlng
 from gap.utils.zarr import BaseZarrReader
 
@@ -211,7 +210,7 @@ class SalientCollector(BaseIngestor):
             pass
 
 
-class SalientIngestor(BaseIngestor):
+class SalientIngestor(BaseZarrIngestor):
     """Ingestor for Salient seasonal forecast data."""
 
     default_chunks = {
@@ -225,39 +224,6 @@ class SalientIngestor(BaseIngestor):
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize SalientIngestor."""
         super().__init__(session, working_dir)
-        self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
-        self.s3 = BaseZarrReader.get_s3_variables()
-        self.s3_options = {
-            'key': self.s3.get('AWS_ACCESS_KEY_ID'),
-            'secret': self.s3.get('AWS_SECRET_ACCESS_KEY'),
-            'client_kwargs': BaseZarrReader.get_s3_client_kwargs()
-        }
-        self.metadata = {}
-
-        # get zarr data source file
-        datasourcefile_id = self.get_config('datasourcefile_id')
-        if datasourcefile_id:
-            self.datasource_file = DataSourceFile.objects.get(
-                id=datasourcefile_id)
-            self.created = not self.get_config(
-                'datasourcefile_zarr_exists', True)
-        else:
-            datasourcefile_name = self.get_config(
-                'datasourcefile_name', 'salient.zarr')
-            self.datasource_file, self.created = (
-                DataSourceFile.objects.get_or_create(
-                    name=datasourcefile_name,
-                    dataset=self.dataset,
-                    format=DatasetStore.ZARR,
-                    defaults={
-                        'created_on': timezone.now(),
-                        'start_date_time': timezone.now(),
-                        'end_date_time': (
-                            timezone.now()
-                        )
-                    }
-                )
-            )
 
         # min+max are the BBOX that GAP processes
         # inc and original_min comes from Salient netcdf file
@@ -274,6 +240,14 @@ class SalientIngestor(BaseIngestor):
             'original_min': 33.38
         }
         self.reindex_tolerance = 0.01
+
+    def _init_dataset(self) -> Dataset:
+        """Fetch dataset for this ingestor.
+
+        :return: Dataset for this ingestor
+        :rtype: Dataset
+        """
+        return Dataset.objects.get(name='Salient Seasonal Forecast')
 
     def _get_s3_filepath(self, source_file: DataSourceFile):
         """Get Salient NetCDF temporary file from Collector.
@@ -313,52 +287,6 @@ class SalientIngestor(BaseIngestor):
         netcdf_url += f'{source_file.name}'
         return xr.open_dataset(
             fs.open(netcdf_url), chunks=self.default_chunks)
-
-    def _update_zarr_source_file(self, forecast_date: datetime.date):
-        """Update zarr DataSourceFile start and end datetime.
-
-        :param forecast_date: Forecast date that has been processed
-        :type forecast_date: datetime.date
-        """
-        if self.created:
-            self.datasource_file.start_date_time = datetime.datetime(
-                forecast_date.year, forecast_date.month, forecast_date.day,
-                0, 0, 0, tzinfo=pytz.UTC
-            )
-            self.datasource_file.end_date_time = (
-                self.datasource_file.start_date_time
-            )
-        else:
-            if self.datasource_file.start_date_time.date() > forecast_date:
-                self.datasource_file.start_date_time = datetime.datetime(
-                    forecast_date.year, forecast_date.month,
-                    forecast_date.day,
-                    0, 0, 0, tzinfo=pytz.UTC
-                )
-            if self.datasource_file.end_date_time.date() < forecast_date:
-                self.datasource_file.end_date_time = datetime.datetime(
-                    forecast_date.year, forecast_date.month,
-                    forecast_date.day,
-                    0, 0, 0, tzinfo=pytz.UTC
-                )
-        self.datasource_file.save()
-
-    def _remove_temporary_source_file(
-            self, source_file: DataSourceFile, file_path: str):
-        """Remove temporary NetCDFFile from collector.
-
-        :param source_file: Temporary NetCDF File
-        :type source_file: DataSourceFile
-        :param file_path: s3 file path
-        :type file_path: str
-        """
-        try:
-            default_storage.delete(file_path)
-        except Exception as ex:
-            logger.error(
-                f'Failed to remove original source_file {file_path}!', ex)
-        finally:
-            source_file.delete()
 
     def _run(self):
         """Run Salient ingestor."""
@@ -537,13 +465,3 @@ class SalientIngestor(BaseIngestor):
             raise Exception(e)
         finally:
             pass
-
-    def verify(self):
-        """Verify the resulting zarr file."""
-        zarr_url = (
-            BaseZarrReader.get_zarr_base_url(self.s3) +
-            self.datasource_file.name
-        )
-        s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
-        self.zarr_ds = xr.open_zarr(s3_mapper, consolidated=True)
-        print(self.zarr_ds)

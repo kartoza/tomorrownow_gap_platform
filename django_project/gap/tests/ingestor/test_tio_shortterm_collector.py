@@ -124,9 +124,14 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
         )
         session.run()
         session.refresh_from_db()
+        self.assertEqual(session.dataset_files.count(), 1)
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(DataSourceFile.objects.count(), 1)
-        _file = default_storage.open(DataSourceFile.objects.first().name)
+        data_source = DataSourceFile.objects.first()
+        self.assertIn('forecast_date', data_source.metadata)
+        self.assertEqual(
+            data_source.metadata['forecast_date'], today.date().isoformat())
+        _file = default_storage.open(data_source.name)
         with zipfile.ZipFile(_file, 'r') as zip_file:
             self.assertEqual(len(zip_file.filelist), 1)
             _file = zip_file.open(f'grid-{grid.id}.json')
