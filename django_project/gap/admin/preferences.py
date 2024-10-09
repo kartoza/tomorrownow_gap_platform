@@ -51,4 +51,11 @@ class PreferencesAdmin(admin.ModelAdmin):
                 )
             }
         ),
+        (
+            'Dask Config', {
+                'fields': (
+                    'dask_threads_num',
+                )
+            }
+        ),
     )

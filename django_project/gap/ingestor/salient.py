@@ -18,6 +18,7 @@ import pandas as pd
 import xarray as xr
 import salientsdk as sk
 from xarray.core.dataset import Dataset as xrDataset
+from django.conf import settings
 from django.utils import timezone
 from django.core.files.storage import default_storage
 
@@ -29,6 +30,7 @@ from gap.models import (
 from gap.ingestor.base import BaseIngestor, BaseZarrIngestor
 from gap.utils.netcdf import NetCDFMediaS3, find_start_latlng
 from gap.utils.zarr import BaseZarrReader
+from gap.utils.dask import execute_dask_compute
 
 
 logger = logging.getLogger(__name__)
@@ -192,7 +194,7 @@ class SalientCollector(BaseIngestor):
             date=self._get_date_config(),
             members=50,
             force=False,
-            verbose=True,
+            verbose=settings.DEBUG,
         )
 
         self._store_as_netcdf_file(fcst_file, self._get_date_config())
@@ -440,18 +442,22 @@ class SalientIngestor(BaseZarrIngestor):
                 )
             }
 
+        # update the zarr file
         if self.created:
-            expanded_ds.to_zarr(
+            x = expanded_ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
                 storage_options=self.s3_options,
-                encoding=encoding
+                encoding=encoding,
+                compute=False
             )
         else:
-            expanded_ds.to_zarr(
+            x = expanded_ds.to_zarr(
                 zarr_url, mode='a-', append_dim='forecast_date',
                 consolidated=True,
                 storage_options=self.s3_options,
+                compute=False
             )
+        execute_dask_compute(x)
 
     def run(self):
         """Run Salient Ingestor."""
