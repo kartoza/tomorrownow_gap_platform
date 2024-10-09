@@ -27,6 +27,7 @@ from gap.providers import CBAMNetCDFReader
 from gap.utils.netcdf import NetCDFProvider, find_start_latlng
 from gap.utils.zarr import BaseZarrReader
 from gap.ingestor.base import BaseIngestor
+from gap.utils.dask import execute_dask_compute
 
 
 logger = logging.getLogger(__name__)
@@ -265,15 +266,17 @@ class CBAMIngestor(BaseIngestor):
         # store to zarr
         if self.created:
             self.created = False
-            expanded_ds.to_zarr(
+            x = expanded_ds.to_zarr(
                 zarr_url, mode='w', consolidated=True,
-                storage_options=self.s3_options, encoding=encoding
+                storage_options=self.s3_options, encoding=encoding,
+                compute=False
             )
         else:
-            expanded_ds.to_zarr(
+            x = expanded_ds.to_zarr(
                 zarr_url, mode='a-', append_dim='date', consolidated=True,
-                storage_options=self.s3_options
+                storage_options=self.s3_options, compute=False
             )
+        execute_dask_compute(x)
 
     def _run(self):
         """Process CBAM NetCDF Files into GAP Zarr file."""
