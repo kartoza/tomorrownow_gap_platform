@@ -77,6 +77,15 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Seasonal Forecast | Wind Speed Climatology | | m/s | wind_speed |
 | Seasonal Forecast | Wind Speed Climatology | | m/s | wind_speed_clim |
 | Seasonal Forecast | Wind Speed Climatology | | m/s | wind_speed_anom |
+| **Short-term Forecast** |
+| Short-term Forecast | Total Rainfall | | mm | total_rainfall |
+| Short-term Forecast | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
+| Short-term Forecast | Max Temperature | | °C | max_temperature |
+| Short-term Forecast | Min Temperature | | °C | min_temperature |
+| Short-term Forecast | Precipitation Probability | | % | precipitation_probability |
+| Short-term Forecast | Humidity Maximum | | % | humidity_maximum |
+| Short-term Forecast | Humidity Minimum | | % | humidity_minimum |
+| Short-term Forecast | Wind Speed Average | | m/s | wind_speed_avg |
 | **Historical Reanalysis** |
 | Historical Reanalysis | Min Total Temperature | Minimum temperature (0000:2300) | °C | min_temperature |
 | Historical Reanalysis | Min Day Temperature | Minimum day-time temperature (0600:1800) | °C | min_day_temperature |

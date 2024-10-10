@@ -43,3 +43,13 @@ class AdditionalConfigNotFoundException(Exception):
     def __init__(self, key):  # noqa
         self.message = f'{key} is required in additional_config.'
         super().__init__(self.message)
+
+
+class MissingCollectorSessionException(Exception):
+    """Collector session not found."""
+
+    def __init__(self, session_id):  # noqa
+        self.message = (
+            f'Missing collector session in IngestorSession {session_id}.'
+        )
+        super().__init__(self.message)

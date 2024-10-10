@@ -955,5 +955,93 @@
       "source_unit": 5,
       "ensembles": false
     }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 88,
+    "fields": {
+      "dataset": 4,
+      "attribute": 15,
+      "source": "total_rainfall",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 89,
+    "fields": {
+      "dataset": 4,
+      "attribute": 8,
+      "source": "total_evapotranspiration_flux",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 90,
+    "fields": {
+      "dataset": 4,
+      "attribute": 9,
+      "source": "max_temperature",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 91,
+    "fields": {
+      "dataset": 4,
+      "attribute": 17,
+      "source": "min_temperature",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 92,
+    "fields": {
+      "dataset": 4,
+      "attribute": 36,
+      "source": "precipitation_probability",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 93,
+    "fields": {
+      "dataset": 4,
+      "attribute": 54,
+      "source": "humidity_maximum",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 94,
+    "fields": {
+      "dataset": 4,
+      "attribute": 55,
+      "source": "humidity_minimum",
+      "source_unit": 6,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 95,
+    "fields": {
+      "dataset": 4,
+      "attribute": 56,
+      "source": "wind_speed_avg",
+      "source_unit": 8,
+      "ensembles": false
+    }
   }
 ]

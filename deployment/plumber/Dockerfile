@@ -27,7 +27,8 @@ RUN install2.r --error tidyverse tidygam mgcv ggpubr classInt zoo
 
 # Install pip packages
 ADD deployment/docker/requirements.txt /requirements.txt
-RUN python3 -m pip install setuptools
+RUN apt-get remove -y python3-pil
+RUN python3 -m pip install setuptools Pillow
 # Fix uwsgi build failure missing cc1
 ARG CPUCOUNT=1
 RUN python3 -m pip install -r /requirements.txt
