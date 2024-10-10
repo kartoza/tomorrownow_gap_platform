@@ -37,7 +37,7 @@ class SalientIngestorBaseTest(TestCase):
     ]
 
     def setUp(self):
-        """Set CBAMIngestorBaseTest."""
+        """Set SalientIngestorBaseTest."""
         self.dataset = Dataset.objects.get(name='Salient Seasonal Forecast')
 
 
@@ -201,7 +201,8 @@ class TestSalientIngestor(SalientIngestorBaseTest):
             additional_config={
                 'datasourcefile_id': datasource.id,
                 'datasourcefile_zarr_exists': True
-            }
+            },
+            trigger_task=False
         )
         ingestor = SalientIngestor(session)
         self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
@@ -224,7 +225,8 @@ class TestSalientIngestor(SalientIngestorBaseTest):
         )
         self.collector.dataset_files.set([self.datasourcefile])
         self.session = IngestorSession.objects.create(
-            ingestor_type=IngestorType.SALIENT
+            ingestor_type=IngestorType.SALIENT,
+            trigger_task=False
         )
         self.session.collectors.set([self.collector])
 

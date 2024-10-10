@@ -160,7 +160,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         mock_get_s3_client_kwargs.return_value = {
             'endpoint_url': 'https://test-endpoint.com'
         }
-        session = IngestorSession.objects.create()
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            trigger_task=False
+        )
         ingestor = CBAMIngestor(session)
         self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
         self.assertEqual(ingestor.s3_options['key'], 'test_access_key')
@@ -191,7 +194,8 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
             additional_config={
                 'datasourcefile_id': datasource.id,
                 'datasourcefile_zarr_exists': True
-            }
+            },
+            trigger_task=False
         )
         ingestor = CBAMIngestor(session)
         self.assertEqual(ingestor.s3['AWS_ACCESS_KEY_ID'], 'test_access_key')
@@ -218,7 +222,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         mock_ds.date.values = np.array([np.datetime64('2023-01-01')])
         mock_open_dataset.return_value = mock_ds
 
-        session = IngestorSession.objects.create()
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            trigger_task=False
+        )
         ingestor = CBAMIngestor(session)
         ingestor.created = False
         ingestor.existing_dates = None
@@ -232,7 +239,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         self, mock_setup_reader, mock_open_dataset, mock_open_dataset_reader
     ):
         """Test run ingestor."""
-        session = IngestorSession.objects.create()
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            trigger_task=False
+        )
         ingestor = CBAMIngestor(session)
         mock_ds = MagicMock(spec=xrDataset)
         mock_open_dataset.return_value = mock_ds
@@ -260,7 +270,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
     @patch('json.dumps')
     def test_run_success(self, mock_json_dumps):
         """Test successful run."""
-        session = IngestorSession.objects.create()
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            trigger_task=False
+        )
         ingestor = CBAMIngestor(session)
         ingestor._run = MagicMock()
         ingestor.metadata = {
@@ -292,7 +305,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         self, mock_setup_reader, mock_open_dataset, mock_open_dataset_reader
     ):
         """Test cancel run."""
-        session = IngestorSession.objects.create()
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            trigger_task=False
+        )
         session.is_cancelled = True
         session.save()
         ingestor = CBAMIngestor(session)
@@ -356,7 +372,10 @@ class CBAMIngestorTest(CBAMIngestorBaseTest):
         mock_get_zarr_base_url.return_value = 's3://bucket/'
 
         # Create instance of CBAMIngestor
-        session = IngestorSession.objects.create()
+        session = IngestorSession.objects.create(
+            ingestor_type=IngestorType.CBAM,
+            trigger_task=False
+        )
         instance = CBAMIngestor(session=session)
         instance.created = True  # Simulate that Zarr file doesn't exist yet
         instance.s3 = {

@@ -191,7 +191,8 @@ class TioShortTermIngestor(BaseZarrIngestor):
         super().__init__(session, working_dir)
 
         self.metadata = {
-            'chunks': []
+            'chunks': [],
+            'total_json_processed': 0
         }
 
         # min+max are the BBOX that GAP processes
@@ -390,25 +391,25 @@ class TioShortTermIngestor(BaseZarrIngestor):
         return results
 
     def _find_chunk_slices(
-            self, arr: List[CoordMapping], chunk_size: int) -> List:
+            self, arr_length: int, chunk_size: int) -> List:
         """Create chunk slices for processing Tio data.
 
         Given arr with length 300 and chunk_size 150,
         this method will return [slice(0, 150), slice(150, 300)].
-        :param arr: array input
-        :type arr: List[CoordMapping]
+        :param arr_length: length of array
+        :type arr_length: int
         :param chunk_size: chunk size
         :type chunk_size: int
         :return: list of slice
         :rtype: List
         """
         coord_slices = []
-        for coord_range in range(0, len(arr), chunk_size):
+        for coord_range in range(0, arr_length, chunk_size):
             max_idx = coord_range + chunk_size
             coord_slices.append(
                 slice(
                     coord_range,
-                    max_idx if max_idx < len(arr) else len(arr)
+                    max_idx if max_idx < arr_length else arr_length
                 )
             )
         return coord_slices
@@ -539,19 +540,18 @@ class TioShortTermIngestor(BaseZarrIngestor):
 
         # create slices for chunks
         lat_slices = self._find_chunk_slices(
-            lat_arr, self.default_chunks['lat'])
+            len(lat_arr), self.default_chunks['lat'])
         lon_slices = self._find_chunk_slices(
-            lon_arr, self.default_chunks['lon'])
+            len(lon_arr), self.default_chunks['lon'])
 
         # open zip file and process the data by chunks
-        zip_source_file = DataSourceFile.objects.get(id=23)
-        with default_storage.open(zip_source_file.name) as _file:
+        with default_storage.open(data_source.name) as _file:
             with zipfile.ZipFile(_file, 'r') as zip_file:
                 for lat_slice in lat_slices:
                     for lon_slice in lon_slices:
                         lat_chunks = lat_arr[lat_slice]
                         lon_chunks = lon_arr[lon_slice]
-                        warnings = self._process_tio_shortterm_data(
+                        warnings, count = self._process_tio_shortterm_data(
                             forecast_date, lat_chunks, lon_chunks,
                             grid_dict, zip_file
                         )
@@ -560,6 +560,7 @@ class TioShortTermIngestor(BaseZarrIngestor):
                             'lon_slice': str(lon_slice),
                             'warnings': warnings
                         })
+                        self.metadata['total_json_processed'] += count
 
         # update end date of zarr datasource file
         self._update_zarr_source_file(forecast_date)
@@ -576,9 +577,9 @@ class TioShortTermIngestor(BaseZarrIngestor):
             self._run()
             self.session.notes = json.dumps(self.metadata, default=str)
         except Exception as e:
-            logger.error('Ingestor TomorrowIO failed!', e)
+            logger.error('Ingestor TomorrowIO failed!')
             logger.error(traceback.format_exc())
-            raise Exception(e)
+            raise e
         finally:
             pass
 
@@ -602,6 +603,7 @@ class TioShortTermIngestor(BaseZarrIngestor):
         :rtype: dict
         """
         zip_file_list = zip_file.namelist()
+        print(f'name list {zip_file_list}')
         count = 0
         data_shape = (
             1,
@@ -665,7 +667,7 @@ class TioShortTermIngestor(BaseZarrIngestor):
         self._update_by_region(forecast_date, lat_arr, lon_arr, new_data)
         del new_data
 
-        return warnings
+        return warnings, count
 
     def verify(self):
         """Verify the resulting zarr file."""

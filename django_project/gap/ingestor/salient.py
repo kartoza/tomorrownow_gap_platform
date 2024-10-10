@@ -205,9 +205,9 @@ class SalientCollector(BaseIngestor):
             self._run()
             self.session.notes = json.dumps(self.metadata, default=str)
         except Exception as e:
-            logger.error('Collector Salient failed!', e)
+            logger.error('Collector Salient failed!')
             logger.error(traceback.format_exc())
-            raise Exception(e)
+            raise e
         finally:
             pass
 
@@ -466,8 +466,8 @@ class SalientIngestor(BaseZarrIngestor):
             self._run()
             self.session.notes = json.dumps(self.metadata, default=str)
         except Exception as e:
-            logger.error('Ingestor Salient failed!', e)
+            logger.error('Ingestor Salient failed!')
             logger.error(traceback.format_exc())
-            raise Exception(e)
+            raise e
         finally:
             pass
