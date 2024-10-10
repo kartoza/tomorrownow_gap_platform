@@ -11,7 +11,6 @@ import os
 import traceback
 import uuid
 import zipfile
-import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
