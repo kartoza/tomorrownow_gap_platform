@@ -56,7 +56,12 @@ app.conf.beat_schedule = {
     'salient-collector-session': {
         'task': 'salient_collector_session',
         # Run every Monday 02:00 UTC
-        'schedule': crontab(minute='0', hour='2', day_of_week='1'),
+        'schedule': crontab(minute='0', hour='4', day_of_week='1'),
+    },
+    'tio-collector-session': {
+        'task': 'tio_collector_session',
+        # Run everyday at 00:30 UTC
+        'schedule': crontab(minute='30', hour='00'),
     },
     # Run all ingestor session daily
     'run-daily-ingestor-session': {

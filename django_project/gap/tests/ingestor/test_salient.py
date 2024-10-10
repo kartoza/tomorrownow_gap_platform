@@ -168,7 +168,7 @@ class TestSalientCollector(SalientIngestorBaseTest):
         # assert
         session = IngestorSession.objects.filter(
             ingestor_type=IngestorType.SALIENT,
-        ).last()
+        ).order_by('id').last()
         self.assertTrue(session)
         self.assertEqual(session.collectors.count(), 1)
         mock_collector.assert_called_once()
