@@ -92,7 +92,6 @@ def patch_download_query(
                     chunk_size=CHUNK_DOWNLOAD_SIZE
                 ):
                     if chunk:  # Filter out keep-alive new chunks
-                        print(f'chunk here {chunk}')
                         if format == "nc":
                             f.write(chunk)
                         else:
