@@ -130,9 +130,9 @@ class CBAMCollector(BaseIngestor):
         try:
             self._run()
         except Exception as e:
-            logger.error('Collector CBAM failed!', e)
+            logger.error('Collector CBAM failed!')
             logger.error(traceback.format_exc())
-            raise Exception(e)
+            raise e
         finally:
             pass
 
@@ -385,8 +385,8 @@ class CBAMIngestor(BaseIngestor):
                 )
             self.datasource_file.save()
         except Exception as e:
-            logger.error('Ingestor CBAM failed!', e)
+            logger.error('Ingestor CBAM failed!')
             logger.error(traceback.format_exc())
-            raise Exception(e)
+            raise e
         finally:
             pass

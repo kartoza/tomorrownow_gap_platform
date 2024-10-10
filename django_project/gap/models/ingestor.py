@@ -192,6 +192,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.arable import ArableIngestor
         from gap.ingestor.tahmo_api import TahmoAPIIngestor
         from gap.ingestor.wind_borne_systems import WindBorneSystemsIngestor
+        from gap.ingestor.tio_shortterm import TioShortTermIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -210,6 +211,8 @@ class IngestorSession(BaseSession):
             ingestor = TahmoAPIIngestor
         elif self.ingestor_type == IngestorType.WIND_BORNE_SYSTEMS_API:
             ingestor = WindBorneSystemsIngestor
+        elif self.ingestor_type == IngestorType.TOMORROWIO:
+            ingestor = TioShortTermIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()
