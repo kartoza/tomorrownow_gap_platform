@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 import os
 from unittest.mock import patch, MagicMock
 from datetime import date
+import zipfile
 import numpy as np
 import pandas as pd
 import dask.array as da
@@ -308,20 +309,26 @@ class TestTioIngestor(TestCase):
             'grid_data.zip'
         )
         # mock default_storage.open
-        mock_default_storage.return_value = open(filepath, "rb")
+        f = open(filepath, "rb")
+        mock_default_storage.return_value = f
+        json_f = zipfile.ZipFile(f, 'r').open('grid-1.json')
 
         # create a grid
         grid = GridFactory(geometry=create_polygon())
         # mock zip_file.namelist
         mock_namelist.return_value = [f'grid-{grid.id}.json']
         with patch.object(self.ingestor, '_open_zarr_dataset') as mock_open:
-            mock_open.return_value = mock_open_zarr_dataset()
-            self.ingestor._run()
+            with patch('zipfile.ZipFile.open') as mock_zip_open:
+                mock_open.return_value = mock_open_zarr_dataset()
+                mock_zip_open.return_value = json_f
+                self.ingestor._run()
+                mock_zip_open.assert_called_once()
 
         mock_default_storage.assert_called_once()
         mock_dask_compute.assert_called_once()
         self.assertEqual(self.ingestor.metadata['total_json_processed'], 1)
         self.assertEqual(len(self.ingestor.metadata['chunks']), 1)
+        f.close()
 
     @patch('gap.utils.zarr.BaseZarrReader.get_zarr_base_url')
     @patch('xarray.open_zarr')
