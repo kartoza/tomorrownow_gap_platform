@@ -318,7 +318,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         ]
         request = self._get_measurement_request(
             attributes=','.join(attribs),
-            product='observations',
+            product='tahmo_ground_observation',
             output_type='csv'
         )
         response = view(request)

@@ -20,7 +20,7 @@ from gap.models.preferences import Preferences
 
 PROVIDER = 'Arable'
 STATION_TYPE = 'Ground Observations'
-DATASET_TYPE = 'Observations'
+DATASET_TYPE = 'Arable Ground Observation'
 DATASET_NAME = 'Arable Ground Observational'
 API_KEY_ENV_NAME = 'ARABLE_API_KEY'
 

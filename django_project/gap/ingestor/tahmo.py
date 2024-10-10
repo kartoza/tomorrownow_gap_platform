@@ -50,7 +50,7 @@ class TahmoIngestor(BaseIngestor):
             name='Ground Observations'
         )
         self.dataset_type = DatasetType.objects.get(
-            name='Observations'
+            name='Tahmo Ground Observation'
         )
         self.dataset, _ = Dataset.objects.get_or_create(
             name='Tahmo Ground Observational',
