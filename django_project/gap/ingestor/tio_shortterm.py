@@ -11,7 +11,6 @@ import os
 import traceback
 import uuid
 import zipfile
-import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -603,7 +602,6 @@ class TioShortTermIngestor(BaseZarrIngestor):
         :rtype: dict
         """
         zip_file_list = zip_file.namelist()
-        print(f'name list {zip_file_list}')
         count = 0
         data_shape = (
             1,
@@ -668,13 +666,3 @@ class TioShortTermIngestor(BaseZarrIngestor):
         del new_data
 
         return warnings, count
-
-    def verify(self):
-        """Verify the resulting zarr file."""
-        zarr_url = (
-            BaseZarrReader.get_zarr_base_url(self.s3) +
-            self.datasource_file.name
-        )
-        s3_mapper = fsspec.get_mapper(zarr_url, **self.s3_options)
-        self.zarr_ds = xr.open_zarr(s3_mapper, consolidated=True)
-        print(self.zarr_ds)
