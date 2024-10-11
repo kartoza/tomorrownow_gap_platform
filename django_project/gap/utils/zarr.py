@@ -199,10 +199,12 @@ class BaseZarrReader(BaseNetCDFReader):
                 pass
         elif cache_row.expired_on:
             # when there is expired_on, we should remove the cache dir
-            update_row = DataSourceFileCache.objects.select_for_update().get(
-                id=cache_row.id
-            )
             with transaction.atomic():
+                update_row = (
+                    DataSourceFileCache.objects.select_for_update().get(
+                        id=cache_row.id
+                    )
+                )
                 self.clear_cache(source_file)
                 update_row.expired_on = None
                 update_row.save()
