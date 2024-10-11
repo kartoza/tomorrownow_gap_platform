@@ -29,7 +29,9 @@ from spw.generator.main import (
     SPWOutput,
     _fetch_timelines_data,
     _fetch_ltn_data,
-    calculate_from_point
+    calculate_from_point,
+    calculate_from_point_attrs,
+    VAR_MAPPING_REVERSE
 )
 from spw.models import RModelExecutionLog, RModelExecutionStatus
 
@@ -253,3 +255,23 @@ class TestSPWGenerator(TestCase):
         self.assertTrue(log.input_file)
         self.assertTrue(log.output)
         self.assertEqual(log.status, RModelExecutionStatus.SUCCESS)
+
+
+class TestSPWAttrs(TestCase):
+    """Test fetch attributes for SPW Tio."""
+
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
+    def test_attrs(self):
+        """Test to ensure attrs is correct for Tio API Call."""
+        attrs = calculate_from_point_attrs()
+        for k, v in VAR_MAPPING_REVERSE.items():
+            self.assertTrue(attrs.filter(source=k).exists())
