@@ -42,9 +42,9 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 |---------|----------|------------|--------|---------|------------------|
 | **Historical Data** |
 | Climate Reanalysis | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | historical_reanalysis |
-| | Tomorrow.io | 4km² | Tomorrow.io Historical Reanalysis (API) | | |
-| Ground Observation Data | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | observations |
-| | Arable weather stations | 300+ stations across East Africa | Arable (API) | | |
+| Tahmo Ground Observation Data | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
+| Arable Ground Observation Data | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
+| Tahmo Disdrometer Observation Data | Tahmo disdrometers | | Tahmo (API) | | tahmo_disdrometer_observation |
 | **Weather Forecasts** |
 | Short-term Deterministic Weather Forecast | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | shortterm_forecast |
 | Seasonal Probabilistic Weather Forecast | Salient | 9km² | Salient (API) | v9 | seasonal_forecast |
@@ -97,7 +97,7 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Historical Reanalysis | Max Night Temperature | Maximum night-time temperature (1900:0500) | °C | max_night_temperature |
 | Historical Reanalysis | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
 | Historical Reanalysis | Total Evapotranspiration Flux | Total Evapotranspiration flux with respect to grass cover (0000:2300) | mm | total_evapotranspiration_flux |
-| **Observation** |
+| **Tahmo Ground Observation** |
 | Observation | Precipitation | | mm/day | precipitation |
 | Observation | Solar radiation | | Wh/m2 | solar_radiation |
 | Observation | Relative Humidity Max | | % | max_relative_humidity |
@@ -105,6 +105,37 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Observation | Air Temperature Average | | °C | average_air_temperature |
 | Observation | Air Temperature Max | | °C | max_air_temperature |
 | Observation | Air Temperature Min | | °C | min_air_temperature |
+| **Arable Ground Observation** |
+| Observation | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
+| Observation | Relative Humidity Max | | % | max_relative_humidity |
+| Observation | Max Day Temperature | | °C | max_day_temperature |
+| Observation | Relative Humidity Mean | | % | mean_relative_humidity |
+| Observation | Mean Day Temperature | | °C | mean_day_temperature |
+| Observation | Relative Humidity Min | | % | min_relative_humidity |
+| Observation | Min Day Temperature | | °C | min_day_temperature |
+| Observation | Precipitation Total | | mm | precipitation_total |
+| Observation | Precipitation | | mm/day | precipitation |
+| Observation | Sea Level Pressure | | kPa | sea_level_pressure |
+| Observation | Wind Heading | | degree | wind_heading |
+| Observation | Wind Speed | | m/s | wind_speed |
+| Observation | Wind Speed Max | | m/s | wind_speed_max |
+| Observation | Wind Speed Min | | m/s | wind_speed_min |
+| **Tahmo Disdrometer Observation** |
+| Observation | Atmospheric Pressure | | kPa | atmospheric_pressure |
+| Observation | Depth of Water | | mm | depth_of_water |
+| Observation | Electrical Conductivity of Precipitation | | mS/cm | electrical_conductivity_of_precipitation |
+| Observation | Electrical Conductivity of Water | | mS/cm | electrical_conductivity_of_water |
+| Observation | Lightning Distance | | km | lightning_distance |
+| Observation | Shortwave Radiation | | W/m2 | shortwave_radiation |
+| Observation | Soil Moisture Content | | m3/m3 | soil_moisture_content |
+| Observation | Soil Temperature | | °C | soil_temperature |
+| Observation | Surface Air Temperature | | °C | surface_air_temperature |
+| Observation | Wind Speed | | m/s | wind_speed |
+| Observation | Wind Gusts | | m/s | wind_gusts |
+| Observation | Precipitation Total | | mm | precipitation_total |
+| Observation | Precipitation | | mm/day | precipitation |
+| Observation | Relative Humidity | | % | relative_humidity |
+| Observation | Wind Heading | | degree | wind_heading |
 | |
 
 
