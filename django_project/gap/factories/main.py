@@ -20,7 +20,8 @@ from gap.models import (
     DatasetTimeStep,
     DatasetStore,
     DataSourceFile,
-    Village
+    Village,
+    DataSourceFileCache
 )
 
 
@@ -129,6 +130,17 @@ class DataSourceFileFactory(DjangoModelFactory):
     end_date_time = factory.Faker('date_time')
     created_on = factory.Faker('date_time')
     format = DatasetStore.NETCDF
+
+
+class DataSourceFileCacheFactory(DjangoModelFactory):
+    """Factory class for DataSourceFileCache model."""
+
+    class Meta:  # noqa
+        model = DataSourceFileCache
+
+    source_file = factory.SubFactory(DataSourceFileFactory)
+    hostname = factory.Faker('text')
+    created_on = factory.Faker('date_time')
 
 
 class VillageFactory(DjangoModelFactory):

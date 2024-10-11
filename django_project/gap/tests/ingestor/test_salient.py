@@ -19,7 +19,7 @@ from gap.models.ingestor import (
     CollectorSession
 )
 from gap.ingestor.salient import SalientIngestor, SalientCollector
-from gap.factories import DataSourceFileFactory
+from gap.factories import DataSourceFileFactory, DataSourceFileCacheFactory
 from gap.tasks.collector import run_salient_collector_session
 
 
@@ -401,3 +401,12 @@ class TestSalientIngestor(SalientIngestorBaseTest):
             self.ingestor._get_s3_filepath(self.datasourcefile))
         mock_to_zarr.assert_called_once()
         mock_compute.assert_called_once()
+
+    def test_invalidate_cache(self):
+        """Test invalidate cache function."""
+        cache_file = DataSourceFileCacheFactory.create(
+            source_file=self.ingestor.datasource_file
+        )
+        self.ingestor._invalidate_zarr_cache()
+        cache_file.refresh_from_db()
+        self.assertIsNotNone(cache_file.expired_on)
