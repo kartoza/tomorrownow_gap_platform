@@ -12,7 +12,7 @@ from django.contrib.gis.geos import (
 )
 
 from gap.providers import (
-    TahmoDatasetReader
+    ObservationDatasetReader
 )
 from gap.factories import (
     ProviderFactory,
@@ -28,11 +28,11 @@ from gap.utils.reader import (
 )
 
 
-class TestTahmoReader(TestCase):
-    """Unit test for Tahmo NetCDFReader class."""
+class TestObsrvationReader(TestCase):
+    """Unit test for ObservationDatasetReader class."""
 
     def setUp(self):
-        """Set test for TahmoReader."""
+        """Set test for ObservationDatasetReader."""
         self.dataset = DatasetFactory.create(
             provider=ProviderFactory(name='Tahmo'))
         self.attribute = AttributeFactory.create(
@@ -51,7 +51,7 @@ class TestTahmoReader(TestCase):
         self.location_input = DatasetReaderInput.from_point(p)
         self.start_date = datetime(2020, 1, 1)
         self.end_date = datetime(2020, 1, 31)
-        self.reader = TahmoDatasetReader(
+        self.reader = ObservationDatasetReader(
             self.dataset, [self.dataset_attr], self.location_input,
             self.start_date, self.end_date
         )
@@ -93,7 +93,7 @@ class TestTahmoReader(TestCase):
             date_time=dt,
             value=100
         )
-        reader = TahmoDatasetReader(
+        reader = ObservationDatasetReader(
             self.dataset, [self.dataset_attr], DatasetReaderInput.from_point(
                 self.station.geometry
             ), dt, dt)
@@ -135,7 +135,7 @@ class TestTahmoReader(TestCase):
         location_input = DatasetReaderInput(
             MultiPoint([self.station.geometry, p]),
             LocationInputType.LIST_OF_POINT)
-        reader = TahmoDatasetReader(
+        reader = ObservationDatasetReader(
             self.dataset, [self.dataset_attr], location_input, dt1, dt2)
         reader.read_historical_data(dt1, dt2)
         data_value = reader.get_data_values()

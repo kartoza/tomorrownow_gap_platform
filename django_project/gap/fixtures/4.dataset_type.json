@@ -33,10 +33,10 @@
     "model": "gap.datasettype",
     "pk": 4,
     "fields": {
-      "name": "Observations",
+      "name": "Tahmo Ground Observation",
       "description": "",
       "type": "historical",
-      "variable_name": "observations"
+      "variable_name": "tahmo_ground_observation"
     }
   },
   {
@@ -57,6 +57,26 @@
       "description": "",
       "type": "historical",
       "variable_name": "default"
+    }
+  },
+  {
+    "model": "gap.datasettype",
+    "pk": 7,
+    "fields": {
+      "name": "Tahmo Disdrometer Observation",
+      "description": "",
+      "type": "historical",
+      "variable_name": "tahmo_disdrometer_observation"
+    }
+  },
+  {
+    "model": "gap.datasettype",
+    "pk": 8,
+    "fields": {
+      "name": "Arable Ground Observation",
+      "description": "",
+      "type": "historical",
+      "variable_name": "arable_ground_observation"
     }
   }
 ]

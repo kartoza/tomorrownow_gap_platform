@@ -24,7 +24,7 @@ from gap.models.preferences import Preferences
 
 PROVIDER = 'Tahmo'
 STATION_TYPE = 'Disdrometer'
-DATASET_TYPE = 'Observations'
+DATASET_TYPE = 'Tahmo Disdrometer Observation'
 DATASET_NAME = 'Tahmo Disdrometer Observational'
 TAHMO_API_USERNAME_ENV_NAME = 'TAHMO_API_USERNAME'
 TAHMO_API_PASSWORD_ENV_NAME = 'TAHMO_API_PASSWORD'

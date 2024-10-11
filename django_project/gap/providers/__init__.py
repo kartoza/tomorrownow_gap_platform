@@ -9,7 +9,7 @@ from gap.models import Dataset, DatasetStore
 from gap.utils.netcdf import NetCDFProvider
 from gap.providers.cbam import CBAMZarrReader, CBAMNetCDFReader  # noqa
 from gap.providers.salient import SalientNetCDFReader, SalientZarrReader  # noqa
-from gap.providers.tahmo import TahmoDatasetReader
+from gap.providers.observation import ObservationDatasetReader
 from gap.providers.tio import (
     TomorrowIODatasetReader,
     PROVIDER_NAME as TIO_PROVIDER,
@@ -30,8 +30,8 @@ def get_reader_from_dataset(dataset: Dataset):
         return CBAMZarrReader
     elif dataset.provider.name == NetCDFProvider.SALIENT:
         return SalientZarrReader
-    elif dataset.provider.name == 'Tahmo':
-        return TahmoDatasetReader
+    elif dataset.provider.name in ['Tahmo', 'Arable']:
+        return ObservationDatasetReader
     elif (
         dataset.provider.name == TIO_PROVIDER and
         dataset.store_type == DatasetStore.EXT_API

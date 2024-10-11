@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Tahmo Data Reader
+.. note:: Observation Data Reader
 """
 
 from typing import List
@@ -34,8 +34,8 @@ class CSVBuffer:
         yield value
 
 
-class TahmoReaderValue(DatasetReaderValue):
-    """Class that convert Tahmo Dataset to TimelineValues."""
+class ObservationReaderValue(DatasetReaderValue):
+    """Class that convert Dataset to TimelineValues."""
 
     date_variable = 'date'
 
@@ -45,7 +45,7 @@ class TahmoReaderValue(DatasetReaderValue):
             attributes: List[DatasetAttribute],
             start_date: datetime,
             end_date: datetime) -> None:
-        """Initialize TahmoReaderValue class.
+        """Initialize ObservationReaderValue class.
 
         :param val: value that has been read
         :type val: List[DatasetTimelineValue]
@@ -94,26 +94,26 @@ class TahmoReaderValue(DatasetReaderValue):
     def to_netcdf_stream(self):
         """Generate NetCDF.
 
-        :raises ValidationError: Not supported for Tahmo Dataset
+        :raises ValidationError: Not supported for Dataset
         """
         raise ValidationError({
             'Invalid Request Parameter': (
                 'Output format netcdf is not available '
-                'for Tahmo Observation Dataset!'
+                'for Observation Dataset!'
             )
         })
 
 
-class TahmoDatasetReader(BaseDatasetReader):
-    """Class to read Tahmo ground observation data."""
+class ObservationDatasetReader(BaseDatasetReader):
+    """Class to read observation ground observation data."""
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime) -> None:
-        """Initialize TahmoDatasetReader class.
+        """Initialize ObservationDatasetReader class.
 
-        :param dataset: Dataset from Tahmo provider
+        :param dataset: Dataset from observation provider
         :type dataset: Dataset
         :param attributes: List of attributes to be queried
         :type attributes: List[DatasetAttribute]
@@ -232,7 +232,7 @@ class TahmoDatasetReader(BaseDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        return TahmoReaderValue(
+        return ObservationReaderValue(
             self.results, self.location_input, self.attributes,
             self.start_date, self.end_date
         )
