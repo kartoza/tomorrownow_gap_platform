@@ -98,7 +98,7 @@ class BaseZarrIngestor(BaseIngestor):
                 'datasourcefile_zarr_exists', True)
         else:
             datasourcefile_name = self.get_config(
-                'datasourcefile_name', f'{self.default_zarr_name}.zarr')
+                'datasourcefile_name', f'{self.default_zarr_name}')
             self.datasource_file, self.created = (
                 DataSourceFile.objects.get_or_create(
                     name=datasourcefile_name,
