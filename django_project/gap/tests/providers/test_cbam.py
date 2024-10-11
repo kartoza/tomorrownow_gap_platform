@@ -196,8 +196,6 @@ class TestCBAMZarrReader(TestCase):
             self.xrDataset, ['max_total_temperature'],
             self.dt1, self.dt2
         )
-        print(ds)
         val = ds['max_total_temperature'].values
-        print(val)
         self.assertAlmostEqual(val[0][0][0], 0.26790932)
         self.assertAlmostEqual(val[0][1][1], 0.50810691)

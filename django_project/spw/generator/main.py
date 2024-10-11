@@ -15,7 +15,7 @@ import pytz
 from django.contrib.gis.geos import Point, Polygon
 from django.utils import timezone
 
-from gap.models import Dataset, DatasetAttribute, CastType
+from gap.models import Dataset, DatasetAttribute, CastType, DatasetStore
 from gap.providers import TomorrowIODatasetReader, TIO_PROVIDER
 from gap.utils.reader import DatasetReaderInput
 from spw.models import RModel, RModelExecutionLog, RModelExecutionStatus
@@ -77,7 +77,8 @@ def calculate_from_point_attrs():
     """Return attributes that are being used in calculate from point."""
     return DatasetAttribute.objects.filter(
         attribute__variable_name__in=ATTRIBUTES,
-        dataset__provider__name=TIO_PROVIDER
+        dataset__provider__name=TIO_PROVIDER,
+        dataset__store_type=DatasetStore.EXT_API
     )
 
 
