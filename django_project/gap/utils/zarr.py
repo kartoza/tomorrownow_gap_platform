@@ -14,11 +14,14 @@ from typing import List
 from datetime import datetime
 import xarray as xr
 from xarray.core.dataset import Dataset as xrDataset
+from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from gap.models import (
     Dataset,
     DatasetAttribute,
-    DataSourceFile
+    DataSourceFile,
+    DataSourceFileCache
 )
 from gap.utils.reader import (
     DatasetReaderInput
@@ -136,6 +139,7 @@ class BaseZarrReader(BaseNetCDFReader):
         :return: xArray Dataset object
         :rtype: xrDataset
         """
+        self._check_zarr_cache_expiry(source_file)
         # get zarr url
         zarr_url = self.get_zarr_base_url(self.s3)
         zarr_url += f'{source_file.name}'
@@ -169,6 +173,41 @@ class BaseZarrReader(BaseNetCDFReader):
             s3_mapper, consolidated=True, drop_variables=drop_variables)
 
         return ds
+
+    def _check_zarr_cache_expiry(self, source_file: DataSourceFile):
+        """Validate cache directory for zarr.
+
+        The cache dir will be cleared if there is update from ingestor.
+        :param source_file: zarr source file
+        :type source_file: DataSourceFile
+        """
+        hostname = os.uname()[1]
+        cache_row = DataSourceFileCache.objects.filter(
+            source_file=source_file,
+            hostname=hostname
+        ).first()
+        if cache_row is None:
+            # no existing record yet, create first
+            try:
+                DataSourceFileCache.objects.create(
+                    source_file=source_file,
+                    hostname=hostname,
+                    created_on=timezone.now()
+                )
+                self.clear_cache(source_file)
+            except IntegrityError:
+                pass
+        elif cache_row.expired_on:
+            # when there is expired_on, we should remove the cache dir
+            with transaction.atomic():
+                update_row = (
+                    DataSourceFileCache.objects.select_for_update().get(
+                        id=cache_row.id
+                    )
+                )
+                self.clear_cache(source_file)
+                update_row.expired_on = None
+                update_row.save()
 
     def clear_cache(self, source_file: DataSourceFile):
         """Clear cache of zarr file.

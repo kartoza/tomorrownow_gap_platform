@@ -15,6 +15,7 @@ import xarray as xr
 
 from django.utils import timezone
 from django.core.files.storage import default_storage
+from django.db import transaction
 
 from core.models import BackgroundTask
 from gap.models import (
@@ -23,7 +24,8 @@ from gap.models import (
     IngestorSessionStatus,
     Dataset,
     DatasetStore,
-    DataSourceFile
+    DataSourceFile,
+    DataSourceFileCache
 )
 from gap.utils.zarr import BaseZarrReader
 
@@ -96,7 +98,7 @@ class BaseZarrIngestor(BaseIngestor):
                 'datasourcefile_zarr_exists', True)
         else:
             datasourcefile_name = self.get_config(
-                'datasourcefile_name', f'{self.default_zarr_name}.zarr')
+                'datasourcefile_name', f'{self.default_zarr_name}')
             self.datasource_file, self.created = (
                 DataSourceFile.objects.get_or_create(
                     name=datasourcefile_name,
@@ -187,6 +189,16 @@ class BaseZarrIngestor(BaseIngestor):
         """Verify the resulting zarr file."""
         self.zarr_ds = self._open_zarr_dataset()
         print(self.zarr_ds)
+
+    def _invalidate_zarr_cache(self):
+        """Invalidate existing zarr cache after ingestor is finished."""
+        source_caches = DataSourceFileCache.objects.select_for_update().filter(
+            source_file=self.datasource_file
+        )
+        with transaction.atomic():
+            for source_cache in source_caches:
+                source_cache.expired_on = timezone.now()
+                source_cache.save()
 
 
 def ingestor_revoked_handler(bg_task: BackgroundTask):

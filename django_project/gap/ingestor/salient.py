@@ -305,7 +305,7 @@ class SalientIngestor(BaseZarrIngestor):
             s3_storage = default_storage
             file_path = self._get_s3_filepath(source_file)
             if not s3_storage.exists(file_path):
-                logger.warn(f'DataSource {file_path} does not exist!')
+                logger.warning(f'DataSource {file_path} does not exist!')
                 continue
 
             # open the dataset
@@ -332,6 +332,9 @@ class SalientIngestor(BaseZarrIngestor):
             'total_files': total_files,
             'forecast_dates': forecast_dates
         }
+
+        # invalidate zarr cache
+        self._invalidate_zarr_cache()
 
     def store_as_zarr(self, dataset: xrDataset, forecast_date: datetime.date):
         """Store xarray dataset from forecast_date into Salient zarr file.

@@ -13,7 +13,8 @@ from core.admin import AbstractDefinitionAdmin
 from gap.models import (
     Attribute, Country, Provider, Measurement, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
-    DatasetType, Unit, Village, CollectorSession, DatasetStore
+    DatasetType, Unit, Village, CollectorSession, DatasetStore,
+    DataSourceFileCache
 )
 from gap.tasks.collector import run_collector_session
 from gap.tasks.ingestor import run_ingestor_session
@@ -202,6 +203,42 @@ class DataSourceFileAdmin(admin.ModelAdmin):
     )
     list_filter = ('dataset', 'format', 'is_latest')
     actions = (load_source_zarr_cache, clear_source_zarr_cache,)
+
+
+@admin.register(DataSourceFileCache)
+class DataSourceFileCacheAdmin(admin.ModelAdmin):
+    """DataSourceFileCache admin."""
+
+    list_display = (
+        'get_name', 'get_dataset', 'hostname',
+        'created_on', 'expired_on'
+    )
+    list_filter = ('hostname',)
+
+    def get_name(self, obj: DataSourceFileCache):
+        """Get name of data source.
+
+        :param obj: data source object
+        :type obj: DataSourceFileCache
+        :return: name of the data source
+        :rtype: str
+        """
+        return obj.source_file.name
+
+    def get_dataset(self, obj: DataSourceFileCache):
+        """Get dataset of data source.
+
+        :param obj: data source object
+        :type obj: DataSourceFileCache
+        :return: dataset of the data source
+        :rtype: str
+        """
+        return obj.source_file.dataset.name
+
+    get_name.short_description = 'Name'
+    get_name.admin_order_field = 'source_file__name'
+    get_dataset.short_description = 'Dataset'
+    get_dataset.admin_order_field = 'source_file__dataset__name'
 
 
 @admin.register(Village)
