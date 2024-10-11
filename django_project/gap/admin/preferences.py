@@ -52,8 +52,9 @@ class PreferencesAdmin(admin.ModelAdmin):
             }
         ),
         (
-            'Dask Config', {
+            'Ingestor Config', {
                 'fields': (
+                    'ingestor_config',
                     'dask_threads_num',
                 )
             }

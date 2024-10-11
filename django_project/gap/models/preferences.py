@@ -109,6 +109,17 @@ class Preferences(SingletonModel):
         )
     )
 
+    # ingestor config
+    ingestor_config = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        help_text=(
+            'Dict of ProviderName and AdditionalConfig; '
+            'AdditionalConfig will be passed to the Ingestor Session.'
+        )
+    )
+
     class Meta:  # noqa: D106
         verbose_name_plural = "preferences"
 

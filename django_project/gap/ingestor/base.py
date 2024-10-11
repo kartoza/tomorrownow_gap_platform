@@ -72,7 +72,15 @@ class BaseIngestor:
 
 
 class BaseZarrIngestor(BaseIngestor):
-    """Base Ingestor class for Zarr product."""
+    """Base Ingestor class for Zarr product.
+
+    Available config for ingestor:
+    datasourcefile_id: Id of existing DataSourceFile
+    datasourcefile_zarr_exists: Indicates that Zarr exists on s3,
+        or create new one
+    datasourcefile_name: set the zarr name if creating new zarr
+    remove_temp_file: remove temporary from the collector
+    """
 
     default_zarr_name = f'{uuid.uuid4()}.zarr'
 
