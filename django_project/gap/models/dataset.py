@@ -107,3 +107,32 @@ class DataSourceFile(models.Model):
     )
     is_latest = models.BooleanField(default=False)
     metadata = models.JSONField(blank=True, default=dict, null=True)
+
+    def __str__(self):
+        return f'{self.name} - {self.id}'
+
+
+class DataSourceFileCache(models.Model):
+    """Model representing cache for DataSourceFile."""
+
+    source_file = models.ForeignKey(
+        DataSourceFile, on_delete=models.CASCADE
+    )
+    hostname = models.CharField(
+        max_length=512
+    )
+    created_on = models.DateTimeField()
+    expired_on = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        """Meta class for DataSourceFileCache."""
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['source_file', 'hostname'],
+                name='source_hostname'
+            )
+        ]

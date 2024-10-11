@@ -569,6 +569,9 @@ class TioShortTermIngestor(BaseZarrIngestor):
         if remove_temp_file:
             self._remove_temporary_source_file(data_source, data_source.name)
 
+        # invalidate zarr cache
+        self._invalidate_zarr_cache()
+
     def run(self):
         """Run TomorrowIO Ingestor."""
         # Run the ingestion
