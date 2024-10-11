@@ -1043,5 +1043,27 @@
       "source_unit": 8,
       "ensembles": false
     }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 96,
+    "fields": {
+      "dataset": 6,
+      "attribute": 6,
+      "source": "solarGHI",
+      "source_unit": 7,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 97,
+    "fields": {
+      "dataset": 4,
+      "attribute": 6,
+      "source": "solar_radiation",
+      "source_unit": 7,
+      "ensembles": false
+    }
   }
 ]

@@ -8,12 +8,12 @@ Tomorrow Now GAP.
 from celery.utils.log import get_task_logger
 
 from core.celery import app
-from gap.models.dataset import (
+from gap.models import (
+    Preferences,
+    Provider,
     Dataset,
     DatasetStore,
-    DataSourceFile
-)
-from gap.models.ingestor import (
+    DataSourceFile,
     IngestorType,
     IngestorSession,
     CollectorSession
@@ -48,6 +48,18 @@ def run_cbam_collector_session():
         )
 
 
+def _get_ingestor_config_from_preferences(provider: Provider) -> dict:
+    """Retrieve additional config for a provider.
+
+    :param provider: provider
+    :type provider: Provider
+    :return: additional config for Ingestor
+    :rtype: dict
+    """
+    config = Preferences.load().ingestor_config
+    return config.get(provider.name, {})
+
+
 def _do_run_zarr_collector(
         dataset: Dataset, collector_session: CollectorSession,
         ingestor_type):
@@ -67,18 +79,25 @@ def _do_run_zarr_collector(
     collector_session.refresh_from_db()
     total_file = collector_session.dataset_files.count()
     if total_file > 0:
-        # find latest DataSourceFile
-        data_source = DataSourceFile.objects.filter(
-            dataset=dataset,
-            format=DatasetStore.ZARR,
-            is_latest=True
-        ).last()
         additional_conf = {}
-        if data_source:
-            additional_conf = {
-                'datasourcefile_id': data_source.id,
-                'datasourcefile_zarr_exists': True
-            }
+        config = _get_ingestor_config_from_preferences(dataset.provider)
+
+        use_latest_datasource = config.get('use_latest_datasource', True)
+        if use_latest_datasource:
+            # find latest DataSourceFile
+            data_source = DataSourceFile.objects.filter(
+                dataset=dataset,
+                format=DatasetStore.ZARR,
+                is_latest=True
+            ).last()
+            if data_source:
+                additional_conf = {
+                    'datasourcefile_id': data_source.id,
+                    'datasourcefile_zarr_exists': True
+                }
+        additional_conf.update(config)
+
+        # create session and trigger the task
         session = IngestorSession.objects.create(
             ingestor_type=ingestor_type,
             trigger_task=False,

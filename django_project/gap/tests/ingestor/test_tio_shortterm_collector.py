@@ -136,6 +136,7 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
             self.assertEqual(len(zip_file.filelist), 1)
             _file = zip_file.open(f'grid-{grid.id}.json')
             _data = json.loads(_file.read().decode('utf-8'))
+            print(_data)
             self.assertEqual(
                 _data,
                 {
@@ -157,7 +158,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 0,
                                 'humidity_maximum': 84,
                                 'humidity_minimum': 69,
-                                'wind_speed_avg': 4.77
+                                'wind_speed_avg': 4.77,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -170,7 +172,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 80,
                                 'humidity_minimum': 71,
-                                'wind_speed_avg': 4.35
+                                'wind_speed_avg': 4.35,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -183,7 +186,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 79,
                                 'humidity_minimum': 73,
-                                'wind_speed_avg': 5.58
+                                'wind_speed_avg': 5.58,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -196,7 +200,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 78,
                                 'humidity_minimum': 72,
-                                'wind_speed_avg': 5.74
+                                'wind_speed_avg': 5.74,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -209,7 +214,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 76,
                                 'humidity_minimum': 70,
-                                'wind_speed_avg': 5.09
+                                'wind_speed_avg': 5.09,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -222,7 +228,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 76,
                                 'humidity_minimum': 72,
-                                'wind_speed_avg': 4.01
+                                'wind_speed_avg': 4.01,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -235,7 +242,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 0,
                                 'humidity_maximum': 76,
                                 'humidity_minimum': 70,
-                                'wind_speed_avg': 3.82
+                                'wind_speed_avg': 3.82,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -248,7 +256,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 78,
                                 'humidity_minimum': 72,
-                                'wind_speed_avg': 4.12
+                                'wind_speed_avg': 4.12,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -261,7 +270,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 80,
                                 'humidity_minimum': 74,
-                                'wind_speed_avg': 5.29
+                                'wind_speed_avg': 5.29,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -274,7 +284,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 80,
                                 'humidity_minimum': 73,
-                                'wind_speed_avg': 4.96
+                                'wind_speed_avg': 4.96,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -287,7 +298,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 77,
                                 'humidity_minimum': 68,
-                                'wind_speed_avg': 4.1
+                                'wind_speed_avg': 4.1,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -300,7 +312,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 78,
                                 'humidity_minimum': 70,
-                                'wind_speed_avg': 4.42
+                                'wind_speed_avg': 4.42,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -313,7 +326,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 78,
                                 'humidity_minimum': 72,
-                                'wind_speed_avg': 4.52
+                                'wind_speed_avg': 4.52,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -326,7 +340,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 78,
                                 'humidity_minimum': 72,
-                                'wind_speed_avg': 4.74
+                                'wind_speed_avg': 4.74,
+                                'solar_radiation': None
                             }
                         },
                         {
@@ -339,7 +354,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                                 'precipitation_probability': 5,
                                 'humidity_maximum': 77.83,
                                 'humidity_minimum': 72.77,
-                                'wind_speed_avg': 3.17
+                                'wind_speed_avg': 3.17,
+                                'solar_radiation': None
                             }
                         }
                     ]

@@ -86,6 +86,7 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Short-term Forecast | Humidity Maximum | | % | humidity_maximum |
 | Short-term Forecast | Humidity Minimum | | % | humidity_minimum |
 | Short-term Forecast | Wind Speed Average | | m/s | wind_speed_avg |
+| Short-term Forecast | Solar radiation | | Wh/m2 | solar_radiation |
 | **Historical Reanalysis** |
 | Historical Reanalysis | Min Total Temperature | Minimum temperature (0000:2300) | °C | min_temperature |
 | Historical Reanalysis | Min Day Temperature | Minimum day-time temperature (0600:1800) | °C | min_day_temperature |
