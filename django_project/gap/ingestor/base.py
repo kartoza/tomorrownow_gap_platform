@@ -80,6 +80,8 @@ class BaseZarrIngestor(BaseIngestor):
         or create new one
     datasourcefile_name: set the zarr name if creating new zarr
     remove_temp_file: remove temporary from the collector
+    use_latest_datasource: Default to True,
+        always use the latest DataSourceFile
     """
 
     default_zarr_name = f'{uuid.uuid4()}.zarr'
