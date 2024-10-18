@@ -14,8 +14,9 @@ from django.test import TestCase
 from core.settings.utils import absolute_path
 from gap.ingestor.exceptions import EnvIsNotSetException
 from gap.ingestor.wind_borne_systems import (
-    WindBorneSystemsAPI, USERNAME_ENV_NAME, PASSWORD_ENV_NAME, PROVIDER,
-    STATION_TYPE
+    WindBorneSystemsAPI,
+    USERNAME_ENV_NAME, PASSWORD_ENV_NAME,
+    PROVIDER, STATION_TYPE
 )
 from gap.models import (
     Provider, StationType, Country, Station, IngestorSession,

@@ -19,9 +19,11 @@ from gap.factories import (
     MeasurementFactory
 )
 from gap.models import DatasetAttribute, Dataset
-from gap.utils.reader import DatasetReaderValue, DatasetTimelineValue, \
-    DatasetReaderInput, DatasetReaderOutputType, BaseDatasetReader, \
+from gap.utils.reader import (
+    DatasetReaderValue, DatasetTimelineValue,
+    DatasetReaderInput, DatasetReaderOutputType, BaseDatasetReader,
     LocationInputType
+)
 from gap_api.api_views.measurement import MeasurementAPI
 
 
