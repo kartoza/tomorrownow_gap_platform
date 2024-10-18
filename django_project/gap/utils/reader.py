@@ -181,7 +181,8 @@ class DatasetTimelineValue:
 
     def __init__(
             self, datetime: Union[np.datetime64, datetime],
-            values: dict, location: Point) -> None:
+            values: dict, location: Point, altitude: int = None
+    ) -> None:
         """Initialize DatasetTimelineValue object.
 
         :param datetime: datetime of data
@@ -192,6 +193,7 @@ class DatasetTimelineValue:
         self.datetime = datetime
         self.values = values
         self.location = location
+        self.altitude = altitude
 
     def _datetime_as_str(self):
         """Convert datetime object to string."""
@@ -307,10 +309,19 @@ class DatasetReaderValue:
         ):
             return {}
 
-        return {
+        altitude = None
+        try:
+            altitude = self.values[0].altitude
+        except IndexError:
+            pass
+
+        output = {
             'geometry': json.loads(self.location_input.geometry.json),
-            'data': [result.to_dict() for result in self.values]
         }
+        if altitude is not None:
+            output['altitude'] = altitude
+        output['data'] = [result.to_dict() for result in self.values]
+        return output
 
     def _xr_dataset_to_dict(self) -> dict:
         """Convert xArray Dataset to dictionary.

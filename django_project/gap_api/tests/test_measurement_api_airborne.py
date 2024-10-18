@@ -146,6 +146,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         results = response.data['results']
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['geometry']['coordinates'], [0.0, 0.0])
+        self.assertEqual(results[0]['altitude'], 1)
         self.assertEqual(len(results[0]['data']), 1)
         self.assertEqual(
             results[0]['data'][0]['datetime'], '2000-01-01T00:00:00+00:00'
@@ -168,6 +169,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         results = response.data['results']
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['geometry']['coordinates'], [10.0, 10.0])
+        self.assertEqual(results[0]['altitude'], 2)
         self.assertEqual(len(results[0]['data']), 1)
         self.assertEqual(
             results[0]['data'][0]['datetime'], '2000-02-01T00:00:00+00:00'
@@ -177,7 +179,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             {'atmospheric_pressure': 200.0, 'temperature': 2.0}
         )
 
-    def test_read_multiple_point(self):
+    def test_read_with_bbox(self):
         """Test read point."""
         view = MeasurementAPI.as_view()
         request = self._get_measurement_request_bbox(
@@ -198,16 +200,17 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers = next(csv_reader, None)
         self.assertEqual(
             headers,
-            ['date', 'lat', 'lon', 'atmospheric_pressure', 'temperature']
+            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+             'temperature']
         )
         rows = []
         for row in csv_reader:
             rows.append(row)
         self.assertEqual(
-            rows[0], ['2000-02-01', '10.0', '10.0', '200.0', '2.0']
+            rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
         )
         self.assertEqual(
-            rows[1], ['2000-03-01', '100.0', '100.0', '300.0', '3.0']
+            rows[1], ['2000-03-01', '100.0', '100.0', '3.0', '300.0', '3.0']
         )
 
         # Second request
@@ -230,11 +233,11 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers = next(csv_reader, None)
         self.assertEqual(
             headers,
-            ['date', 'lat', 'lon', 'atmospheric_pressure', 'temperature']
+            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure', 'temperature']
         )
         rows = []
         for row in csv_reader:
             rows.append(row)
         self.assertEqual(
-            rows[0], ['2000-02-01', '10.0', '10.0', '200.0', '2.0']
+            rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
         )

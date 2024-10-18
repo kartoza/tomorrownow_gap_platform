@@ -71,7 +71,8 @@ class ObservationReaderValue(DatasetReaderValue):
         headers = [
             'date',
             'lat',
-            'lon'
+            'lon',
+            'altitude'
         ]
         for attr in self.attributes:
             headers.append(attr.attribute.variable_name)
@@ -81,7 +82,8 @@ class ObservationReaderValue(DatasetReaderValue):
             data = [
                 val.get_datetime_repr('%Y-%m-%d'),
                 str(val.location.y),
-                str(val.location.x)
+                str(val.location.x),
+                str(val.altitude) if val.altitude else '',
             ]
             for attr in self.attributes:
                 var_name = attr.attribute.variable_name
@@ -217,32 +219,45 @@ class ObservationDatasetReader(BaseDatasetReader):
 
         iter_dt = None
         iter_loc = None
+        iter_alt = None
         # group by location and date_time
         dt_loc_val = {}
         for measurement in measurements:
             # if it has history, use history location
-            if measurement.station_history:
-                measurement_loc = measurement.station_history.geometry
+            station_history = measurement.station_history
+            if station_history:
+                measurement_loc = station_history.geometry
+                measurement_alt = station_history.altitude
             else:
                 measurement_loc = measurement.station.geometry
+                measurement_alt = measurement.station.altitude
 
             if iter_dt is None:
                 iter_dt = measurement.date_time
                 iter_loc = measurement_loc
+                iter_alt = measurement_alt
             elif (
                 iter_loc != measurement_loc or
-                iter_dt != measurement.date_time
+                iter_dt != measurement.date_time or
+                iter_alt != measurement_alt
             ):
                 self.results.append(
-                    DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
+                    DatasetTimelineValue(
+                        iter_dt, dt_loc_val, iter_loc, iter_alt
+                    )
+                )
                 iter_dt = measurement.date_time
                 iter_loc = measurement_loc
+                iter_alt = measurement_alt
                 dt_loc_val = {}
             dt_loc_val[
                 measurement.dataset_attribute.attribute.variable_name
             ] = measurement.value
         self.results.append(
-            DatasetTimelineValue(iter_dt, dt_loc_val, iter_loc))
+            DatasetTimelineValue(
+                iter_dt, dt_loc_val, iter_loc, iter_alt
+             )
+        )
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
