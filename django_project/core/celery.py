@@ -74,8 +74,8 @@ app.conf.beat_schedule = {
     },
     'store-api-logs': {
         'task': 'store_api_logs',
-        # Run every 2minutes
-        'schedule': crontab(minute='*/2'),
+        # Run every 5minutes
+        'schedule': crontab(minute='*/5'),
     }
 }
 
