@@ -18,6 +18,7 @@ from django.contrib.gis.geos import (
     Polygon
 )
 from django.db.models.functions import Lower
+from django.db.utils import ProgrammingError
 from django.http import StreamingHttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -44,22 +45,28 @@ from gap_api.utils.helper import ApiTag
 
 def attribute_list():
     """Attribute list."""
-    return list(
-        Attribute.objects.all().values_list(
-            'variable_name', flat=True
-        ).order_by('variable_name')
-    )
+    try:
+        return list(
+            Attribute.objects.all().values_list(
+                'variable_name', flat=True
+            ).order_by('variable_name')
+        )
+    except ProgrammingError:
+        pass
 
 
 def default_attribute_list():
     """Attribute list."""
-    first = Attribute.objects.all().order_by('variable_name').first()
-    if first:
-        return Attribute.objects.all().order_by(
-            'variable_name'
-        ).first().variable_name
-    else:
-        return ''
+    try:
+        first = Attribute.objects.all().order_by('variable_name').first()
+        if first:
+            return Attribute.objects.all().order_by(
+                'variable_name'
+            ).first().variable_name
+        else:
+            return ''
+    except ProgrammingError:
+        pass
 
 
 class MeasurementAPI(APIView):
@@ -391,7 +398,7 @@ class MeasurementAPI(APIView):
             product_name=Lower('dataset__type__variable_name')
         ).filter(
             product_name__in=product_filter
-        )
+        ).order_by('dataset__type__variable_name')
 
         # validate empty dataset_attributes
         self.validate_dataset_attributes(dataset_attributes, output_format)
@@ -407,7 +414,8 @@ class MeasurementAPI(APIView):
                         da.dataset, [da], location, start_dt, end_dt,
                         altitudes=(min_altitudes, max_altitudes),
                     )
-                except TypeError:
+                except TypeError as e:
+                    print(e)
                     pass
 
         response = None

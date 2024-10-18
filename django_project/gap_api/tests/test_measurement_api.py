@@ -30,10 +30,13 @@ from gap_api.api_views.measurement import MeasurementAPI
 class MockDatasetReader(BaseDatasetReader):
     """Class to mock a dataset reader."""
 
-    def __init__(self, dataset, attributes: List[DatasetAttribute],
-                 location_input: DatasetReaderInput, start_date: datetime,
-                 end_date: datetime,
-                 output_type=DatasetReaderOutputType.JSON) -> None:
+    def __init__(
+            self, dataset, attributes: List[DatasetAttribute],
+            location_input: DatasetReaderInput, start_date: datetime,
+            end_date: datetime,
+            output_type=DatasetReaderOutputType.JSON,
+            altitudes: (float, float) = None
+    ) -> None:
         """Initialize MockDatasetReader class."""
         super().__init__(
             dataset, attributes, location_input,

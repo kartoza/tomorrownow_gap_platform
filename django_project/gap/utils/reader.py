@@ -427,6 +427,8 @@ class BaseDatasetReader:
         :type end_date: datetime
         :param output_type: Output type
         :type output_type: str
+        :param altitudes: Altitudes for the reader
+        :type altitudes: (float, float)
         """
         self.dataset = dataset
         self.attributes = attributes

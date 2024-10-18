@@ -179,6 +179,26 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             {'atmospheric_pressure': 200.0, 'temperature': 2.0}
         )
 
+    def read_csv(self, response):
+        """Read csv file."""
+        response_text = ''.join(
+            chunk.decode('utf-8') for chunk in response.streaming_content
+        )
+        csv_file = io.StringIO(response_text)
+        csv_reader = csv.reader(csv_file)
+        headers = next(csv_reader, None)
+        ordered_headers = [
+            'date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+            'temperature'
+        ]
+        rows = []
+        for row in csv_reader:
+            row_data = list(range(len(headers)))
+            for idx, header in enumerate(headers):
+                row_data[ordered_headers.index(header)] = row[idx]
+            rows.append(row_data)
+        return ordered_headers, rows
+
     def test_read_with_bbox(self):
         """Test read point."""
         view = MeasurementAPI.as_view()
@@ -192,20 +212,12 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         response = view(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'text/csv')
-        response_text = ''.join(
-            chunk.decode('utf-8') for chunk in response.streaming_content
-        )
-        csv_file = io.StringIO(response_text)
-        csv_reader = csv.reader(csv_file)
-        headers = next(csv_reader, None)
+        headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
             ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
              'temperature']
         )
-        rows = []
-        for row in csv_reader:
-            rows.append(row)
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
@@ -225,20 +237,17 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         response = view(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'text/csv')
-        response_text = ''.join(
-            chunk.decode('utf-8') for chunk in response.streaming_content
-        )
-        csv_file = io.StringIO(response_text)
-        csv_reader = csv.reader(csv_file)
-        headers = next(csv_reader, None)
+        headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
             ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
              'temperature']
         )
-        rows = []
-        for row in csv_reader:
-            rows.append(row)
+        self.assertEqual(
+            headers,
+            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+             'temperature']
+        )
         self.assertEqual(len(rows), 1)
         self.assertEqual(
             rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
@@ -256,20 +265,12 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         response = view(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'text/csv')
-        response_text = ''.join(
-            chunk.decode('utf-8') for chunk in response.streaming_content
-        )
-        csv_file = io.StringIO(response_text)
-        csv_reader = csv.reader(csv_file)
-        headers = next(csv_reader, None)
+        headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
             ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
              'temperature']
         )
-        rows = []
-        for row in csv_reader:
-            rows.append(row)
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
