@@ -23,7 +23,7 @@ from gap.models import (
 
 PROVIDER = 'WindBorne Systems'
 STATION_TYPE = 'Balloon'
-DATASET_TYPE = 'Airborne Observational'
+DATASET_TYPE = 'WindBorne Observational'
 DATASET_NAME = 'WindBorne Balloons Observations'
 USERNAME_ENV_NAME = 'WIND_BORNE_SYSTEMS_USERNAME'
 PASSWORD_ENV_NAME = 'WIND_BORNE_SYSTEMS_PASSWORD'
@@ -171,7 +171,7 @@ class WindBorneSystemsIngestor(BaseIngestor):
                                 'altitude': observation['altitude'],
                             }
                         )
-                        StationHistory.objects.update_or_create(
+                        history, _ = StationHistory.objects.update_or_create(
                             station=station,
                             date_time=date_time,
                             defaults={
@@ -190,7 +190,8 @@ class WindBorneSystemsIngestor(BaseIngestor):
                                         dataset_attribute=attribute,
                                         date_time=date_time,
                                         defaults={
-                                            'value': observation[variable]
+                                            'value': observation[variable],
+                                            'station_history': history
                                         }
                                     )
                             except KeyError:

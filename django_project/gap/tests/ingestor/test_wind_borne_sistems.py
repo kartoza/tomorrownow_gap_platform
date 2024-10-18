@@ -267,18 +267,18 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         self.assertEqual(
             list(
                 station.measurement_set.filter(
-                    dataset_attribute__source='pressure'
-                ).values_list('value', flat=True)
-            ),
-            [200, 300, 400]
-        )
-        self.assertEqual(
-            list(
-                station.measurement_set.filter(
                     dataset_attribute__source='humidity'
                 ).values_list('value', flat=True)
             ),
             [1, 2, 3]
+        )
+        self.assertEqual(
+            list(
+                station.measurement_set.filter(
+                    dataset_attribute__source='pressure'
+                ).values_list('value', flat=True)
+            ),
+            [200, 300, 400]
         )
         self.assertEqual(
             list(
@@ -304,4 +304,29 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
                 )
             ),
             [500, 600, 700]
+        )
+        histories = station.stationhistory_set.all()
+        self.assertEqual(
+            list(
+                histories[0].measurement_set.order_by(
+                    'dataset_attribute__source'
+                ).values_list('value', flat=True)
+            ),
+            [1, 200, 10, 10]
+        )
+        self.assertEqual(
+            list(
+                histories[1].measurement_set.order_by(
+                    'dataset_attribute__source'
+                ).values_list('value', flat=True)
+            ),
+            [2, 300, 20, 20]
+        )
+        self.assertEqual(
+            list(
+                histories[2].measurement_set.order_by(
+                    'dataset_attribute__source'
+                ).values_list('value', flat=True)
+            ),
+            [3, 400, 30, 30]
         )

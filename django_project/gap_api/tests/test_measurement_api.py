@@ -94,6 +94,41 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         request.resolver_match = FakeResolverMatchV1
         return request
 
+    def _get_measurement_request_bbox(
+            self, bbox='0,0,10,10', attributes='max_temperature',
+            start_dt='2024-04-01', end_dt='2024-04-04', product=None,
+            output_type='json'):
+        """Get request for Measurement API.
+
+        :param bbox: Bounding box: xmin, ymin, xmax, ymax,
+            defaults to '0,0,10,10'
+        :type bbox: str, optional
+        :param attributes: comma separated list of attribute,
+            defaults to 'max_temperature'
+        :type attributes: str, optional
+        :param start_dt: start date range, defaults to '2024-04-01'
+        :type start_dt: str, optional
+        :param end_dt: end date range, defaults to '2024-04-04'
+        :type end_dt: str, optional
+        :param product: product type, defaults to None
+        :type product: str, optional
+        :return: Request object
+        :rtype: WSGIRequest
+        """
+        request_params = (
+            f'?bbox={bbox}&attributes={attributes}'
+            f'&start_date={start_dt}&end_date={end_dt}'
+            f'&output_type={output_type}'
+        )
+        if product:
+            request_params = request_params + f'&product={product}'
+        request = self.factory.get(
+            reverse('api:v1:get-measurement') + request_params
+        )
+        request.user = self.superuser
+        request.resolver_match = FakeResolverMatchV1
+        return request
+
 
     def _post_measurement_request(
             self, lat=-2.215, lon=29.125, attributes='max_temperature',

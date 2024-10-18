@@ -5,18 +5,11 @@ Tomorrow Now GAP.
 .. note:: Measurement APIs
 """
 
-from typing import Dict
-import pytz
 import json
 from datetime import date, datetime, time
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
-from django.http import StreamingHttpResponse
-from django.db.models.functions import Lower
+from typing import Dict
+
+import pytz
 from django.contrib.gis.geos import (
     GEOSGeometry,
     Point,
@@ -24,11 +17,20 @@ from django.contrib.gis.geos import (
     MultiPolygon,
     Polygon
 )
+from django.db.models.functions import Lower
+from django.http import StreamingHttpResponse
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from gap.models import (
     Attribute,
     DatasetAttribute
 )
+from gap.providers import get_reader_from_dataset
 from gap.utils.reader import (
     LocationInputType,
     DatasetReaderInput,
@@ -38,7 +40,26 @@ from gap.utils.reader import (
 )
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
-from gap.providers import get_reader_from_dataset
+
+
+def attribute_list():
+    """Attribute list."""
+    return list(
+        Attribute.objects.all().values_list(
+            'variable_name', flat=True
+        ).order_by('variable_name')
+    )
+
+
+def default_attribute_list():
+    """Attribute list."""
+    first = Attribute.objects.all().order_by('variable_name').first()
+    if first:
+        return Attribute.objects.all().order_by(
+            'variable_name'
+        ).first().variable_name
+    else:
+        return ''
 
 
 class MeasurementAPI(APIView):
@@ -48,8 +69,16 @@ class MeasurementAPI(APIView):
     permission_classes = [IsAuthenticated]
     api_parameters = [
         openapi.Parameter(
-            'attributes', openapi.IN_QUERY,
-            description='List of attribute name', type=openapi.TYPE_STRING
+            'attributes',
+            openapi.IN_QUERY,
+            required=True,
+            description='List of attribute name',
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Items(
+                type=openapi.TYPE_STRING,
+                enum=attribute_list(),
+                default=default_attribute_list()
+            )
         ),
         openapi.Parameter(
             'start_date', openapi.IN_QUERY,
@@ -69,7 +98,8 @@ class MeasurementAPI(APIView):
                 'historical_reanalysis',
                 'shortterm_forecast',
                 'seasonal_forecast',
-                'observations'
+                'observations',
+                'windborne_observational'
             ],
             default='historical_reanalysis'
         ),
@@ -314,9 +344,11 @@ class MeasurementAPI(APIView):
             time.max, tzinfo=pytz.UTC
         )
         output_format = self._get_format_filter()
-        data = {}
         if location is None:
-            return data
+            return Response(
+                status=200,
+                data={}
+            )
 
         # validate if json is only available for single location filter
         self.validate_output_format(location, output_format)
@@ -385,8 +417,8 @@ class MeasurementAPI(APIView):
     @swagger_auto_schema(
         operation_id='get-measurement',
         operation_description=(
-            "Fetch weather data using either a single point or bounding box "
-            "and attribute filters."
+                "Fetch weather data using either a single point or bounding box "
+                "and attribute filters."
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
@@ -410,7 +442,7 @@ class MeasurementAPI(APIView):
         responses={
             200: openapi.Schema(
                 description=(
-                    'Weather data'
+                        'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
@@ -425,8 +457,8 @@ class MeasurementAPI(APIView):
     @swagger_auto_schema(
         operation_id='get-measurement-by-geom',
         operation_description=(
-            "Fetch weather data using either a polygon or list of point "
-            "and attribute filters."
+                "Fetch weather data using either a polygon or list of point "
+                "and attribute filters."
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
@@ -434,14 +466,14 @@ class MeasurementAPI(APIView):
         ],
         request_body=openapi.Schema(
             description=(
-                'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
+                    'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
             ),
             type=openapi.TYPE_STRING
         ),
         responses={
             200: openapi.Schema(
                 description=(
-                    'Weather data'
+                        'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
