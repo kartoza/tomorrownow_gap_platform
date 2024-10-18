@@ -41,6 +41,13 @@ def store_api_logs():
                 entry['user'] = UserModel._default_manager.filter(
                     id=user_id).first()
 
+            # parse attributes in query_params
+            if entry.get('query_params', None):
+                attributes = entry['query_params'].get('attributes', '')
+                entry['query_params']['attributes'] = (
+                    attributes.replace(' ', '').split(',')
+                )
+
             logs.append(APIRequestLog(**entry))
 
     # write logs to the database
