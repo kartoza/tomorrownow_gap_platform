@@ -24,7 +24,10 @@ class GAPAPILoggingMixin(BaseLoggingMixin):
         if self.log.get('user', None):
             # replace with user id
             self.log['user'] = self.log['user'].id
-        cache._cache.get_client().rpush(
-            self.CACHE_KEY,
-            json.dumps(self.log, cls=DjangoJSONEncoder)
-        )
+        try:
+            cache._cache.get_client().rpush(
+                self.CACHE_KEY,
+                json.dumps(self.log, cls=DjangoJSONEncoder)
+            )
+        except Exception:  # noqa
+            pass

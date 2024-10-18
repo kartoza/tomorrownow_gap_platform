@@ -142,7 +142,11 @@ CACHES = {
         'LOCATION': (
             f'redis://default:{os.environ.get("REDIS_PASSWORD", "")}'
             f'@{os.environ.get("REDIS_HOST", "")}',
-        )
+        ),
+        'OPTIONS': {
+            'SOCKET_TIMEOUT': 2,
+            'SOCKET_CONNECT_TIMEOUT': 2
+        }
     }
 }
 
