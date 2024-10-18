@@ -199,7 +199,6 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
             ingestor_type=self.ingestor_type
         )
         session.refresh_from_db()
-        print(session.notes)
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(Station.objects.count(), 2)
         first_station = Station.objects.first()

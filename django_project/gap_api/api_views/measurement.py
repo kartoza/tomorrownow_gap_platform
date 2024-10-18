@@ -417,8 +417,8 @@ class MeasurementAPI(APIView):
     @swagger_auto_schema(
         operation_id='get-measurement',
         operation_description=(
-                "Fetch weather data using either a single point or bounding box "
-                "and attribute filters."
+            "Fetch weather data using either a single point or bounding box "
+            "and attribute filters."
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
@@ -442,7 +442,7 @@ class MeasurementAPI(APIView):
         responses={
             200: openapi.Schema(
                 description=(
-                        'Weather data'
+                    'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
@@ -457,8 +457,8 @@ class MeasurementAPI(APIView):
     @swagger_auto_schema(
         operation_id='get-measurement-by-geom',
         operation_description=(
-                "Fetch weather data using either a polygon or list of point "
-                "and attribute filters."
+            "Fetch weather data using either a polygon or list of point "
+            "and attribute filters."
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
@@ -466,14 +466,14 @@ class MeasurementAPI(APIView):
         ],
         request_body=openapi.Schema(
             description=(
-                    'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
+                'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
             ),
             type=openapi.TYPE_STRING
         ),
         responses={
             200: openapi.Schema(
                 description=(
-                        'Weather data'
+                    'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
