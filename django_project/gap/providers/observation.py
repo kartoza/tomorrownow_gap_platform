@@ -5,10 +5,11 @@ Tomorrow Now GAP.
 .. note:: Observation Data Reader
 """
 
-from typing import List
 from datetime import datetime
-from django.contrib.gis.geos import Polygon, Point
+from typing import List
+
 from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Polygon, Point
 from rest_framework.exceptions import ValidationError
 
 from gap.models import (
@@ -112,7 +113,10 @@ class ObservationDatasetReader(BaseDatasetReader):
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
-            end_date: datetime) -> None:
+            end_date: datetime,
+            altitudes: (float, float) = None
+
+    ) -> None:
         """Initialize ObservationDatasetReader class.
 
         :param dataset: Dataset from observation provider
@@ -127,8 +131,24 @@ class ObservationDatasetReader(BaseDatasetReader):
         :type end_date: datetime
         """
         super().__init__(
-            dataset, attributes, location_input, start_date, end_date)
+            dataset, attributes, location_input, start_date, end_date,
+            altitudes=altitudes
+        )
         self.results: List[DatasetTimelineValue] = []
+
+    def query_by_altitude(self, qs):
+        """Query by altitude."""
+        altitudes = self.altitudes
+        try:
+            if altitudes[0] is not None and altitudes[1] is not None:
+                qs = qs.filter(
+                    altitude__gte=altitudes[0]
+                ).filter(
+                    altitude__lte=altitudes[1]
+                )
+        except (IndexError, TypeError):
+            pass
+        return qs
 
     def _find_nearest_station_by_point(self, point: Point = None):
         p = point
@@ -237,9 +257,9 @@ class ObservationDatasetReader(BaseDatasetReader):
                 iter_loc = measurement_loc
                 iter_alt = measurement_alt
             elif (
-                iter_loc != measurement_loc or
-                iter_dt != measurement.date_time or
-                iter_alt != measurement_alt
+                    iter_loc != measurement_loc or
+                    iter_dt != measurement.date_time or
+                    iter_alt != measurement_alt
             ):
                 self.results.append(
                     DatasetTimelineValue(
@@ -256,7 +276,7 @@ class ObservationDatasetReader(BaseDatasetReader):
         self.results.append(
             DatasetTimelineValue(
                 iter_dt, dt_loc_val, iter_loc, iter_alt
-             )
+            )
         )
 
     def get_data_values(self) -> DatasetReaderValue:

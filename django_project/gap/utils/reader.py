@@ -6,15 +6,16 @@ Tomorrow Now GAP.
 """
 
 import json
-from typing import Union, List
-import numpy as np
-from datetime import datetime
-import pytz
 import tempfile
-from xarray.core.dataset import Dataset as xrDataset
+from datetime import datetime
+from typing import Union, List
+
+import numpy as np
+import pytz
 from django.contrib.gis.geos import (
     Point, Polygon, MultiPolygon, GeometryCollection, MultiPoint, GEOSGeometry
 )
+from xarray.core.dataset import Dataset as xrDataset
 
 from gap.models import (
     CastType,
@@ -215,8 +216,8 @@ class DatasetTimelineValue:
         dt = self.datetime
         if isinstance(self.datetime, np.datetime64):
             timestamp = (
-                (dt - np.datetime64('1970-01-01T00:00:00')) /
-                np.timedelta64(1, 's')
+                    (dt - np.datetime64('1970-01-01T00:00:00')) /
+                    np.timedelta64(1, 's')
             )
             dt = datetime.fromtimestamp(timestamp, tz=pytz.UTC)
         return dt.strftime(format)
@@ -409,7 +410,9 @@ class BaseDatasetReader:
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput,
             start_date: datetime, end_date: datetime,
-            output_type=DatasetReaderOutputType.JSON) -> None:
+            output_type=DatasetReaderOutputType.JSON,
+            altitudes: (float, float) = None
+    ) -> None:
         """Initialize BaseDatasetReader class.
 
         :param dataset: Dataset for reading
@@ -431,6 +434,7 @@ class BaseDatasetReader:
         self.start_date = start_date
         self.end_date = end_date
         self.output_type = output_type
+        self.altitudes = altitudes
 
     def add_attribute(self, attribute: DatasetAttribute):
         """Add a new attribuute to be read.

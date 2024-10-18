@@ -181,6 +181,32 @@ class MeasurementAPI(APIView):
             return DatasetReaderInput.from_bbox(number_list)
         return None
 
+    def _get_altitudes_filter(self):
+        """Get list of altitudes in the query parameter.
+
+        :return: altitudes list
+        :rtype: (int, int)
+        """
+        altitudes_str = self.request.GET.get('altitudes', None)
+        if altitudes_str is None:
+            return None, None
+        try:
+            altitudes = [
+                float(altitude) for altitude in altitudes_str.split(',')
+            ]
+        except ValueError:
+            raise ValidationError('altitudes not a float')
+        if len(altitudes) != 2:
+            raise ValidationError(
+                'altitudes needs to be a comma-separated list, '
+                'contains 2 number'
+            )
+        if altitudes[0] > altitudes[1]:
+            raise ValidationError(
+                'First altitude needs to be greater than second altitude'
+            )
+        return altitudes[0], altitudes[1]
+
     def _get_product_filter(self):
         """Get product name filter in the request parameters.
 
@@ -335,6 +361,7 @@ class MeasurementAPI(APIView):
         """
         attributes = self._get_attribute_filter()
         location = self._get_location_filter()
+        min_altitudes, max_altitudes = self._get_altitudes_filter()
         start_dt = datetime.combine(
             self._get_date_filter('start_date'),
             time.min, tzinfo=pytz.UTC
@@ -377,9 +404,10 @@ class MeasurementAPI(APIView):
                 try:
                     reader = get_reader_from_dataset(da.dataset)
                     dataset_dict[da.dataset.id] = reader(
-                        da.dataset, [da], location, start_dt, end_dt
+                        da.dataset, [da], location, start_dt, end_dt,
+                        altitudes=(min_altitudes, max_altitudes),
                     )
-                except TypeError:
+                except TypeError as e:
                     pass
 
         response = None
@@ -417,8 +445,8 @@ class MeasurementAPI(APIView):
     @swagger_auto_schema(
         operation_id='get-measurement',
         operation_description=(
-            "Fetch weather data using either a single point or bounding box "
-            "and attribute filters."
+                "Fetch weather data using either a single point or bounding box "
+                "and attribute filters."
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
@@ -437,12 +465,17 @@ class MeasurementAPI(APIView):
                 'bbox', openapi.IN_QUERY,
                 description='Bounding box: xmin, ymin, xmax, ymax',
                 type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                'altitudes', openapi.IN_QUERY,
+                description='2 value of altitudes: alt_min, alt_max',
+                type=openapi.TYPE_STRING
             )
         ],
         responses={
             200: openapi.Schema(
                 description=(
-                    'Weather data'
+                        'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}
@@ -457,8 +490,8 @@ class MeasurementAPI(APIView):
     @swagger_auto_schema(
         operation_id='get-measurement-by-geom',
         operation_description=(
-            "Fetch weather data using either a polygon or list of point "
-            "and attribute filters."
+                "Fetch weather data using either a polygon or list of point "
+                "and attribute filters."
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
@@ -466,14 +499,14 @@ class MeasurementAPI(APIView):
         ],
         request_body=openapi.Schema(
             description=(
-                'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
+                    'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
             ),
             type=openapi.TYPE_STRING
         ),
         responses={
             200: openapi.Schema(
                 description=(
-                    'Weather data'
+                        'Weather data'
                 ),
                 type=openapi.TYPE_OBJECT,
                 properties={}

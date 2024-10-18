@@ -134,7 +134,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
     def test_read_point(self):
         """Test read point."""
         view = MeasurementAPI.as_view()
-        request = self._get_measurement_request(
+        request = self._get_measurement_request_point(
             lat=0, lon=0,
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
@@ -157,7 +157,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         )
 
         # Getting lat lon 10,10
-        request = self._get_measurement_request(
+        request = self._get_measurement_request_point(
             lat=10, lon=10,
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
@@ -206,6 +206,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         rows = []
         for row in csv_reader:
             rows.append(row)
+        self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
         )
@@ -214,7 +215,6 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         )
 
         # Second request
-
         request = self._get_measurement_request_bbox(
             bbox='5,5,20,20',
             start_dt='2000-01-01', end_dt='2000-03-01',
@@ -233,11 +233,47 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers = next(csv_reader, None)
         self.assertEqual(
             headers,
-            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure', 'temperature']
+            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+             'temperature']
         )
         rows = []
         for row in csv_reader:
             rows.append(row)
+        self.assertEqual(len(rows), 1)
         self.assertEqual(
             rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
+        )
+
+        # Return data with altitude between 1.5-5, should return history 2 & 3
+        request = self._get_measurement_request_bbox(
+            bbox='0,0,100,100',
+            altitudes='1.5,5',
+            start_dt='2000-01-01', end_dt='2000-03-01',
+            attributes=','.join(['atmospheric_pressure', 'temperature']),
+            product='windborne_observational',
+            output_type='csv',
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'text/csv')
+        response_text = ''.join(
+            chunk.decode('utf-8') for chunk in response.streaming_content
+        )
+        csv_file = io.StringIO(response_text)
+        csv_reader = csv.reader(csv_file)
+        headers = next(csv_reader, None)
+        self.assertEqual(
+            headers,
+            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+             'temperature']
+        )
+        rows = []
+        for row in csv_reader:
+            rows.append(row)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(
+            rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
+        )
+        self.assertEqual(
+            rows[1], ['2000-03-01', '100.0', '100.0', '3.0', '300.0', '3.0']
         )

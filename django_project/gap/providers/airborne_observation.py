@@ -26,7 +26,10 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
             distance=Distance('geometry', p)
         ).filter(
             station__provider=self.dataset.provider
-        ).order_by('distance').first()
+        )
+
+        qs = self.query_by_altitude(qs)
+        qs = qs.order_by('distance').first()
         if qs is None:
             return None
         return [qs]
@@ -40,7 +43,10 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
             geometry__intersects=polygon
         ).filter(
             station__provider=self.dataset.provider
-        ).order_by('id')
+        )
+
+        qs = self.query_by_altitude(qs)
+        qs = qs.order_by('id')
         if not qs.exists():
             return None
         return qs
@@ -50,7 +56,10 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
             geometry__within=self.location_input.polygon
         ).filter(
             station__provider=self.dataset.provider
-        ).order_by('id')
+        )
+
+        qs = self.query_by_altitude(qs)
+        qs = qs.order_by('id')
         if not qs.exists():
             return None
         return qs
