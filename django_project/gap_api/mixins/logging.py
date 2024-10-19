@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP API.
 
-.. note:: Mixins for API Tracking
+.. note:: Mixin for API Tracking
 """
 
 import json

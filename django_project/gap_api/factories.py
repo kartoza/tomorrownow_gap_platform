@@ -18,7 +18,7 @@ class APIRequestLogFactory(DjangoModelFactory):
         model = APIRequestLog
 
     user = factory.SubFactory(UserF)
-    username_persistent = factory.Faker('person')
+    username_persistent = factory.Faker('name')
     path = '/api/v1/measurement'
     host = 'http://localhost'
     method = 'GET'
