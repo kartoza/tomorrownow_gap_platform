@@ -1,0 +1,129 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+<!-- Override extrahead to add Chart.js -->
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" />
+<style>
+    /* Flexbox container to align the charts side by side */
+    .chart-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    /* Give more width to the bar chart */
+    .bar-chart-container {
+        width: 65%;
+    }
+
+    .pie-chart-container {
+        width: 30%;
+    }
+
+    /* Canvas styling for responsive charts */
+    canvas {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('myBarChart').getContext('2d');
+
+        // parse chart data
+        var chartData = JSON.parse(document.getElementById('chartData').textContent);
+
+        // Parse the dates to JS
+        chartData.forEach((d) => {
+            d.x = new Date(d.date).toJSON().slice(0, 10);
+        });
+
+        // Render the chart
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                datasets: [{
+                    label: 'total requests',
+                    data: chartData,
+                    backgroundColor: '#5eb4ef',
+                }, ],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            round: 'day',
+                            displayFormats: {
+                                day: 'MMM D',
+                            },
+                        },
+                    }, ],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                        },
+                    }, ],
+                },
+            },
+        });
+
+        // Render pie chart
+        const productData = JSON.parse(document.getElementById('productChartData').textContent);
+        const pieLabels = productData.map(product => product.product);
+        const pieData = productData.map(product => product.count);
+
+        const pieCtx = document.getElementById('myPieChart').getContext('2d');
+        const myPieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData,
+                    backgroundColor: productData.map(product => product.color)
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                }
+            }
+        });
+
+    });
+</script>
+
+{{ chart_data|json_script:"chartData" }}
+{{ product_chart_data|json_script:"productChartData" }}
+
+{% endblock %}
+
+{% block content %}
+<!-- Render the chart -->
+<div class="chart-container">
+    <!-- Bar chart container (left, wider) -->
+    <div class="bar-chart-container">
+        <canvas id="myBarChart"></canvas>
+    </div>
+    <!-- Pie chart container (right, narrower) -->
+    <div class="pie-chart-container">
+        <canvas id="myPieChart"></canvas>
+    </div>
+</div>
+<!-- Render the rest of the ChangeList view -->
+{{ block.super }}
+{% endblock %}

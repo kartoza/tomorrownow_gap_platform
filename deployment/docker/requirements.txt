@@ -44,7 +44,7 @@ django-storages==1.14.2
 django-storages[s3]
 
 # Python client for Redis database and key-value store
-redis==4.3.4
+redis==5.1.1
 
 psycopg2-binary==2.9.9
 # drf yasg
@@ -69,3 +69,6 @@ numpy==1.26.4
 salientsdk==0.3.5
 
 python-geohash==0.8.5
+
+# api tracking
+drf-api-tracking==1.8.4

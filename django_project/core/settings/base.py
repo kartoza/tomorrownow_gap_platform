@@ -93,6 +93,7 @@ TEMPLATES = [
         'DIRS': [
             # Put Templates
             absolute_path('core', 'templates'),
+            absolute_path('gap_api', 'templates'),
         ],
         'OPTIONS': {
             'loaders': [
@@ -141,7 +142,11 @@ CACHES = {
         'LOCATION': (
             f'redis://default:{os.environ.get("REDIS_PASSWORD", "")}'
             f'@{os.environ.get("REDIS_HOST", "")}',
-        )
+        ),
+        'OPTIONS': {
+            'socket_timeout': 2,
+            'socket_connect_timeout': 2
+        }
     }
 }
 

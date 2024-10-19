@@ -41,6 +41,7 @@ from gap.utils.reader import (
 )
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
+from gap_api.mixins import GAPAPILoggingMixin
 
 
 def attribute_list():
@@ -69,7 +70,7 @@ def default_attribute_list():
         pass
 
 
-class MeasurementAPI(APIView):
+class MeasurementAPI(GAPAPILoggingMixin, APIView):
     """API class for measurement."""
 
     date_format = '%Y-%m-%d'
