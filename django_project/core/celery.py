@@ -159,7 +159,8 @@ def update_task_progress(
 
 
 EXCLUDED_TASK_LIST = [
-    'celery.backend_cleanup'
+    'celery.backend_cleanup',
+    'store_api_logs'
 ]
 
 
