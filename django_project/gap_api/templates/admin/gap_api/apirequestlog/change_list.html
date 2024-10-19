@@ -64,55 +64,6 @@
                 },
             },
         });
-
-        function onDateChange(newStart, newEnd) {
-            var formattedStart = newStart.format('YYYY-MM-D');
-            var formattedEnd = newEnd.format('YYYY-MM-D');
-            var url = "/admin/gap_api/apirequestlog/chart_data/?start_date=" + formattedStart + "&end_date=" + formattedEnd;
-            
-            var params = window.location.search;
-            if (params && params.startsWith('?')) {
-                url = url + '&' + params.substring(1)
-            }
-
-            const res = fetch(url)
-                .then(resp => resp.json())
-                .then(resp => {
-                    resp.forEach((d) => {
-                        d.x = new Date(d.date);
-                    });
-                
-                    chart.data.datasets[0].data = resp;
-                    chart.update();
-                })
-
-            formatDateRangeInput(newStart, newEnd)
-        }
-
-        function formatDateRangeInput(newStart, newEnd) {
-            document.querySelector('#daterangepicker span').innerHTML = newStart.format('MMMM D, YYYY') + ' - ' + newEnd.format('MMMM D, YYYY');
-        }
-
-        var start = chartData.length ? moment(chartData[chartData.length - 1].x) : moment();
-        var end = moment();
-
-
-        // Disable daterange picker because it doesn't refresh the table 
-        // $('#daterangepicker').daterangepicker({
-        //     startDate: start,
-        //     endDate: end,
-        //     ranges: {
-        //         'Today': [moment(), moment()],
-        //         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-        //         'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-        //         'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-        //         'This Month': [moment().startOf('month'), moment().endOf('month')],
-        //         'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-        //         'Lifetime': [chartData.length ? moment(chartData[chartData.length - 1].x) : moment(), moment()],
-        //     }
-        // }, onDateChange);
-
-        // formatDateRangeInput(start, end);
     });
 </script>
 
@@ -121,12 +72,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Render The Date Range Picker -->
-<!-- <div id="daterangepicker"
-    style="margin-bottom: 10px; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: -moz-fit-content; width: fit-content;">
-    <i class="fa fa-calendar"></i>&nbsp;
-    <span></span> <i class="fa fa-caret-down"></i>
-</div> -->
 <!-- Render the chart -->
 <div style="width: 80%;">
     <canvas style="margin-bottom: 30px; width: 60%; height: 50%;" id="chart"></canvas>
