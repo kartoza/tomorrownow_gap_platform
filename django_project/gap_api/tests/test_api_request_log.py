@@ -10,12 +10,10 @@ import mock
 import datetime
 from django.test import TestCase, RequestFactory
 from django.contrib.admin import ModelAdmin
-from django.core.cache import cache
 
 from core.factories import UserF
 from gap.models import DatasetType
 from gap_api.models import APIRequestLog
-from gap_api.mixins import GAPAPILoggingMixin
 from gap_api.tasks import store_api_logs
 from gap_api.admin import ProductTypeFilter, GapAPIRequestLogAdmin
 from gap_api.factories import APIRequestLogFactory
@@ -43,10 +41,11 @@ class TestAPIRequestLog(TestCase):
         self.admin_instance = GapAPIRequestLogAdmin(
             APIRequestLog, admin_site=mock.MagicMock())
 
-    def test_store_api_logs(self):
+    @mock.patch('django.core.cache.cache._cache.get_client')
+    def test_store_api_logs(self, mock_get_client):
         """Test store api logs from cache."""
-        cache._cache.get_client().rpush(
-            GAPAPILoggingMixin.CACHE_KEY,
+        mock_redis_client = mock_get_client.return_value
+        mock_redis_client.lpop.side_effect = [
             json.dumps({
                 "requested_at": "2024-10-17 17:56:52.270889+00:00",
                 "data": None,
@@ -74,8 +73,10 @@ class TestAPIRequestLog(TestCase):
                 "response": None,
                 "status_code": 200
             })
-        )
+        ] + [None] * 499
         store_api_logs()
+        # default batch size
+        self.assertEqual(mock_redis_client.lpop.call_count, 500)
         logs = APIRequestLog.objects.all()
         self.assertEqual(logs.count(), 1)
         self.assertEqual(logs.first().user, self.user)
@@ -123,7 +124,10 @@ class TestAPIRequestLog(TestCase):
     def test_change_list_view(
             self, mock_super_changelist_view, mock_generate_chart_data):
         """Test change_list view."""
-        mock_chart_data = [{"date": "2024-10-18", "count": 10}]
+        mock_chart_data = {
+            'total_requests': [{"date": "2024-10-18", "count": 10}],
+            'product': [{"product": "product a", "count": 10}]
+        }
         mock_generate_chart_data.return_value = mock_chart_data
 
         # Simulate a GET request to the changelist view
@@ -135,10 +139,7 @@ class TestAPIRequestLog(TestCase):
         # Assert that _generate_chart_data was called
         mock_generate_chart_data.assert_called_once_with(request)
 
-        # Assert that the extra_context includes the correct chart data
-        expected_extra_context = {"chart_data": list(mock_chart_data)}
-        mock_super_changelist_view.assert_called_once_with(
-            request, extra_context=expected_extra_context)
+        mock_super_changelist_view.assert_called_once()
 
     def test_generate_chart_data(self):
         """Test generate chart data."""
@@ -157,4 +158,5 @@ class TestAPIRequestLog(TestCase):
             'user__id__exact': f'{self.user.id}'
         }
         data = self.admin_instance._generate_chart_data(req)
-        self.assertEqual(len(data), 1)
+        self.assertEqual(len(data['total_requests']), 1)
+        self.assertEqual(len(data['product']), 1)

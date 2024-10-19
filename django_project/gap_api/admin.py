@@ -5,9 +5,11 @@ Tomorrow Now GAP API.
 .. note:: Admin for API Tracking
 """
 
+import random
 from django.contrib import admin
-from django.db.models import Count
-from django.db.models.functions import TruncDay
+from django.db.models import Count, TextField
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import TruncDay, Cast
 from rest_framework_tracking.admin import APIRequestLogAdmin
 from rest_framework_tracking.models import APIRequestLog as BaseAPIRequestLog
 
@@ -16,6 +18,11 @@ from gap_api.models import APIRequestLog
 
 
 admin.site.unregister(BaseAPIRequestLog)
+
+
+def generate_random_color():
+    """Generate random color for product type."""
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
 class ProductTypeFilter(admin.SimpleListFilter):
@@ -81,7 +88,16 @@ class GapAPIRequestLogAdmin(APIRequestLogAdmin):
         # Aggregate api logs per day
         chart_data = self._generate_chart_data(request)
 
-        extra_context = extra_context or {"chart_data": list(chart_data)}
+        # generate color for products
+        product_counts = []
+        for product in chart_data['product']:
+            product['color'] = generate_random_color()
+            product_counts.append(product)
+
+        extra_context = extra_context or {
+            "chart_data": list(chart_data['total_requests']),
+            "product_chart_data": product_counts
+        }
 
         # Call the superclass changelist_view to render the page
         return super().changelist_view(request, extra_context=extra_context)
@@ -127,15 +143,30 @@ class GapAPIRequestLogAdmin(APIRequestLogAdmin):
             filters['user__id'] = user_id
 
         filters.update(other_filters)
-        return (
-            APIRequestLog.objects.filter(
-                **filters
+        return {
+            'total_requests': (
+                APIRequestLog.objects.filter(
+                    **filters
+                )
+                .annotate(date=TruncDay("requested_at"))
+                .values("date")
+                .annotate(y=Count("id"))
+                .order_by("-date")
+            ),
+            'product': (
+                APIRequestLog.objects.filter(
+                    **filters
+                ).annotate(
+                    product=Cast(
+                        KeyTextTransform('product', 'query_params'),
+                        TextField()
+                    )
+                )
+                .values('product')
+                .annotate(count=Count("id"))
+                .order_by('product')
             )
-            .annotate(date=TruncDay("requested_at"))
-            .values("date")
-            .annotate(y=Count("id"))
-            .order_by("-date")
-        )
+        }
 
 
 admin.site.register(APIRequestLog, GapAPIRequestLogAdmin)
