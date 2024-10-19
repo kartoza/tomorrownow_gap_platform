@@ -44,7 +44,7 @@ django-storages==1.14.2
 django-storages[s3]
 
 # Python client for Redis database and key-value store
-redis==4.3.4
+redis==5.1.1
 
 psycopg2-binary==2.9.9
 # drf yasg
