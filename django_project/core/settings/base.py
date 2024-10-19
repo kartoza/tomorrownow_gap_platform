@@ -144,8 +144,8 @@ CACHES = {
             f'@{os.environ.get("REDIS_HOST", "")}',
         ),
         'OPTIONS': {
-            'SOCKET_TIMEOUT': 2,
-            'SOCKET_CONNECT_TIMEOUT': 2
+            'socket_timeout': 2,
+            'socket_connect_timeout': 2
         }
     }
 }
