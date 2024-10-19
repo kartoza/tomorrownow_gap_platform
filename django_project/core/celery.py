@@ -76,6 +76,11 @@ app.conf.beat_schedule = {
         'task': 'store_api_logs',
         # Run every 5minutes
         'schedule': crontab(minute='*/5'),
+    },
+    'cleanup-r-execution-logs': {
+        'task': 'cleanup_r_execution_logs',
+        # Run every first day of each month at 00:00 UTC
+        'schedule': crontab(minute=0, hour=0, day_of_month=1),
     }
 }
 
