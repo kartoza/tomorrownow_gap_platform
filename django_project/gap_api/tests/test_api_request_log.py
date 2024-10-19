@@ -8,7 +8,7 @@ Tomorrow Now GAP.
 import json
 import mock
 import datetime
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, override_settings
 from django.contrib.admin import ModelAdmin
 
 from core.factories import UserF
@@ -25,6 +25,13 @@ class MockRequestObj(object):
     GET = {}
 
 
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        }
+    }
+)
 class TestAPIRequestLog(TestCase):
     """Test class for APIRequestLog model and task."""
 
