@@ -41,14 +41,14 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Product | Provider | Resolution | Source | Version | API product_type |
 |---------|----------|------------|--------|---------|------------------|
 | **Historical Data** |
-| Climate Reanalysis | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | historical_reanalysis |
-| Tahmo Ground Observation Data | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
-| Arable Ground Observation Data | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | historical_reanalysis |
+| Ground Observations (TAHMO stations) | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
+| Ground Observations (Arable stations) | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
 | Disdrometer Observation Data | disdrometers | | Tahmo (API) | | tahmo_disdrometer_observation |
-Airborne Observation Data | WindBorne Systems | 100 weather balloons| Windborne Systems | | airborne_observation |
+| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | airborne_observation |
 | **Weather Forecasts** |
-| Short-term Deterministic Weather Forecast | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | shortterm_forecast |
-| Seasonal Probabilistic Weather Forecast | Salient | 9km² | Salient (API) | v9 | seasonal_forecast |
+| CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | shortterm_forecast |
+| Salient Seasonal weather forecast (3-months) | Salient | 9km² | Salient (API) | v9 | seasonal_forecast |
 | |
 
 
