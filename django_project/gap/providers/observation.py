@@ -6,11 +6,13 @@ Tomorrow Now GAP.
 """
 
 from datetime import datetime
-from typing import List
-
-from django.contrib.gis.db.models.functions import Distance
+import numpy as np
+import pandas as pd
+import xarray as xr
+import tempfile
 from django.contrib.gis.geos import Polygon, Point
-from rest_framework.exceptions import ValidationError
+from django.contrib.gis.db.models.functions import Distance
+from typing import List, Tuple
 
 from gap.models import (
     Dataset,
@@ -45,7 +47,8 @@ class ObservationReaderValue(DatasetReaderValue):
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute],
             start_date: datetime,
-            end_date: datetime) -> None:
+            end_date: datetime,
+            nearest_stations) -> None:
         """Initialize ObservationReaderValue class.
 
         :param val: value that has been read
@@ -58,6 +61,7 @@ class ObservationReaderValue(DatasetReaderValue):
         super().__init__(val, location_input, attributes)
         self.start_date = start_date
         self.end_date = end_date
+        self.nearest_stations = nearest_stations
 
     def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream.
@@ -95,16 +99,75 @@ class ObservationReaderValue(DatasetReaderValue):
             yield bytes(','.join(data) + '\n', 'utf-8')
 
     def to_netcdf_stream(self):
-        """Generate NetCDF.
+        """Generate NetCDF."""
+        # create date array
+        date_array = pd.date_range(
+            self.start_date.date().isoformat(),
+            self.end_date.date().isoformat()
+        )
 
-        :raises ValidationError: Not supported for Dataset
-        """
-        raise ValidationError({
-            'Invalid Request Parameter': (
-                'Output format netcdf is not available '
-                'for Observation Dataset!'
+        # sort lat and lon array
+        lat_array = set()
+        lon_array = set()
+        station: Station
+        for station in self.nearest_stations:
+            x = round(station.geometry.x, 5)
+            y = round(station.geometry.y, 5)
+            lon_array.add(x)
+            lat_array.add(y)
+        lat_array = sorted(lat_array)
+        lon_array = sorted(lon_array)
+        lat_array = pd.Index(lat_array, dtype='float64')
+        lon_array = pd.Index(lon_array, dtype='float64')
+
+        # define the data variables
+        data_vars = {}
+        empty_shape = (len(date_array), len(lat_array), len(lon_array))
+        for attr in self.attributes:
+            var = attr.attribute.variable_name
+            data_vars[var] = (
+                ['date', 'lat', 'lon'],
+                np.empty(empty_shape)
             )
-        })
+
+        # create the dataset
+        ds = xr.Dataset(
+            data_vars=data_vars,
+            coords={
+                'date': ('date', date_array),
+                'lat': ('lat', lat_array),
+                'lon': ('lon', lon_array)
+            }
+        )
+
+        # assign values to the dataset
+        for val in self.values:
+            date_idx = date_array.get_loc(val.get_datetime_repr('%Y-%m-%d'))
+            loc = val.location
+            lat_idx = lat_array.get_loc(round(loc.y, 5))
+            lon_idx = lon_array.get_loc(round(loc.x, 5))
+
+            for attr in self.attributes:
+                var_name = attr.attribute.variable_name
+                if var_name not in val.values:
+                    continue
+                ds[var_name][date_idx, lat_idx, lon_idx] = (
+                    val.values[var_name]
+                )
+
+        # write to netcdf
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=".nc", delete=True, delete_on_close=False)
+        ) as tmp_file:
+            ds.to_netcdf(
+                tmp_file.name, format='NETCDF4', engine='netcdf4')
+            with open(tmp_file.name, 'rb') as f:
+                while True:
+                    chunk = f.read(self.chunk_size_in_bytes)
+                    if not chunk:
+                        break
+                    yield chunk
 
 
 class ObservationDatasetReader(BaseDatasetReader):
@@ -114,8 +177,7 @@ class ObservationDatasetReader(BaseDatasetReader):
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime,
-            altitudes: (float, float) = None
-
+            altitudes: Tuple[float, float] = None
     ) -> None:
         """Initialize ObservationDatasetReader class.
 
@@ -135,6 +197,7 @@ class ObservationDatasetReader(BaseDatasetReader):
             altitudes=altitudes
         )
         self.results: List[DatasetTimelineValue] = []
+        self.nearest_stations = None
 
     def query_by_altitude(self, qs):
         """Query by altitude."""
@@ -209,17 +272,17 @@ class ObservationDatasetReader(BaseDatasetReader):
 
     def get_measurements(self, start_date: datetime, end_date: datetime):
         """Return measurements data."""
-        nearest_stations = self.get_nearest_stations()
-        if nearest_stations is None:
+        self.nearest_stations = self.get_nearest_stations()
+        if self.nearest_stations is None:
             return
         return Measurement.objects.select_related(
             'dataset_attribute', 'dataset_attribute__attribute',
-            'station'
+            'station', 'station_history'
         ).filter(
             date_time__gte=start_date,
             date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
-            station__in=nearest_stations
+            station__in=self.nearest_stations
         ).order_by('date_time', 'station', 'dataset_attribute')
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
@@ -287,5 +350,5 @@ class ObservationDatasetReader(BaseDatasetReader):
         """
         return ObservationReaderValue(
             self.results, self.location_input, self.attributes,
-            self.start_date, self.end_date
+            self.start_date, self.end_date, self.nearest_stations
         )
