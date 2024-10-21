@@ -84,7 +84,7 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
 
         return Measurement.objects.select_related(
             'dataset_attribute', 'dataset_attribute__attribute',
-            'station'
+            'station', 'station_history'
         ).filter(
             date_time__gte=start_date,
             date_time__lte=end_date,

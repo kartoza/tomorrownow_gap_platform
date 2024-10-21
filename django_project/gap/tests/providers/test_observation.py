@@ -14,6 +14,7 @@ from django.contrib.gis.geos import (
 from gap.providers import (
     ObservationDatasetReader
 )
+from gap.providers.observation import ObservationReaderValue
 from gap.factories import (
     ProviderFactory,
     DatasetFactory,
@@ -24,7 +25,8 @@ from gap.factories import (
 )
 from gap.utils.reader import (
     DatasetReaderInput,
-    LocationInputType
+    LocationInputType,
+    DatasetTimelineValue
 )
 
 
@@ -140,3 +142,19 @@ class TestObsrvationReader(TestCase):
         reader.read_historical_data(dt1, dt2)
         data_value = reader.get_data_values()
         self.assertEqual(len(data_value._val), 3)
+
+    def test_observation_to_netcdf_stream(self):
+        """Test convert observation value to netcdf stream."""
+        val = DatasetTimelineValue(
+            self.start_date,
+            {
+                self.dataset_attr.attribute.variable_name: 20
+            },
+            self.location_input.point
+        )
+        reader_value = ObservationReaderValue(
+            [val], self.location_input, [self.dataset_attr],
+            self.start_date, self.end_date, [self.station])
+        d = reader_value.to_netcdf_stream()
+        res = list(d)
+        self.assertIsNotNone(res)
