@@ -56,93 +56,93 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 
 | Product | Name | Description | Unit | API attribute name |
 |---------|------|-------------|------|---------------------|
-| **Seasonal Forecast** |
-| Seasonal Forecast | Temperature | | °C | temperature |
-| Seasonal Forecast | Temperature Climatology | | °C | temperature_clim |
-| Seasonal Forecast | Temperature Anomaly | | °C | temperature_anom |
-| Seasonal Forecast | Precipitation | | mm day-1 | precipitation |
-| Seasonal Forecast | Precipitation Anomaly | | mm day-1 | precipitation_anom |
-| Seasonal Forecast | Precipitation Climatology | | mm day-1 | precipitation_clim |
-| Seasonal Forecast | Minimum Temperature | | °C | min_temperature |
-| Seasonal Forecast | Minimum Temperature Climatology | | °C | min_temperature_clim |
-| Seasonal Forecast | Minimum Temperature Anomaly | | °C | min_temperature_anom |
-| Seasonal Forecast | Maximum Temperature | | °C | max_temperature |
-| Seasonal Forecast | Maximum Temperature Climatology | | °C | max_temperature_clim |
-| Seasonal Forecast | Maximum Temperature Anomaly | | °C | max_temperature_anom |
-| Seasonal Forecast | Relative Humidity | | % | relative_humidty |
-| Seasonal Forecast | Relative Humidity Climatology | | % | relative_humidty_clim |
-| Seasonal Forecast | Relative Humidity Anomaly | | % | relative_humidty_anom |
-| Seasonal Forecast | Downward Solar Radiation | | kWh m-2 day-1 | solar_radiation |
-| Seasonal Forecast | Downward Solar Radiation Climatology | | kWh m-2 day-1 | solar_radiation_clim |
-| Seasonal Forecast | Downward Solar Radiation Anomaly | | kWh m-2 day-1 | solar_radiation_anom |
-| Seasonal Forecast | Wind Speed Climatology | | m/s | wind_speed |
-| Seasonal Forecast | Wind Speed Climatology | | m/s | wind_speed_clim |
-| Seasonal Forecast | Wind Speed Climatology | | m/s | wind_speed_anom |
-| **Short-term Forecast** |
-| Short-term Forecast | Total Rainfall | | mm | total_rainfall |
-| Short-term Forecast | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
-| Short-term Forecast | Max Temperature | | °C | max_temperature |
-| Short-term Forecast | Min Temperature | | °C | min_temperature |
-| Short-term Forecast | Precipitation Probability | | % | precipitation_probability |
-| Short-term Forecast | Humidity Maximum | | % | humidity_maximum |
-| Short-term Forecast | Humidity Minimum | | % | humidity_minimum |
-| Short-term Forecast | Wind Speed Average | | m/s | wind_speed_avg |
-| Short-term Forecast | Solar radiation | | Wh/m2 | solar_radiation |
-| **Historical Reanalysis** |
-| Historical Reanalysis | Min Total Temperature | Minimum temperature (0000:2300) | °C | min_temperature |
-| Historical Reanalysis | Min Day Temperature | Minimum day-time temperature (0600:1800) | °C | min_day_temperature |
-| Historical Reanalysis | Total Rainfall | Total rainfall (0000:2300) | mm | total_rainfall |
-| Historical Reanalysis | Max Day Temperature | Maximum day-time temperature (0600:1800) | °C | max_day_temperature |
-| Historical Reanalysis | Min Night Temperature | Minimum night-time temperature (1900:0500) | °C | min_night_temperature |
-| Historical Reanalysis | Total Solar Irradiance | Total solar irradiance reaching the surface (0000:2300) | MJ/sqm | total_solar_irradiance |
-| Historical Reanalysis | Average Solar Irradiance | Average hourly solar irradiance reaching the surface (0600:1800) | MJ/sqm | average_solar_irradiance |
-| Historical Reanalysis | Max Night Temperature | Maximum night-time temperature (1900:0500) | °C | max_night_temperature |
-| Historical Reanalysis | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
-| Historical Reanalysis | Total Evapotranspiration Flux | Total Evapotranspiration flux with respect to grass cover (0000:2300) | mm | total_evapotranspiration_flux |
-| **Tahmo Ground Observation** |
-| Observation | Precipitation | | mm/day | precipitation |
-| Observation | Solar radiation | | Wh/m2 | solar_radiation |
-| Observation | Relative Humidity Max | | % | max_relative_humidity |
-| Observation | Relative Humidity Min | | % | min_relative_humidity |
-| Observation | Air Temperature Average | | °C | average_air_temperature |
-| Observation | Air Temperature Max | | °C | max_air_temperature |
-| Observation | Air Temperature Min | | °C | min_air_temperature |
-| **Arable Ground Observation** |
-| Observation | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
-| Observation | Relative Humidity Max | | % | max_relative_humidity |
-| Observation | Max Day Temperature | | °C | max_day_temperature |
-| Observation | Relative Humidity Mean | | % | mean_relative_humidity |
-| Observation | Mean Day Temperature | | °C | mean_day_temperature |
-| Observation | Relative Humidity Min | | % | min_relative_humidity |
-| Observation | Min Day Temperature | | °C | min_day_temperature |
-| Observation | Precipitation Total | | mm | precipitation_total |
-| Observation | Precipitation | | mm/day | precipitation |
-| Observation | Sea Level Pressure | | kPa | sea_level_pressure |
-| Observation | Wind Heading | | degree | wind_heading |
-| Observation | Wind Speed | | m/s | wind_speed |
-| Observation | Wind Speed Max | | m/s | wind_speed_max |
-| Observation | Wind Speed Min | | m/s | wind_speed_min |
-| **Tahmo Disdrometer Observation** |
-| Observation | Atmospheric Pressure | | kPa | atmospheric_pressure |
-| Observation | Depth of Water | | mm | depth_of_water |
-| Observation | Electrical Conductivity of Precipitation | | mS/cm | electrical_conductivity_of_precipitation |
-| Observation | Electrical Conductivity of Water | | mS/cm | electrical_conductivity_of_water |
-| Observation | Lightning Distance | | km | lightning_distance |
-| Observation | Shortwave Radiation | | W/m2 | shortwave_radiation |
-| Observation | Soil Moisture Content | | m3/m3 | soil_moisture_content |
-| Observation | Soil Temperature | | °C | soil_temperature |
-| Observation | Surface Air Temperature | | °C | surface_air_temperature |
-| Observation | Wind Speed | | m/s | wind_speed |
-| Observation | Wind Gusts | | m/s | wind_gusts |
-| Observation | Precipitation Total | | mm | precipitation_total |
-| Observation | Precipitation | | mm/day | precipitation |
-| Observation | Relative Humidity | | % | relative_humidity |
-| Observation | Wind Heading | | degree | wind_heading |
-| **Windborne** |
-| Windborne | Temperature | | °C | temperature |
-| Windborne | Atmospheric Pressure | | hPa | atmospheric_pressure |
-| Windborne | Specific Humidity | | mg/kg | specific_humidity |
-| Windborne | Relative Humidity | | % | relative_humidity |
+| **Salient Seasonal weather forecast (3-months)** |
+| Salient Seasonal weather forecast (3-months) | Temperature | | °C | temperature |
+| Salient Seasonal weather forecast (3-months) | Temperature Climatology | | °C | temperature_clim |
+| Salient Seasonal weather forecast (3-months) | Temperature Anomaly | | °C | temperature_anom |
+| Salient Seasonal weather forecast (3-months) | Precipitation | | mm day-1 | precipitation |
+| Salient Seasonal weather forecast (3-months) | Precipitation Anomaly | | mm day-1 | precipitation_anom |
+| Salient Seasonal weather forecast (3-months) | Precipitation Climatology | | mm day-1 | precipitation_clim |
+| Salient Seasonal weather forecast (3-months) | Minimum Temperature | | °C | min_temperature |
+| Salient Seasonal weather forecast (3-months) | Minimum Temperature Climatology | | °C | min_temperature_clim |
+| Salient Seasonal weather forecast (3-months) | Minimum Temperature Anomaly | | °C | min_temperature_anom |
+| Salient Seasonal weather forecast (3-months) | Maximum Temperature | | °C | max_temperature |
+| Salient Seasonal weather forecast (3-months) | Maximum Temperature Climatology | | °C | max_temperature_clim |
+| Salient Seasonal weather forecast (3-months) | Maximum Temperature Anomaly | | °C | max_temperature_anom |
+| Salient Seasonal weather forecast (3-months) | Relative Humidity | | % | relative_humidty |
+| Salient Seasonal weather forecast (3-months) | Relative Humidity Climatology | | % | relative_humidty_clim |
+| Salient Seasonal weather forecast (3-months) | Relative Humidity Anomaly | | % | relative_humidty_anom |
+| Salient Seasonal weather forecast (3-months) | Downward Solar Radiation | | kWh m-2 day-1 | solar_radiation |
+| Salient Seasonal weather forecast (3-months) | Downward Solar Radiation Climatology | | kWh m-2 day-1 | solar_radiation_clim |
+| Salient Seasonal weather forecast (3-months) | Downward Solar Radiation Anomaly | | kWh m-2 day-1 | solar_radiation_anom |
+| Salient Seasonal weather forecast (3-months) | Wind Speed Climatology | | m/s | wind_speed |
+| Salient Seasonal weather forecast (3-months) | Wind Speed Climatology | | m/s | wind_speed_clim |
+| Salient Seasonal weather forecast (3-months) | Wind Speed Climatology | | m/s | wind_speed_anom |
+| **CBAM Short-Term weather forecast (14-days)** |
+| CBAM Short-Term weather forecast (14-days) | Total Rainfall | | mm | total_rainfall |
+| CBAM Short-Term weather forecast (14-days) | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
+| CBAM Short-Term weather forecast (14-days) | Max Temperature | | °C | max_temperature |
+| CBAM Short-Term weather forecast (14-days) | Min Temperature | | °C | min_temperature |
+| CBAM Short-Term weather forecast (14-days) | Precipitation Probability | | % | precipitation_probability |
+| CBAM Short-Term weather forecast (14-days) | Humidity Maximum | | % | humidity_maximum |
+| CBAM Short-Term weather forecast (14-days) | Humidity Minimum | | % | humidity_minimum |
+| CBAM Short-Term weather forecast (14-days) | Wind Speed Average | | m/s | wind_speed_avg |
+| CBAM Short-Term weather forecast (14-days) | Solar radiation | | Wh/m2 | solar_radiation |
+| **CBAM Daily Historical Reanalysis (2012 - 2023)** |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Min Total Temperature | Minimum temperature (0000:2300) | °C | min_temperature |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Min Day Temperature | Minimum day-time temperature (0600:1800) | °C | min_day_temperature |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Total Rainfall | Total rainfall (0000:2300) | mm | total_rainfall |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Max Day Temperature | Maximum day-time temperature (0600:1800) | °C | max_day_temperature |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Min Night Temperature | Minimum night-time temperature (1900:0500) | °C | min_night_temperature |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Total Solar Irradiance | Total solar irradiance reaching the surface (0000:2300) | MJ/sqm | total_solar_irradiance |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Average Solar Irradiance | Average hourly solar irradiance reaching the surface (0600:1800) | MJ/sqm | average_solar_irradiance |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Max Night Temperature | Maximum night-time temperature (1900:0500) | °C | max_night_temperature |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Total Evapotranspiration Flux | Total Evapotranspiration flux with respect to grass cover (0000:2300) | mm | total_evapotranspiration_flux |
+| **Ground Observations (TAHMO stations)** |
+| Ground Observations (TAHMO stations) | Precipitation | | mm/day | precipitation |
+| Ground Observations (TAHMO stations) | Solar radiation | | Wh/m2 | solar_radiation |
+| Ground Observations (TAHMO stations) | Relative Humidity Max | | % | max_relative_humidity |
+| Ground Observations (TAHMO stations) | Relative Humidity Min | | % | min_relative_humidity |
+| Ground Observations (TAHMO stations) | Air Temperature Average | | °C | average_air_temperature |
+| Ground Observations (TAHMO stations) | Air Temperature Max | | °C | max_air_temperature |
+| Ground Observations (TAHMO stations) | Air Temperature Min | | °C | min_air_temperature |
+| **Ground Observations (Arable stations)** |
+| Ground Observations (Arable stations) | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
+| Ground Observations (Arable stations) | Relative Humidity Max | | % | max_relative_humidity |
+| Ground Observations (Arable stations) | Max Day Temperature | | °C | max_day_temperature |
+| Ground Observations (Arable stations) | Relative Humidity Mean | | % | mean_relative_humidity |
+| Ground Observations (Arable stations) | Mean Day Temperature | | °C | mean_day_temperature |
+| Ground Observations (Arable stations) | Relative Humidity Min | | % | min_relative_humidity |
+| Ground Observations (Arable stations) | Min Day Temperature | | °C | min_day_temperature |
+| Ground Observations (Arable stations) | Precipitation Total | | mm | precipitation_total |
+| Ground Observations (Arable stations) | Precipitation | | mm/day | precipitation |
+| Ground Observations (Arable stations) | Sea Level Pressure | | kPa | sea_level_pressure |
+| Ground Observations (Arable stations) | Wind Heading | | degree | wind_heading |
+| Ground Observations (Arable stations) | Wind Speed | | m/s | wind_speed |
+| Ground Observations (Arable stations) | Wind Speed Max | | m/s | wind_speed_max |
+| Ground Observations (Arable stations) | Wind Speed Min | | m/s | wind_speed_min |
+| **Disdrometer Observation Data** |
+| Disdrometer Observation Data | Atmospheric Pressure | | kPa | atmospheric_pressure |
+| Disdrometer Observation Data | Depth of Water | | mm | depth_of_water |
+| Disdrometer Observation Data | Electrical Conductivity of Precipitation | | mS/cm | electrical_conductivity_of_precipitation |
+| Disdrometer Observation Data | Electrical Conductivity of Water | | mS/cm | electrical_conductivity_of_water |
+| Disdrometer Observation Data | Lightning Distance | | km | lightning_distance |
+| Disdrometer Observation Data | Shortwave Radiation | | W/m2 | shortwave_radiation |
+| Disdrometer Observation Data | Soil Moisture Content | | m3/m3 | soil_moisture_content |
+| Disdrometer Observation Data | Soil Temperature | | °C | soil_temperature |
+| Disdrometer Observation Data | Surface Air Temperature | | °C | surface_air_temperature |
+| Disdrometer Observation Data | Wind Speed | | m/s | wind_speed |
+| Disdrometer Observation Data | Wind Gusts | | m/s | wind_gusts |
+| Disdrometer Observation Data | Precipitation Total | | mm | precipitation_total |
+| Disdrometer Observation Data | Precipitation | | mm/day | precipitation |
+| Disdrometer Observation Data | Relative Humidity | | % | relative_humidity |
+| Disdrometer Observation Data | Wind Heading | | degree | wind_heading |
+| **Radiosonde Observations (Windborne)** |
+| Radiosonde Observations (Windborne) | Temperature | | °C | temperature |
+| Radiosonde Observations (Windborne) | Atmospheric Pressure | | hPa | atmospheric_pressure |
+| Radiosonde Observations (Windborne) | Specific Humidity | | mg/kg | specific_humidity |
+| Radiosonde Observations (Windborne) | Relative Humidity | | % | relative_humidity |
 | |
 
 In order to use the API, the user must be authenticated and must have authorisation to access the data.
