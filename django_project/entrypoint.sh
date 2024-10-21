@@ -15,6 +15,15 @@ npm install --verbose
 echo "npm build"
 npm run build
 
+# copy flower daemon script
+cd /home/web/django_project
+rm -f /var/tmp/flower.pid
+cp flower.sh /etc/init.d/flower
+chmod +x /etc/init.d/flower
+update-rc.d flower defaults
+sleep 2
+/etc/init.d/flower start
+
 # Run initialization
 cd /home/web/django_project
 echo 'Running initialize.py...'
