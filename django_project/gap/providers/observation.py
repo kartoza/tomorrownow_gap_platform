@@ -14,8 +14,6 @@ from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
 from typing import List, Tuple
 
-from rest_framework.exceptions import ValidationError
-
 from gap.models import (
     Dataset,
     DatasetAttribute,
