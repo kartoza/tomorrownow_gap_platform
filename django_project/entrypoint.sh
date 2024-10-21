@@ -16,6 +16,7 @@ echo "npm build"
 npm run build
 
 # copy flower daemon script
+cd /home/web/django_project
 rm -f /var/tmp/flower.pid
 cp flower.sh /etc/init.d/flower
 chmod +x /etc/init.d/flower
