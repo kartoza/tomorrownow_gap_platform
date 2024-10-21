@@ -72,3 +72,7 @@ python-geohash==0.8.5
 
 # api tracking
 drf-api-tracking==1.8.4
+
+# celery task monitoring
+flower==1.2.0
+django-revproxy==0.12.0
