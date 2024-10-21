@@ -6,9 +6,12 @@ Tomorrow Now GAP.
 """
 import os
 import mock
+import pytz
+import datetime
 import requests_mock
 from django.test import TestCase
 
+from spw.models import RModelExecutionLog
 from spw.utils.plumber import (
     write_plumber_file,
     write_plumber_data,
@@ -20,7 +23,12 @@ from spw.utils.plumber import (
     execute_spw_model
 )
 from spw.utils.process import write_pidfile
-from spw.factories import RModelFactory, RModelOutputFactory
+from spw.factories import (
+    RModelFactory,
+    RModelOutputFactory,
+    RModelExecutionLogFactory
+)
+from spw.tasks import cleanup_r_execution_logs
 
 
 def mocked_os_kill(self, *args, **kwargs):
@@ -166,3 +174,26 @@ class TestPlumberUtils(TestCase):
         self.assertTrue(os.path.exists(file_path))
         remove_plumber_data(file_path)
         self.assertFalse(os.path.exists(file_path))
+
+
+class TestCleanRModelExecutionJob(TestCase):
+    """Test cleanup_r_execution_logs task."""
+
+    @mock.patch('django.utils.timezone.now')
+    def test_cleanup_execution_logs(self, mocked_dt):
+        """Test cleanup task."""
+        mocked_dt.return_value = datetime.datetime(
+            2024, 8, 14, 10, 10, 10, tzinfo=pytz.UTC)
+        log1 = RModelExecutionLogFactory.create(
+            start_date_time=datetime.datetime(
+                2024, 8, 10, 10, 10, 10, tzinfo=pytz.UTC)
+        )
+        RModelExecutionLogFactory.create(
+            model=log1.model,
+            start_date_time=datetime.datetime(
+                2024, 6, 10, 10, 10, 10, tzinfo=pytz.UTC)
+        )
+        cleanup_r_execution_logs()
+        logs = RModelExecutionLog.objects.all()
+        self.assertEqual(logs.count(), 1)
+        self.assertEqual(logs.first().id, log1.id)

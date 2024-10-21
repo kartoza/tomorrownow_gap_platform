@@ -11,4 +11,4 @@ license: This program is free software; you can redistribute it and/or modify it
 
 # API user guide
 
-* **[Measurement API:](./measurment.md)** this section explains the measurement API guide for both GET and POST method.
+* **[Measurement API:](./measurement.md)** this section explains the measurement API guide for both GET and POST method.
