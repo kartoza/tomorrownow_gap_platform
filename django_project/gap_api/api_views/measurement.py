@@ -54,6 +54,8 @@ def attribute_list():
         )
     except ProgrammingError:
         pass
+    except RuntimeError:
+        pass
 
 
 def default_attribute_list():
@@ -67,6 +69,8 @@ def default_attribute_list():
         else:
             return ''
     except ProgrammingError:
+        pass
+    except RuntimeError:
         pass
 
 

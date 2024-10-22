@@ -387,7 +387,9 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         request = self._get_measurement_request_point(
             attributes=','.join(attribs),
             product='tahmo_ground_observation',
-            output_type='csv'
+            output_type='csv',
+            start_dt=dt.date().isoformat(),
+            end_dt=dt.date().isoformat()
         )
         response = view(request)
         self.assertEqual(response.status_code, 200)

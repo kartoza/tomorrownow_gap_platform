@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import tempfile
+from django.db.models import Exists, OuterRef
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
 from typing import List, Tuple
@@ -217,10 +218,18 @@ class ObservationDatasetReader(BaseDatasetReader):
         p = point
         if p is None:
             p = self.location_input.point
+        # has_measurement is for removing duplicates station
         qs = Station.objects.annotate(
-            distance=Distance('geometry', p)
+            distance=Distance('geometry', p),
+            has_measurement=Exists(
+                Measurement.objects.filter(
+                    station=OuterRef('pk'),
+                    dataset_attribute__dataset=self.dataset
+                )
+            )
         ).filter(
-            provider=self.dataset.provider
+            provider=self.dataset.provider,
+            has_measurement=True
         ).order_by('distance').first()
         if qs is None:
             return None
@@ -273,7 +282,7 @@ class ObservationDatasetReader(BaseDatasetReader):
     def get_measurements(self, start_date: datetime, end_date: datetime):
         """Return measurements data."""
         self.nearest_stations = self.get_nearest_stations()
-        if self.nearest_stations is None:
+        if self.nearest_stations is None or len(self.nearest_stations) == 0:
             return
         return Measurement.objects.select_related(
             'dataset_attribute', 'dataset_attribute__attribute',
@@ -294,7 +303,7 @@ class ObservationDatasetReader(BaseDatasetReader):
         :type end_date: datetime
         """
         measurements = self.get_measurements(start_date, end_date)
-        if measurements is None:
+        if measurements is None or measurements.count() == 0:
             return
 
         # final result, group by datetime

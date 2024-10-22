@@ -21,7 +21,8 @@ from gap.factories import (
     DatasetAttributeFactory,
     AttributeFactory,
     StationFactory,
-    MeasurementFactory
+    MeasurementFactory,
+    StationTypeFactory
 )
 from gap.utils.reader import (
     DatasetReaderInput,
@@ -60,6 +61,12 @@ class TestObsrvationReader(TestCase):
 
     def test_find_nearest_station_by_point(self):
         """Test find nearest station from single point."""
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=self.start_date,
+            value=120
+        )
         result = self.reader._find_nearest_station_by_point()
         self.assertEqual(result, [self.station])
 
@@ -80,6 +87,12 @@ class TestObsrvationReader(TestCase):
 
     def test_find_nearest_station_by_points(self):
         """Test find nearest station from list of point."""
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=self.start_date,
+            value=120
+        )
         self.reader.location_input.type = LocationInputType.LIST_OF_POINT
         self.reader.location_input.geom_collection = MultiPoint(
             [Point(0, 0), self.station.geometry])
@@ -106,6 +119,65 @@ class TestObsrvationReader(TestCase):
         self.assertEqual(
             results['data'][0]['values']['surface_air_temperature'],
             100)
+
+    def test_read_historical_data_empty(self):
+        """Test for reading empty historical data from Tahmo."""
+        dt = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt,
+            value=100
+        )
+        points = DatasetReaderInput(MultiPoint(
+            [Point(0, 0), Point(1, 1)]), LocationInputType.LIST_OF_POINT)
+        reader = ObservationDatasetReader(
+            self.dataset, [self.dataset_attr], points, dt, dt)
+        reader.read_historical_data(
+            datetime(2010, 11, 1, 0, 0, 0),
+            datetime(2010, 11, 1, 0, 0, 0))
+        data_value = reader.get_data_values()
+        self.assertEqual(len(data_value._val), 0)
+
+    def test_read_historical_data_by_point(self):
+        """Test read by stations that has same point for different dataset."""
+        other_dataset = DatasetFactory.create(
+            provider=self.dataset.provider)
+        other_attr = DatasetAttributeFactory.create(
+            dataset=other_dataset,
+            attribute=self.attribute,
+            source='test_attr'
+        )
+        other_station = StationFactory.create(
+            geometry=self.station.geometry,
+            provider=self.dataset.provider,
+            station_type=StationTypeFactory.create(name='other')
+        )
+
+        # create measurement
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        dt2 = datetime(2019, 11, 2, 0, 0, 0)
+        measurement = MeasurementFactory.create(
+            station=other_station,
+            dataset_attribute=other_attr,
+            date_time=dt1,
+            value=876
+        )
+
+        # create reader
+        location_input = DatasetReaderInput.from_point(other_station.geometry)
+        reader = ObservationDatasetReader(
+            other_dataset, [other_attr], location_input,
+            dt1, dt2
+        )
+        reader.read_historical_data(dt1, dt2)
+        data_value = reader.get_data_values()
+        # should return above measurement
+        self.assertEqual(len(data_value._val), 1)
+        self.assertEqual(
+            data_value.values[0].values['surface_air_temperature'],
+            measurement.value
+        )
 
     def test_read_historical_data_multiple_locations(self):
         """Test for reading historical data from multiple locations."""
