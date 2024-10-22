@@ -21,7 +21,8 @@ from gap.factories import (
     DatasetAttributeFactory,
     AttributeFactory,
     StationFactory,
-    MeasurementFactory
+    MeasurementFactory,
+    StationTypeFactory
 )
 from gap.utils.reader import (
     DatasetReaderInput,
@@ -125,6 +126,46 @@ class TestObsrvationReader(TestCase):
             datetime(2010, 11, 1, 0, 0, 0))
         data_value = reader.get_data_values()
         self.assertEqual(len(data_value._val), 0)
+
+    def test_read_historical_data_by_point(self):
+        """Test read by stations that has same point for different dataset."""
+        other_dataset = DatasetFactory.create(
+            provider=self.dataset.provider)
+        other_attr = DatasetAttributeFactory.create(
+            dataset=other_dataset,
+            attribute=self.attribute,
+            source='test_attr'
+        )
+        other_station = StationFactory.create(
+            geometry=self.station.geometry,
+            provider=self.dataset.provider,
+            station_type=StationTypeFactory.create(name='other')
+        )
+
+        # create measurement
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        dt2 = datetime(2019, 11, 2, 0, 0, 0)
+        measurement = MeasurementFactory.create(
+            station=other_station,
+            dataset_attribute=other_attr,
+            date_time=dt1,
+            value=876
+        )
+
+        # create reader
+        location_input = DatasetReaderInput.from_point(other_station.geometry)
+        reader = ObservationDatasetReader(
+            other_dataset, [other_attr], location_input,
+            dt1, dt2
+        )
+        reader.read_historical_data(dt1, dt2)
+        data_value = reader.get_data_values()
+        # should return above measurement
+        self.assertEqual(len(data_value._val), 1)
+        self.assertEqual(
+            data_value.values[0].values['surface_air_temperature'],
+            measurement.value
+        )
 
     def test_read_historical_data_multiple_locations(self):
         """Test for reading historical data from multiple locations."""

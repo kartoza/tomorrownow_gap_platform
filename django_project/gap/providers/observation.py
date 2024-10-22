@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import tempfile
+from django.db.models import Exists, OuterRef
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
 from typing import List, Tuple
@@ -218,9 +219,16 @@ class ObservationDatasetReader(BaseDatasetReader):
         if p is None:
             p = self.location_input.point
         qs = Station.objects.annotate(
-            distance=Distance('geometry', p)
+            distance=Distance('geometry', p),
+            has_measurement=Exists(
+                Measurement.objects.filter(
+                    station=OuterRef('pk'),
+                    dataset_attribute__dataset=self.dataset
+                )
+            )
         ).filter(
-            provider=self.dataset.provider
+            provider=self.dataset.provider,
+            has_measurement=True
         ).order_by('distance').first()
         if qs is None:
             return None
