@@ -45,7 +45,7 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Ground Observations (TAHMO stations) | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
 | Ground Observations (Arable stations) | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
 | Disdrometer Observation Data | disdrometers | | Tahmo (API) | | tahmo_disdrometer_observation |
-| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | airborne_observation |
+| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | windborne_observational |
 | **Weather Forecasts** |
 | CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | shortterm_forecast |
 | Salient Seasonal weather forecast (3-months) | Salient | 9km² | Salient (API) | v9 | seasonal_forecast |
@@ -248,6 +248,14 @@ Fill the attributes in the 1️⃣ available fields. After filling the details c
 **Example of response:**
 
 ![POST API RESPONSE](./img/api-guide-11.png)
+
+
+## API Postman Collection
+
+You can download the postman collection below and import the API collection using your postman. Once imported, you need to set the variable `gap_api_username` and `gap_api_password` using your credentials.
+
+[Download](./assets/tngap_api.postman_collection.zip)
+
 
 ## Error codes
 
