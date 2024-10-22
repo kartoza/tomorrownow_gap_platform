@@ -107,6 +107,25 @@ class TestObsrvationReader(TestCase):
             results['data'][0]['values']['surface_air_temperature'],
             100)
 
+    def test_read_historical_data_empty(self):
+        """Test for reading empty historical data from Tahmo."""
+        dt = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt,
+            value=100
+        )
+        points = DatasetReaderInput(MultiPoint(
+            [Point(0, 0), Point(1, 1)]), LocationInputType.LIST_OF_POINT)
+        reader = ObservationDatasetReader(
+            self.dataset, [self.dataset_attr], points, dt, dt)
+        reader.read_historical_data(
+            datetime(2010, 11, 1, 0, 0, 0),
+            datetime(2010, 11, 1, 0, 0, 0))
+        data_value = reader.get_data_values()
+        self.assertEqual(len(data_value._val), 0)
+
     def test_read_historical_data_multiple_locations(self):
         """Test for reading historical data from multiple locations."""
         dt1 = datetime(2019, 11, 1, 0, 0, 0)
