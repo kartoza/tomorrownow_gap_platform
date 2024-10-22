@@ -218,6 +218,7 @@ class ObservationDatasetReader(BaseDatasetReader):
         p = point
         if p is None:
             p = self.location_input.point
+        # has_measurement is for removing duplicates station
         qs = Station.objects.annotate(
             distance=Distance('geometry', p),
             has_measurement=Exists(

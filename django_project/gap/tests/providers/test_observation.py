@@ -61,6 +61,12 @@ class TestObsrvationReader(TestCase):
 
     def test_find_nearest_station_by_point(self):
         """Test find nearest station from single point."""
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=self.start_date,
+            value=120
+        )
         result = self.reader._find_nearest_station_by_point()
         self.assertEqual(result, [self.station])
 
@@ -81,6 +87,12 @@ class TestObsrvationReader(TestCase):
 
     def test_find_nearest_station_by_points(self):
         """Test find nearest station from list of point."""
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=self.start_date,
+            value=120
+        )
         self.reader.location_input.type = LocationInputType.LIST_OF_POINT
         self.reader.location_input.geom_collection = MultiPoint(
             [Point(0, 0), self.station.geometry])
