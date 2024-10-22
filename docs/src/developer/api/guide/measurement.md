@@ -45,7 +45,7 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Ground Observations (TAHMO stations) | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
 | Ground Observations (Arable stations) | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
 | Disdrometer Observation Data | disdrometers | | Tahmo (API) | | tahmo_disdrometer_observation |
-| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | airborne_observation |
+| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | windborne_observational |
 | **Weather Forecasts** |
 | CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | shortterm_forecast |
 | Salient Seasonal weather forecast (3-months) | Salient | 9km² | Salient (API) | v9 | seasonal_forecast |
@@ -206,38 +206,48 @@ https://docs.xarray.dev/en/stable/user-guide/io.html#netcdf
 
 ### Python
 
-
+```python
 import requests
+from requests.auth import HTTPBasicAuth
 
-url = "https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json"
+url = "https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json"
 
 payload={}
 headers = {}
+basic = HTTPBasicAuth('YOUR_USERNAME', 'YOUR_PASSWORD')
 
-response = requests.request("GET", url, headers=headers, data=payload)
+response = requests.request("GET", url, auth=basic, headers=headers, data=payload)
 
-print(response.text)
+print(response.json())
+```
 
 ### CURL
 
-curl --location --request GET 'https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json'
+```
+curl --location 'https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature%2Cmin_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json' -u 'YOUR_USERNAME:YOUR_PASSWORD' -H 'User-Agent: PostmanRuntime/7.42.0'
+```
 
 ### JavaScript-JQuery
 
-"var settings = {
-  "url": "https://tngap.dev.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json",
+```js
+var settings = {
+  "url": "https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json",
   "method": "GET",
   "timeout": 0,
+  "headers": {
+    "Authorization": "Basic *****"
+  },
 };
 
 $.ajax(settings).done(function (response) {
   console.log(response);
-});"
+});
+```
 
 
 **POST API:**
 
-Create data using the POST API. Click on the 1️⃣ measurement POST API to view the usage option. Click on the 2️⃣ `Try it out` button, to enable the fields to enter the attributes.
+Using the POST API, you can query the data by polygon or list of point. Click on the 1️⃣ measurement POST API to view the usage option. Click on the 2️⃣ `Try it out` button, to enable the fields to enter the attributes.
 
 ![POST API](./img/api-guide-9.png)
 
@@ -248,6 +258,14 @@ Fill the attributes in the 1️⃣ available fields. After filling the details c
 **Example of response:**
 
 ![POST API RESPONSE](./img/api-guide-11.png)
+
+
+## API Postman Collection
+
+You can download the postman collection below and import the API collection using your postman. Once imported, you need to set the variable `gap_api_username` and `gap_api_password` using your credentials.
+
+[Download](./assets/tngap_api.postman_collection.zip)
+
 
 ## Error codes
 
