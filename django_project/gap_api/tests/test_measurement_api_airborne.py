@@ -200,7 +200,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         return ordered_headers, rows
 
     def test_read_with_bbox(self):
-        """Test read point."""
+        """Test read bbox."""
         view = MeasurementAPI.as_view()
         request = self._get_measurement_request_bbox(
             bbox='0,0,100,100',
@@ -279,3 +279,17 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             rows[1],
             ['2000-03-01', '00:00:00', '100.0', '100.0', '3.0', '300.0', '3.0']
         )
+
+    def test_read_to_netcdf(self):
+        """Test read bbox to netcdf."""
+        view = MeasurementAPI.as_view()
+        request = self._get_measurement_request_bbox(
+            bbox='0,0,100,100',
+            start_dt='2000-02-01', end_dt='2000-03-01',
+            attributes=','.join(['atmospheric_pressure', 'temperature']),
+            product='windborne_observational',
+            output_type='netcdf',
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)

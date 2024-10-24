@@ -28,6 +28,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from gap.models import (
+    Dataset,
+    DatasetObservationType,
     Attribute,
     DatasetAttribute
 )
@@ -316,9 +318,14 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         return response
 
     def validate_output_format(
-            self, location: DatasetReaderInput, output_format):
+            self, dataset: Dataset, product_type: str,
+            location: DatasetReaderInput, output_format):
         """Validate output format.
 
+        :param dataset: dataset to read
+        :type dataset: Dataset
+        :param product_type: product type in request
+        :type product_type: str
         :param location: location input filter
         :type location: DatasetReaderInput
         :param output_format: output type/format
@@ -331,6 +338,17 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                     'Invalid Request Parameter': (
                         'Output format json is only available '
                         'for single point query!'
+                    )
+                })
+        elif output_format == DatasetReaderOutputType.NETCDF:
+            if (
+                dataset.observation_type ==
+                DatasetObservationType.UPPER_AIR_OBSERVATION
+            ):
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Output format NETCDF is not available '
+                        f'for {product_type}!'
                     )
                 })
 
@@ -350,7 +368,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 )
             })
 
-        if output_format == 'csv':
+        if output_format == DatasetReaderOutputType.CSV:
             non_ensemble_count = dataset_attributes.filter(
                 ensembles=False
             ).count()
@@ -389,10 +407,6 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 data={}
             )
 
-        # validate if json is only available for single location filter
-        self.validate_output_format(location, output_format)
-        # TODO: validate minimum/maximum area filter?
-
         dataset_attributes = DatasetAttribute.objects.filter(
             attribute__in=attributes,
             dataset__is_internal_use=False,
@@ -407,6 +421,11 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
 
         # validate empty dataset_attributes
         self.validate_dataset_attributes(dataset_attributes, output_format)
+
+        # validate output type
+        self.validate_output_format(
+            dataset_attributes.first().dataset, product_filter, location,
+            output_format)
 
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
@@ -508,7 +527,12 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
-            *api_parameters
+            *api_parameters,
+            openapi.Parameter(
+                'altitudes', openapi.IN_QUERY,
+                description='2 value of altitudes: alt_min, alt_max',
+                type=openapi.TYPE_STRING
+            )
         ],
         request_body=openapi.Schema(
             description=(
