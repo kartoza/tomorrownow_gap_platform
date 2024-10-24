@@ -111,7 +111,7 @@ def tomorrowio_shortterm_forecast_dataset() -> Dataset:
         }
     )
     ds_forecast, _ = Dataset.objects.get_or_create(
-        name=f'{provider.name} {dt_shorttermforecast.name}',
+        name='Tomorrow.io Short-term Forecast',
         provider=provider,
         type=dt_shorttermforecast,
         store_type=DatasetStore.EXT_API,
@@ -157,7 +157,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             }
         )
         ds_historical, _ = Dataset.objects.get_or_create(
-            name=f'{provider.name} {dt_historical.name}',
+            name='Tomorrow.io Historical Reanalysis',
             provider=provider,
             type=dt_historical,
             store_type=DatasetStore.EXT_API,
@@ -174,7 +174,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             }
         )
         ds_ltn, _ = Dataset.objects.get_or_create(
-            name=f'{provider.name} {dt_ltn.name}',
+            name='Tomorrow.io Long Term Normals (20 years)',
             provider=provider,
             type=dt_ltn,
             store_type=DatasetStore.EXT_API,

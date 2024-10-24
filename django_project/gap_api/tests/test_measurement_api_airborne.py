@@ -87,7 +87,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             name=STATION_TYPE
         )
         dataset_type = DatasetType.objects.get(
-            name=DATASET_TYPE
+            variable_name=DATASET_TYPE
         )
         dataset = Dataset.objects.get(
             name=DATASET_NAME,
