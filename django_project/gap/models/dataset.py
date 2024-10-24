@@ -46,8 +46,18 @@ class DatasetStore:
 class DatasetTimeStep:
     """Dataset Time Step."""
 
+    QUARTER_HOURLY = 'QUARTER_HOURLY'
     HOURLY = 'HOURLY'
     DAILY = 'DAILY'
+    OTHER = 'OTHER'
+
+
+class DatasetObservationType:
+    """Observation type of data source."""
+
+    GROUND_OBSERVATION = 'GROUND_OBSERVATION'
+    UPPER_AIR_OBSERVATION = 'UPPER_AIR_OBSERVATION'
+    NOT_SPECIFIED = 'NOT_SPECIFIED'
 
 
 class Dataset(Definition):
@@ -63,6 +73,8 @@ class Dataset(Definition):
         choices=(
             (DatasetTimeStep.DAILY, DatasetTimeStep.DAILY),
             (DatasetTimeStep.HOURLY, DatasetTimeStep.HOURLY),
+            (DatasetTimeStep.QUARTER_HOURLY, DatasetTimeStep.QUARTER_HOURLY),
+            (DatasetTimeStep.OTHER, DatasetTimeStep.OTHER),
         ),
         max_length=512
     )
@@ -81,6 +93,24 @@ class Dataset(Definition):
             'Indicates whether this dataset is internal use, '
             'not exposed through API.'
         ),
+    )
+    observation_type = models.CharField(
+        choices=(
+            (
+                DatasetObservationType.GROUND_OBSERVATION,
+                DatasetObservationType.GROUND_OBSERVATION
+            ),
+            (
+                DatasetObservationType.UPPER_AIR_OBSERVATION,
+                DatasetObservationType.UPPER_AIR_OBSERVATION
+            ),
+            (
+                DatasetObservationType.NOT_SPECIFIED,
+                DatasetObservationType.NOT_SPECIFIED
+            ),
+        ),
+        max_length=512,
+        default=DatasetObservationType.NOT_SPECIFIED
     )
 
 

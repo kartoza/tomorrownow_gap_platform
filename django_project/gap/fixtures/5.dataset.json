@@ -9,7 +9,8 @@
       "type": 4,
       "time_step": "DAILY",
       "store_type": "TABLE",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "GROUND_OBSERVATION"
     }
   },
   {
@@ -22,7 +23,8 @@
       "type": 1,
       "time_step": "DAILY",
       "store_type": "ZARR",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -35,7 +37,8 @@
       "type": 3,
       "time_step": "DAILY",
       "store_type": "ZARR",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -48,7 +51,8 @@
       "type": 2,
       "time_step": "DAILY",
       "store_type": "ZARR",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -61,7 +65,8 @@
       "type": 1,
       "time_step": "DAILY",
       "store_type": "EXT_API",
-      "is_internal_use": true
+      "is_internal_use": true,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -74,7 +79,8 @@
       "type": 2,
       "time_step": "DAILY",
       "store_type": "EXT_API",
-      "is_internal_use": true
+      "is_internal_use": true,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -87,7 +93,8 @@
       "type": 6,
       "time_step": "DAILY",
       "store_type": "EXT_API",
-      "is_internal_use": true
+      "is_internal_use": true,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -100,7 +107,8 @@
       "type": 8,
       "time_step": "DAILY",
       "store_type": "TABLE",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "GROUND_OBSERVATION"
     }
   },
   {
@@ -111,9 +119,10 @@
       "description": "Tahmo data that coming from API : https://datahub.tahmo.org/",
       "provider": 1,
       "type": 7,
-      "time_step": "DAILY",
+      "time_step": "QUARTER_HOURLY",
       "store_type": "TABLE",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "NOT_SPECIFIED"
     }
   },
   {
@@ -124,9 +133,10 @@
       "description": "",
       "provider": 6,
       "type": 5,
-      "time_step": "DAILY",
+      "time_step": "OTHER",
       "store_type": "TABLE",
-      "is_internal_use": false
+      "is_internal_use": false,
+      "observation_type": "UPPER_AIR_OBSERVATION"
     }
   }
 ]
