@@ -405,7 +405,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             if config.max_daterange == -1:
                 continue
 
-            if diff.days > config.max_daterange:
+            if diff.days + 1 > config.max_daterange:
                 raise ValidationError({
                     'Invalid Request Parameter': (
                         f'Maximum date range is {config.max_daterange}'
