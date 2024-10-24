@@ -19,7 +19,8 @@ from gap.models import (
     Country,
     Measurement,
     CollectorSession,
-    IngestorType
+    IngestorType,
+    DatasetTimeStep
 )
 
 
@@ -169,3 +170,19 @@ class CollectorSessionCRUDTest(TestCase):
         session.delete()
         self.assertFalse(
             CollectorSession.objects.filter(id=session.id).exists())
+
+
+class DatasetTimeStepTest(TestCase):
+    """DatasetTimeStep test case."""
+
+    def test_convert_freq(self):
+        """Test to_freq function."""
+        freq = DatasetTimeStep.to_freq(DatasetTimeStep.DAILY)
+        self.assertEqual(freq, 'D')
+        freq = DatasetTimeStep.to_freq(DatasetTimeStep.HOURLY)
+        self.assertEqual(freq, 'h')
+        freq = DatasetTimeStep.to_freq(DatasetTimeStep.QUARTER_HOURLY)
+        self.assertEqual(freq, '15min')
+        with self.assertRaises(ValueError) as ctx:
+            DatasetTimeStep.to_freq(DatasetTimeStep.OTHER)
+        self.assertIn('Unsupported time_step', str(ctx.exception))
