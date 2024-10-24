@@ -5,7 +5,7 @@ Tomorrow Now GAP.
 .. note:: Helper for reading NetCDF File
 """
 
-from gap.ingestor.wind_borne_systems import PROVIDER
+from gap.ingestor.wind_borne_systems import PROVIDER as WINBORNE_PROVIDER
 from gap.models import Dataset, DatasetStore
 from gap.providers.airborne_observation import ObservationAirborneDatasetReader
 from gap.providers.cbam import CBAMZarrReader, CBAMNetCDFReader  # noqa
@@ -36,7 +36,7 @@ def get_reader_from_dataset(dataset: Dataset):
         return SalientZarrReader
     elif dataset.provider.name in ['Tahmo', 'Arable']:
         return ObservationDatasetReader
-    elif dataset.provider.name in [PROVIDER]:
+    elif dataset.provider.name in [WINBORNE_PROVIDER]:
         return ObservationAirborneDatasetReader
     elif (
         dataset.provider.name == TIO_PROVIDER and

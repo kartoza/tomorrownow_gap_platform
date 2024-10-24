@@ -79,7 +79,7 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
     def get_measurements(self, start_date: datetime, end_date: datetime):
         """Return measurements."""
         nearest_histories = self.get_nearest_stations()
-        if nearest_histories is None:
+        if nearest_histories is None or len(nearest_histories) == 0:
             return None
 
         return Measurement.objects.select_related(
