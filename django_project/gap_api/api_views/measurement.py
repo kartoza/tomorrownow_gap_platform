@@ -41,6 +41,7 @@ from gap.utils.reader import (
     BaseDatasetReader,
     DatasetReaderOutputType
 )
+from gap_api.models import DatasetTypeAPIConfig
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin
@@ -385,6 +386,32 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                     )
                 })
 
+    def validate_date_range(self, product_filter, start_dt, end_dt):
+        """Validate maximum date range based on product filter.
+
+        :param product_filter: list of product type
+        :type product_filter: List[str]
+        :param start_dt: start date query
+        :type start_dt: datetime
+        :param end_dt: end date query
+        :type end_dt: datetime
+        """
+        configs = DatasetTypeAPIConfig.objects.filter(
+            type__variable_name__in=product_filter
+        )
+        diff = end_dt - start_dt
+
+        for config in configs:
+            if config.max_daterange == -1:
+                continue
+
+            if diff.days + 1 > config.max_daterange:
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        f'Maximum date range is {config.max_daterange}'
+                    )
+                })
+
     def get_response_data(self) -> Response:
         """Read data from dataset.
 
@@ -430,6 +457,9 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         self.validate_output_format(
             dataset_attributes.first().dataset, product_filter, location,
             output_format)
+
+        # validate date range
+        self.validate_date_range(product_filter, start_dt, end_dt)
 
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
