@@ -47,10 +47,14 @@ class PriseMessage(models.Model):
         db_table = 'prise_message'
 
     @staticmethod
-    def get_messages_objects(pest: Pest, message_group: str = None):
+    def get_messages_objects(
+            pest: Pest, message_group: str = None, farm_group: FarmGroup = None
+    ):
         """Return message objects."""
         try:
-            message = PriseMessage.objects.get(pest=pest).messages.all()
+            message = PriseMessage.objects.get(
+                pest=pest, farm_group=farm_group
+            ).messages.all()
             if message_group:
                 message = message.filter(group=message_group)
             return message
@@ -60,13 +64,13 @@ class PriseMessage(models.Model):
     @staticmethod
     def get_messages(
             pest: Pest, message_group: str, context=dict,
-            language_code: str = None
+            language_code: str = None, farm_group: FarmGroup = None
 
     ):
         """Return messages string."""
         return [
             message.get_message(context, language_code)
             for message in PriseMessage.get_messages_objects(
-                pest, message_group
+                pest=pest, message_group=message_group, farm_group=farm_group
             )
         ]
