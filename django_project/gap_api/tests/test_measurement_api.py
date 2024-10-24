@@ -12,13 +12,14 @@ from unittest.mock import patch
 
 from django.contrib.gis.geos import Polygon, MultiPolygon, Point
 from django.urls import reverse
+from rest_framework.exceptions import ValidationError
 
 from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
 from gap.factories import (
     StationFactory,
     MeasurementFactory
 )
-from gap.models import DatasetAttribute, Dataset
+from gap.models import DatasetAttribute, Dataset, DatasetType
 from gap.utils.reader import (
     DatasetReaderValue, DatasetTimelineValue,
     DatasetReaderInput, DatasetReaderOutputType, BaseDatasetReader,
@@ -223,7 +224,8 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         '5.dataset.json',
         '6.unit.json',
         '7.attribute.json',
-        '8.dataset_attribute.json'
+        '8.dataset_attribute.json',
+        '1.datasettype_apiconfig.json'
     ]
 
     def test_read_historical_data_empty(self):
@@ -394,3 +396,24 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         response = view(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'text/csv')
+
+    def test_validate_date_range(self):
+        """Test validate date_range."""
+        shortterm_forecast = DatasetType.objects.get(
+            variable_name='cbam_shortterm_forecast'
+        )
+        view = MeasurementAPI()
+        with self.assertRaises(ValidationError) as ctx:
+            view.validate_date_range(
+                ['cbam_shortterm_forecast'],
+                datetime(2024, 10, 1, 0, 0, 0),
+                datetime(2024, 10, 30, 0, 0, 0)
+            )
+        self.assertIn('Maximum date range is', str(ctx.exception))
+        shortterm_forecast.datasettypeapiconfig.max_daterange = -1
+        shortterm_forecast.datasettypeapiconfig.save()
+        view.validate_date_range(
+            ['cbam_shortterm_forecast'],
+            datetime(2024, 10, 1, 0, 0, 0),
+            datetime(2024, 10, 30, 0, 0, 0)
+        )
