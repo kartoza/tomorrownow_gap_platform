@@ -35,8 +35,8 @@ PROJECT_APPS = (
     'gap',
     'gap_api',
     'spw',
-    'prise',
     'message',
+    'prise',
 )
 INSTALLED_APPS = INSTALLED_APPS + PROJECT_APPS
 

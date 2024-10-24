@@ -3,7 +3,7 @@
     "model": "message.messagetemplate",
     "pk": 1,
     "fields": {
-      "code": "beanfly_1",
+      "code": "prise_beanfly_1",
       "name": "feedback",
       "type": "Feedback",
       "application": "PRISE",
@@ -18,7 +18,7 @@
     "model": "message.messagetemplate",
     "pk": 2,
     "fields": {
-      "code": "beanfly_2",
+      "code": "prise_beanfly_2",
       "name": "identify",
       "type": "Introduction /Advice /Action",
       "application": "PRISE",
@@ -33,7 +33,7 @@
     "model": "message.messagetemplate",
     "pk": 3,
     "fields": {
-      "code": "beanfly_3",
+      "code": "prise_beanfly_3",
       "name": "intro2",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -48,7 +48,7 @@
     "model": "message.messagetemplate",
     "pk": 4,
     "fields": {
-      "code": "beanfly_4",
+      "code": "prise_beanfly_4",
       "name": "intro3",
       "type": "PRISE overview",
       "application": "PRISE",
@@ -63,7 +63,7 @@
     "model": "message.messagetemplate",
     "pk": 5,
     "fields": {
-      "code": "beanfly_5",
+      "code": "prise_beanfly_5",
       "name": "feedback",
       "type": "Feedback",
       "application": "PRISE",
@@ -78,7 +78,7 @@
     "model": "message.messagetemplate",
     "pk": 6,
     "fields": {
-      "code": "beanfly_6",
+      "code": "prise_beanfly_6",
       "name": "monitor",
       "type": "Introduction",
       "application": "PRISE",
@@ -93,7 +93,7 @@
     "model": "message.messagetemplate",
     "pk": 7,
     "fields": {
-      "code": "beanfly_7",
+      "code": "prise_beanfly_7",
       "name": "control 1",
       "type": "Context",
       "application": "PRISE",
@@ -108,7 +108,7 @@
     "model": "message.messagetemplate",
     "pk": 8,
     "fields": {
-      "code": "beanfly_8",
+      "code": "prise_beanfly_8",
       "name": "bestdate",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -123,7 +123,7 @@
     "model": "message.messagetemplate",
     "pk": 9,
     "fields": {
-      "code": "beanfly_9",
+      "code": "prise_beanfly_9",
       "name": "bestdate",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -138,7 +138,7 @@
     "model": "message.messagetemplate",
     "pk": 10,
     "fields": {
-      "code": "beanfly_10",
+      "code": "prise_beanfly_10",
       "name": "feedback",
       "type": "Warning /Description /Feedback",
       "application": "PRISE",
@@ -153,7 +153,7 @@
     "model": "message.messagetemplate",
     "pk": 11,
     "fields": {
-      "code": "beanfly_11",
+      "code": "prise_beanfly_11",
       "name": "advice1",
       "type": "Warning /Description /Action /Advice1",
       "application": "PRISE",
@@ -168,7 +168,7 @@
     "model": "message.messagetemplate",
     "pk": 12,
     "fields": {
-      "code": "beanfly_12",
+      "code": "prise_beanfly_12",
       "name": "bestdate",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -183,7 +183,7 @@
     "model": "message.messagetemplate",
     "pk": 13,
     "fields": {
-      "code": "fall_armyworm_1",
+      "code": "prise_fall_armyworm_1",
       "name": "feedback",
       "type": "Feedback",
       "application": "PRISE",
@@ -198,7 +198,7 @@
     "model": "message.messagetemplate",
     "pk": 14,
     "fields": {
-      "code": "fall_armyworm_2",
+      "code": "prise_fall_armyworm_2",
       "name": "intro1",
       "type": "Introduction /Advice /Action",
       "application": "PRISE",
@@ -213,7 +213,7 @@
     "model": "message.messagetemplate",
     "pk": 15,
     "fields": {
-      "code": "fall_armyworm_3",
+      "code": "prise_fall_armyworm_3",
       "name": "intro2",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -228,7 +228,7 @@
     "model": "message.messagetemplate",
     "pk": 16,
     "fields": {
-      "code": "fall_armyworm_4",
+      "code": "prise_fall_armyworm_4",
       "name": "feedback",
       "type": "Feedback",
       "application": "PRISE",
@@ -243,7 +243,7 @@
     "model": "message.messagetemplate",
     "pk": 17,
     "fields": {
-      "code": "fall_armyworm_5",
+      "code": "prise_fall_armyworm_5",
       "name": "spray1",
       "type": "Introduction",
       "application": "PRISE",
@@ -258,7 +258,7 @@
     "model": "message.messagetemplate",
     "pk": 18,
     "fields": {
-      "code": "fall_armyworm_6",
+      "code": "prise_fall_armyworm_6",
       "name": "spray2",
       "type": "Context",
       "application": "PRISE",
@@ -273,7 +273,7 @@
     "model": "message.messagetemplate",
     "pk": 19,
     "fields": {
-      "code": "fall_armyworm_7",
+      "code": "prise_fall_armyworm_7",
       "name": "bestdate1",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -288,7 +288,7 @@
     "model": "message.messagetemplate",
     "pk": 20,
     "fields": {
-      "code": "fall_armyworm_8",
+      "code": "prise_fall_armyworm_8",
       "name": "bestdate2",
       "type": "Warning /Description",
       "application": "PRISE",
@@ -303,7 +303,7 @@
     "model": "message.messagetemplate",
     "pk": 21,
     "fields": {
-      "code": "fall_armyworm_9",
+      "code": "prise_fall_armyworm_9",
       "name": "feedback",
       "type": "Feedback",
       "application": "PRISE",
@@ -318,7 +318,7 @@
     "model": "message.messagetemplate",
     "pk": 22,
     "fields": {
-      "code": "fall_armyworm_10",
+      "code": "prise_fall_armyworm_10",
       "name": "spray1",
       "type": "Introduction",
       "application": "PRISE",
@@ -333,7 +333,7 @@
     "model": "message.messagetemplate",
     "pk": 23,
     "fields": {
-      "code": "fall_armyworm_11",
+      "code": "prise_fall_armyworm_11",
       "name": "spray2",
       "type": "Context",
       "application": "PRISE",
@@ -348,7 +348,7 @@
     "model": "message.messagetemplate",
     "pk": 24,
     "fields": {
-      "code": "fall_armyworm_12",
+      "code": "prise_fall_armyworm_12",
       "name": "advice1",
       "type": "Warning /Description /Action /Advice1",
       "application": "PRISE",
@@ -363,7 +363,7 @@
     "model": "message.messagetemplate",
     "pk": 25,
     "fields": {
-      "code": "fall_armyworm_13",
+      "code": "prise_fall_armyworm_13",
       "name": "bestdate",
       "type": "Warning /Description",
       "application": "PRISE",

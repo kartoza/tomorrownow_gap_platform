@@ -5,10 +5,23 @@ Tomorrow Now GAP.
 .. note:: Message models.
 """
 
+from django.conf import settings
 from django.db import models
+from django.template import Template, Context
 from django.utils.translation import gettext_lazy as _
 
-from prise.variables import MessageType
+from prise.variables import PriceMessageGroup
+
+
+class MessageLanguageNotSupportedException(Exception):
+    """Message language not supported exception."""
+
+    def __init__(self):  # noqa
+        self.message = (
+            f'The language is not supported. '
+            f'Choices: {[lang[0] for lang in settings.LANGUAGES]}'' '
+        )
+        super().__init__(self.message)
 
 
 class MessageApplication:
@@ -37,12 +50,24 @@ class MessageTemplate(models.Model):
         max_length=512
     )
     group = models.CharField(
-        default=MessageType.START_SEASON,
+        default=PriceMessageGroup.START_SEASON,
         choices=(
-            (MessageType.START_SEASON, _(MessageType.START_SEASON)),
-            (MessageType.TIME_TO_ACTION_1, _(MessageType.TIME_TO_ACTION_1)),
-            (MessageType.TIME_TO_ACTION_2, _(MessageType.TIME_TO_ACTION_2)),
-            (MessageType.END_SEASON, _(MessageType.END_SEASON)),
+            (
+                PriceMessageGroup.START_SEASON,
+                _(PriceMessageGroup.START_SEASON)
+            ),
+            (
+                PriceMessageGroup.TIME_TO_ACTION_1,
+                _(PriceMessageGroup.TIME_TO_ACTION_1)
+            ),
+            (
+                PriceMessageGroup.TIME_TO_ACTION_2,
+                _(PriceMessageGroup.TIME_TO_ACTION_2)
+            ),
+            (
+                PriceMessageGroup.END_SEASON,
+                _(PriceMessageGroup.END_SEASON)
+            ),
         ),
         max_length=512
     )
@@ -62,7 +87,29 @@ class MessageTemplate(models.Model):
 
     class Meta:  # noqa
         ordering = ('code',)
+        db_table = 'message_template'
+        indexes = [
+            models.Index(fields=['group']),
+            models.Index(fields=['application']),
+            models.Index(fields=['name']),
+        ]
 
     def __str__(self):
         """Return string representation of MessageTemplate."""
         return self.code
+
+    def get_message(self, context=dict, language_code: str = None):
+        """Return template by language code.
+
+        Also auto assign the data from context to template.
+        """
+        if not language_code:
+            language_code = settings.LANGUAGES[0][0]
+        try:
+            template = Template(
+                getattr(self, f'template_{language_code}')
+            )
+            context_obj = Context(context)
+            return template.render(context_obj)
+        except AttributeError:
+            raise MessageLanguageNotSupportedException()

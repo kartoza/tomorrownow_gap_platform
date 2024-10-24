@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 
-class MessageType:
+class PriceMessageGroup:
     """Type of message that being used by Price."""
 
     START_SEASON = 'Start of Season'
