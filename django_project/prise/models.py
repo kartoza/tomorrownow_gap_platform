@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from django.db import models
 
 from gap.models.crop_insight import Pest
+from gap.models.farm_group import FarmGroup
 from message.models import MessageTemplate
 
 
@@ -25,10 +26,15 @@ class PriseMessage(models.Model):
     """Model that stores message template linked with pest."""
 
     pest = models.ForeignKey(
-        Pest, on_delete=models.CASCADE, unique=True
+        Pest, on_delete=models.CASCADE
+    )
+    farm_group = models.ForeignKey(
+        FarmGroup, on_delete=models.CASCADE,
+        help_text='A default message if farm group is not specified.',
+        null=True, blank=True
     )
     messages = models.ManyToManyField(
-        MessageTemplate, null=True, blank=True
+        MessageTemplate, blank=True
     )
 
     def __str__(self):
@@ -36,6 +42,7 @@ class PriseMessage(models.Model):
         return self.pest.name
 
     class Meta:  # noqa
+        unique_together = ('pest', 'farm_group')
         ordering = ('pest__name',)
         db_table = 'prise_message'
 

@@ -13,7 +13,7 @@ from prise.models import PriseMessage
 class PriseMessageAdmin(admin.ModelAdmin):
     """Admin page for PriseMessage."""
 
-    list_display = ('pest', 'message_count')
+    list_display = ('pest', 'farm_group', 'message_count')
 
     filter_horizontal = ('messages',)
 

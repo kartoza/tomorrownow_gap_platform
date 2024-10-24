@@ -15,8 +15,9 @@ from message.models import MessageTemplate
 class MessageTemplateAdmin(TranslationAdmin):
     """Admin page for MessageTemplate."""
 
-    list_display = ('code', 'application', 'group', 'template')
+    list_display = ('code', 'name', 'application', 'group', 'template')
     filter = ('application', 'group')
+    search_fields = ('code',)
 
     class Media:  # noqa
         js = (

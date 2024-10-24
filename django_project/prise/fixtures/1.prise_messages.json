@@ -4,6 +4,7 @@
     "pk": 1,
     "fields": {
       "pest": 1,
+      "farm_group": null,
       "messages": [
         1,
         10,
@@ -25,6 +26,7 @@
     "pk": 2,
     "fields": {
       "pest": 2,
+      "farm_group": null,
       "messages": [
         13,
         22,
@@ -39,6 +41,42 @@
         19,
         20,
         21
+      ]
+    }
+  },
+  {
+    "model": "prise.prisemessage",
+    "pk": 3,
+    "fields": {
+      "pest": 1,
+      "farm_group": 4,
+      "messages": [
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ]
+    }
+  },
+  {
+    "model": "prise.prisemessage",
+    "pk": 4,
+    "fields": {
+      "pest": 2,
+      "farm_group": 4,
+      "messages": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
       ]
     }
   }
