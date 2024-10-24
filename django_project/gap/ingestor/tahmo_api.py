@@ -114,7 +114,7 @@ class TahmoAPIIngestor(BaseIngestor):
             name=DATASET_NAME,
             provider=self.provider,
             type=self.dataset_type,
-            time_step=DatasetTimeStep.DAILY,
+            time_step=DatasetTimeStep.QUARTER_HOURLY,
             store_type=DatasetStore.TABLE
         )
 

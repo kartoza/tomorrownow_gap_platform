@@ -101,7 +101,7 @@ class WindBorneSystemsIngestor(BaseIngestor):
             name=DATASET_NAME,
             provider=self.provider,
             type=self.dataset_type,
-            time_step=DatasetTimeStep.DAILY,
+            time_step=DatasetTimeStep.OTHER,
             store_type=DatasetStore.TABLE
         )
 
