@@ -20,7 +20,7 @@ class Command(BaseCommand):
     """Command to load fixtures."""
 
     help = 'Load all fixtures'
-    apps = ['gap', 'spw']
+    apps = ['gap', 'spw', 'gap_api']
 
     def handle(self, *args, **options):
         """Handle load fixtures."""

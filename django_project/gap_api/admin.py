@@ -14,7 +14,7 @@ from rest_framework_tracking.admin import APIRequestLogAdmin
 from rest_framework_tracking.models import APIRequestLog as BaseAPIRequestLog
 
 from gap.models import DatasetType
-from gap_api.models import APIRequestLog
+from gap_api.models import APIRequestLog, DatasetTypeAPIConfig
 
 
 admin.site.unregister(BaseAPIRequestLog)
@@ -169,4 +169,11 @@ class GapAPIRequestLogAdmin(APIRequestLogAdmin):
         }
 
 
+class GapAPIDatasetTypeConfigAdmin(admin.ModelAdmin):
+    """Admin class for DatasetTypeAPIConfig."""
+
+    list_display = ('type', 'max_daterange',)
+
+
 admin.site.register(APIRequestLog, GapAPIRequestLogAdmin)
+admin.site.register(DatasetTypeAPIConfig, GapAPIDatasetTypeConfigAdmin)
