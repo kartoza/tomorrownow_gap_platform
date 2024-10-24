@@ -8,7 +8,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from message.models import MessageTemplate
-from prise.variables import PriceMessageGroup
+from prise.variables import PriseMessageGroup
 
 
 class MessageTemplateFactory(DjangoModelFactory):
@@ -24,4 +24,4 @@ class MessageTemplateFactory(DjangoModelFactory):
         lambda n: f'name-{n}'
     )
     template = factory.Faker('text')
-    group = PriceMessageGroup.START_SEASON
+    group = PriseMessageGroup.START_SEASON

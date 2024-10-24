@@ -11,7 +11,7 @@ from gap.factories import PestFactory
 from message.factories import MessageTemplateFactory
 from prise.factories import PriseMessageFactory
 from prise.models import PriseMessage, PriseMessagePestDoesNotExist
-from prise.variables import PriceMessageGroup
+from prise.variables import PriseMessageGroup
 
 
 class PriseMessageTest(TestCase):
@@ -28,28 +28,28 @@ class PriseMessageTest(TestCase):
             template_sw=(
                 'This is template 1 in swahili with {{ language_code }}'
             ),
-            group=PriceMessageGroup.START_SEASON
+            group=PriseMessageGroup.START_SEASON
         )
         message_2 = MessageTemplateFactory(
             template='This is template 2 in english with {{ language_code }}',
             template_sw=(
                 'This is template 2 in swahili with {{ language_code }}'
             ),
-            group=PriceMessageGroup.START_SEASON
+            group=PriseMessageGroup.START_SEASON
         )
         message_3 = MessageTemplateFactory(
             template='This is template 3 in english with {{ language_code }}',
             template_sw=(
                 'This is template 3 in swahili with {{ language_code }}'
             ),
-            group=PriceMessageGroup.TIME_TO_ACTION_1
+            group=PriseMessageGroup.TIME_TO_ACTION_1
         )
         message_4 = MessageTemplateFactory(
             template='This is template 4 in english with {{ language_code }}',
             template_sw=(
                 'This is template 4 in swahili with {{ language_code }}'
             ),
-            group=PriceMessageGroup.START_SEASON
+            group=PriseMessageGroup.START_SEASON
         )
         prise_message_1 = PriseMessageFactory(pest=self.pest_1)
         prise_message_1.messages.add(*[message_1, message_2, message_3])
@@ -68,13 +68,13 @@ class PriseMessageTest(TestCase):
         )
         self.assertEqual(
             PriseMessage.get_messages_objects(
-                self.pest_1, message_group=PriceMessageGroup.START_SEASON
+                self.pest_1, message_group=PriseMessageGroup.START_SEASON
             ).count(),
             2
         )
         self.assertEqual(
             PriseMessage.get_messages_objects(
-                self.pest_1, message_group=PriceMessageGroup.TIME_TO_ACTION_1
+                self.pest_1, message_group=PriseMessageGroup.TIME_TO_ACTION_1
             ).count(),
             1
         )
@@ -94,7 +94,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'en'
                 },
-                message_group=PriceMessageGroup.START_SEASON
+                message_group=PriseMessageGroup.START_SEASON
             ),
             [
                 'This is template 1 in english with en',
@@ -111,7 +111,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'sw'
                 },
-                message_group=PriceMessageGroup.START_SEASON
+                message_group=PriseMessageGroup.START_SEASON
             ),
             [
                 'This is template 1 in swahili with sw',
@@ -128,7 +128,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'en'
                 },
-                message_group=PriceMessageGroup.TIME_TO_ACTION_1
+                message_group=PriseMessageGroup.TIME_TO_ACTION_1
             ),
             [
                 'This is template 3 in english with en'
@@ -144,7 +144,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'sw'
                 },
-                message_group=PriceMessageGroup.TIME_TO_ACTION_1
+                message_group=PriseMessageGroup.TIME_TO_ACTION_1
             ),
             [
                 'This is template 3 in swahili with sw',
@@ -160,7 +160,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'en'
                 },
-                message_group=PriceMessageGroup.START_SEASON
+                message_group=PriseMessageGroup.START_SEASON
             ),
             [
                 'This is template 4 in english with en',
@@ -176,7 +176,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'sw'
                 },
-                message_group=PriceMessageGroup.START_SEASON
+                message_group=PriseMessageGroup.START_SEASON
             ),
             [
                 'This is template 4 in swahili with sw',
@@ -192,7 +192,7 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'en'
                 },
-                message_group=PriceMessageGroup.START_SEASON
+                message_group=PriseMessageGroup.START_SEASON
             )
 
     def test_pest_3_messages_sw(self):
@@ -204,5 +204,5 @@ class PriseMessageTest(TestCase):
                 context={
                     'language_code': 'sw'
                 },
-                message_group=PriceMessageGroup.START_SEASON
+                message_group=PriseMessageGroup.START_SEASON
             )

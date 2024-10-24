@@ -6,8 +6,8 @@ Tomorrow Now GAP.
 """
 
 
-class PriceMessageGroup:
-    """Type of message that being used by Price."""
+class PriseMessageGroup:
+    """Type of message that being used by Prise."""
 
     START_SEASON = 'Start of Season'
     TIME_TO_ACTION_1 = 'PRISE Time To Action 1 - Beginning of the month'

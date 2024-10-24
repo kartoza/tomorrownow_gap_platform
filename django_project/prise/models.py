@@ -12,7 +12,7 @@ from message.models import MessageTemplate
 
 
 class PriseMessagePestDoesNotExist(Exception):
-    """Price message of pest does not exist exception."""
+    """Prise message of pest does not exist exception."""
 
     def __init__(self, pest: Pest):  # noqa
         self.message = (

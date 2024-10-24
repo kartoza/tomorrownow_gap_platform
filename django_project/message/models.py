@@ -10,7 +10,7 @@ from django.db import models
 from django.template import Template, Context
 from django.utils.translation import gettext_lazy as _
 
-from prise.variables import PriceMessageGroup
+from prise.variables import PriseMessageGroup
 
 
 class MessageLanguageNotSupportedException(Exception):
@@ -50,23 +50,23 @@ class MessageTemplate(models.Model):
         max_length=512
     )
     group = models.CharField(
-        default=PriceMessageGroup.START_SEASON,
+        default=PriseMessageGroup.START_SEASON,
         choices=(
             (
-                PriceMessageGroup.START_SEASON,
-                _(PriceMessageGroup.START_SEASON)
+                PriseMessageGroup.START_SEASON,
+                _(PriseMessageGroup.START_SEASON)
             ),
             (
-                PriceMessageGroup.TIME_TO_ACTION_1,
-                _(PriceMessageGroup.TIME_TO_ACTION_1)
+                PriseMessageGroup.TIME_TO_ACTION_1,
+                _(PriseMessageGroup.TIME_TO_ACTION_1)
             ),
             (
-                PriceMessageGroup.TIME_TO_ACTION_2,
-                _(PriceMessageGroup.TIME_TO_ACTION_2)
+                PriseMessageGroup.TIME_TO_ACTION_2,
+                _(PriseMessageGroup.TIME_TO_ACTION_2)
             ),
             (
-                PriceMessageGroup.END_SEASON,
-                _(PriceMessageGroup.END_SEASON)
+                PriseMessageGroup.END_SEASON,
+                _(PriseMessageGroup.END_SEASON)
             ),
         ),
         max_length=512
