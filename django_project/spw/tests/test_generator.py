@@ -108,6 +108,16 @@ class TestSPWOutput(TestCase):
 class TestSPWFetchDataFunctions(TestCase):
     """Test SPW fetch data functions."""
 
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
     def setUp(self):
         """Set test fetch data functions."""
         TomorrowIODatasetReader.init_provider()
@@ -195,6 +205,16 @@ class TestSPWFetchDataFunctions(TestCase):
 
 class TestSPWGenerator(TestCase):
     """Test SPW Generator functions."""
+
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     def setUp(self):
         """Set the test class."""
