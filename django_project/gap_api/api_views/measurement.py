@@ -109,13 +109,15 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             description='Product type',
             type=openapi.TYPE_STRING,
             enum=[
-                'historical_reanalysis',
-                'shortterm_forecast',
-                'seasonal_forecast',
-                'observations',
-                'windborne_observational'
+                'cbam_historical_analysis',
+                'arable_ground_observation',
+                'disdrometer_ground_observation',
+                'tahmo_ground_observation',
+                'windborne_radiosonde_observation',
+                'cbam_shortterm_forecast',
+                'salient_seasonal_forecast'
             ],
-            default='historical_reanalysis'
+            default='cbam_historical_analysis'
         ),
         openapi.Parameter(
             'output_type', openapi.IN_QUERY,
@@ -229,7 +231,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         """
         product = self.request.GET.get('product', None)
         if product is None:
-            return ['historical_reanalysis']
+            return ['cbam_historical_analysis']
         return [product.lower()]
 
     def _get_format_filter(self):

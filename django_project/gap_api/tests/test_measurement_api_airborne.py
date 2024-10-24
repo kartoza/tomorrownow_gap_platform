@@ -138,7 +138,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             lat=0, lon=0,
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='json',
         )
         response = view(request)
@@ -161,7 +161,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             lat=10, lon=10,
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='json',
         )
         response = view(request)
@@ -206,7 +206,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             bbox='0,0,100,100',
             start_dt='2000-02-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='csv',
         )
         response = view(request)
@@ -234,7 +234,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             bbox='5,5,20,20',
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='csv',
         )
         response = view(request)
@@ -258,7 +258,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             altitudes='1.5,5',
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='csv',
         )
         response = view(request)
@@ -287,7 +287,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             bbox='0,0,100,100',
             start_dt='2000-02-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='netcdf',
         )
         response = view(request)
