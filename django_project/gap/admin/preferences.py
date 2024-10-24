@@ -59,4 +59,11 @@ class PreferencesAdmin(admin.ModelAdmin):
                 )
             }
         ),
+        (
+            'Logging', {
+                'fields': (
+                    'api_log_batch_size',
+                )
+            }
+        ),
     )
