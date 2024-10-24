@@ -19,7 +19,9 @@ from gap.models import (
     Dataset,
     DatasetAttribute,
     Station,
-    Measurement
+    Measurement,
+    DatasetTimeStep,
+    DatasetObservationType
 )
 from gap.utils.reader import (
     LocationInputType,
@@ -74,29 +76,57 @@ class ObservationReaderValue(DatasetReaderValue):
         :yield: bytes of csv file
         :rtype: bytes
         """
-        headers = [
-            'date',
-            'lat',
-            'lon',
-            'altitude'
-        ]
+        dataset = self.attributes[0].dataset
+        time_col_exists = dataset.time_step != DatasetTimeStep.DAILY
+        alt_col_exists = (
+            dataset.observation_type ==
+            DatasetObservationType.UPPER_AIR_OBSERVATION
+        )
+        headers = ['date']
+
+        # add time if time_step is not daily
+        if time_col_exists:
+            headers.append('time')
+
+        # add lat and lon
+        headers.extend(['lat', 'lon'])
+
+        # add altitude if it's upper air observation
+        if alt_col_exists:
+            headers.append('altitude')
+
+        # write headers
         for attr in self.attributes:
             headers.append(attr.attribute.variable_name)
         yield bytes(','.join(headers) + '\n', 'utf-8')
 
         for val in self.values:
-            data = [
-                val.get_datetime_repr('%Y-%m-%d'),
+            data = [val.get_datetime_repr('%Y-%m-%d')]
+
+            # add time if time_step is not daily
+            if time_col_exists:
+                data.append(val.get_datetime_repr('%H:%M:%S'))
+
+            # add lat and lon
+            data.extend([
                 str(val.location.y),
-                str(val.location.x),
-                str(val.altitude) if val.altitude else '',
-            ]
+                str(val.location.x)
+            ])
+
+            # add altitude if it's upper air observation
+            if alt_col_exists:
+                data.append(
+                    str(val.altitude) if val.altitude else ''
+                )
+
             for attr in self.attributes:
                 var_name = attr.attribute.variable_name
                 if var_name in val.values:
                     data.append(str(val.values[var_name]))
                 else:
                     data.append('')
+
+            # write row
             yield bytes(','.join(data) + '\n', 'utf-8')
 
     def to_netcdf_stream(self):
