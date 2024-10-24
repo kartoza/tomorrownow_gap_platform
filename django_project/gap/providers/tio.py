@@ -104,7 +104,7 @@ TIO_SHORT_TERM_FORCAST_VARIABLES = {
 def tomorrowio_shortterm_forecast_dataset() -> Dataset:
     """Return dataset object for tomorrow.io Dataset for sort term forecast."""
     provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
-    dt_shorttermforecast, _ = DatasetType.objects.get(
+    dt_shorttermforecast = DatasetType.objects.get(
         variable_name='cbam_shortterm_forecast',
         type=CastType.FORECAST
     )
@@ -148,7 +148,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
     def init_provider(cls):
         """Init Tomorrow.io provider and variables."""
         provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
-        dt_historical, _ = DatasetType.objects.get(
+        dt_historical = DatasetType.objects.get(
             variable_name='cbam_historical_analysis',
             type=CastType.HISTORICAL
         )
@@ -163,7 +163,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             }
         )
         tomorrowio_shortterm_forecast_dataset()
-        dt_ltn, _ = DatasetType.objects.get(
+        dt_ltn = DatasetType.objects.get(
             name=cls.LONG_TERM_NORMALS_TYPE,
             type=CastType.HISTORICAL
         )
