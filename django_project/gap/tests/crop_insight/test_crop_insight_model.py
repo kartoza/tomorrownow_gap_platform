@@ -19,6 +19,15 @@ class CropCRUDTest(TestCase):
 
     Factory = CropInsightRequestFactory
     Model = CropInsightRequest
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     def test_create_object(self):
         """Test create object."""

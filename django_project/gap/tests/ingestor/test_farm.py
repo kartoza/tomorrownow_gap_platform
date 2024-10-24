@@ -22,7 +22,15 @@ from gap.models.ingestor import (
 class FarmIngestorTest(TestCase):
     """Farm ingestor test case."""
 
-    fixtures = []
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     def setUp(self) -> None:
         """Set test class."""
