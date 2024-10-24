@@ -90,6 +90,12 @@ class MeasurementAdmin(admin.ModelAdmin):
     )
     list_filter = ('station',)
     search_fields = ('name',)
+    # fix N+1 issues for dataset_attribute dropdown
+    readonly_fields = ('dataset_attribute', 'station_history',)
+
+    def has_add_permission(self, request, obj=None):
+        """Disable add measurement from admin page."""
+        return False
 
 
 class IngestorSessionProgressInline(admin.TabularInline):
