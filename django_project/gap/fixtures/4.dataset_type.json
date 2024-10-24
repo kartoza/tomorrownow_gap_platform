@@ -3,37 +3,37 @@
     "model": "gap.datasettype",
     "pk": 1,
     "fields": {
-      "name": "Historical Reanalysis",
+      "name": "CBAM Daily Historical Reanalysis (2012 - 2023)",
       "description": "",
       "type": "historical",
-      "variable_name": "historical_reanalysis"
+      "variable_name": "cbam_historical_analysis"
     }
   },
   {
     "model": "gap.datasettype",
     "pk": 2,
     "fields": {
-      "name": "Short-term Forecast",
+      "name": "CBAM Short-Term Weather Forecast (14-days)",
       "description": "",
       "type": "forecast",
-      "variable_name": "shortterm_forecast"
+      "variable_name": "cbam_shortterm_forecast"
     }
   },
   {
     "model": "gap.datasettype",
     "pk": 3,
     "fields": {
-      "name": "Seasonal Forecast",
+      "name": "Salient Seasonal Weather Forecast (3-months)",
       "description": "",
       "type": "forecast",
-      "variable_name": "seasonal_forecast"
+      "variable_name": "salient_seasonal_forecast"
     }
   },
   {
     "model": "gap.datasettype",
     "pk": 4,
     "fields": {
-      "name": "Tahmo Ground Observation",
+      "name": "Ground Observations (TAHMO stations)",
       "description": "",
       "type": "historical",
       "variable_name": "tahmo_ground_observation"
@@ -43,10 +43,10 @@
     "model": "gap.datasettype",
     "pk": 5,
     "fields": {
-      "name": "WindBorne Observational",
+      "name": "Radiosonde Observations (Windborne)",
       "description": "",
       "type": "historical",
-      "variable_name": "windborne_observational"
+      "variable_name": "windborne_radiosonde_observation"
     }
   },
   {
@@ -63,17 +63,17 @@
     "model": "gap.datasettype",
     "pk": 7,
     "fields": {
-      "name": "Tahmo Disdrometer Observation",
+      "name": "Disdrometer Ground Observation",
       "description": "",
       "type": "historical",
-      "variable_name": "tahmo_disdrometer_observation"
+      "variable_name": "disdrometer_ground_observation"
     }
   },
   {
     "model": "gap.datasettype",
     "pk": 8,
     "fields": {
-      "name": "Arable Ground Observation",
+      "name": "Ground Observations (Arable stations)",
       "description": "",
       "type": "historical",
       "variable_name": "arable_ground_observation"

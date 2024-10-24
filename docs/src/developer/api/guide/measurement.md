@@ -41,14 +41,14 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Product | Provider | Resolution | Source | Version | API product_type |
 |---------|----------|------------|--------|---------|------------------|
 | **Historical Data** |
-| CBAM Daily Historical Reanalysis (2012 - 2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | historical_reanalysis |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis |
 | Ground Observations (TAHMO stations) | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
 | Ground Observations (Arable stations) | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
-| Disdrometer Observation Data | disdrometers | | Tahmo (API) | | tahmo_disdrometer_observation |
-| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | windborne_observational |
+| Disdrometer Observation Data | disdrometers | | Tahmo (API) | | disdrometer_ground_observation |
+| Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | windborne_radiosonde_observation |
 | **Weather Forecasts** |
-| CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | shortterm_forecast |
-| Salient Seasonal weather forecast (3-months) | Salient | 9km² | Salient (API) | v9 | seasonal_forecast |
+| CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | cbam_shortterm_forecast |
+| Salient Seasonal weather forecast (3-months) | Salient | 9km² | Salient (API) | v9 | salient_seasonal_forecast |
 | |
 
 
@@ -210,7 +210,7 @@ https://docs.xarray.dev/en/stable/user-guide/io.html#netcdf
 import requests
 from requests.auth import HTTPBasicAuth
 
-url = "https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json"
+url = "https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=cbam_historical_analysis&output_type=json"
 
 payload={}
 headers = {}
@@ -224,14 +224,14 @@ print(response.json())
 ### CURL
 
 ```
-curl --location 'https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature%2Cmin_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json' -u 'YOUR_USERNAME:YOUR_PASSWORD' -H 'User-Agent: PostmanRuntime/7.42.0'
+curl --location 'https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature%2Cmin_temperature&start_date=2019-11-01&end_date=2019-11-02&product=cbam_historical_analysis&output_type=json' -u 'YOUR_USERNAME:YOUR_PASSWORD' -H 'User-Agent: PostmanRuntime/7.42.0'
 ```
 
 ### JavaScript-JQuery
 
 ```js
 var settings = {
-  "url": "https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=historical_reanalysis&output_type=json",
+  "url": "https://tngap.sta.do.kartoza.com/api/v1/measurement/?lat=-1.404244&lon=35.008688&attributes=max_temperature,min_temperature&start_date=2019-11-01&end_date=2019-11-02&product=cbam_historical_analysis&output_type=json",
   "method": "GET",
   "timeout": 0,
   "headers": {
@@ -274,6 +274,6 @@ You can download the postman collection below and import the API collection usin
 | 400 | Unknown geometry type! | Use geometry with type Polygon/Multipolygon/MultiPoint to make a request using POST method |
 | 400 | Output format json is only available for single point query! | JSON output is only available for GET method with singe point query. Please use csv/netcdf output format! |
 | 400 | No matching attribute found! | The attribute list cannot be found in the product type. |
-| 400 | Attribute with ensemble cannot be mixed with non-ensemble | When requesting for product type seasonal_forecast and output is csv, the attribute that is in ensemble (50-values) cannot be requested with the attribute that does not have ensemble. Please use netcdf output format instead! |
+| 400 | Attribute with ensemble cannot be mixed with non-ensemble | When requesting for product type salient_seasonal_forecast and output is csv, the attribute that is in ensemble (50-values) cannot be requested with the attribute that does not have ensemble. Please use netcdf output format instead! |
 | 400 | Incorrect output type | Use either json, csv, netcdf or ascii |
 | 404 | No weather data is found for given queries | |

@@ -354,7 +354,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         ]
         request = self._get_measurement_request_point(
             attributes=','.join(attribs),
-            product='seasonal_forecast',
+            product='salient_seasonal_forecast',
             output_type='csv'
         )
         response = view(request)

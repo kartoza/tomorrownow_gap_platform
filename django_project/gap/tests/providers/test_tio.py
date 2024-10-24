@@ -16,7 +16,8 @@ from gap.models import (
     Dataset,
     DatasetAttribute,
     DatasetType,
-    CastType
+    CastType,
+    DatasetStore
 )
 from gap.utils.reader import (
     DatasetReaderInput
@@ -41,7 +42,8 @@ class TestTomorrowIODatasetReader(TestCase):
         """Set test class."""
         TomorrowIODatasetReader.init_provider()
         self.dataset = Dataset.objects.filter(
-            provider__name='Tomorrow.io'
+            provider__name='Tomorrow.io',
+            store_type=DatasetStore.EXT_API
         ).first()
 
         attr = DatasetAttribute.objects.filter(
