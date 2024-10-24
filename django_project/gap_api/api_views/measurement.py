@@ -407,7 +407,9 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 data={}
             )
 
-        dataset_attributes = DatasetAttribute.objects.filter(
+        dataset_attributes = DatasetAttribute.objects.select_related(
+            'dataset'
+        ).filter(
             attribute__in=attributes,
             dataset__is_internal_use=False,
             attribute__is_active=True

@@ -205,13 +205,11 @@ class DatasetTimelineValue:
                 self.datetime, unit='s', timezone='UTC')
         return self.datetime.isoformat(timespec='seconds')
 
-    def get_datetime_repr(self, format: str) -> str:
-        """Return the representation of datetime in given format.
+    def get_datetime(self) -> datetime:
+        """Get datetime value.
 
-        :param format: Format like '%Y-%m-%d'
-        :type format: str
-        :return: String of datetime
-        :rtype: str
+        :return: parsed datetime
+        :rtype: datetime
         """
         dt = self.datetime
         if isinstance(self.datetime, np.datetime64):
@@ -220,7 +218,17 @@ class DatasetTimelineValue:
                     np.timedelta64(1, 's')
             )
             dt = datetime.fromtimestamp(timestamp, tz=pytz.UTC)
-        return dt.strftime(format)
+        return dt
+
+    def get_datetime_repr(self, format: str) -> str:
+        """Return the representation of datetime in given format.
+
+        :param format: Format like '%Y-%m-%d'
+        :type format: str
+        :return: String of datetime
+        :rtype: str
+        """
+        return self.get_datetime().strftime(format)
 
     def to_dict(self):
         """Convert into dict.
