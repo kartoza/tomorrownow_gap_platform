@@ -13,3 +13,9 @@ class PriseMessageGroup:
     TIME_TO_ACTION_1 = 'PRISE Time To Action 1 - Beginning of the month'
     TIME_TO_ACTION_2 = 'PRISE Time To Action 2 - Second half of the month'
     END_SEASON = 'End of season'
+
+
+class PriseDataType:
+    """Type of data that being used by Prise."""
+
+    NEAR_REAL_TIME = 'Near Real Time'

@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Message prise models.
+.. note:: Pest prise models.
 """
 
 from django.db import models
@@ -20,3 +20,6 @@ class PrisePest(models.Model):
         max_length=256,
         help_text='Pest variable name that being used on CABI PRISE CSV.'
     )
+
+    class Meta:  # noqa
+        db_table = 'prise_pest'
