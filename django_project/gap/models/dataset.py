@@ -46,8 +46,36 @@ class DatasetStore:
 class DatasetTimeStep:
     """Dataset Time Step."""
 
+    QUARTER_HOURLY = 'QUARTER_HOURLY'
     HOURLY = 'HOURLY'
     DAILY = 'DAILY'
+    OTHER = 'OTHER'
+
+    @classmethod
+    def to_freq(cls, time_step: str) -> str:
+        """Convert time_step to pandas frequency.
+
+        :param time_step: One of DatasetTimeStep
+        :type time_step: str
+        :return: frequency
+        :rtype: str
+        """
+        if time_step == DatasetTimeStep.DAILY:
+            return 'D'
+        elif time_step == DatasetTimeStep.HOURLY:
+            return 'h'
+        elif time_step == DatasetTimeStep.QUARTER_HOURLY:
+            return '15min'
+        else:
+            raise ValueError(f'Unsupported time_step {time_step}')
+
+
+class DatasetObservationType:
+    """Observation type of data source."""
+
+    GROUND_OBSERVATION = 'GROUND_OBSERVATION'
+    UPPER_AIR_OBSERVATION = 'UPPER_AIR_OBSERVATION'
+    NOT_SPECIFIED = 'NOT_SPECIFIED'
 
 
 class Dataset(Definition):
@@ -63,6 +91,8 @@ class Dataset(Definition):
         choices=(
             (DatasetTimeStep.DAILY, DatasetTimeStep.DAILY),
             (DatasetTimeStep.HOURLY, DatasetTimeStep.HOURLY),
+            (DatasetTimeStep.QUARTER_HOURLY, DatasetTimeStep.QUARTER_HOURLY),
+            (DatasetTimeStep.OTHER, DatasetTimeStep.OTHER),
         ),
         max_length=512
     )
@@ -81,6 +111,24 @@ class Dataset(Definition):
             'Indicates whether this dataset is internal use, '
             'not exposed through API.'
         ),
+    )
+    observation_type = models.CharField(
+        choices=(
+            (
+                DatasetObservationType.GROUND_OBSERVATION,
+                DatasetObservationType.GROUND_OBSERVATION
+            ),
+            (
+                DatasetObservationType.UPPER_AIR_OBSERVATION,
+                DatasetObservationType.UPPER_AIR_OBSERVATION
+            ),
+            (
+                DatasetObservationType.NOT_SPECIFIED,
+                DatasetObservationType.NOT_SPECIFIED
+            ),
+        ),
+        max_length=512,
+        default=DatasetObservationType.NOT_SPECIFIED
     )
 
 

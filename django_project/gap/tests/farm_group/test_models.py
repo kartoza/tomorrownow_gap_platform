@@ -18,6 +18,15 @@ class FarmGroupCRUDTest(TestCase):
 
     Factory = FarmGroupFactory
     Model = FarmGroup
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     def test_create_object(self):
         """Test create object."""
@@ -53,6 +62,15 @@ class FarmGroupFunctionalityCRUDTest(TestCase):
 
     Factory = FarmGroupFactory
     Model = FarmGroup
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
 
     def setUp(self) -> None:
         """Set test class."""

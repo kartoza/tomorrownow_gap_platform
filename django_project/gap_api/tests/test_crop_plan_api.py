@@ -21,6 +21,16 @@ from gap_api.api_views.crop_insight import CropPlanAPI
 class CropPlanAPITest(BaseAPIViewTest):
     """Historical api test case."""
 
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
     def create_forecast_data(self, forecast, attr, date, value):
         """Create forecast data."""
         FarmShortTermForecastData.objects.get_or_create(

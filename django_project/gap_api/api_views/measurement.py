@@ -28,6 +28,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from gap.models import (
+    Dataset,
+    DatasetObservationType,
     Attribute,
     DatasetAttribute
 )
@@ -39,6 +41,7 @@ from gap.utils.reader import (
     BaseDatasetReader,
     DatasetReaderOutputType
 )
+from gap_api.models import DatasetTypeAPIConfig
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin
@@ -107,13 +110,15 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             description='Product type',
             type=openapi.TYPE_STRING,
             enum=[
-                'historical_reanalysis',
-                'shortterm_forecast',
-                'seasonal_forecast',
-                'observations',
-                'windborne_observational'
+                'cbam_historical_analysis',
+                'arable_ground_observation',
+                'disdrometer_ground_observation',
+                'tahmo_ground_observation',
+                'windborne_radiosonde_observation',
+                'cbam_shortterm_forecast',
+                'salient_seasonal_forecast'
             ],
-            default='historical_reanalysis'
+            default='cbam_historical_analysis'
         ),
         openapi.Parameter(
             'output_type', openapi.IN_QUERY,
@@ -227,7 +232,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         """
         product = self.request.GET.get('product', None)
         if product is None:
-            return ['historical_reanalysis']
+            return ['cbam_historical_analysis']
         return [product.lower()]
 
     def _get_format_filter(self):
@@ -316,9 +321,14 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         return response
 
     def validate_output_format(
-            self, location: DatasetReaderInput, output_format):
+            self, dataset: Dataset, product_type: str,
+            location: DatasetReaderInput, output_format):
         """Validate output format.
 
+        :param dataset: dataset to read
+        :type dataset: Dataset
+        :param product_type: product type in request
+        :type product_type: str
         :param location: location input filter
         :type location: DatasetReaderInput
         :param output_format: output type/format
@@ -331,6 +341,17 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                     'Invalid Request Parameter': (
                         'Output format json is only available '
                         'for single point query!'
+                    )
+                })
+        elif output_format == DatasetReaderOutputType.NETCDF:
+            if (
+                dataset.observation_type ==
+                DatasetObservationType.UPPER_AIR_OBSERVATION
+            ):
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        'Output format NETCDF is not available '
+                        f'for {product_type}!'
                     )
                 })
 
@@ -350,7 +371,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 )
             })
 
-        if output_format == 'csv':
+        if output_format == DatasetReaderOutputType.CSV:
             non_ensemble_count = dataset_attributes.filter(
                 ensembles=False
             ).count()
@@ -362,6 +383,32 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                     'Invalid Request Parameter': (
                         'Attribute with ensemble cannot be mixed '
                         'with non-ensemble'
+                    )
+                })
+
+    def validate_date_range(self, product_filter, start_dt, end_dt):
+        """Validate maximum date range based on product filter.
+
+        :param product_filter: list of product type
+        :type product_filter: List[str]
+        :param start_dt: start date query
+        :type start_dt: datetime
+        :param end_dt: end date query
+        :type end_dt: datetime
+        """
+        configs = DatasetTypeAPIConfig.objects.filter(
+            type__variable_name__in=product_filter
+        )
+        diff = end_dt - start_dt
+
+        for config in configs:
+            if config.max_daterange == -1:
+                continue
+
+            if diff.days + 1 > config.max_daterange:
+                raise ValidationError({
+                    'Invalid Request Parameter': (
+                        f'Maximum date range is {config.max_daterange}'
                     )
                 })
 
@@ -389,11 +436,9 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 data={}
             )
 
-        # validate if json is only available for single location filter
-        self.validate_output_format(location, output_format)
-        # TODO: validate minimum/maximum area filter?
-
-        dataset_attributes = DatasetAttribute.objects.filter(
+        dataset_attributes = DatasetAttribute.objects.select_related(
+            'dataset'
+        ).filter(
             attribute__in=attributes,
             dataset__is_internal_use=False,
             attribute__is_active=True
@@ -407,6 +452,14 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
 
         # validate empty dataset_attributes
         self.validate_dataset_attributes(dataset_attributes, output_format)
+
+        # validate output type
+        self.validate_output_format(
+            dataset_attributes.first().dataset, product_filter, location,
+            output_format)
+
+        # validate date range
+        self.validate_date_range(product_filter, start_dt, end_dt)
 
         dataset_dict: Dict[int, BaseDatasetReader] = {}
         for da in dataset_attributes:
@@ -508,7 +561,12 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
-            *api_parameters
+            *api_parameters,
+            openapi.Parameter(
+                'altitudes', openapi.IN_QUERY,
+                description='2 value of altitudes: alt_min, alt_max',
+                type=openapi.TYPE_STRING
+            )
         ],
         request_body=openapi.Schema(
             description=(

@@ -104,14 +104,12 @@ TIO_SHORT_TERM_FORCAST_VARIABLES = {
 def tomorrowio_shortterm_forecast_dataset() -> Dataset:
     """Return dataset object for tomorrow.io Dataset for sort term forecast."""
     provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
-    dt_shorttermforecast, _ = DatasetType.objects.get_or_create(
-        name='Short-term Forecast',
-        defaults={
-            'type': CastType.FORECAST
-        }
+    dt_shorttermforecast = DatasetType.objects.get(
+        variable_name='cbam_shortterm_forecast',
+        type=CastType.FORECAST
     )
     ds_forecast, _ = Dataset.objects.get_or_create(
-        name=f'{provider.name} {dt_shorttermforecast.name}',
+        name='Tomorrow.io Short-term Forecast',
         provider=provider,
         type=dt_shorttermforecast,
         store_type=DatasetStore.EXT_API,
@@ -150,14 +148,12 @@ class TomorrowIODatasetReader(BaseDatasetReader):
     def init_provider(cls):
         """Init Tomorrow.io provider and variables."""
         provider, _ = Provider.objects.get_or_create(name='Tomorrow.io')
-        dt_historical, _ = DatasetType.objects.get_or_create(
-            name='Historical Reanalysis',
-            defaults={
-                'type': CastType.HISTORICAL
-            }
+        dt_historical = DatasetType.objects.get(
+            variable_name='cbam_historical_analysis',
+            type=CastType.HISTORICAL
         )
         ds_historical, _ = Dataset.objects.get_or_create(
-            name=f'{provider.name} {dt_historical.name}',
+            name='Tomorrow.io Historical Reanalysis',
             provider=provider,
             type=dt_historical,
             store_type=DatasetStore.EXT_API,
@@ -167,14 +163,12 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             }
         )
         tomorrowio_shortterm_forecast_dataset()
-        dt_ltn, _ = DatasetType.objects.get_or_create(
+        dt_ltn = DatasetType.objects.get(
             name=cls.LONG_TERM_NORMALS_TYPE,
-            defaults={
-                'type': CastType.HISTORICAL
-            }
+            type=CastType.HISTORICAL
         )
         ds_ltn, _ = Dataset.objects.get_or_create(
-            name=f'{provider.name} {dt_ltn.name}',
+            name='Tomorrow.io Long Term Normals (20 years)',
             provider=provider,
             type=dt_ltn,
             store_type=DatasetStore.EXT_API,

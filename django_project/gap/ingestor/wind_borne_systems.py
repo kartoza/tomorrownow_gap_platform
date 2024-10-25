@@ -23,7 +23,7 @@ from gap.models import (
 
 PROVIDER = 'WindBorne Systems'
 STATION_TYPE = 'Balloon'
-DATASET_TYPE = 'WindBorne Observational'
+DATASET_TYPE = 'windborne_radiosonde_observation'
 DATASET_NAME = 'WindBorne Balloons Observations'
 USERNAME_ENV_NAME = 'WIND_BORNE_SYSTEMS_USERNAME'
 PASSWORD_ENV_NAME = 'WIND_BORNE_SYSTEMS_PASSWORD'
@@ -95,13 +95,13 @@ class WindBorneSystemsIngestor(BaseIngestor):
             name=STATION_TYPE
         )
         self.dataset_type = DatasetType.objects.get(
-            name=DATASET_TYPE
+            variable_name=DATASET_TYPE
         )
         self.dataset, _ = Dataset.objects.get_or_create(
             name=DATASET_NAME,
             provider=self.provider,
             type=self.dataset_type,
-            time_step=DatasetTimeStep.DAILY,
+            time_step=DatasetTimeStep.OTHER,
             store_type=DatasetStore.TABLE
         )
 

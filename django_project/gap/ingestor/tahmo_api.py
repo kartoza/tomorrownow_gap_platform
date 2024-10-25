@@ -24,7 +24,7 @@ from gap.models.preferences import Preferences
 
 PROVIDER = 'Tahmo'
 STATION_TYPE = 'Disdrometer'
-DATASET_TYPE = 'Tahmo Disdrometer Observation'
+DATASET_TYPE = 'disdrometer_ground_observation'
 DATASET_NAME = 'Tahmo Disdrometer Observational'
 TAHMO_API_USERNAME_ENV_NAME = 'TAHMO_API_USERNAME'
 TAHMO_API_PASSWORD_ENV_NAME = 'TAHMO_API_PASSWORD'
@@ -108,13 +108,13 @@ class TahmoAPIIngestor(BaseIngestor):
             name=STATION_TYPE
         )
         self.dataset_type = DatasetType.objects.get(
-            name=DATASET_TYPE
+            variable_name=DATASET_TYPE
         )
         self.dataset, _ = Dataset.objects.get_or_create(
             name=DATASET_NAME,
             provider=self.provider,
             type=self.dataset_type,
-            time_step=DatasetTimeStep.DAILY,
+            time_step=DatasetTimeStep.QUARTER_HOURLY,
             store_type=DatasetStore.TABLE
         )
 

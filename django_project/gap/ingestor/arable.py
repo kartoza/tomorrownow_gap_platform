@@ -20,7 +20,7 @@ from gap.models.preferences import Preferences
 
 PROVIDER = 'Arable'
 STATION_TYPE = 'Ground Observations'
-DATASET_TYPE = 'Arable Ground Observation'
+DATASET_TYPE = 'arable_ground_observation'
 DATASET_NAME = 'Arable Ground Observational'
 API_KEY_ENV_NAME = 'ARABLE_API_KEY'
 
@@ -54,7 +54,7 @@ class ArableIngestor(BaseIngestor):
             name=STATION_TYPE
         )
         self.dataset_type = DatasetType.objects.get(
-            name=DATASET_TYPE
+            variable_name=DATASET_TYPE
         )
         self.dataset, _ = Dataset.objects.get_or_create(
             name=DATASET_NAME,

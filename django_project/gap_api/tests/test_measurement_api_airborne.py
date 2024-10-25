@@ -87,13 +87,13 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             name=STATION_TYPE
         )
         dataset_type = DatasetType.objects.get(
-            name=DATASET_TYPE
+            variable_name=DATASET_TYPE
         )
         dataset = Dataset.objects.get(
             name=DATASET_NAME,
             provider=provider,
             type=dataset_type,
-            time_step=DatasetTimeStep.DAILY,
+            time_step=DatasetTimeStep.OTHER,
             store_type=DatasetStore.TABLE
         )
         station = Station.objects.create(
@@ -138,7 +138,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             lat=0, lon=0,
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='json',
         )
         response = view(request)
@@ -161,7 +161,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             lat=10, lon=10,
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='json',
         )
         response = view(request)
@@ -188,7 +188,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         csv_reader = csv.reader(csv_file)
         headers = next(csv_reader, None)
         ordered_headers = [
-            'date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+            'date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
             'temperature'
         ]
         rows = []
@@ -200,13 +200,13 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         return ordered_headers, rows
 
     def test_read_with_bbox(self):
-        """Test read point."""
+        """Test read bbox."""
         view = MeasurementAPI.as_view()
         request = self._get_measurement_request_bbox(
             bbox='0,0,100,100',
             start_dt='2000-02-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='csv',
         )
         response = view(request)
@@ -215,15 +215,18 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
-            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+            ['date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
              'temperature']
         )
         self.assertEqual(len(rows), 2)
         self.assertEqual(
-            rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
+            rows[0],
+            ['2000-02-01', '00:00:00', '10.0', '10.0', '2.0', '200.0', '2.0']
         )
         self.assertEqual(
-            rows[1], ['2000-03-01', '100.0', '100.0', '3.0', '300.0', '3.0']
+            rows[1],
+            ['2000-03-01', '00:00:00', '100.0', '100.0', '3.0', '300.0',
+             '3.0']
         )
 
         # Second request
@@ -231,7 +234,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             bbox='5,5,20,20',
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='csv',
         )
         response = view(request)
@@ -240,17 +243,13 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
-            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
-             'temperature']
-        )
-        self.assertEqual(
-            headers,
-            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+            ['date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
              'temperature']
         )
         self.assertEqual(len(rows), 1)
         self.assertEqual(
-            rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
+            rows[0],
+            ['2000-02-01', '00:00:00', '10.0', '10.0', '2.0', '200.0', '2.0']
         )
 
         # Return data with altitude between 1.5-5, should return history 2 & 3
@@ -259,7 +258,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             altitudes='1.5,5',
             start_dt='2000-01-01', end_dt='2000-03-01',
             attributes=','.join(['atmospheric_pressure', 'temperature']),
-            product='windborne_observational',
+            product='windborne_radiosonde_observation',
             output_type='csv',
         )
         response = view(request)
@@ -268,13 +267,29 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
-            ['date', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
+            ['date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
              'temperature']
         )
         self.assertEqual(len(rows), 2)
         self.assertEqual(
-            rows[0], ['2000-02-01', '10.0', '10.0', '2.0', '200.0', '2.0']
+            rows[0],
+            ['2000-02-01', '00:00:00', '10.0', '10.0', '2.0', '200.0', '2.0']
         )
         self.assertEqual(
-            rows[1], ['2000-03-01', '100.0', '100.0', '3.0', '300.0', '3.0']
+            rows[1],
+            ['2000-03-01', '00:00:00', '100.0', '100.0', '3.0', '300.0', '3.0']
         )
+
+    def test_read_to_netcdf(self):
+        """Test read bbox to netcdf."""
+        view = MeasurementAPI.as_view()
+        request = self._get_measurement_request_bbox(
+            bbox='0,0,100,100',
+            start_dt='2000-02-01', end_dt='2000-03-01',
+            attributes=','.join(['atmospheric_pressure', 'temperature']),
+            product='windborne_radiosonde_observation',
+            output_type='netcdf',
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)

@@ -19,7 +19,9 @@ from gap.models import (
     Dataset,
     DatasetAttribute,
     Station,
-    Measurement
+    Measurement,
+    DatasetTimeStep,
+    DatasetObservationType
 )
 from gap.utils.reader import (
     LocationInputType,
@@ -74,38 +76,88 @@ class ObservationReaderValue(DatasetReaderValue):
         :yield: bytes of csv file
         :rtype: bytes
         """
-        headers = [
-            'date',
-            'lat',
-            'lon',
-            'altitude'
-        ]
+        dataset = self.attributes[0].dataset
+        time_col_exists = dataset.time_step != DatasetTimeStep.DAILY
+        alt_col_exists = (
+            dataset.observation_type ==
+            DatasetObservationType.UPPER_AIR_OBSERVATION
+        )
+        headers = ['date']
+
+        # add time if time_step is not daily
+        if time_col_exists:
+            headers.append('time')
+
+        # add lat and lon
+        headers.extend(['lat', 'lon'])
+
+        # add altitude if it's upper air observation
+        if alt_col_exists:
+            headers.append('altitude')
+
+        # write headers
         for attr in self.attributes:
             headers.append(attr.attribute.variable_name)
         yield bytes(','.join(headers) + '\n', 'utf-8')
 
         for val in self.values:
-            data = [
-                val.get_datetime_repr('%Y-%m-%d'),
+            data = [val.get_datetime_repr('%Y-%m-%d')]
+
+            # add time if time_step is not daily
+            if time_col_exists:
+                data.append(val.get_datetime_repr('%H:%M:%S'))
+
+            # add lat and lon
+            data.extend([
                 str(val.location.y),
-                str(val.location.x),
-                str(val.altitude) if val.altitude else '',
-            ]
+                str(val.location.x)
+            ])
+
+            # add altitude if it's upper air observation
+            if alt_col_exists:
+                data.append(
+                    str(val.altitude) if val.altitude else ''
+                )
+
             for attr in self.attributes:
                 var_name = attr.attribute.variable_name
                 if var_name in val.values:
                     data.append(str(val.values[var_name]))
                 else:
                     data.append('')
+
+            # write row
             yield bytes(','.join(data) + '\n', 'utf-8')
+
+    def _get_date_array(self):
+        """Get date range from result values."""
+        dataset = self.attributes[0].dataset
+
+        first_dt = self.values[0].get_datetime()
+        last_dt = self.values[-1].get_datetime()
+
+        if dataset.time_step == DatasetTimeStep.DAILY:
+            first_dt = first_dt.date()
+            last_dt = last_dt.date()
+
+        return pd.date_range(
+            first_dt, last_dt,
+            freq=DatasetTimeStep.to_freq(dataset.time_step))
+
+    def _get_date_index(
+            self, date_array: pd.DatetimeIndex, datetime: datetime):
+        """Get date index from date_array."""
+        dataset = self.attributes[0].dataset
+        dt = (
+            datetime.replace(hour=0, minute=0, second=0, tzinfo=None) if
+            dataset.time_step == DatasetTimeStep.DAILY else datetime
+        )
+        return date_array.get_loc(dt)
 
     def to_netcdf_stream(self):
         """Generate NetCDF."""
         # create date array
-        date_array = pd.date_range(
-            self.start_date.date().isoformat(),
-            self.end_date.date().isoformat()
-        )
+        date_array = self._get_date_array()
 
         # sort lat and lon array
         lat_array = set()
@@ -143,7 +195,7 @@ class ObservationReaderValue(DatasetReaderValue):
 
         # assign values to the dataset
         for val in self.values:
-            date_idx = date_array.get_loc(val.get_datetime_repr('%Y-%m-%d'))
+            date_idx = self._get_date_index(date_array, val.get_datetime())
             loc = val.location
             lat_idx = lat_array.get_loc(round(loc.y, 5))
             lon_idx = lon_array.get_loc(round(loc.x, 5))

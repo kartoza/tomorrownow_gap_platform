@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db.utils import ProgrammingError
 from django.http import HttpResponseBadRequest
 from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
@@ -35,6 +36,8 @@ def default_fields():
     try:
         return CropPlanData.forecast_default_fields()
     except ProgrammingError:
+        return []
+    except ObjectDoesNotExist:
         return []
 
 
