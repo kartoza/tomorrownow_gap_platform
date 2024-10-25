@@ -25,7 +25,7 @@ class PriseDataByPestRawInput:
     def __init__(
             self, pest_variable_name: str, value: float
     ):
-        """Initialization.
+        """Initialize the raw input for prise models with pest.
 
         :param pest_variable_name:
             The variable name of pest, this will be mapped to Pest object.
@@ -46,6 +46,7 @@ class PriseDataRawInput:
             values: [PriseDataByPestRawInput],
             data_type: str = PriseDataType.NEAR_REAL_TIME
     ):
+        """Initialize the raw input for prise models."""
         self.farm = Farm.get_farm_by_unique_id(farm_unique_id)
         self.generated_at = generated_at
 
@@ -86,6 +87,7 @@ class PriseData(models.Model):
 
     @staticmethod
     def insert_data(data: PriseDataRawInput):
+        """Insert data into prise model."""
         prise_data, _ = PriseData.objects.get_or_create(
             farm=data.farm,
             generated_at=data.generated_at,

@@ -54,7 +54,7 @@ class CabiPriseIngestorTest(TestCase):
         self.assertEqual(session.status, IngestorSessionStatus.FAILED)
         self.assertEqual(
             session.notes,
-            f"Row 2 does not have 'farmID'"
+            "Row 2 does not have 'farmID'"
         )
 
     def test_error_data_type(self):
