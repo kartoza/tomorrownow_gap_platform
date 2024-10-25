@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0032_preferences_api_log_batch_size'),
+        ('gap', '0033_dataset_observation_type_alter_dataset_time_step'),
     ]
 
     operations = [
