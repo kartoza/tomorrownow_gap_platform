@@ -7,7 +7,7 @@ Tomorrow Now GAP.
 
 from django.db import models
 
-from gap.models.crop_insight import Pest
+from gap.models.pest import Pest
 from gap.models.farm_group import FarmGroup
 from message.models import MessageTemplate
 

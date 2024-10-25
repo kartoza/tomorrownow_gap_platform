@@ -46,10 +46,7 @@ class Crop(Definition):
     pass
 
 
-class Pest(Definition):
-    """Model representing pest."""
 
-    pass
 
 
 class FarmShortTermForecast(models.Model):
