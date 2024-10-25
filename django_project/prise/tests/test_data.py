@@ -46,7 +46,7 @@ class PriseDataTest(TestCase):
         """Test return farm with unique id does not exist."""
         with self.assertRaises(FarmWithUniqueIdDoesNotFound):
             PriseDataRawInput(
-                unique_id='farm_0', generated_at=timezone.now(),
+                farm_unique_id='farm_0', generated_at=timezone.now(),
                 values=[]
             )
 
@@ -54,7 +54,7 @@ class PriseDataTest(TestCase):
         """Test return pest with variable does not exist."""
         with self.assertRaises(PestVariableNameNotRecognized):
             PriseDataRawInput(
-                unique_id='farm_1', generated_at=timezone.now(),
+                farm_unique_id='farm_1', generated_at=timezone.now(),
                 values=[
                     PriseDataByPestRawInput('pest_0', 10)
                 ]
@@ -65,7 +65,7 @@ class PriseDataTest(TestCase):
         date_time = timezone.now()
         PriseData.insert_data(
             PriseDataRawInput(
-                unique_id='farm_1', generated_at=date_time,
+                farm_unique_id='farm_1', generated_at=date_time,
                 values=[
                     PriseDataByPestRawInput('pest_1', 10),
                     PriseDataByPestRawInput('pest_2', 20),

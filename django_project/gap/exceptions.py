@@ -19,6 +19,6 @@ class FarmWithUniqueIdDoesNotFound(Exception):
 
     def __init__(self, unique_id: str):  # noqa
         self.message = (
-            f'Farm with unique id {unique_id} is not recognized.'
+            f'Farm with unique id {unique_id} does not exist.'
         )
         super().__init__(self.message)

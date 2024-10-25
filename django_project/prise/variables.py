@@ -19,3 +19,8 @@ class PriseDataType:
     """Type of data that being used by Prise."""
 
     NEAR_REAL_TIME = 'Near Real Time'
+
+    @classmethod
+    def types(cls):
+        """Return all available types."""
+        return [cls.NEAR_REAL_TIME]

@@ -11,6 +11,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from gap.models.farm import Farm
+from prise.exceptions import PriseDataTypeNotRecognized
 from prise.models.pest import Pest, PrisePest
 from prise.variables import PriseDataType
 
@@ -41,13 +42,18 @@ class PriseDataRawInput:
     """The raw input inserting to prise models."""
 
     def __init__(
-            self, unique_id: str, generated_at: datetime,
+            self, farm_unique_id: str, generated_at: datetime,
             values: [PriseDataByPestRawInput],
-            data_type: str = PriseDataType.NEAR_REAL_TIME,
+            data_type: str = PriseDataType.NEAR_REAL_TIME
     ):
-        self.farm = Farm.get_farm_by_unique_id(unique_id)
+        self.farm = Farm.get_farm_by_unique_id(farm_unique_id)
         self.generated_at = generated_at
-        self.data_type = data_type
+
+        self.data_type = data_type.replace(
+            '-', ' '
+        ).replace('_', ' ')
+        if self.data_type not in PriseDataType.types():
+            raise PriseDataTypeNotRecognized()
         self.values = values
 
 
