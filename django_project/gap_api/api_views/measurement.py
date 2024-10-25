@@ -81,6 +81,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
     """API class for measurement."""
 
     date_format = '%Y-%m-%d'
+    time_format = '%H:%M:%S'
     permission_classes = [IsAuthenticated]
     api_parameters = [
         openapi.Parameter(
@@ -97,16 +98,29 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         openapi.Parameter(
             'start_date', openapi.IN_QUERY,
-            description='Start Date',
+            required=True,
+            description='Start Date (YYYY-MM-DD)',
             type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
             'end_date', openapi.IN_QUERY,
-            description='End Date',
+            required=True,
+            description='End Date (YYYY-MM-DD)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'start_time', openapi.IN_QUERY,
+            description='Start Time - UTC (HH:MM:SS)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'end_time', openapi.IN_QUERY,
+            description='End Time - UTC (HH:MM:SS)',
             type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
             'product', openapi.IN_QUERY,
+            required=True,
             description='Product type',
             type=openapi.TYPE_STRING,
             enum=[
@@ -122,6 +136,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         openapi.Parameter(
             'output_type', openapi.IN_QUERY,
+            required=True,
             description='Returned format',
             type=openapi.TYPE_STRING,
             enum=[
@@ -156,6 +171,24 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         return (
             date.today() if date_str is None else
             datetime.strptime(date_str, self.date_format).date()
+        )
+
+    def _get_time_filter(self, attr_name, default):
+        """Get time object from filter (start_time/end_time).
+
+        :param attr_name: request parameter name
+        :type attr_name: str
+        :param default: Time.min or Time.max
+        :type default: time
+        :return: Time object
+        :rtype: time
+        """
+        time_str = self.request.GET.get(attr_name, None)
+        return (
+            default if time_str is None else
+            datetime.strptime(
+                time_str, self.time_format
+            ).replace(tzinfo=None).time()
         )
 
     def _get_location_filter(self) -> DatasetReaderInput:
@@ -423,11 +456,11 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         min_altitudes, max_altitudes = self._get_altitudes_filter()
         start_dt = datetime.combine(
             self._get_date_filter('start_date'),
-            time.min, tzinfo=pytz.UTC
+            self._get_time_filter('start_time', time.min), tzinfo=pytz.UTC
         )
         end_dt = datetime.combine(
             self._get_date_filter('end_date'),
-            time.max, tzinfo=pytz.UTC
+            self._get_time_filter('end_time', time.max), tzinfo=pytz.UTC
         )
         output_format = self._get_format_filter()
         if location is None:
