@@ -52,7 +52,8 @@ class Location(models.Model):
         srid=4326
     )
     file = models.FileField(
-        upload_to=location_file_path
+        upload_to=location_file_path,
+        null=True, blank=True
     )
     file_type = models.CharField(
         max_length=100,
