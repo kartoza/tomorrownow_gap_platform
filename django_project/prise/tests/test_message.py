@@ -9,9 +9,9 @@ from django.test import TestCase
 
 from gap.factories import PestFactory, FarmGroupFactory
 from message.factories import MessageTemplateFactory
+from prise.exceptions import PriseMessagePestDoesNotExist
 from prise.factories import PriseMessageFactory
 from prise.models import PriseMessage
-from prise.exceptions import  PriseMessagePestDoesNotExist
 from prise.variables import PriseMessageGroup
 
 
@@ -78,6 +78,13 @@ class PriseMessageTest(TestCase):
             pest=self.pest_1, farm_group=self.farm_group
         )
         prise_message.messages.add(*[message_5])
+
+    def test_message_group_not_recognized(self):
+        """Test message group is not recognized."""
+        with self.assertRaises(ValueError):
+            PriseMessage.get_messages_objects(
+                self.pest_1, message_group='NotRecognizedGroup'
+            )
 
     def test_pest_no_message_objects(self):
         """Test return pest with no message."""
