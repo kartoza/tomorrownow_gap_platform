@@ -6,14 +6,12 @@ Tomorrow Now GAP.
 """
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
-from gap.models.pest import Pest
 from gap.models.farm_group import FarmGroup
+from gap.models.pest import Pest
 from message.models import MessageTemplate
 from prise.exceptions import PriseMessagePestDoesNotExist
-
-
-
 
 
 class PriseMessage(models.Model):
@@ -39,6 +37,7 @@ class PriseMessage(models.Model):
         unique_together = ('pest', 'farm_group')
         ordering = ('pest__name',)
         db_table = 'prise_message'
+        verbose_name = _('Message')
 
     @staticmethod
     def get_messages_objects(

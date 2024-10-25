@@ -76,6 +76,7 @@ class PriseData(models.Model):
         unique_together = ('farm', 'generated_at', 'data_type')
         ordering = ('-generated_at',)
         db_table = 'prise_data'
+        verbose_name = _('Data')
 
     @staticmethod
     def insert_data(data: PriseDataRawInput):
@@ -108,3 +109,4 @@ class PriseDataByPest(models.Model):
     class Meta:  # noqa
         unique_together = ('data', 'pest')
         db_table = 'prise_data_by_pest'
+        verbose_name = _('Data by Pest')

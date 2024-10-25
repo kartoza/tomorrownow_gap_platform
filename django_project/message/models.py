@@ -83,6 +83,7 @@ class MessageTemplate(models.Model):
             models.Index(fields=['application']),
             models.Index(fields=['name']),
         ]
+        verbose_name = _('Template')
 
     def __str__(self):
         """Return string representation of MessageTemplate."""

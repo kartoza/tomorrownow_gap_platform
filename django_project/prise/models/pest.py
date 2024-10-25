@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from gap.models.pest import Pest
 from prise.exceptions import PestVariableNameNotRecognized
@@ -28,6 +29,7 @@ class PrisePest(models.Model):
 
     class Meta:  # noqa
         db_table = 'prise_pest'
+        verbose_name = _('Pest')
 
     @staticmethod
     def get_pest_by_variable_name(pest_variable_name) -> Pest:
