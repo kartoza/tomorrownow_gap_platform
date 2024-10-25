@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 from django.contrib import admin
 
-from prise.models import PriseMessage
+from prise.models import PriseMessage, PrisePest
 
 
 @admin.register(PriseMessage)
@@ -20,3 +20,10 @@ class PriseMessageAdmin(admin.ModelAdmin):
     def message_count(self, obj: PriseMessage):
         """Message count."""
         return obj.messages.count()
+
+
+@admin.register(PrisePest)
+class PrisePestAdmin(admin.ModelAdmin):
+    """Admin page for PrisePest."""
+
+    list_display = ('pest', 'variable_name')
