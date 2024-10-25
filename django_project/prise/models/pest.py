@@ -8,18 +8,33 @@ Tomorrow Now GAP.
 from django.db import models
 
 from gap.models.pest import Pest
+from prise.exceptions import PestVariableNameNotRecognized
 
 
 class PrisePest(models.Model):
-    """Pest specifically for Prise."""
+    """Pest specifically for Prise.
 
-    pest = models.OneToOneField(
-        Pest, on_delete=models.CASCADE, unique=True
-    )
+    This is for mapping the variable name to the pest model.
+    """
+
     variable_name = models.CharField(
         max_length=256,
-        help_text='Pest variable name that being used on CABI PRISE CSV.'
+        help_text='Pest variable name that being used on CABI PRISE CSV.',
+        unique=True
+    )
+    pest = models.ForeignKey(
+        Pest, on_delete=models.CASCADE
     )
 
     class Meta:  # noqa
         db_table = 'prise_pest'
+
+    @staticmethod
+    def get_pest_by_variable_name(pest_variable_name) -> Pest:
+        """Return Pest by variable name."""
+        try:
+            return PrisePest.objects.get(
+                variable_name=pest_variable_name
+            ).pest
+        except PrisePest.DoesNotExist:
+            raise PestVariableNameNotRecognized(pest_variable_name)

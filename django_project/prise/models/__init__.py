@@ -5,6 +5,6 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
-from .data import *  # noqa
-from .message import *  # noqa
-from .pest import *  # noqa
+from prise.models.data import *  # noqa
+from prise.models.message import *  # noqa
+from prise.models.pest import *  # noqa

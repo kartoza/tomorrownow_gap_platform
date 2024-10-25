@@ -7,8 +7,8 @@ Tomorrow Now GAP.
 
 from django.test import TestCase
 
+from message.exceptions import MessageLanguageNotSupportedException
 from message.factories import MessageTemplateFactory
-from message.models import MessageLanguageNotSupportedException
 
 
 class MessageTemplateTest(TestCase):

@@ -10,7 +10,8 @@ from django.test import TestCase
 from gap.factories import PestFactory, FarmGroupFactory
 from message.factories import MessageTemplateFactory
 from prise.factories import PriseMessageFactory
-from prise.models import PriseMessage, PriseMessagePestDoesNotExist
+from prise.models import PriseMessage
+from prise.exceptions import  PriseMessagePestDoesNotExist
 from prise.variables import PriseMessageGroup
 
 

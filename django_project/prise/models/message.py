@@ -10,16 +10,10 @@ from django.db import models
 from gap.models.pest import Pest
 from gap.models.farm_group import FarmGroup
 from message.models import MessageTemplate
+from prise.exceptions import PriseMessagePestDoesNotExist
 
 
-class PriseMessagePestDoesNotExist(Exception):
-    """Prise message of pest does not exist exception."""
 
-    def __init__(self, pest: Pest):  # noqa
-        self.message = (
-            f'Prise message with pest {pest.name} does not exist.'
-        )
-        super().__init__(self.message)
 
 
 class PriseMessage(models.Model):
