@@ -17,6 +17,16 @@ from prise.variables import PriseMessageGroup
 class PriseMessageTest(TestCase):
     """PriseMessage test case."""
 
+    fixtures = [
+        '2.provider.json',
+        '3.station_type.json',
+        '4.dataset_type.json',
+        '5.dataset.json',
+        '6.unit.json',
+        '7.attribute.json',
+        '8.dataset_attribute.json'
+    ]
+
     def setUp(self):
         """Set SalientIngestorBaseTest."""
         self.pest_1 = PestFactory(name='pest 1')
