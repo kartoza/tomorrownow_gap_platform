@@ -6,20 +6,13 @@ Tomorrow Now GAP.
 """
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
-from gap.models.crop_insight import Pest
 from gap.models.farm_group import FarmGroup
+from gap.models.pest import Pest
 from message.models import MessageTemplate
-
-
-class PriseMessagePestDoesNotExist(Exception):
-    """Prise message of pest does not exist exception."""
-
-    def __init__(self, pest: Pest):  # noqa
-        self.message = (
-            f'Prise message with pest {pest.name} does not exist.'
-        )
-        super().__init__(self.message)
+from prise.exceptions import PriseMessagePestDoesNotExist
+from prise.variables import PriseMessageGroup
 
 
 class PriseMessage(models.Model):
@@ -45,17 +38,39 @@ class PriseMessage(models.Model):
         unique_together = ('pest', 'farm_group')
         ordering = ('pest__name',)
         db_table = 'prise_message'
+        verbose_name = _('Message')
 
     @staticmethod
     def get_messages_objects(
             pest: Pest, message_group: str = None, farm_group: FarmGroup = None
     ):
-        """Return message objects."""
+        """Return message objects.
+
+        :param pest: Message for specific pest.
+        :type pest: Pest
+
+        :param message_group:
+            Message group for specific pest can be checked in
+            PriseMessageGroup.
+        :type message_group: str
+
+        :param farm_group:
+            Message that will be filtered by farm group.
+            If not specified, it will use message that belongs to
+            empty farm group.
+        :type farm_group: FarmGroup
+        """
         try:
             message = PriseMessage.objects.get(
                 pest=pest, farm_group=farm_group
             ).messages.all()
+
             if message_group:
+                if message_group not in PriseMessageGroup.groups():
+                    raise ValueError(
+                        'Message group is not recognized. '
+                        f'Choices are {PriseMessageGroup.groups()}.'
+                    )
                 message = message.filter(group=message_group)
             return message
         except PriseMessage.DoesNotExist:
@@ -67,7 +82,28 @@ class PriseMessage(models.Model):
             language_code: str = None, farm_group: FarmGroup = None
 
     ):
-        """Return messages string."""
+        """Return messages string.
+
+        :param pest: Message for specific pest.
+        :type pest: Pest
+
+        :param message_group:
+            Message group for specific pest can be checked in
+            PriseMessageGroup.
+        :type message_group: str
+
+        :param context: Context that will be used to render messages.
+        :type context: dict
+
+        :param language_code: Language code for messages, default=en.
+        :type language_code: str
+
+        :param farm_group:
+            Message that will be filtered by farm group.
+            If not specified, it will use message that belongs to
+            empty farm group.
+        :type farm_group: FarmGroup
+        """
         return [
             message.get_message(context, language_code)
             for message in PriseMessage.get_messages_objects(

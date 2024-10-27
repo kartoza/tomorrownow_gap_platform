@@ -9,8 +9,7 @@ from django.utils.html import format_html
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
-    Crop, Pest,
-    FarmShortTermForecast, FarmShortTermForecastData,
+    Crop, FarmShortTermForecast, FarmShortTermForecastData,
     FarmProbabilisticWeatherForcast,
     FarmSuitablePlantingWindowSignal, FarmPlantingWindowTable,
     FarmPestManagement, FarmCropVariety, CropInsightRequest
@@ -21,13 +20,6 @@ from gap.tasks.crop_insight import generate_insight_report
 @admin.register(Crop)
 class CropAdmin(AbstractDefinitionAdmin):
     """Crop admin."""
-
-    pass
-
-
-@admin.register(Pest)
-class PestAdmin(AbstractDefinitionAdmin):
-    """Pest admin."""
 
     pass
 

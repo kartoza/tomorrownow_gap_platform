@@ -8,7 +8,8 @@ import factory
 from factory.django import DjangoModelFactory
 
 from gap.factories.crop_insight import PestFactory
-from prise.models import PriseMessage
+from gap.factories.farm import FarmFactory
+from prise.models import PriseMessage, PrisePest, PriseData, PriseDataByPest
 
 
 class PriseMessageFactory(DjangoModelFactory):
@@ -18,3 +19,37 @@ class PriseMessageFactory(DjangoModelFactory):
         model = PriseMessage
 
     pest = factory.SubFactory(PestFactory)
+
+
+class PrisePestFactory(DjangoModelFactory):
+    """Factory class for PrisePest model."""
+
+    class Meta:  # noqa
+        model = PrisePest
+
+    pest = factory.SubFactory(PestFactory)
+    variable_name = factory.Sequence(
+        lambda n: f'pest-{n}'
+    )
+
+
+class PriseDataFactory(DjangoModelFactory):
+    """Factory class for PriseData model."""
+
+    class Meta:  # noqa
+        model = PriseData
+
+    farm = factory.SubFactory(FarmFactory)
+    ingested_at = factory.Faker('date')
+    generated_at = factory.Faker('date')
+
+
+class PriseDataByPestFactory(DjangoModelFactory):
+    """Factory class for PriseDataByPest model."""
+
+    class Meta:  # noqa
+        model = PriseDataByPest
+
+    data = factory.SubFactory(PriseDataFactory)
+    pest = factory.SubFactory(PestFactory)
+    value = factory.Faker('pyfloat')

@@ -4,7 +4,10 @@
     "pk": 1,
     "fields": {
       "name": "Beanfly",
-      "description": "Beanfly (On bean)"
+      "description": "Beanfly (On bean)",
+      "scientific_name": "Ophiomyia",
+      "taxonomic_rank": "genus",
+      "link": "https://en.wikipedia.org/wiki/Ophiomyia"
     }
   },
   {
@@ -12,7 +15,10 @@
     "pk": 2,
     "fields": {
       "name": "Fall Armyworm",
-      "description": "Fall Armyworm (on maize and other hosts)"
+      "description": "Fall Armyworm (on maize and other hosts)",
+      "scientific_name": "Spodoptera frugiperda",
+      "taxonomic_rank": "species",
+      "link": "https://en.wikipedia.org/wiki/Fall_armyworm"
     }
   }
 ]
