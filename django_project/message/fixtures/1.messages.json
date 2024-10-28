@@ -474,9 +474,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 2 - Second half of the month",
       "note": "",
-      "template": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ \r\n day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
-      "template_en": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ \r\n day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
-      "template_sw": "Iwapo ulipanda mwezi wa {{ month }}, tumia viua wadudu kama' Pyrethrin na Neem siku {{ \r\n day_1 }} hadi {{ day_2 }} baada ya kupanda. Kwa maelezo, piga {{ phone }}"
+      "template": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
+      "template_en": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
+      "template_sw": "Iwapo ulipanda mwezi wa {{ month }}, tumia viua wadudu kama' Pyrethrin na Neem siku {{ day_1 }} hadi {{ day_2 }} baada ya kupanda. Kwa maelezo, piga {{ phone }}"
     }
   },
   {

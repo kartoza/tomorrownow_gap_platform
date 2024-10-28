@@ -101,7 +101,7 @@ class FarmGroup(Definition):
             max_pest_message = 5
             active = False  # enable only for Kalro in admin
             for idx in range(max_pest_message):
-                field = f'prise_{pest.short_name}_{idx + 1}'
+                field = CropPlanData.prise_message_key(pest, idx + 1)
                 FarmGroupCropInsightField.objects.update_or_create(
                     farm_group=self,
                     field=field,

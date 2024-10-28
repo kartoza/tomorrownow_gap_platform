@@ -23,6 +23,7 @@ from gap.models.farm_group import FarmGroup
 from gap.models.lookup import RainfallClassification
 from gap.models.measurement import DatasetAttribute
 from gap.models.preferences import Preferences
+from gap.models.pest import Pest
 from spw.models import SPWOutput
 
 User = get_user_model()
@@ -387,9 +388,16 @@ class CropPlanData:
             'rainAccumulationType'
         ]
 
+    @staticmethod
+    def prise_message_key(pest: Pest, field_num):
+        """Return key for prise message field."""
+        return f'prise_{pest.short_name}_{field_num}'
+
     @property
     def data(self) -> dict:
         """Return the data."""
+        from prise.generator import generate_prise_message
+
         # ---------------------------------------
         # Spw data
         spw_top_message = ''
@@ -464,6 +472,18 @@ class CropPlanData:
                                 day_n, 'rainAccumulationType'
                             )
                         ] = _class.name
+
+        # ----------------------------------------
+        # Prise message
+        for pest in Pest.objects.all():
+            prise_messages = (
+                generate_prise_message(self.farm, pest, self.generated_date)
+            )
+            for idx, prise_message in enumerate(prise_messages):
+                output[
+                    CropPlanData.prise_message_key(pest, idx + 1)
+                ] = prise_message
+
         return output
 
 
