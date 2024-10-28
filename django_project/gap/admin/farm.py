@@ -5,8 +5,11 @@ Tomorrow Now GAP.
 .. note:: Farms admin
 """
 
+import json
 from django.contrib import admin, messages
 from django.utils.html import format_html
+from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
@@ -30,6 +33,24 @@ def recreate_farm_group_fields(modeladmin, request, queryset):
         group.prepare_fields()
 
 
+@admin.action(description='Download fields as json')
+def download_farm_group_fields(modeladmin, request, queryset):
+    """Download farm group fields."""
+    data = {}
+    for group in queryset.all():
+        fields = group.farmgroupcropinsightfield_set.all()
+        fields_to_include = ['field', 'column_number', 'label', 'active']
+        data[group.name] = list(fields.values(*fields_to_include))
+ 
+    # Convert the data to JSON
+    response_data = json.dumps(data, cls=DjangoJSONEncoder)
+
+    # Create the HttpResponse with the correct content_type for JSON
+    response = HttpResponse(response_data, content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename=farm_groups.json'
+    return response
+
+
 @admin.action(description='Run crop insight')
 def run_crop_insight(modeladmin, request, queryset):
     """Run crop insight."""
@@ -46,7 +67,9 @@ class FarmGroupAdmin(AbstractDefinitionAdmin):
 
     filter_horizontal = ('farms', 'users')
     inlines = (FarmGroupCropInsightFieldInline,)
-    actions = (recreate_farm_group_fields, run_crop_insight)
+    actions = (
+        recreate_farm_group_fields, run_crop_insight,
+        download_farm_group_fields)
     readonly_fields = ('displayed_headers',)
 
     def farm_count(self, obj: FarmGroup):
