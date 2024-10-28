@@ -19,9 +19,11 @@ from gap.factories.farm import FarmFactory, FarmGroupFactory
 from gap.factories.grid import GridFactory
 from gap.models.crop_insight import (
     FarmSuitablePlantingWindowSignal, CropInsightRequest,
-    FarmGroupIsNotSetException
+    FarmGroupIsNotSetException,
 )
+from gap.models.pest import Pest
 from gap.models.preferences import Preferences
+from gap.models.farm_group import FarmGroupCropInsightField
 from gap.tasks.crop_insight import (
     generate_insight_report,
     generate_crop_plan
@@ -75,6 +77,7 @@ class TestCropInsightGenerator(TestCase):
         '7.attribute.json',
         '8.dataset_attribute.json',
         '9.rainfall_classification.json',
+        '10.pest.json',
         '1.spw_output.json'
     ]
     csv_headers = [
@@ -97,6 +100,8 @@ class TestCropInsightGenerator(TestCase):
         'day11_mm', 'day11_Chance', 'day11_Type',
         'day12_mm', 'day12_Chance', 'day12_Type',
         'day13_mm', 'day13_Chance', 'day13_Type',
+        'prise_bean_fly_1', 'prise_bean_fly_2', 'prise_bean_fly_3',
+        'prise_bean_fly_4', 'prise_bean_fly_5'
     ]
 
     def setUp(self):
@@ -149,12 +154,20 @@ class TestCropInsightGenerator(TestCase):
         }
         self.preferences.save()
 
+        # update prise headers
+        self.pest = Pest.objects.get(name='Beanfly')
+        FarmGroupCropInsightField.objects.filter(
+            farm_group=self.farm_group,
+            field__startswith=f'prise_{self.pest.short_name}_'
+        ).update(active=True)
+
+    @patch('prise.generator.generate_prise_message')
     @patch('spw.generator.main.execute_spw_model')
     @patch('spw.generator.main._fetch_timelines_data')
     @patch('spw.generator.main._fetch_ltn_data')
     def test_spw_generator(
             self, mock_fetch_ltn_data, mock_fetch_timelines_data,
-            mock_execute_spw_model
+            mock_execute_spw_model, mock_prise
     ):
         """Test calculate_from_point function."""
         last_day = self.today + timedelta(days=12)
@@ -299,6 +312,9 @@ class TestCropInsightGenerator(TestCase):
                 attachments.append(attachment)
             return 0
 
+        # mock prise message
+        mock_prise.return_value = ['prise pet 1', 'prise pet 2']
+
         # Mock the send email
         with patch("django.core.mail.EmailMessage.send", mock_send_fn):
             # Crop insight report
@@ -349,6 +365,28 @@ class TestCropInsightGenerator(TestCase):
                         self.assertEqual(row[10], '10.0')  # Precip (daily)
                         self.assertEqual(row[11], '50.0')  # Precip % chance
                         self.assertEqual(row[12], 'Light rain')  # Precip Type
+
+                        # prise columns
+                        self.assertEqual(
+                            row[self.csv_headers.index('prise_bean_fly_1')],
+                            'prise pet 1'
+                        )
+                        self.assertEqual(
+                            row[self.csv_headers.index('prise_bean_fly_2')],
+                            'prise pet 2'
+                        )
+                        self.assertEqual(
+                            row[self.csv_headers.index('prise_bean_fly_3')],
+                            ''
+                        )
+                        self.assertEqual(
+                            row[self.csv_headers.index('prise_bean_fly_4')],
+                            ''
+                        )
+                        self.assertEqual(
+                            row[self.csv_headers.index('prise_bean_fly_5')],
+                            ''
+                        )
 
                     # Farm 2
                     elif row_num == 3:
