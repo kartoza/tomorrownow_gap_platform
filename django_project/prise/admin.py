@@ -6,7 +6,13 @@ Tomorrow Now GAP.
 """
 from django.contrib import admin
 
-from prise.models import PriseMessage, PrisePest, PriseData, PriseDataByPest
+from prise.models import (
+    PriseMessage,
+    PrisePest,
+    PriseData,
+    PriseDataByPest,
+    PriseMessageSchedule
+)
 
 
 @admin.register(PriseMessage)
@@ -42,3 +48,14 @@ class PriseDataAdmin(admin.ModelAdmin):
     list_display = ('farm', 'ingested_at', 'generated_at', 'data_type')
     list_filter = ('farm', 'data_type')
     inlines = (PriseDataByPestInline,)
+
+
+@admin.register(PriseMessageSchedule)
+class PriseMessageScheduleAdmin(admin.ModelAdmin):
+    """Admin page for PriseMessageSchedule."""
+
+    list_display = (
+        'group', 'week_of_month', 'day_of_week',
+        'schedule_date', 'priority', 'active'
+    )
+    list_filter = ('group', 'active')

@@ -384,9 +384,9 @@
       "application": "PRISE",
       "group": "Start of Season",
       "note": "This message group should be sent once at the start of the season/ before planting",
-      "template": "Dear farmer, you will be receiving updates on when and how to manage beanfly pest in beans.For more call {{ phone }}",
-      "template_en": "Dear farmer, you will be receiving updates on when and how to manage beanfly pest in beans.For more call {{ phone }}",
-      "template_sw": "Mkulima mpendwa, tutakujulisha wakati na jinsi ya kudhibiti nzi wa maharage (Beanfly).Kwa maelezo zaidi piga {{ phone }}."
+      "template": "Dear farmer, you will be receiving updates on when and how to manage beanfly pest in beans.",
+      "template_en": "Dear farmer, you will be receiving updates on when and how to manage beanfly pest in beans.",
+      "template_sw": "Mkulima mpendwa, tutakujulisha wakati na jinsi ya kudhibiti nzi wa maharage (Beanfly)."
     }
   },
   {
@@ -399,9 +399,9 @@
       "application": "PRISE",
       "group": "Start of Season",
       "note": "",
-      "template": "During planting, use certified or seeds treated with pesticides to prevent infestation of bean flies at germination. For more call {{ phone }}",
-      "template_en": "During planting, use certified or seeds treated with pesticides to prevent infestation of bean flies at germination. For more call {{ phone }}",
-      "template_sw": "Tumia mbegu zilizoidhinishwa au kutibiwa kwa dawa ya wadudu wakati wa kupanda kuzuia uharibifu wa maharage kwa nzi. Kwa maelezo, piga {{ phone }}"
+      "template": "During planting, use certified or seeds treated with pesticides to prevent infestation of bean flies at germination.",
+      "template_en": "During planting, use certified or seeds treated with pesticides to prevent infestation of bean flies at germination.",
+      "template_sw": "Tumia mbegu zilizoidhinishwa au kutibiwa kwa dawa ya wadudu wakati wa kupanda kuzuia uharibifu wa maharage kwa nzi."
     }
   },
   {
@@ -414,9 +414,9 @@
       "application": "PRISE",
       "group": "Start of Season",
       "note": "",
-      "template": "Beanfly is a small shiny black fly, symptoms include wilting and yellowing of whole plant, leaf drop and thick stems. For more call {{ phone }}",
-      "template_en": "Beanfly is a small shiny black fly, symptoms include wilting and yellowing of whole plant, leaf drop and thick stems. For more call {{ phone }}",
-      "template_sw": "Nzi wa maharage ni mdogo mweusi anayeng'aa, dalili ni kunyauka, rangi ya njano, majani kuanguka na mashina yaliyovimba. Maelezo zaidi {{ phone }}"
+      "template": "Beanfly is a small shiny black fly, symptoms include wilting and yellowing of whole plant, leaf drop and thick stems.",
+      "template_en": "Beanfly is a small shiny black fly, symptoms include wilting and yellowing of whole plant, leaf drop and thick stems.",
+      "template_sw": "Nzi wa maharage ni mdogo mweusi anayeng'aa, dalili ni kunyauka, rangi ya njano, majani kuanguka na mashina yaliyovimba."
     }
   },
   {
@@ -444,9 +444,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "Take action when 5 -10% of plants per acre (100 - 300 plants) are infested with beanfly. For more call {{ phone }}",
-      "template_en": "Take action when 5 -10% of plants per acre (100 - 300 plants) are infested with beanfly. For more call {{ phone }}",
-      "template_sw": "Chukua hatua ya kudhibiti wakati asilimia 5-10 ya mimea ya maharage(mimea 100 - 300 kwa ekari) imeharibiwa na nzi. Kwa maelezo, piga {{ phone }}."
+      "template": "Take action when 5 -10% of plants per acre (100 - 300 plants) are infested with beanfly.",
+      "template_en": "Take action when 5 -10% of plants per acre (100 - 300 plants) are infested with beanfly.",
+      "template_sw": "Chukua hatua ya kudhibiti wakati asilimia 5-10 ya mimea ya maharage(mimea 100 - 300 kwa ekari) imeharibiwa na nzi."
     }
   },
   {
@@ -459,9 +459,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
-      "template_en": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
-      "template_sw": "Iwapo ulipanda mwezi wa {{ month }}, tumia viua wadudu kama' Pyrethrin na Neem siku {{ day_1 }} hadi {{ day_2 }} baada ya kupanda. Kwa maelezo, piga {{ phone }}"
+      "template": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_en": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_sw": "Iwapo ulipanda mwezi wa {{ month }}, tumia viua wadudu kama' Pyrethrin na Neem siku {{ day_1 }} hadi {{ day_2 }} baada ya kupanda."
     }
   },
   {
@@ -474,9 +474,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 2 - Second half of the month",
       "note": "",
-      "template": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ \r\n day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
-      "template_en": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ \r\n day_1 }} to {{ day_2 }} days after planting. For more call {{ phone }}",
-      "template_sw": "Iwapo ulipanda mwezi wa {{ month }}, tumia viua wadudu kama' Pyrethrin na Neem siku {{ \r\n day_1 }} hadi {{ day_2 }} baada ya kupanda. Kwa maelezo, piga {{ phone }}"
+      "template": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_en": "If you planted beans in {{ month }} you may apply Pyrethrin, Acephate and Neem-based products {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_sw": "Iwapo ulipanda mwezi wa {{ month }}, tumia viua wadudu kama' Pyrethrin na Neem siku {{ day_1 }} hadi {{ day_2 }} baada ya kupanda."
     }
   },
   {
@@ -489,9 +489,9 @@
       "application": "PRISE",
       "group": "Start of Season",
       "note": "This message group should be sent once at the start of the season/ before planting",
-      "template": "We will send you updates on when and how to manage Fall Armyworm in maize. For more information call {{ phone }}",
-      "template_en": "We will send you updates on when and how to manage Fall Armyworm in maize. For more information call {{ phone }}",
-      "template_sw": "Tutawafahamisha  jinsi na wakati wa kuzuia viwavi jeshi (Fall Armyworm) kwenye mahindi. Kwa habari zaidi piga {{ phone }}."
+      "template": "We will send you updates on when and how to manage Fall Armyworm in maize.",
+      "template_en": "We will send you updates on when and how to manage Fall Armyworm in maize.",
+      "template_sw": "Tutawafahamisha  jinsi na wakati wa kuzuia viwavi jeshi (Fall Armyworm) kwenye mahindi."
     }
   },
   {
@@ -504,9 +504,9 @@
       "application": "PRISE",
       "group": "Start of Season",
       "note": "",
-      "template": "Fall Armyworm caterpillars are brown or black with 4 black dots near the tail. For more information call {{ phone }}",
-      "template_en": "Fall Armyworm caterpillars are brown or black with 4 black dots near the tail. For more information call {{ phone }}",
-      "template_sw": "Viwavi jeshi wana rangi ya kahawia au nyeusi na wana madoadoa manne meusi karibu na mkia. Kwa habari zaidi, piga {{ phone }}."
+      "template": "Fall Armyworm caterpillars are brown or black with 4 black dots near the tail.",
+      "template_en": "Fall Armyworm caterpillars are brown or black with 4 black dots near the tail.",
+      "template_sw": "Viwavi jeshi wana rangi ya kahawia au nyeusi na wana madoadoa manne meusi karibu na mkia."
     }
   },
   {
@@ -519,9 +519,9 @@
       "application": "PRISE",
       "group": "Start of Season",
       "note": "",
-      "template": "Fall Armyworm caterpillars cause tiny and large ragged holes and an orange sawdust like fieces on maize leaves. For more information call {{ phone }}",
-      "template_en": "Fall Armyworm caterpillars cause tiny and large ragged holes and an orange sawdust like fieces on maize leaves. For more information call {{ phone }}",
-      "template_sw": "Viwavi jeshi husababisha mashimo chakavu na kinyesi kama vumbi ya mbao yenye rangi ya chungwa kwenye majani. Kwa habari zaidi piga {{ phone }}."
+      "template": "Fall Armyworm caterpillars cause tiny and large ragged holes and an orange sawdust like fieces on maize leaves.",
+      "template_en": "Fall Armyworm caterpillars cause tiny and large ragged holes and an orange sawdust like fieces on maize leaves.",
+      "template_sw": "Viwavi jeshi husababisha mashimo chakavu na kinyesi kama vumbi ya mbao yenye rangi ya chungwa kwenye majani."
     }
   },
   {
@@ -534,9 +534,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "Early management of Fall Armyworm in maize is more effective and economical when cartepillars are young. For more info call {{ phone }}",
-      "template_en": "Early management of Fall Armyworm in maize is more effective and economical when cartepillars are young. For more info call {{ phone }}",
-      "template_sw": "Unapozuia viwavi jeshi mapema wakiwa wachanga ina mafanikio na ni bora pia kiuchumi. Kwa habari zaidi piga {{ phone }}"
+      "template": "Early management of Fall Armyworm in maize is more effective and economical when cartepillars are young.",
+      "template_en": "Early management of Fall Armyworm in maize is more effective and economical when cartepillars are young.",
+      "template_sw": "Unapozuia viwavi jeshi mapema wakiwa wachanga ina mafanikio na ni bora pia kiuchumi."
     }
   },
   {
@@ -549,9 +549,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "If you planted maize in {{ last_month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting .For more info call {{ phone }}",
-      "template_en": "If you planted maize in {{ last_month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting .For more info call {{ phone }}",
-      "template_sw": "Ikiwa ulipanda mahindi yako mwezi wa {{ last_month }}, tumia dawa zilizosajiliwa na PCPB siku {{ day_1 }} na {{ day_2 }} baada ya kumea. Kwa habari zaidi piga {{ phone }}"
+      "template": "If you planted maize in {{ last_month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_en": "If you planted maize in {{ last_month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_sw": "Ikiwa ulipanda mahindi yako mwezi wa {{ last_month }}, tumia dawa zilizosajiliwa na PCPB siku {{ day_1 }} na {{ day_2 }} baada ya kumea."
     }
   },
   {
@@ -564,9 +564,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "If you planted maize in {{ month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.For more info call {{ phone }}",
-      "template_en": "If you planted maize in {{ month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.For more info call {{ phone }}",
-      "template_sw": "Ikiwa ulipanda mahindi yako mwezi wa {{ month }}, tumia dawa zilizosajiliwa na PCPB siku {{ day_1 }} na {{ day_2 }} baada ya kumea. Kwa habari zaidi piga {{ phone }}"
+      "template": "If you planted maize in {{ month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_en": "If you planted maize in {{ month }} apply PCPB registered products against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_sw": "Ikiwa ulipanda mahindi yako mwezi wa {{ month }}, tumia dawa zilizosajiliwa na PCPB siku {{ day_1 }} na {{ day_2 }} baada ya kumea."
     }
   },
   {
@@ -579,9 +579,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "Apply fungicides (Metarhizium and Fusarium sp.), viruses (NPVs) and bacteria (Bt) based products against Fall Armyworm. For more info call {{ phone }}",
-      "template_en": "Apply fungicides (Metarhizium and Fusarium sp.), viruses (NPVs) and bacteria (Bt) based products against Fall Armyworm. For more info call {{ phone }}",
-      "template_sw": "Tumia dawa za kuvu (Metarhizium and Fusarium sp.,virusi(NPVs) na bidhaa za Bacteria(Bt) kuzuia viwavi jeshi. Kwa habari zaidi piga {{ phone }}"
+      "template": "Apply fungicides (Metarhizium and Fusarium sp.), viruses (NPVs) and bacteria (Bt) based products against Fall Armyworm.",
+      "template_en": "Apply fungicides (Metarhizium and Fusarium sp.), viruses (NPVs) and bacteria (Bt) based products against Fall Armyworm.",
+      "template_sw": "Tumia dawa za kuvu (Metarhizium and Fusarium sp.,virusi(NPVs) na bidhaa za Bacteria(Bt) kuzuia viwavi jeshi."
     }
   },
   {
@@ -594,9 +594,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 1 - Beginning of the month",
       "note": "",
-      "template": "Apply Neem-based, Chlorantraniliprole, Indoxacarb and Alpha-cypermethrin products against Fall Armyworm. For more info call {{ phone }}",
-      "template_en": "Apply Neem-based, Chlorantraniliprole, Indoxacarb and Alpha-cypermethrin products against Fall Armyworm. For more info call {{ phone }}",
-      "template_sw": "Tumia bidhaa za Neem, Chlorantraniliprole, Indoxacarb na Alpha-cypermethrin kuzuia viwavi jeshi. Kwa habari zaidi piga {{ phone }}"
+      "template": "Apply Neem-based, Chlorantraniliprole, Indoxacarb and Alpha-cypermethrin products against Fall Armyworm.",
+      "template_en": "Apply Neem-based, Chlorantraniliprole, Indoxacarb and Alpha-cypermethrin products against Fall Armyworm.",
+      "template_sw": "Tumia bidhaa za Neem, Chlorantraniliprole, Indoxacarb na Alpha-cypermethrin kuzuia viwavi jeshi."
     }
   },
   {
@@ -609,9 +609,9 @@
       "application": "PRISE",
       "group": "PRISE Time To Action 2 - Second half of the month",
       "note": "",
-      "template": "If you planted maize in {{ month }} apply second spray against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting. For more info call {{ phone }}",
-      "template_en": "If you planted maize in {{ month }} apply second spray against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting. For more info call {{ phone }}",
-      "template_sw": "Ikiwa ulipanda mahindi yako mwezi wa {{ month }}, tumia dawa zilizosajiliwa na PCPB siku {{ day_1 }} na {{ day_2 }} baada ya kumea. Kwa habari zaidi piga {{ phone }}"
+      "template": "If you planted maize in {{ month }} apply second spray against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_en": "If you planted maize in {{ month }} apply second spray against Fall Armyworm {{ day_1 }} to {{ day_2 }} days after planting.",
+      "template_sw": "Ikiwa ulipanda mahindi yako mwezi wa {{ month }}, tumia dawa zilizosajiliwa na PCPB siku {{ day_1 }} na {{ day_2 }} baada ya kumea."
     }
   }
 ]

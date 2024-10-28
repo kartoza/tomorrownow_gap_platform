@@ -5,7 +5,9 @@ Tomorrow Now GAP.
 .. note:: Message prise models.
 """
 
+from datetime import datetime, timezone
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from gap.models.farm_group import FarmGroup
@@ -110,3 +112,98 @@ class PriseMessage(models.Model):
                 pest=pest, message_group=message_group, farm_group=farm_group
             )
         ]
+
+
+class PriseMessageSchedule(models.Model):
+    """Class that stores the schedule of sending prise message.
+
+    The scheduler will match by week_of_month and day_of_week first.
+    Then, it will also look for matching schedule_date.
+    """
+
+    group = models.CharField(
+        default=PriseMessageGroup.START_SEASON,
+        choices=(
+            (
+                PriseMessageGroup.START_SEASON,
+                _(PriseMessageGroup.START_SEASON)
+            ),
+            (
+                PriseMessageGroup.TIME_TO_ACTION_1,
+                _(PriseMessageGroup.TIME_TO_ACTION_1)
+            ),
+            (
+                PriseMessageGroup.TIME_TO_ACTION_2,
+                _(PriseMessageGroup.TIME_TO_ACTION_2)
+            ),
+            (
+                PriseMessageGroup.END_SEASON,
+                _(PriseMessageGroup.END_SEASON)
+            ),
+        ),
+        max_length=512
+    )
+    week_of_month = models.PositiveIntegerField(
+        blank=True,
+        null=True
+    )
+    day_of_week = models.PositiveIntegerField(
+        blank=True,
+        null=True
+    )
+    schedule_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text=(
+            'Override the schedule date, '
+            'useful for sending one time message.'
+        )
+    )
+    active = models.BooleanField(
+        default=True
+    )
+    priority = models.PositiveIntegerField(
+        default=1
+    )
+
+    class Meta:  # noqa
+        db_table = 'prise_schedule'
+        verbose_name = _('Schedule')
+
+    @staticmethod
+    def calculate_week_of_month(dt: datetime) -> int:
+        """Calculate week_of_month from datetime.
+
+        :param dt: datetime object
+        :type dt: datetime
+        :return: week of month
+        :rtype: int
+        """
+        first_day = dt.replace(day=1)
+        day_of_week = first_day.weekday()  # Monday is 0, Sunday is 6
+        adjusted_dom = dt.day + day_of_week  # days into the current week
+        return int((adjusted_dom - 1) / 7) + 1
+
+    @staticmethod
+    def get_schedule(dt: datetime):
+        """Get active schedule based on datetime.
+
+        :param dt: datetime object
+        :type dt: datetime
+        :return: Schedule with highest priority
+        :rtype: PriseMessageSchedule
+        """
+        week_of_month = PriseMessageSchedule.calculate_week_of_month(dt)
+        day_of_week = dt.weekday()
+        schedule_dt = dt.replace(
+            hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+
+        return PriseMessageSchedule.objects.filter(
+            active=True
+        ).filter(
+            Q(
+                week_of_month=week_of_month,
+                day_of_week=day_of_week
+            ) |
+            Q(schedule_date=schedule_dt)
+        ).order_by('-priority').first()

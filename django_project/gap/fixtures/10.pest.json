@@ -7,7 +7,8 @@
       "description": "Beanfly (On bean)",
       "scientific_name": "Ophiomyia",
       "taxonomic_rank": "genus",
-      "link": "https://en.wikipedia.org/wiki/Ophiomyia"
+      "link": "https://en.wikipedia.org/wiki/Ophiomyia",
+      "short_name": "bean_fly"
     }
   },
   {
@@ -18,7 +19,8 @@
       "description": "Fall Armyworm (on maize and other hosts)",
       "scientific_name": "Spodoptera frugiperda",
       "taxonomic_rank": "species",
-      "link": "https://en.wikipedia.org/wiki/Fall_armyworm"
+      "link": "https://en.wikipedia.org/wiki/Fall_armyworm",
+      "short_name": "faw"
     }
   }
 ]
