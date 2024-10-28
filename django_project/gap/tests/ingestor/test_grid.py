@@ -6,8 +6,7 @@ Tomorrow Now GAP.
 """
 import os
 
-from django.contrib.gis.gdal import DataSource
-from django.contrib.gis.geos import GEOSGeometry, Point
+from django.contrib.gis.geos import Point, MultiPolygon, Polygon
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -26,34 +25,32 @@ class GridIngestorTest(TestCase):
 
     def setUp(self):
         """Init test case."""
-        shp_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'data',
-            'Kenya.geojson'
-        )
-        data_source = DataSource(shp_path)
-        layer = data_source[0]
-        for feature in layer:
-            geometry = GEOSGeometry(feature.geom.wkt, srid=4326)
-            Country.objects.create(
-                name=feature['name'],
-                iso_a3=feature['iso_a3'],
-                geometry=geometry
+        Country.objects.create(
+            name='Country 1',
+            iso_a3='COUNTRY_1',
+            geometry=MultiPolygon(
+                [Polygon(((0, 0), (0, 30), (30, 30), (30, 0), (0, 0)))]
             )
-        FarmFactory(
-            geometry=Point(35.558753743230838, 0.010459215860272)
         )
         FarmFactory(
-            geometry=Point(35.587536235482737, 0.012895828960962)
+            unique_id='farm-1',
+            geometry=Point(0, 0)
         )
         FarmFactory(
-            geometry=Point(35.593780056553257, 0.042744339444414)
+            unique_id='farm-2',
+            geometry=Point(11, 11)
         )
         FarmFactory(
-            geometry=Point(35.587536236482737, 0.012895828960962)
+            unique_id='farm-3',
+            geometry=Point(21, 21)
         )
         FarmFactory(
-            geometry=Point(35.593780056563257, 0.042744339444414)
+            unique_id='farm-4',
+            geometry=Point(12, 12)
+        )
+        FarmFactory(
+            unique_id='farm-5',
+            geometry=Point(22, 22)
         )
 
     def test_no_file(self):
@@ -137,29 +134,33 @@ class GridIngestorTest(TestCase):
         self.assertEqual(session.notes, '3/3')
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
 
-        grids = Grid.objects.all()
+        grids = Grid.objects.order_by('unique_id')
         self.assertEqual(grids.count(), 3)
+        grids = [
+            grids.get(unique_id='A0001'), grids.get(unique_id='A0002'),
+            grids.get(unique_id='A0003')
+        ]
 
         for grid in grids:
-            self.assertEqual(grid.country.name, 'Kenya')
+            self.assertEqual(grid.country.name, 'Country 1')
 
         grid = grids[0]
-        self.assertEqual(grid.unique_id, '0001')
+        self.assertEqual(grid.unique_id, 'A0001')
         self.assertEqual(
             [grid.geometry.centroid.y, grid.geometry.centroid.x],
-            [0.012069999999999999, 35.554135]
+            [5, 5]
         )
         grid = grids[1]
-        self.assertEqual(grid.unique_id, '0002')
+        self.assertEqual(grid.unique_id, 'A0002')
         self.assertEqual(
             [grid.geometry.centroid.y, grid.geometry.centroid.x],
-            [0.012069999999999999, 35.590489999999996]
+            [15, 15]
         )
         grid = grids[2]
-        self.assertEqual(grid.unique_id, '0003')
+        self.assertEqual(grid.unique_id, 'A0003')
         self.assertEqual(
             [grid.geometry.centroid.y, grid.geometry.centroid.x],
-            [0.047935, 35.59049]
+            [25, 25]
         )
 
         # check farm
@@ -168,8 +169,18 @@ class GridIngestorTest(TestCase):
         for farm in farms:
             self.assertIsNotNone(farm.grid)
 
-        self.assertEqual(farms[0].grid.id, grids[0].id)
-        self.assertEqual(farms[1].grid.id, grids[1].id)
-        self.assertEqual(farms[2].grid.id, grids[2].id)
-        self.assertEqual(farms[3].grid.id, grids[1].id)
-        self.assertEqual(farms[4].grid.id, grids[2].id)
+        self.assertEqual(
+            farms.get(unique_id='farm-1').grid.id, grids[0].id
+        )
+        self.assertEqual(
+            farms.get(unique_id='farm-2').grid.id, grids[1].id
+        )
+        self.assertEqual(
+            farms.get(unique_id='farm-3').grid.id, grids[2].id
+        )
+        self.assertEqual(
+            farms.get(unique_id='farm-4').grid.id, grids[1].id
+        )
+        self.assertEqual(
+            farms.get(unique_id='farm-5').grid.id, grids[2].id
+        )

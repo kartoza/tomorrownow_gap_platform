@@ -39,7 +39,7 @@ class Country(Definition):
     def get_countries_by_point(point: Point):
         """Get country by point."""
         return Country.objects.filter(
-            geometry__contains=point
+            geometry__intersects=point
         )
 
     @staticmethod

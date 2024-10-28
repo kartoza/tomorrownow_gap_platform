@@ -1,0 +1,18 @@
+[
+  {
+    "model": "prise.prisepest",
+    "pk": 1,
+    "fields": {
+      "pest": 1,
+      "variable_name": "ophiomyia_stat_v02_w1_nrt_midpoint"
+    }
+  },
+  {
+    "model": "prise.prisepest",
+    "pk": 2,
+    "fields": {
+      "pest": 2,
+      "variable_name": "s_frugiperda_stat_v05_w1_nrt_midpoint"
+    }
+  }
+]

@@ -32,5 +32,5 @@ class Grid(Definition):
     def get_grids_by_point(point: Point):
         """Get grids by point."""
         return Grid.objects.filter(
-            geometry__contains=point
+            geometry__intersects=point
         )

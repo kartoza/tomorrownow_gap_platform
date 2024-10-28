@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 from django.contrib.gis.db import models
 
 from core.models.common import Definition
+from gap.exceptions import FarmWithUniqueIdDoesNotFound
 from gap.models.common import Village
 from gap.models.grid import Grid
 
@@ -85,3 +86,11 @@ class Farm(models.Model):
             self.grid = Grid.get_grids_by_point(self.geometry).first()
             if self.grid:
                 self.save()
+
+    @staticmethod
+    def get_farm_by_unique_id(unique_id):
+        """Return Farm by unique_id."""
+        try:
+            return Farm.objects.get(unique_id=unique_id)
+        except Farm.DoesNotExist:
+            raise FarmWithUniqueIdDoesNotFound(unique_id)

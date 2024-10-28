@@ -35,6 +35,7 @@ class IngestorType:
     TAHMO_API = 'Tahmo API'
     TIO_FORECAST_COLLECTOR = 'Tio Forecast Collector'
     WIND_BORNE_SYSTEMS_API = 'WindBorne Systems API'
+    CABI_PRISE_EXCEL = 'Cabi Prise Excel'
 
 
 class IngestorSessionStatus:
@@ -72,6 +73,10 @@ class BaseSession(models.Model):
             (
                 IngestorType.WIND_BORNE_SYSTEMS_API,
                 IngestorType.WIND_BORNE_SYSTEMS_API
+            ),
+            (
+                IngestorType.CABI_PRISE_EXCEL,
+                IngestorType.CABI_PRISE_EXCEL
             ),
         ),
         max_length=512
@@ -193,6 +198,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.tahmo_api import TahmoAPIIngestor
         from gap.ingestor.wind_borne_systems import WindBorneSystemsIngestor
         from gap.ingestor.tio_shortterm import TioShortTermIngestor
+        from gap.ingestor.cabi_prise import CabiPriseIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -213,6 +219,8 @@ class IngestorSession(BaseSession):
             ingestor = WindBorneSystemsIngestor
         elif self.ingestor_type == IngestorType.TOMORROWIO:
             ingestor = TioShortTermIngestor
+        elif self.ingestor_type == IngestorType.CABI_PRISE_EXCEL:
+            ingestor = CabiPriseIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()

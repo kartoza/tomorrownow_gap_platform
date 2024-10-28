@@ -10,5 +10,6 @@ from gap.admin.farm import *
 from gap.admin.grid import *
 from gap.admin.lookup import *
 from gap.admin.main import *
+from gap.admin.pest import *
 from gap.admin.preferences import *
 from gap.admin.station import *

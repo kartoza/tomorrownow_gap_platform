@@ -10,18 +10,8 @@ from django.db import models
 from django.template import Template, Context
 from django.utils.translation import gettext_lazy as _
 
+from message.exceptions import MessageLanguageNotSupportedException
 from prise.variables import PriseMessageGroup
-
-
-class MessageLanguageNotSupportedException(Exception):
-    """Message language not supported exception."""
-
-    def __init__(self):  # noqa
-        self.message = (
-            f'The language is not supported. '
-            f'Choices: {[lang[0] for lang in settings.LANGUAGES]}'' '
-        )
-        super().__init__(self.message)
 
 
 class MessageApplication:
@@ -93,6 +83,7 @@ class MessageTemplate(models.Model):
             models.Index(fields=['application']),
             models.Index(fields=['name']),
         ]
+        verbose_name = _('Template')
 
     def __str__(self):
         """Return string representation of MessageTemplate."""

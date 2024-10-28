@@ -4,7 +4,7 @@
     "pk": 1,
     "fields": {
       "pest": 1,
-      "farm_group": null,
+      "farm_group": 5,
       "messages": [
         1,
         10,
@@ -26,7 +26,7 @@
     "pk": 2,
     "fields": {
       "pest": 2,
-      "farm_group": null,
+      "farm_group": 5,
       "messages": [
         13,
         22,
@@ -49,7 +49,7 @@
     "pk": 3,
     "fields": {
       "pest": 1,
-      "farm_group": 4,
+      "farm_group": null,
       "messages": [
         26,
         27,
@@ -66,7 +66,7 @@
     "pk": 4,
     "fields": {
       "pest": 2,
-      "farm_group": 4,
+      "farm_group": null,
       "messages": [
         33,
         34,
