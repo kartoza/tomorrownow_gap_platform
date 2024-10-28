@@ -41,7 +41,7 @@ def download_farm_group_fields(modeladmin, request, queryset):
         fields = group.farmgroupcropinsightfield_set.all()
         fields_to_include = ['field', 'column_number', 'label', 'active']
         data[group.name] = list(fields.values(*fields_to_include))
- 
+
     # Convert the data to JSON
     response_data = json.dumps(data, cls=DjangoJSONEncoder)
 
