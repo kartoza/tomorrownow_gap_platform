@@ -112,28 +112,18 @@ def generate_prise_message(
     )
 
     # fetch message schedule based on generated_date
-    schedules = PriseMessageSchedule.get_schedule(current_dt)
+    schedule = PriseMessageSchedule.get_schedule(current_dt)
 
-    groups = set()
-    for schedule in schedules:
-        groups.add(schedule.group)
-
-    if len(groups) == 0:
+    if schedule is None:
         return result
 
-    # handle multiple unique groups
-    group: str
-    if len(groups) > 1:
-        group = PriseMessageSchedule.handle_multiple_groups(groups)
-    else:
-        group = list(groups)[0]
-
     # get context
-    context = PriseMessageContext(farm, pest, group, generated_date).context
+    context = PriseMessageContext(
+        farm, pest, schedule.group, generated_date).context
 
     if len(context) == 0:
         return result
 
     # get messages, use default template
-    messages = PriseMessage.get_messages(pest, group, context)
+    messages = PriseMessage.get_messages(pest, schedule.group, context)
     return [f'"{message}"' for message in messages]

@@ -9,7 +9,14 @@ from factory.django import DjangoModelFactory
 
 from gap.factories.crop_insight import PestFactory
 from gap.factories.farm import FarmFactory
-from prise.models import PriseMessage, PrisePest, PriseData, PriseDataByPest
+from prise.models import (
+    PriseMessage,
+    PrisePest,
+    PriseData,
+    PriseDataByPest,
+    PriseMessageSchedule
+)
+from prise.variables import PriseMessageGroup
 
 
 class PriseMessageFactory(DjangoModelFactory):
@@ -53,3 +60,16 @@ class PriseDataByPestFactory(DjangoModelFactory):
     data = factory.SubFactory(PriseDataFactory)
     pest = factory.SubFactory(PestFactory)
     value = factory.Faker('pyfloat')
+
+
+class PriseMessageScheduleFactory(DjangoModelFactory):
+    """Factory class for PriseMessageSchedule model."""
+
+    class Meta:  # noqa
+        model = PriseMessageSchedule
+
+    group = PriseMessageGroup.START_SEASON
+    week_of_month = 1
+    day_of_week = 1
+    active = True
+    priority = 1

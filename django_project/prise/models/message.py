@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Message prise models.
 """
 
-from typing import Set
 from datetime import datetime, timezone
 from django.db import models
 from django.db.models import Q
@@ -163,6 +162,13 @@ class PriseMessageSchedule(models.Model):
     active = models.BooleanField(
         default=True
     )
+    priority = models.PositiveIntegerField(
+        default=1
+    )
+
+    class Meta:  # noqa
+        db_table = 'prise_schedule'
+        verbose_name = _('Schedule')
 
     @staticmethod
     def calculate_week_of_month(dt: datetime) -> int:
@@ -184,8 +190,8 @@ class PriseMessageSchedule(models.Model):
 
         :param dt: datetime object
         :type dt: datetime
-        :return: Active schedule of message
-        :rtype: List of PriseMessageSchedule
+        :return: Schedule with highest priority
+        :rtype: PriseMessageSchedule
         """
         week_of_month = PriseMessageSchedule.calculate_week_of_month(dt)
         day_of_week = dt.weekday()
@@ -200,19 +206,4 @@ class PriseMessageSchedule(models.Model):
                 day_of_week=day_of_week
             ) |
             Q(schedule_date=schedule_dt)
-        )
-
-    @staticmethod
-    def handle_multiple_groups(groups: Set[str]) -> str:
-        """Handle when scheduler returns multiple groups.
-
-        :param groups: set of group
-        :type groups: Set[str]
-        :return: priority group to be sent
-        :rtype: str
-        """
-        if PriseMessageGroup.TIME_TO_ACTION_1 in groups:
-            return PriseMessageGroup.TIME_TO_ACTION_1
-        if PriseMessageGroup.TIME_TO_ACTION_2 in groups:
-            return PriseMessageGroup.TIME_TO_ACTION_2
-        return list(groups)[0]
+        ).order_by('-priority').first()

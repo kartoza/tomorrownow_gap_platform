@@ -7,7 +7,8 @@
         "week_of_month": 1,
         "day_of_week": 1,
         "schedule_date": null,
-        "active": true
+        "active": true,
+        "priority": 1
     }
 },
 {
@@ -18,7 +19,8 @@
         "week_of_month": 3,
         "day_of_week": 1,
         "schedule_date": null,
-        "active": true
+        "active": true,
+        "priority": 1
     }
 }
 ]
