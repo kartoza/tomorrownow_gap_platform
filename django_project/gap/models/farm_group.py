@@ -50,6 +50,7 @@ class FarmGroup(Definition):
     def prepare_fields(self):
         """Prepare fields."""
         from gap.models.crop_insight import CropPlanData
+        from gap.models.pest import Pest
         from gap.providers.tio import TomorrowIODatasetReader
         TomorrowIODatasetReader.init_provider()
 
@@ -93,6 +94,25 @@ class FarmGroup(Definition):
                     }
                 )
                 column_num += 1
+
+        # create message for pest recommendation
+        for pest in Pest.objects.all():
+            # reserve 5 message columns for each pest
+            max_pest_message = 5
+            active = False  # enable only for Kalro in admin
+            for idx in range(max_pest_message):
+                field = f'prise_{pest.short_name}_{idx + 1}'
+                FarmGroupCropInsightField.objects.update_or_create(
+                    farm_group=self,
+                    field=field,
+                    defaults={
+                        'column_number': column_num,
+                        'label': None,
+                        'active': active
+                    }
+                )
+                column_num += 1
+
 
     @property
     def headers(self):

@@ -75,6 +75,7 @@ class PriseData(models.Model):
         default=PriseDataType.NEAR_REAL_TIME,
         choices=(
             (PriseDataType.NEAR_REAL_TIME, _(PriseDataType.NEAR_REAL_TIME)),
+            (PriseDataType.CLIMATOLOGY, _(PriseDataType.CLIMATOLOGY)),
         ),
         max_length=512
     )

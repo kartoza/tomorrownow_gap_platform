@@ -50,3 +50,7 @@ class Pest(Definition):
     link = models.URLField(
         null=True, blank=True
     )
+    short_name = models.CharField(
+        max_length=20,
+        null=True, blank=True
+    )

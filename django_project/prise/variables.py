@@ -26,9 +26,10 @@ class PriseMessageGroup:
 class PriseDataType:
     """Type of data that being used by Prise."""
 
+    CLIMATOLOGY = 'Climatology'
     NEAR_REAL_TIME = 'Near Real Time'
 
     @classmethod
     def types(cls):
         """Return all available types."""
-        return [cls.NEAR_REAL_TIME]
+        return [cls.CLIMATOLOGY, cls.NEAR_REAL_TIME]
