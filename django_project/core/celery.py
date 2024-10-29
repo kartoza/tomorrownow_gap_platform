@@ -81,6 +81,11 @@ app.conf.beat_schedule = {
         'task': 'cleanup_r_execution_logs',
         # Run every first day of each month at 00:00 UTC
         'schedule': crontab(minute=0, hour=0, day_of_month=1),
+    },
+    'cleanup-user-locations': {
+        'task': 'cleanup_user_locations',
+        # Run every week at 00:00 UTC
+        'schedule': crontab(minute='0', hour='0', day_of_week='0'),
     }
 }
 
@@ -160,7 +165,8 @@ def update_task_progress(
 
 EXCLUDED_TASK_LIST = [
     'celery.backend_cleanup',
-    'store_api_logs'
+    'store_api_logs',
+    'cleanup_user_locations'
 ]
 
 
