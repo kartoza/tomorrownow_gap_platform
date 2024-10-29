@@ -5,21 +5,14 @@ Tomorrow Now GAP API.
 .. note:: Models for Location
 """
 
-
+from datetime import timedelta
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import (
     Polygon, MultiPolygon,
     Point, MultiPoint
 )
 from django.conf import settings
-
-
-def location_file_path(instance, filename):
-    """Return upload path for Original file."""
-    return (
-        f'{settings.STORAGE_DIR_PREFIX}locations/'
-        f'{str(instance.user.pk)}/{filename}'
-    )
+from django.utils import timezone
 
 
 class UploadFileType:
@@ -27,7 +20,7 @@ class UploadFileType:
 
     GEOJSON = 'geojson'
     SHAPEFILE = 'shapefile'
-    GEOPACKAGE = 'GEOPACKAGE'
+    GEOPACKAGE = 'geopackage'
 
 
 class Location(models.Model):
@@ -51,19 +44,6 @@ class Location(models.Model):
     geometry = models.GeometryField(
         srid=4326
     )
-    file = models.FileField(
-        upload_to=location_file_path,
-        null=True, blank=True
-    )
-    file_type = models.CharField(
-        max_length=100,
-        choices=(
-            (UploadFileType.GEOJSON, UploadFileType.GEOJSON),
-            (UploadFileType.SHAPEFILE, UploadFileType.SHAPEFILE),
-            (UploadFileType.GEOPACKAGE, UploadFileType.GEOPACKAGE),
-        ),
-        default=UploadFileType.GEOJSON
-    )
     created_on = models.DateTimeField()
     expired_on = models.DateTimeField(
         null=True,
@@ -79,3 +59,12 @@ class Location(models.Model):
                 name='user_locationname'
             )
         ]
+
+    def save(self, *args, **kwargs):
+        """Override location save."""
+        if not self.pk:
+            self.expired_on = (
+                timezone.now() +
+                timedelta(days=Location.DEFAULT_EXPIRY_IN_DAYS)
+            )
+        super(Location, self).save(*args, **kwargs)
