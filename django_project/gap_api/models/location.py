@@ -7,10 +7,6 @@ Tomorrow Now GAP API.
 
 from datetime import timedelta
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import (
-    Polygon, MultiPolygon,
-    Point, MultiPoint
-)
 from django.conf import settings
 from django.utils import timezone
 
@@ -28,10 +24,10 @@ class Location(models.Model):
 
     DEFAULT_EXPIRY_IN_DAYS = 60  # 2 months
     ALLOWED_GEOMETRY_TYPES = [
-        Point,
-        MultiPoint,
-        Polygon,
-        MultiPolygon
+        'Point',
+        'MultiPoint',
+        'Polygon',
+        'MultiPolygon'
     ]
 
     user = models.ForeignKey(

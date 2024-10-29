@@ -19,7 +19,7 @@ class LocationSerializer(serializers.ModelSerializer):
         model = Location
         fields = ['location_name', 'created_on', 'expired_on']
         swagger_schema_fields = {
-            'title': 'User Info',
+            'title': 'Location Data',
             'example': {
                 'location_name': 'location A',
                 'created_on': '2024-10-01T00:00:00Z',
