@@ -5,17 +5,12 @@ Tomorrow Now GAP.
 .. note:: Measurement APIs
 """
 
-import json
 from datetime import date, datetime, time
 from typing import Dict
 
 import pytz
 from django.contrib.gis.geos import (
-    GEOSGeometry,
-    Point,
-    MultiPoint,
-    MultiPolygon,
-    Polygon
+    Point
 )
 from django.db.models.functions import Lower
 from django.db.utils import ProgrammingError
@@ -41,7 +36,7 @@ from gap.utils.reader import (
     BaseDatasetReader,
     DatasetReaderOutputType
 )
-from gap_api.models import DatasetTypeAPIConfig
+from gap_api.models import DatasetTypeAPIConfig, Location
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin
@@ -197,38 +192,28 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         :return: Location to be queried
         :rtype: DatasetReaderInput
         """
-        if self.request.method == 'POST':
-            features = self.request.data.get('features', [])
-            geom = None
-            point_list = []
-            for geojson in features:
-                geom = GEOSGeometry(
-                    json.dumps(geojson['geometry']), srid=4326
-                )
-                if isinstance(geom, (MultiPolygon, Polygon)):
-                    break
-                point_list.append(geom[0])
-            if geom is None:
-                raise ValidationError({
-                    'Invalid Request Parameter': (
-                        'Unknown geometry type!'
-                    )
-                })
-            if isinstance(geom, (MultiPolygon, Polygon)):
-                return DatasetReaderInput(
-                    geom, LocationInputType.POLYGON)
-            return DatasetReaderInput(
-                MultiPoint(point_list), LocationInputType.LIST_OF_POINT)
         lon = self.request.GET.get('lon', None)
         lat = self.request.GET.get('lat', None)
         if lon is not None and lat is not None:
             return DatasetReaderInput.from_point(
                 Point(x=float(lon), y=float(lat), srid=4326))
+
         # (xmin, ymin, xmax, ymax)
         bbox = self.request.GET.get('bbox', None)
         if bbox is not None:
             number_list = [float(a) for a in bbox.split(',')]
             return DatasetReaderInput.from_bbox(number_list)
+
+        # location_name
+        location_name = self.request.GET.get('location_name', None)
+        if location_name is not None:
+            location = Location.objects.filter(
+                user=self.request.user,
+                name=location_name
+            ).first()
+            if location:
+                return location.to_input()
+
         return None
 
     def _get_altitudes_filter(self):
@@ -566,47 +551,16 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 type=openapi.TYPE_STRING
             ),
             openapi.Parameter(
-                'altitudes', openapi.IN_QUERY,
-                description='2 value of altitudes: alt_min, alt_max',
+                'location_name', openapi.IN_QUERY,
+                description='User location name that has been uploaded',
                 type=openapi.TYPE_STRING
-            )
-        ],
-        responses={
-            200: openapi.Schema(
-                description=(
-                        'Weather data'
-                ),
-                type=openapi.TYPE_OBJECT,
-                properties={}
             ),
-            400: APIErrorSerializer
-        }
-    )
-    def get(self, request, *args, **kwargs):
-        """Fetch weather data by a single point or bounding box."""
-        return self.get_response_data()
-
-    @swagger_auto_schema(
-        operation_id='get-measurement-by-geom',
-        operation_description=(
-            "Fetch weather data using either a polygon or list of point "
-            "and attribute filters."
-        ),
-        tags=[ApiTag.Measurement],
-        manual_parameters=[
-            *api_parameters,
             openapi.Parameter(
                 'altitudes', openapi.IN_QUERY,
                 description='2 value of altitudes: alt_min, alt_max',
                 type=openapi.TYPE_STRING
             )
         ],
-        request_body=openapi.Schema(
-            description=(
-                'MultiPolygon or MultiPoint (SRID 4326) in geojson format'
-            ),
-            type=openapi.TYPE_STRING
-        ),
         responses={
             200: openapi.Schema(
                 description=(
@@ -618,6 +572,6 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             400: APIErrorSerializer
         }
     )
-    def post(self, request, *args, **kwargs):
-        """Fetch weather data by polygon/points."""
+    def get(self, request, *args, **kwargs):
+        """Fetch weather data by a single point or bounding box."""
         return self.get_response_data()

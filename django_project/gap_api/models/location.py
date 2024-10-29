@@ -68,3 +68,15 @@ class Location(models.Model):
                 timedelta(days=Location.DEFAULT_EXPIRY_IN_DAYS)
             )
         super(Location, self).save(*args, **kwargs)
+
+    def to_input(self):
+        """Return location object as DatasetReaderInput.
+
+        :return: DatasetReaderInput object
+        :rtype: DatasetReaderInput
+        """
+        from gap.utils.reader import DatasetReaderInput, LocationInputType
+        location_type = LocationInputType.map_from_geom_typeid(
+            self.geometry.geom_typeid)
+
+        return DatasetReaderInput(self.geometry, location_type)
