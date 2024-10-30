@@ -82,3 +82,6 @@ django-revproxy==0.12.0
 
 # fiona
 fiona==1.10.1
+
+# django admin inline paginator
+django-admin-inline-paginator==0.4.0

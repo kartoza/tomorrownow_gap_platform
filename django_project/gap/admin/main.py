@@ -8,6 +8,7 @@ import os
 import shutil
 
 from django.contrib import admin, messages
+from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
@@ -98,10 +99,11 @@ class MeasurementAdmin(admin.ModelAdmin):
         return False
 
 
-class IngestorSessionProgressInline(admin.TabularInline):
+class IngestorSessionProgressInline(TabularInlinePaginated):
     """IngestorSessionProgress inline."""
 
     model = IngestorSessionProgress
+    per_page = 20
     extra = 0
 
 
