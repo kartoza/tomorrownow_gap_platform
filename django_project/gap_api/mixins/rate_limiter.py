@@ -40,8 +40,6 @@ class RateLimiter:
             return f"rate_limit:minute:{self.user_id}"
         elif granularity == 'hour':
             return f"rate_limit:hour:{self.user_id}"
-        elif granularity == 'day':
-            return f"ratelimit:{self.user_id}:day"
         else:
             raise ValueError("Unsupported granularity")
 
