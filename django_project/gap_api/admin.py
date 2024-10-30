@@ -6,15 +6,23 @@ Tomorrow Now GAP API.
 """
 
 import random
+import json
 from django.contrib import admin
 from django.db.models import Count, TextField
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import TruncDay, Cast
+from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework_tracking.admin import APIRequestLogAdmin
 from rest_framework_tracking.models import APIRequestLog as BaseAPIRequestLog
 
 from gap.models import DatasetType
-from gap_api.models import APIRequestLog, DatasetTypeAPIConfig, Location
+from gap_api.models import (
+    APIRequestLog,
+    DatasetTypeAPIConfig,
+    Location,
+    APIRateLimiter
+)
 
 
 admin.site.unregister(BaseAPIRequestLog)
@@ -182,6 +190,30 @@ class LocationAdmin(admin.ModelAdmin):
     list_filter = ('user',)
 
 
+@admin.action(description='Export rate limiter as json')
+def export_rate_limiter_as_json(modeladmin, request, queryset):
+    """Download rate limiter."""
+    fields_to_include = [
+        'pk', 'user_id', 'minute_limit', 'hour_limit', 'day_limit']
+    data = list(queryset.all().values(*fields_to_include))
+
+    # Convert the data to JSON
+    response_data = json.dumps(data, cls=DjangoJSONEncoder)
+
+    # Create the HttpResponse with the correct content_type for JSON
+    response = HttpResponse(response_data, content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename=rate_limiter.json'
+    return response
+
+
+class APIRateLimiterAdmin(admin.ModelAdmin):
+    """Admin class for APIRateLimiter."""
+
+    list_display = ('config_name', 'minute_limit', 'hour_limit', 'day_limit',)
+    actions = (export_rate_limiter_as_json,)
+
+
 admin.site.register(APIRequestLog, GapAPIRequestLogAdmin)
 admin.site.register(DatasetTypeAPIConfig, GapAPIDatasetTypeConfigAdmin)
 admin.site.register(Location, LocationAdmin)
+admin.site.register(APIRateLimiter, APIRateLimiterAdmin)
