@@ -188,7 +188,7 @@ class CounterSlidingWindowThrottle(BaseThrottle):
         if user does not have config, then it will use the global config.
         """
         config = APIRateLimiter.get_config(user)
-        
+
         rate_limits = {}
         if config is None:
             return rate_limits
