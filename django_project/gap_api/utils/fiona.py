@@ -52,12 +52,16 @@ def _read_layers_from_memory_file(fp: InMemoryUploadedFile):
     """Read layers from memory file of shapefile."""
     layers = []
     file_path = None
+
     try:
-        with NamedTemporaryFile(delete=False, suffix='.zip') as destination:
+        with NamedTemporaryFile(
+                mode='wb+', delete=False, suffix='.zip'
+        ) as destination:
             file_path = destination.name
             for chunk in fp.chunks():
                 destination.write(chunk)
-            layers = fiona.listlayers(f'zip://{file_path}')
+
+        layers = fiona.listlayers(f'zip://{file_path}')
     except Exception:
         pass
     finally:
@@ -136,16 +140,6 @@ def validate_shapefile_zip(layer_file_path: any):
     return is_valid, error
 
 
-def _get_attributes(collection):
-    """Get attributes from fiona collection."""
-    attrs = []
-    try:
-        attrs = next(iter(collection))["properties"].keys()
-    except (KeyError, IndexError):
-        pass
-    return list(attrs)
-
-
 def _get_crs_epsg(crs):
     """Get crs from crs dict."""
     return crs['init'] if 'init' in crs else None
@@ -181,14 +175,12 @@ def open_fiona_collection(file_obj, type: str) -> Collection:
             )
             return fiona.open(file_path)
         else:
-            return _open_collection(file_path, type)
+            return _open_collection(file_obj, type)
 
 
-def validate_layer_file_metadata(collection: Collection):
+def validate_collection_crs(collection: Collection):
     """Validate crs to be EPSG:4326."""
     epsg_mapping = from_epsg(4326)
     valid = _get_crs_epsg(collection.crs) == epsg_mapping['init']
     crs = _get_crs_epsg(collection.crs)
-    feature_count = len(collection)
-    attributes = _get_attributes(collection)
-    return valid, crs, feature_count, attributes
+    return valid, crs

@@ -26,7 +26,7 @@ from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin
 from gap_api.utils.fiona import (
     validate_shapefile_zip,
-    validate_layer_file_metadata,
+    validate_collection_crs,
     delete_tmp_shapefile,
     open_fiona_collection
 )
@@ -98,19 +98,6 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
                     os.remove(file_obj.temporary_file_path())
             elif isinstance(file_obj, str):
                 delete_tmp_shapefile(file_obj)
-
-    def _validate_crs_type(self, collection):
-        """Validate crs of collection.
-
-        :param collection: fiona collection object
-        :type collection: Collection
-        :return: tuple of is_valid and crs
-        :rtype: Tuple[bool, str]
-        """
-        is_valid_crs, crs, _, _ = (
-            validate_layer_file_metadata(collection)
-        )
-        return is_valid_crs, crs
 
     def _build_geom_object(self, geom_str: str) -> GEOSGeometry:
         """Build geometry object from string.
@@ -224,7 +211,7 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
         collection = open_fiona_collection(file_obj, file_type)
         tmp_file_obj_list.append(collection.path)
 
-        is_valid_crs, crs = self._validate_crs_type(collection)
+        is_valid_crs, crs = validate_collection_crs(collection)
         if not is_valid_crs:
             self._on_validation_error(
                 f'Incorrect CRS type: {crs}!', tmp_file_obj_list)
@@ -244,6 +231,9 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
                 'geometry': geometry
             }
         )
+
+        # close collection
+        collection.close()
 
         # remove temporary uploaded file if any
         self._remove_temp_files(tmp_file_obj_list)

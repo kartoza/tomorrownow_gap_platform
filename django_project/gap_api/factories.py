@@ -9,7 +9,7 @@ from factory.django import DjangoModelFactory
 from django.contrib.gis.geos import Polygon, MultiPolygon
 
 from core.factories import UserF
-from gap_api.models import APIRequestLog, Location, UploadFileType
+from gap_api.models import APIRequestLog, Location
 
 
 class APIRequestLogFactory(DjangoModelFactory):
@@ -50,5 +50,4 @@ class LocationFactory(DjangoModelFactory):
             Polygon(((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
         )
     )
-    file_type = UploadFileType.GEOJSON
     created_on = factory.Faker('date_time')

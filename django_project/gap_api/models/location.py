@@ -8,7 +8,6 @@ Tomorrow Now GAP API.
 from datetime import timedelta
 from django.contrib.gis.db import models
 from django.conf import settings
-from django.utils import timezone
 
 
 class UploadFileType:
@@ -60,7 +59,7 @@ class Location(models.Model):
         """Override location save."""
         if not self.pk:
             self.expired_on = (
-                timezone.now() +
+                self.created_on +
                 timedelta(days=Location.DEFAULT_EXPIRY_IN_DAYS)
             )
         super(Location, self).save(*args, **kwargs)
