@@ -13,12 +13,14 @@ from rest_framework.views import APIView
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.serializers.user import UserInfoSerializer
 from gap_api.utils.helper import ApiTag
+from gap_api.mixins import GAPAPILoggingMixin, CounterSlidingWindowThrottle
 
 
-class UserInfo(APIView):
+class UserInfo(GAPAPILoggingMixin, APIView):
     """API to return user info."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [CounterSlidingWindowThrottle]
 
     @swagger_auto_schema(
         operation_id='user-info',

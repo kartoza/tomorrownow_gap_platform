@@ -10,8 +10,12 @@ from django.test import TestCase, override_settings
 from django.core.cache import cache
 from fakeredis import FakeConnection
 
+from gap.factories import UserF
 from gap_api.models.rate_limiter import APIRateLimiter
-from gap_api.mixins.rate_limiter import RateLimiter
+from gap_api.mixins.rate_limiter import (
+    RateLimiter,
+    CounterSlidingWindowThrottle
+)
 from gap_api.factories import APIRateLimiterFactory
 
 
@@ -34,6 +38,7 @@ class TestRateLimiter(TestCase):
     def setUp(self):
         """Set test class."""
         self.redis_client = cache._cache.get_client()
+        self.user = UserF.create()
 
     def test_rate_limiter_allows_request(self):
         """Test requests are allowed."""
@@ -192,6 +197,36 @@ class TestRateLimiter(TestCase):
         self.assertTrue(0 < wait_time <= 3600)
         mock_time.assert_called_once()
 
+    @patch('gap_api.models.rate_limiter.APIRateLimiter.get_config')
+    def test_fetch_rate_limit(self, mock_get_config):
+        """Test fetch_rate_limit."""
+        throttle = CounterSlidingWindowThrottle()
+        mock_get_config.return_value = None
+        rate_limits = throttle._fetch_rate_limit(self.user)
+        self.assertEqual(len(rate_limits), 0)
+        mock_get_config.assert_called_once()
+        mock_get_config.reset_mock()
+
+        mock_get_config.return_value = {
+            'minute': -1,
+            'hour': -1,
+            'day': -1,
+        }
+        rate_limits = throttle._fetch_rate_limit(self.user)
+        self.assertEqual(len(rate_limits), 0)
+        mock_get_config.assert_called_once()
+        mock_get_config.reset_mock()
+
+        mock_get_config.return_value = {
+            'minute': 10,
+            'hour': 100,
+            'day': 1000,
+        }
+        rate_limits = throttle._fetch_rate_limit(self.user)
+        self.assertEqual(len(rate_limits), 3)
+        mock_get_config.assert_called_once()
+        mock_get_config.reset_mock()
+
 
 @override_settings(
     CACHES={
@@ -221,6 +256,14 @@ class TestAPIRateLimiterModel(TestCase):
             minute_limit=5,
             hour_limit=50,
             day_limit=500,
+        )
+
+    def test_get_config_name(self):
+        """Test config_name."""
+        self.assertEqual(self.global_rate_limiter.config_name, 'global')
+        self.assertEqual(
+            self.user_rate_limiter.config_name,
+            self.user_rate_limiter.user.username
         )
 
     def test_set_cache_for_user(self):
