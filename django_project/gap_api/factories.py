@@ -6,9 +6,10 @@ Tomorrow Now GAP.
 """
 import factory
 from factory.django import DjangoModelFactory
+from django.contrib.gis.geos import Polygon, MultiPolygon
 
 from core.factories import UserF
-from gap_api.models import APIRequestLog
+from gap_api.models import APIRequestLog, Location
 
 
 class APIRequestLogFactory(DjangoModelFactory):
@@ -34,3 +35,19 @@ class APIRequestLogFactory(DjangoModelFactory):
         'start_date': '2019-11-01',
         'output_type': 'csv'
     }
+
+
+class LocationFactory(DjangoModelFactory):
+    """Factory class for Location model."""
+
+    class Meta:  # noqa
+        model = Location
+
+    user = factory.SubFactory(UserF)
+    name = factory.Faker('name')
+    geometry = factory.LazyAttribute(
+        lambda _: MultiPolygon(
+            Polygon(((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
+        )
+    )
+    created_on = factory.Faker('date_time')

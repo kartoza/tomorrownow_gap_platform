@@ -3,7 +3,7 @@
     "model": "gap_api.datasettypeapiconfig",
     "pk": 1,
     "fields": {
-        "max_daterange": 30
+        "max_daterange": 366
     }
 },
 {
@@ -17,7 +17,7 @@
     "model": "gap_api.datasettypeapiconfig",
     "pk": 7,
     "fields": {
-        "max_daterange": 30
+        "max_daterange": 90
     }
 },
 {

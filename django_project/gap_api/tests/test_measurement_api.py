@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Unit tests for User API.
 """
 
-import json
 from datetime import datetime
 from typing import List
 from unittest.mock import patch
@@ -26,6 +25,7 @@ from gap.utils.reader import (
     LocationInputType
 )
 from gap_api.api_views.measurement import MeasurementAPI
+from gap_api.factories import LocationFactory
 
 
 class MockDatasetReader(BaseDatasetReader):
@@ -186,28 +186,22 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         :return: Request object
         :rtype: WSGIRequest
         """
+        location = LocationFactory.create(
+            user=self.superuser,
+            geometry=MultiPolygon(
+                Polygon(((0, 0), (0, 10), (10, 10), (10, 0), (0, 0)))
+            )
+        )
         request_params = (
             f'?attributes={attributes}'
             f'&start_date={start_dt}&end_date={end_dt}'
-            f'&output_type={output_type}'
+            f'&output_type={output_type}&location_name={location.name}'
         )
         if product:
             request_params = request_params + f'&product={product}'
-        polygon = Polygon(((0, 0), (0, 10), (10, 10), (10, 0), (0, 0)))
-        data = {
-            "type": "FeatureCollection",
-            "name": "polygon",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {"name": "1"},
-                    "geometry": json.loads(MultiPolygon(polygon).json)
-                }
-            ]
-        }
-        request = self.factory.post(
-            reverse('api:v1:get-measurement') + request_params,
-            data=data, format='json'
+        print(request_params)
+        request = self.factory.get(
+            reverse('api:v1:get-measurement') + request_params
         )
         request.user = self.superuser
         request.resolver_match = FakeResolverMatchV1

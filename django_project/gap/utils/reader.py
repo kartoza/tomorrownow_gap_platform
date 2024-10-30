@@ -77,6 +77,22 @@ class LocationInputType:
     POLYGON = 'polygon'
     LIST_OF_POINT = 'list_of_point'
 
+    @staticmethod
+    def map_from_geom_typeid(geom_typeid: int) -> str:
+        """Get type from geom_typeid.
+
+        :param geom_typeid: id from geom_typeid
+        :type geom_typeid: int
+        :return: LocationInputType
+        :rtype: str
+        """
+        if geom_typeid == 0:
+            return LocationInputType.POINT
+        elif geom_typeid in [3, 6]:
+            return LocationInputType.POLYGON
+        elif geom_typeid == 4:
+            return LocationInputType.LIST_OF_POINT
+
 
 class DatasetReaderInput:
     """Class to store the dataset reader input.

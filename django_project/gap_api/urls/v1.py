@@ -15,6 +15,7 @@ from gap.models.preferences import Preferences
 from gap_api.api_views.crop_insight import CropPlanAPI
 from gap_api.api_views.measurement import MeasurementAPI
 from gap_api.api_views.user import UserInfo
+from gap_api.api_views.location import LocationAPI
 from gap_api.urls.schema import CustomSchemaGenerator
 
 
@@ -80,6 +81,16 @@ measurement_urls = [
         name='get-measurement'
     )
 ]
+
+# LOCATION API
+location_urls = [
+    path(
+        'location/',
+        LocationAPI.as_view(),
+        name='upload-location'
+    ),
+]
+
 urlpatterns = [
     re_path(
         r'^docs/$',
@@ -88,6 +99,7 @@ urlpatterns = [
     ),
 ]
 urlpatterns += user_urls
+urlpatterns += location_urls
 urlpatterns += measurement_urls
 urlpatterns += [
     re_path(

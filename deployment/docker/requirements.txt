@@ -79,3 +79,6 @@ drf-api-tracking==1.8.4
 # celery task monitoring
 flower==1.2.0
 django-revproxy==0.12.0
+
+# fiona
+fiona==1.10.1
