@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Unit tests for User API.
 """
 
-import json
 from datetime import datetime
 from typing import List
 from unittest.mock import patch
