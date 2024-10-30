@@ -26,6 +26,7 @@ from gap.utils.reader import (
     LocationInputType
 )
 from gap_api.api_views.measurement import MeasurementAPI
+from gap_api.factories import LocationFactory
 
 
 class MockDatasetReader(BaseDatasetReader):
@@ -186,28 +187,22 @@ class CommonMeasurementAPITest(BaseAPIViewTest):
         :return: Request object
         :rtype: WSGIRequest
         """
+        location = LocationFactory.create(
+            user=self.superuser,
+            geometry=MultiPolygon(
+                Polygon(((0, 0), (0, 10), (10, 10), (10, 0), (0, 0)))
+            )
+        )
         request_params = (
             f'?attributes={attributes}'
             f'&start_date={start_dt}&end_date={end_dt}'
-            f'&output_type={output_type}'
+            f'&output_type={output_type}&location_name={location.name}'
         )
         if product:
             request_params = request_params + f'&product={product}'
-        polygon = Polygon(((0, 0), (0, 10), (10, 10), (10, 0), (0, 0)))
-        data = {
-            "type": "FeatureCollection",
-            "name": "polygon",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {"name": "1"},
-                    "geometry": json.loads(MultiPolygon(polygon).json)
-                }
-            ]
-        }
-        request = self.factory.post(
-            reverse('api:v1:get-measurement') + request_params,
-            data=data, format='json'
+        print(request_params)
+        request = self.factory.get(
+            reverse('api:v1:get-measurement') + request_params
         )
         request.user = self.superuser
         request.resolver_match = FakeResolverMatchV1
@@ -276,65 +271,65 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(response.status_code, 400)
         self.assertIn('Invalid Request Parameter', response.data)
 
-    # @patch('gap_api.api_views.measurement.get_reader_from_dataset')
-    # def test_read_historical_data_by_polygon(self, mocked_reader):
-    #     """Test read historical data."""
-    #     view = MeasurementAPI.as_view()
-    #     mocked_reader.return_value = MockDatasetReader
-    #     dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
-    #     attribute1 = DatasetAttribute.objects.filter(
-    #         dataset=dataset,
-    #         attribute__variable_name='max_temperature'
-    #     ).first()
-    #     attribute2 = DatasetAttribute.objects.filter(
-    #         dataset=dataset,
-    #         attribute__variable_name='total_rainfall'
-    #     ).first()
-    #     attribs = [
-    #         attribute1.attribute.variable_name,
-    #         attribute2.attribute.variable_name
-    #     ]
-    #     request = self._post_measurement_request(
-    #         attributes=','.join(attribs),
-    #         output_type='json'
-    #     )
-    #     response = view(request)
-    #     self.assertEqual(response.status_code, 400)
-    #     self.assertIn('Invalid Request Parameter', response.data)
-    #     request = self._post_measurement_request(
-    #         attributes=','.join(attribs),
-    #         output_type='csv'
-    #     )
-    #     response = view(request)
-    #     self.assertEqual(response.status_code, 200)
-    #     mocked_reader.assert_called_once_with(attribute1.dataset)
-    #     self.assertEqual(response['content-type'], 'text/csv')
-    #     mocked_reader.reset_mock()
-    #     request = self._post_measurement_request(
-    #         attributes=','.join(attribs),
-    #         output_type='ascii'
-    #     )
-    #     response = view(request)
-    #     self.assertEqual(response.status_code, 200)
-    #     mocked_reader.assert_called_once_with(attribute1.dataset)
-    #     self.assertEqual(response['content-type'], 'text/ascii')
-    #     mocked_reader.reset_mock()
-    #     request = self._post_measurement_request(
-    #         attributes=','.join(attribs),
-    #         output_type='netcdf'
-    #     )
-    #     response = view(request)
-    #     self.assertEqual(response.status_code, 200)
-    #     mocked_reader.assert_called_once_with(attribute1.dataset)
-    #     self.assertEqual(response['content-type'], 'application/x-netcdf')
-    #     # invalid output_type
-    #     request = self._post_measurement_request(
-    #         attributes=','.join(attribs),
-    #         output_type='sdfsdf'
-    #     )
-    #     response = view(request)
-    #     self.assertEqual(response.status_code, 400)
-    #     self.assertIn('Invalid Request Parameter', response.data)
+    @patch('gap_api.api_views.measurement.get_reader_from_dataset')
+    def test_read_historical_data_by_polygon(self, mocked_reader):
+        """Test read historical data."""
+        view = MeasurementAPI.as_view()
+        mocked_reader.return_value = MockDatasetReader
+        dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
+        attribute1 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='max_temperature'
+        ).first()
+        attribute2 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='total_rainfall'
+        ).first()
+        attribs = [
+            attribute1.attribute.variable_name,
+            attribute2.attribute.variable_name
+        ]
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='json'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='csv'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertEqual(response['content-type'], 'text/csv')
+        mocked_reader.reset_mock()
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='ascii'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertEqual(response['content-type'], 'text/ascii')
+        mocked_reader.reset_mock()
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='netcdf'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertEqual(response['content-type'], 'application/x-netcdf')
+        # invalid output_type
+        request = self._post_measurement_request(
+            attributes=','.join(attribs),
+            output_type='sdfsdf'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid Request Parameter', response.data)
 
     @patch('gap_api.api_views.measurement.get_reader_from_dataset')
     def test_validate_dataset_attributes(self, mocked_reader):

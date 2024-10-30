@@ -450,8 +450,12 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         output_format = self._get_format_filter()
         if location is None:
             return Response(
-                status=200,
-                data={}
+                status=400,
+                data={
+                    'Invalid Request Parameter': (
+                        'Missing location input parameter!'
+                    )
+                }
             )
 
         dataset_attributes = DatasetAttribute.objects.select_related(
