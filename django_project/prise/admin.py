@@ -55,7 +55,7 @@ class PriseMessageScheduleAdmin(admin.ModelAdmin):
     """Admin page for PriseMessageSchedule."""
 
     list_display = (
-        'group', 'week_of_month', 'day_of_week',
+        'group', 'day_occurrence_in_month', 'day_of_week',
         'schedule_date', 'priority', 'active'
     )
     list_filter = ('group', 'active')

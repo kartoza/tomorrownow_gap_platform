@@ -69,7 +69,7 @@ class PriseMessageScheduleFactory(DjangoModelFactory):
         model = PriseMessageSchedule
 
     group = PriseMessageGroup.START_SEASON
-    week_of_month = 1
+    day_occurrence_in_month = 1
     day_of_week = 1
     active = True
     priority = 1

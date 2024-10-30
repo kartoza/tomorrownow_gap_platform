@@ -4,7 +4,7 @@
     "pk": 1,
     "fields": {
         "group": "PRISE Time To Action 1 - Beginning of the month",
-        "week_of_month": 1,
+        "day_occurrence_in_month": 1,
         "day_of_week": 1,
         "schedule_date": null,
         "active": true,
@@ -16,7 +16,7 @@
     "pk": 2,
     "fields": {
         "group": "PRISE Time To Action 2 - Second half of the month",
-        "week_of_month": 3,
+        "day_occurrence_in_month": 3,
         "day_of_week": 1,
         "schedule_date": null,
         "active": true,
