@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 from django.contrib import admin, messages
 from django.utils.html import format_html
+from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from core.admin import AbstractDefinitionAdmin
 from gap.models import (
@@ -24,10 +25,11 @@ class CropAdmin(AbstractDefinitionAdmin):
     pass
 
 
-class FarmShortTermForecastDataInline(admin.TabularInline):
+class FarmShortTermForecastDataInline(TabularInlinePaginated):
     """FarmShortTermForecastData inline."""
 
     model = FarmShortTermForecastData
+    per_page = 20
     extra = 0
 
 
