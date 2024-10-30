@@ -142,6 +142,45 @@ class TestRateLimiter(TestCase):
         self.assertFalse(
             self.redis_client.hexists(hour_key, current_hour - 25))
 
+    def test_get_waiting_time_in_seconds_for_minute_limit(self):
+        """Test get waiting time for minute limit."""
+        rate_limiter = RateLimiter(
+            user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
+        rate_limiter.exceeding_limits = [1]
+        wait_time = rate_limiter.get_waiting_time_in_seconds()
+        self.assertTrue(0 < wait_time <= 60)
+
+    def test_get_waiting_time_in_seconds_for_hour_limit(self):
+        """Test get waiting time for hour limit."""
+        rate_limiter = RateLimiter(
+            user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
+        rate_limiter.exceeding_limits = [60]
+        wait_time = rate_limiter.get_waiting_time_in_seconds()
+        self.assertTrue(0 < wait_time <= 3600)
+
+    def test_get_waiting_time_in_seconds_for_day_limit(self):
+        """Test get waiting time for day limit."""
+        rate_limiter = RateLimiter(
+            user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
+        rate_limiter.exceeding_limits = [1440]
+        wait_time = rate_limiter.get_waiting_time_in_seconds()
+        self.assertTrue(0 < wait_time <= 86400)
+
+    def test_get_waiting_time_in_seconds_under_limit(self):
+        """Test get waiting time when under limit."""
+        rate_limiter = RateLimiter(
+            user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
+        wait_time = rate_limiter.get_waiting_time_in_seconds()
+        self.assertIsNone(wait_time)
+
+    def test_get_waiting_time_in_seconds_multiple_limit(self):
+        """Test get waiting time when multiple limits are exceeded."""
+        rate_limiter = RateLimiter(
+            user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
+        rate_limiter.exceeding_limits = [1, 60]
+        wait_time = rate_limiter.get_waiting_time_in_seconds()
+        self.assertTrue(0 < wait_time <= 3600)
+
 
 @override_settings(
     CACHES={

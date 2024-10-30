@@ -25,6 +25,7 @@ class RateLimiter:
         self.user_id = user_id
         self.rate_limits = rate_limits
         self.redis: Redis = cache._cache.get_client()
+        self.exceeding_limits = []
 
     def _get_current_minute(self):
         """Get the current timestamp rounded to the nearest min."""
@@ -119,10 +120,14 @@ class RateLimiter:
 
     def is_rate_limited(self):
         """Check if the user is rate-limited based on defined rate limits."""
+        self.exceeding_limits = []
         for duration_in_minutes, max_requests in self.rate_limits.items():
             request_count = self._get_request_count(duration_in_minutes)
             if request_count >= max_requests:
-                return True
+                self.exceeding_limits.append(duration_in_minutes)
+
+        if len(self.exceeding_limits) > 0:
+            return True
         return False
 
     def is_request_allowed(self):
@@ -133,6 +138,36 @@ class RateLimiter:
         self._increment_request_count()
         return True
 
+    def get_waiting_time_in_seconds(self):
+        """
+        Estimate the waiting time (in seconds) until the rate limit is lifted.
+
+        This is calculated as the time remaining until the next window starts.
+        """
+        current_time = time.time()
+        waiting_times = []
+
+        # check minute-level rate limit
+        if any(duration < 60 for duration in self.exceeding_limits):
+            next_minute_reset = (current_time // 60 + 1) * 60
+            waiting_times.append(next_minute_reset - current_time)
+
+        # check hour-level rate limit
+        if 60 in self.exceeding_limits:
+            next_hour_reset = (current_time // 3600 + 1) * 3600
+            waiting_times.append(next_hour_reset - current_time)
+
+        # check day-level rate limit
+        if 1440 in self.exceeding_limits:
+            next_day_reset = (current_time // 86400 + 1) * 86400
+            waiting_times.append(next_day_reset - current_time)
+
+        # Return the longest waiting time
+        if waiting_times:
+            return int(max(waiting_times))
+
+        return None
+
 
 class CounterSlidingWindowThrottle(BaseThrottle):
     """Custom throttle class using sliding window counter."""
@@ -140,11 +175,20 @@ class CounterSlidingWindowThrottle(BaseThrottle):
     def allow_request(self, request, view):
         """Check whether request is allowed."""
         rate_limits = {
-            1: 100,    # 100 requests per minute
+            1: 3,    # 100 requests per minute
             60: 1000,  # 1000 requests per hour
             1440: 10000  # 10,000 requests per day
         }
 
         rate_limiter = RateLimiter(request.user.id, rate_limits)
 
-        return rate_limiter.is_request_allowed()
+        self.wait_time = None
+        is_allowed = rate_limiter.is_request_allowed()
+        if not is_allowed:
+            self.wait_time = rate_limiter.get_waiting_time_in_seconds()
+
+        return is_allowed
+
+    def wait(self):
+        """Return the waiting time in seconds."""
+        return self.wait_time
