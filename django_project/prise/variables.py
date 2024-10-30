@@ -26,7 +26,7 @@ class PriseMessageGroup:
 class PriseDataType:
     """Type of data that being used by Prise."""
 
-    CLIMATOLOGY = 'Climatology'
+    CLIMATOLOGY = 'Climatological'
     NEAR_REAL_TIME = 'Near Real Time'
 
     @classmethod

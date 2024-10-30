@@ -278,10 +278,10 @@ class PriseMessageScheduleTest(TestCase):
 
     def setUp(self):
         """Set test class."""
-        # Active schedule matching week_of_month and day_of_week
+        # Active schedule matching day_occurrence_in_month and day_of_week
         PriseMessageScheduleFactory.create(
             group="Start Season",
-            week_of_month=1,
+            day_occurrence_in_month=1,
             day_of_week=1,
             schedule_date=None,
             active=True
@@ -290,37 +290,57 @@ class PriseMessageScheduleTest(TestCase):
         # Inactive schedule (should not be returned)
         PriseMessageScheduleFactory.create(
             group="End Season",
-            week_of_month=1,
+            day_occurrence_in_month=1,
             day_of_week=1,
             schedule_date=None,
             active=False
         )
 
-    def test_calculate_week_of_month(self):
-        """Test calculate_week_of_month."""
-        date = datetime(2024, 10, 1)  # October 1st, 2024
+    def test_calculate_day_occurrence_in_month(self):
+        """Test calc_day_occurrence_in_month."""
+        # Test for the first occurrence of Tuesday (2024-11-05)
+        date = datetime(2024, 11, 5)
         self.assertEqual(
-            PriseMessageSchedule.calculate_week_of_month(date), 1)
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 1)
 
-        date = datetime(2024, 10, 15)  # October 15th, 2024
+        # Test for the second occurrence of Tuesday (2024-11-12)
+        date = datetime(2024, 11, 12)
         self.assertEqual(
-            PriseMessageSchedule.calculate_week_of_month(date), 3)
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 2)
 
-        date = datetime(2024, 10, 31)  # October 31st, 2024
+        # Test for the third occurrence of Tuesday (2024-11-19)
+        date = datetime(2024, 11, 19)
         self.assertEqual(
-            PriseMessageSchedule.calculate_week_of_month(date), 5)
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 3)
 
-        date = datetime(2024, 9, 1)  # September 1st, 2024 (a Sunday)
+        # Test for the fourth occurrence of Tuesday (2024-11-26)
+        date = datetime(2024, 11, 26)
         self.assertEqual(
-            PriseMessageSchedule.calculate_week_of_month(date), 1)
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 4)
 
-        date = datetime(2024, 10, 7)  # October 7th, 2024
+        # Test for the first occurrence of Monday (2024-11-04)
+        date = datetime(2024, 11, 4)
         self.assertEqual(
-            PriseMessageSchedule.calculate_week_of_month(date), 2)
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 1)
+
+        # Test the last day of the month (2024-11-30), which is a Saturday
+        date = datetime(2024, 11, 30)
+        self.assertEqual(
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 5)
+
+        # Test for the first occurrence of Sunday (2024-12-01)
+        date = datetime(2024, 12, 1)
+        self.assertEqual(
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 1)
+
+        # Test boundary case of the first day of the month
+        date = datetime(2024, 11, 1)  # This is a Friday
+        self.assertEqual(
+            PriseMessageSchedule.calc_day_occurrence_in_month(date), 1)
 
     def test_get_schedule_by_week_and_day(self):
         """Test get_schedule by week and day."""
-        # Test fetching schedule by week_of_month and day_of_week
+        # Test fetching schedule by day_occurrence and day_of_week
         today = datetime(2024, 10, 1)
         schedule = PriseMessageSchedule.get_schedule(today)
         self.assertTrue(schedule)
@@ -334,7 +354,7 @@ class PriseMessageScheduleTest(TestCase):
         # Active schedule with matching schedule_date
         PriseMessageScheduleFactory.create(
             group="Time to Action",
-            week_of_month=None,
+            day_occurrence_in_month=None,
             day_of_week=None,
             schedule_date=today.date(),
             active=True,
@@ -358,8 +378,8 @@ class PriseMessageScheduleTest(TestCase):
         today = datetime(2024, 10, 28)
         PriseMessageSchedule.objects.create(
             group="Inactive Group",
-            week_of_month=(
-                PriseMessageSchedule.calculate_week_of_month(today)
+            day_occurrence_in_month=(
+                PriseMessageSchedule.calc_day_occurrence_in_month(today)
             ),
             day_of_week=today.weekday(),
             schedule_date=None,
