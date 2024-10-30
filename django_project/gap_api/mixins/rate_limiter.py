@@ -139,6 +139,6 @@ class CounterSlidingWindowThrottle(BaseThrottle):
 
         if rate_limiter.is_rate_limited():
             return False
-        
+
         rate_limiter._increment_request_count()
         return True
