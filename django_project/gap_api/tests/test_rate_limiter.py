@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Unit tests for User API.
 """
 
+from mock import patch
 from django.test import TestCase, override_settings
 from django.core.cache import cache
 from fakeredis import FakeConnection
@@ -142,44 +143,54 @@ class TestRateLimiter(TestCase):
         self.assertFalse(
             self.redis_client.hexists(hour_key, current_hour - 25))
 
-    def test_get_waiting_time_in_seconds_for_minute_limit(self):
+    @patch('time.time', return_value=1730319778)
+    def test_get_waiting_time_in_seconds_for_minute_limit(self, mock_time):
         """Test get waiting time for minute limit."""
         rate_limiter = RateLimiter(
             user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
         rate_limiter.exceeding_limits = [1]
         wait_time = rate_limiter.get_waiting_time_in_seconds()
         self.assertTrue(0 < wait_time <= 60)
+        mock_time.assert_called_once()
 
-    def test_get_waiting_time_in_seconds_for_hour_limit(self):
+    @patch('time.time', return_value=1730319778)
+    def test_get_waiting_time_in_seconds_for_hour_limit(self, mock_time):
         """Test get waiting time for hour limit."""
         rate_limiter = RateLimiter(
             user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
         rate_limiter.exceeding_limits = [60]
         wait_time = rate_limiter.get_waiting_time_in_seconds()
         self.assertTrue(0 < wait_time <= 3600)
+        mock_time.assert_called_once()
 
-    def test_get_waiting_time_in_seconds_for_day_limit(self):
+    @patch('time.time', return_value=1730319778)
+    def test_get_waiting_time_in_seconds_for_day_limit(self, mock_time):
         """Test get waiting time for day limit."""
         rate_limiter = RateLimiter(
             user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
         rate_limiter.exceeding_limits = [1440]
         wait_time = rate_limiter.get_waiting_time_in_seconds()
         self.assertTrue(0 < wait_time <= 86400)
+        mock_time.assert_called_once()
 
-    def test_get_waiting_time_in_seconds_under_limit(self):
+    @patch('time.time', return_value=1730319778)
+    def test_get_waiting_time_in_seconds_under_limit(self, mock_time):
         """Test get waiting time when under limit."""
         rate_limiter = RateLimiter(
             user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
         wait_time = rate_limiter.get_waiting_time_in_seconds()
         self.assertIsNone(wait_time)
+        mock_time.assert_called_once()
 
-    def test_get_waiting_time_in_seconds_multiple_limit(self):
+    @patch('time.time', return_value=1730319778)
+    def test_get_waiting_time_in_seconds_multiple_limit(self, mock_time):
         """Test get waiting time when multiple limits are exceeded."""
         rate_limiter = RateLimiter(
             user_id="user129", rate_limits={1: 5, 60: 10, 1440: 100})
         rate_limiter.exceeding_limits = [1, 60]
         wait_time = rate_limiter.get_waiting_time_in_seconds()
         self.assertTrue(0 < wait_time <= 3600)
+        mock_time.assert_called_once()
 
 
 @override_settings(
