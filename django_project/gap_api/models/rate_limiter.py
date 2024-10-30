@@ -8,14 +8,15 @@ Tomorrow Now GAP API.
 from django.db import models
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 
 class APIRateLimiter(models.Model):
     """Models that stores GAP API rate limiter."""
 
-    GLOBAL_CACHE_KEY = 'gap-api-ratelimit-global'
+    CACHE_PREFIX_KEY = 'gap-api-ratelimit-'
+    GLOBAL_CACHE_KEY = f'{CACHE_PREFIX_KEY}global'
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -38,7 +39,7 @@ class APIRateLimiter(models.Model):
     def cache_key(self):
         """Return cache key for this config."""
         if self.user:
-            return f'gap-api-ratelimit-{self.user.id}'
+            return f'{APIRateLimiter.CACHE_PREFIX_KEY}{self.user.id}'
         return APIRateLimiter.GLOBAL_CACHE_KEY
 
     @property
@@ -92,7 +93,7 @@ class APIRateLimiter(models.Model):
     @staticmethod
     def get_config(user):
         """Return config for given user."""
-        cache_key = f'gap-api-ratelimit-{user.id}'
+        cache_key = f'{APIRateLimiter.CACHE_PREFIX_KEY}{user.id}'
         config_cache = cache.get(cache_key, None)
 
         if config_cache == 'global':
@@ -122,7 +123,11 @@ class APIRateLimiter(models.Model):
 def ratelimiter_post_create(
         sender, instance: APIRateLimiter, created, *args, **kwargs):
     """Clear cache after saving the object."""
-    if created:
-        return
+    cache.delete(instance.cache_key)
 
+
+@receiver(pre_delete, sender=APIRateLimiter)
+def ratelimiter_pre_delete(
+        sender, instance: APIRateLimiter, *args, **kwargs):
+    """Clear cache before the model is deleted."""
     cache.delete(instance.cache_key)

@@ -10,6 +10,16 @@ from redis import Redis
 from django.core.cache import cache
 from rest_framework.throttling import BaseThrottle
 
+from gap_api.models.rate_limiter import APIRateLimiter
+
+
+class RateLimitKey:
+    """Key for available rate limit."""
+
+    RATE_LIMIT_MINUTE_KEY = 1
+    RATE_LIMIT_HOUR_KEY = 60
+    RATE_LIMIT_DAY_KEY = 1440
+
 
 class RateLimiter:
     """RateLimiter using sliding window counter."""
@@ -153,12 +163,12 @@ class RateLimiter:
             waiting_times.append(next_minute_reset - current_time)
 
         # check hour-level rate limit
-        if 60 in self.exceeding_limits:
+        if RateLimitKey.RATE_LIMIT_HOUR_KEY in self.exceeding_limits:
             next_hour_reset = (current_time // 3600 + 1) * 3600
             waiting_times.append(next_hour_reset - current_time)
 
         # check day-level rate limit
-        if 1440 in self.exceeding_limits:
+        if RateLimitKey.RATE_LIMIT_DAY_KEY in self.exceeding_limits:
             next_day_reset = (current_time // 86400 + 1) * 86400
             waiting_times.append(next_day_reset - current_time)
 
@@ -172,13 +182,33 @@ class RateLimiter:
 class CounterSlidingWindowThrottle(BaseThrottle):
     """Custom throttle class using sliding window counter."""
 
+    def _fetch_rate_limit(self, user):
+        """Fetch rate limit for given user.
+
+        if user does not have config, then it will use the global config.
+        """
+        config = APIRateLimiter.get_config(user)
+        rate_limits = {}
+
+        if config['minute'] != -1:
+            rate_limits[RateLimitKey.RATE_LIMIT_MINUTE_KEY] = config['minute']
+
+        if config['hour'] != -1:
+            rate_limits[RateLimitKey.RATE_LIMIT_HOUR_KEY] = config['hour']
+
+        if config['day'] != -1:
+            rate_limits[RateLimitKey.RATE_LIMIT_DAY_KEY] = config['day']
+
+        return rate_limits
+
     def allow_request(self, request, view):
         """Check whether request is allowed."""
-        rate_limits = {
-            1: 3,    # 100 requests per minute
-            60: 1000,  # 1000 requests per hour
-            1440: 10000  # 10,000 requests per day
-        }
+        rate_limits = self._fetch_rate_limit(request.user)
+
+        # check if rate_limit is disabled
+        # NOTE: the global config is 1k/min, 10k/hour, 100k/day from fixture
+        if len(rate_limits) == 0:
+            return True
 
         rate_limiter = RateLimiter(request.user.id, rate_limits)
 

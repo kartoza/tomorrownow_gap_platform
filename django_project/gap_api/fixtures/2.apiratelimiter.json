@@ -4,9 +4,9 @@
     "pk": 1,
     "fields": {
         "user": null,
-        "minute_limit": 100,
-        "hour_limit": 1000,
-        "day_limit": 10000
+        "minute_limit": 1000,
+        "hour_limit": 10000,
+        "day_limit": 100000
     }
 }
 ]
