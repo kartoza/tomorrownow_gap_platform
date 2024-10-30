@@ -88,9 +88,9 @@ class LocationInputType:
         """
         if geom_typeid == 0:
             return LocationInputType.POINT
-        elif geom_typeid in [2, 5]:
+        elif geom_typeid in [3, 6]:
             return LocationInputType.POLYGON
-        elif geom_typeid == 3:
+        elif geom_typeid == 4:
             return LocationInputType.LIST_OF_POINT
 
 

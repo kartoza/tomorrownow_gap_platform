@@ -7,12 +7,15 @@ Tomorrow Now GAP.
 
 import os
 import json
+import fiona
+import logging
 from typing import Tuple
 from django.utils import timezone
 from django.core.files.uploadedfile import TemporaryUploadedFile
 from django.contrib.gis.geos import GEOSGeometry, MultiPoint, MultiPolygon
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+import fiona.model
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -30,6 +33,9 @@ from gap_api.utils.fiona import (
     delete_tmp_shapefile,
     open_fiona_collection
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class LocationAPI(GAPAPILoggingMixin, APIView):
@@ -99,19 +105,19 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
             elif isinstance(file_obj, str):
                 delete_tmp_shapefile(file_obj)
 
-    def _build_geom_object(self, geom_str: str) -> GEOSGeometry:
+    def _build_geom_object(self, fiona_geom) -> GEOSGeometry:
         """Build geometry object from string.
 
-        :param geom_str: feature geojson string
-        :type geom_str: str
+        :param fiona_geom: geometry fiona object
+        :type fiona_geom: Fiona.Geometry
         :return: geometry object if valid one
         :rtype: GEOSGeometry
         """
         geom = None
         try:
-            geom = GEOSGeometry(geom_str)
-        except Exception:
-            pass
+            geom = GEOSGeometry(fiona_geom)
+        except Exception as ex:
+            logger.error(ex)
         return geom
 
     def _read_geom(self, collection) -> Tuple[GEOSGeometry, str]:
@@ -128,12 +134,13 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
         geometries = []
         geom_type = ''
         for feature_idx, feature in enumerate(collection):
-            geom_type = feature['type']
+            geom_type = feature['geometry']['type']
             if geom_type not in Location.ALLOWED_GEOMETRY_TYPES:
                 error = f'Geometry type {geom_type} is not allowed!'
                 break
 
-            geom_str = json.dumps(feature['geometry'])
+            geom_str = json.dumps(
+                feature['geometry'], cls=fiona.model.ObjectEncoder)
             geom = self._build_geom_object(geom_str)
             if geom is None:
                 error = (
@@ -151,12 +158,12 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
 
         if geom_type == 'Point':
             return (
-                MultiPoint(geometries) if len(geometries) > 0 else
+                MultiPoint(geometries) if len(geometries) > 1 else
                 geometries[0], None
             )
         elif geom_type == 'Polygon':
             return (
-                MultiPolygon(geometries) if len(geometries) > 0 else
+                MultiPolygon(geometries) if len(geometries) > 1 else
                 geometries[0], None
             )
         return geometries[0], None
@@ -217,13 +224,13 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
                 f'Incorrect CRS type: {crs}!', tmp_file_obj_list)
 
         # read geometry
-        geometry, error = self._read_geom(collection, file_type)
+        geometry, error = self._read_geom(collection)
         if error:
             self._on_validation_error(
                 error, tmp_file_obj_list)
 
         # create location object
-        location = Location.objects.update_or_create(
+        location, _ = Location.objects.update_or_create(
             user=request.user,
             name=name,
             defaults={

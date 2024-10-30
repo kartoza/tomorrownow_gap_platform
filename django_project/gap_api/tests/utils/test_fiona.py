@@ -17,7 +17,8 @@ from gap_api.models.location import UploadFileType
 from gap_api.utils.fiona import (
     validate_shapefile_zip,
     open_fiona_collection,
-    validate_collection_crs
+    validate_collection_crs,
+    delete_tmp_shapefile
 )
 
 
@@ -68,6 +69,14 @@ class TestUtilsFiona(TestCase):
                 file_stats.st_size, None)
             is_valid, error = validate_shapefile_zip(mem_file)
             self.assertTrue(is_valid)
+        # test using temporary uploaded file
+        with open(shape_file_path, 'rb') as file:
+            tmp_file = TemporaryUploadedFile(
+                'shp.zip', 'application/zip', file_stats.st_size, 'utf-8')
+            with open(tmp_file.temporary_file_path(), 'wb+') as wfile:
+                wfile.write(file.read())
+            is_valid, error = validate_shapefile_zip(tmp_file)
+            self.assertTrue(is_valid)
 
     def test_open_fiona_collection_shp(self):
         """Test open fiona collection for shapefile."""
@@ -95,6 +104,7 @@ class TestUtilsFiona(TestCase):
                 mem_file, UploadFileType.SHAPEFILE)
             self.assertEqual(len(collection), 3)
             collection.close()
+            delete_tmp_shapefile(collection.path)
 
         # test using TemporaryUploadedFile
         with open(shape_file_path, 'rb') as file:
@@ -106,6 +116,7 @@ class TestUtilsFiona(TestCase):
                 tmp_file, UploadFileType.SHAPEFILE)
             self.assertEqual(len(collection), 3)
             collection.close()
+            delete_tmp_shapefile(collection.path)
 
     def test_open_fiona_collection_gpkg(self):
         """Test open fiona collection for gpkg."""
@@ -213,6 +224,19 @@ class TestUtilsFiona(TestCase):
         )
         collection = open_fiona_collection(
             shape_file_path, UploadFileType.GEOPACKAGE)
+        is_valid, _ = validate_collection_crs(collection)
+        collection.close()
+        self.assertTrue(is_valid)
+
+        shape_file_path = absolute_path(
+            'gap_api',
+            'tests',
+            'utils',
+            'data',
+            'country.geojson'
+        )
+        collection = open_fiona_collection(
+            shape_file_path, UploadFileType.GEOJSON)
         is_valid, _ = validate_collection_crs(collection)
         collection.close()
         self.assertTrue(is_valid)
