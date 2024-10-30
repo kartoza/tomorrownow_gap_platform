@@ -40,6 +40,10 @@ class RateLimiter:
             return f"rate_limit:minute:{self.user_id}"
         elif granularity == 'hour':
             return f"rate_limit:hour:{self.user_id}"
+        elif granularity == 'day':
+            return f"ratelimit:{self.user_id}:day"
+        else:
+            raise ValueError("Unsupported granularity")
 
     def _increment_request_count(self):
         """Increment the request count for the current minute and hour."""
@@ -123,6 +127,14 @@ class RateLimiter:
                 return True
         return False
 
+    def is_request_allowed(self):
+        """Check and increment the counter if request is allowed."""
+        if self.is_rate_limited():
+            return False
+
+        self._increment_request_count()
+        return True
+
 
 class CounterSlidingWindowThrottle(BaseThrottle):
     """Custom throttle class using sliding window counter."""
@@ -137,8 +149,4 @@ class CounterSlidingWindowThrottle(BaseThrottle):
 
         rate_limiter = RateLimiter(request.user.id, rate_limits)
 
-        if rate_limiter.is_rate_limited():
-            return False
-
-        rate_limiter._increment_request_count()
-        return True
+        return rate_limiter.is_request_allowed()

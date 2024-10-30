@@ -6,12 +6,14 @@ Tomorrow Now GAP.
 """
 
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 from unittest.mock import patch
 
+from django.test import override_settings
 from django.contrib.gis.geos import Polygon, MultiPolygon, Point
 from django.urls import reverse
 from rest_framework.exceptions import ValidationError
+from fakeredis import FakeConnection
 
 from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
 from gap.factories import (
@@ -36,7 +38,7 @@ class MockDatasetReader(BaseDatasetReader):
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime,
             output_type=DatasetReaderOutputType.JSON,
-            altitudes: (float, float) = None
+            altitudes: Tuple[float, float] = None
     ) -> None:
         """Initialize MockDatasetReader class."""
         super().__init__(
@@ -58,6 +60,19 @@ class MockDatasetReader(BaseDatasetReader):
         )
 
 
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': [
+                'redis://127.0.0.1:6379',
+            ],
+            'OPTIONS': {
+                'connection_class': FakeConnection
+            }
+        }
+    }
+)
 class CommonMeasurementAPITest(BaseAPIViewTest):
     """Common class for Measurement API Test."""
 

@@ -22,3 +22,6 @@ requests-mock
 
 # memory profiler
 memory-profiler
+
+# fakeredis
+fakeredis==2.26.1
