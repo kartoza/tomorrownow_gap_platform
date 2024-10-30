@@ -9,7 +9,9 @@ from django.test import TestCase, override_settings
 from django.core.cache import cache
 from fakeredis import FakeConnection
 
+from gap_api.models.rate_limiter import APIRateLimiter
 from gap_api.mixins.rate_limiter import RateLimiter
+from gap_api.factories import APIRateLimiterFactory
 
 
 @override_settings(
@@ -139,3 +141,84 @@ class TestRateLimiter(TestCase):
         # Verify old hour data is cleaned up
         self.assertFalse(
             self.redis_client.hexists(hour_key, current_hour - 25))
+
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': [
+                'redis://127.0.0.1:6379',
+            ],
+            'OPTIONS': {
+                'connection_class': FakeConnection
+            }
+        }
+    }
+)
+class TestAPIRateLimiterModel(TestCase):
+    """Unit test for APIRateLimiter model."""
+
+    def setUp(self):
+        """Set the test class."""
+        self.global_rate_limiter = APIRateLimiterFactory.create(
+            user=None,
+            minute_limit=10,
+            hour_limit=100,
+            day_limit=1000,
+        )
+        self.user_rate_limiter = APIRateLimiterFactory.create(
+            minute_limit=5,
+            hour_limit=50,
+            day_limit=500,
+        )
+
+    def test_set_cache_for_user(self):
+        """Test setting cache for a specific user."""
+        # Set cache for user-specific config
+        self.user_rate_limiter.set_cache()
+        cached_value = cache.get(self.user_rate_limiter.cache_key)
+        self.assertEqual(cached_value, '5:50:500')
+
+    def test_set_cache_for_global(self):
+        """Test setting cache for global config."""
+        # Set cache for global config
+        self.global_rate_limiter.set_cache()
+        cached_value = cache.get(self.global_rate_limiter.cache_key)
+        self.assertEqual(cached_value, '10:100:1000')
+
+    def test_clear_cache_for_user(self):
+        """Test clearing cache for a specific user."""
+        self.user_rate_limiter.set_cache()
+        self.user_rate_limiter.clear_cache()
+        cached_value = cache.get(self.user_rate_limiter.cache_key)
+        self.assertIsNone(cached_value)
+
+    def test_get_config_for_user(self):
+        """Test retrieving config for a specific user from cache."""
+        self.user_rate_limiter.set_cache()
+        config = APIRateLimiter.get_config(self.user_rate_limiter.user)
+        self.assertEqual(config['minute'], 5)
+        self.assertEqual(config['hour'], 50)
+        self.assertEqual(config['day'], 500)
+
+    def test_get_global_config(self):
+        """Test retrieving global config from cache."""
+        self.global_rate_limiter.set_cache()
+        config = APIRateLimiter.get_global_config()
+        self.assertEqual(config['minute'], 10)
+        self.assertEqual(config['hour'], 100)
+        self.assertEqual(config['day'], 1000)
+
+    def test_get_global_config_when_not_cached(self):
+        """Test retrieving global config when it is not cached."""
+        # First clear cache to simulate no cache scenario
+        cache.delete(APIRateLimiter.GLOBAL_CACHE_KEY)
+
+        # Ensure the global rate limiter is fetched and set in the cache
+        config = APIRateLimiter.get_global_config()
+        self.assertEqual(config['minute'], 10)
+        self.assertEqual(config['hour'], 100)
+        self.assertEqual(config['day'], 1000)
+        cached_value = cache.get(APIRateLimiter.GLOBAL_CACHE_KEY)
+        self.assertEqual(cached_value, '10:100:1000')

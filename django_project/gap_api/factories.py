@@ -9,7 +9,7 @@ from factory.django import DjangoModelFactory
 from django.contrib.gis.geos import Polygon, MultiPolygon
 
 from core.factories import UserF
-from gap_api.models import APIRequestLog, Location
+from gap_api.models import APIRequestLog, Location, APIRateLimiter
 
 
 class APIRequestLogFactory(DjangoModelFactory):
@@ -51,3 +51,15 @@ class LocationFactory(DjangoModelFactory):
         )
     )
     created_on = factory.Faker('date_time')
+
+
+class APIRateLimiterFactory(DjangoModelFactory):
+    """Factory class for APIRateLimiter model."""
+
+    class Meta:  # noqa
+        model = APIRateLimiter
+
+    user = factory.SubFactory(UserF)
+    minute_limit = 10
+    hour_limit = 100
+    day_limit = 1000

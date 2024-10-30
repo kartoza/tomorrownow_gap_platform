@@ -67,9 +67,9 @@ class APIRateLimiter(models.Model):
         """Parse cache value."""
         values = cache_str.split(':')
         return {
-            'minute': values[0],
-            'hour': values[1],
-            'day': values[2]
+            'minute': int(values[0]),
+            'hour': int(values[1]),
+            'day': int(values[2])
         }
 
     @staticmethod
