@@ -25,14 +25,97 @@
       .info .main {
         margin-bottom: 0 !important;
       }
+
+      .swagger-ui select[multiple] {
+        min-height: 200px;
+      }
     </style>
 {% endblock %}
 {% block extra_scripts %}
+    <script id="gap-product-type-list" type="application/json">{{ product_type_list | safe }}</script>
+    <script id="gap-attribute-dict" type="application/json">{{ attribute_dict | safe }}</script>
     <script>
       setTimeout(function () {
         const link = document.getElementsByClassName('topbar-wrapper')[0].getElementsByClassName('link')[0]
         link.href = "/"
         link.target = "_blank"
       }, 500);
+    </script>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script>
+        $( document ).ready(function() {
+            const mainWeatherBlockID = '#operations-Weather_\\\\\\&_Climate_Data-get-measurement';
+            const productTypeList = JSON.parse(document.getElementById('gap-product-type-list').innerHTML);
+            const attributeDict = JSON.parse(document.getElementById('gap-attribute-dict').innerHTML);
+
+            function change_item_list(selected_value) {
+              // replace attribute dropdown based on selected product_type
+              var $attributeSelect = $(mainWeatherBlockID + ' > div.no-margin > div > div.opblock-section > div.parameters-container > div > table > tbody > tr[data-param-name="attributes"] > td.parameters-col_description > select');
+
+              // clear existing list
+              $attributeSelect.empty();
+
+              // update using selected product type
+              if (attributeDict && selected_value in attributeDict) {
+                var optionsSet = attributeDict[selected_value];
+                optionsSet.forEach(option => {
+                      $attributeSelect.append($('<option>', {
+                          value: option,
+                          text: option
+                      }));
+                });
+              }
+            }
+
+            // attach to observer to listen when weather block is opened
+            setTimeout(function() {
+              var targetElement = $(mainWeatherBlockID)[0];
+
+              // Set up a MutationObserver to listen for attribute changes
+              var observer = new MutationObserver(function(mutations) {
+                  mutations.forEach(function(mutation) {
+                      if (mutation.attributeName === 'class') {
+                          if (mutation.target.className.includes('is-open')) {
+                            setTimeout(function(){
+                                var $tableSelect = mainWeatherBlockID + ' > div.no-margin > div > div.opblock-section > div.parameters-container > div > table';
+                                var newRow = '<tr><td colspan="2"><hr></td></tr>';
+
+                                // apend hr after attributes row
+                                $($tableSelect + ' tr[data-param-name="attributes"]').after(newRow);
+                                // apend hr after end_time row
+                                $($tableSelect + ' tr[data-param-name="end_time"]').after(newRow);
+                                // apend hr after output_type row
+                                $($tableSelect + ' tr[data-param-name="output_type"]').after(newRow);
+
+                                var $productSelect = $(mainWeatherBlockID + ' > div.no-margin > div > div.opblock-section > div.parameters-container > div > table > tbody > tr[data-param-name="product"] > td.parameters-col_description > select');
+                              
+                                // replace selectElement value list using Product Type Name
+                                $productSelect.empty();
+                                productTypeList.forEach(option => {
+                                  $productSelect.append($('<option>', {
+                                      value: option.variable_name,
+                                      text: option.name
+                                  }));
+                                });
+
+                                // trigger attribute change for first product
+                                if (productTypeList && productTypeList.length > 0) {
+                                    change_item_list(productTypeList[0].variable_name);
+                                }
+                                
+                                $productSelect.on('change', function() {
+                                    change_item_list($(this).val());
+                                });
+                            }, 200);
+                          }
+                      }
+                  });
+              });
+
+              // Configure the observer to watch for attribute changes
+              observer.observe(targetElement, { attributes: true });
+            }, 200)
+        });
     </script>
 {% endblock %}

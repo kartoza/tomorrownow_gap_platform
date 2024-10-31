@@ -26,7 +26,8 @@ from gap.models import (
     Dataset,
     DatasetObservationType,
     Attribute,
-    DatasetAttribute
+    DatasetAttribute,
+    DatasetType
 )
 from gap.providers import get_reader_from_dataset
 from gap.utils.reader import (
@@ -42,34 +43,42 @@ from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin
 
 
-def attribute_list():
-    """Attribute list."""
+def product_type_list():
+    """Get product Type list."""
     try:
         return list(
-            Attribute.objects.all().values_list(
-                'variable_name', flat=True
-            ).order_by('variable_name')
+            DatasetType.objects.exclude(
+                variable_name='default'
+            ).values(
+                'variable_name', 'name'
+            ).order_by('name')
         )
     except ProgrammingError:
         pass
     except RuntimeError:
         pass
+    return []
 
 
-def default_attribute_list():
-    """Attribute list."""
+def dataset_attribute_by_product():
+    """Get dict of product and its attribute."""
+    results = {}
     try:
-        first = Attribute.objects.all().order_by('variable_name').first()
-        if first:
-            return Attribute.objects.all().order_by(
-                'variable_name'
-            ).first().variable_name
-        else:
-            return ''
+        for dataset_type in DatasetType.objects.all():
+            results[dataset_type.variable_name] = list(
+                DatasetAttribute.objects.select_related(
+                    'attribute', 'dataset'
+                ).filter(
+                    dataset__type=dataset_type
+                ).values_list(
+                    'attribute__variable_name', flat=True
+                ).distinct().order_by('attribute__variable_name')
+            )
     except ProgrammingError:
         pass
     except RuntimeError:
         pass
+    return results
 
 
 class MeasurementAPI(GAPAPILoggingMixin, APIView):
@@ -79,40 +88,6 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
     time_format = '%H:%M:%S'
     permission_classes = [IsAuthenticated]
     api_parameters = [
-        openapi.Parameter(
-            'attributes',
-            openapi.IN_QUERY,
-            required=True,
-            description='List of attribute name',
-            type=openapi.TYPE_ARRAY,
-            items=openapi.Items(
-                type=openapi.TYPE_STRING,
-                enum=attribute_list(),
-                default=default_attribute_list()
-            )
-        ),
-        openapi.Parameter(
-            'start_date', openapi.IN_QUERY,
-            required=True,
-            description='Start Date (YYYY-MM-DD)',
-            type=openapi.TYPE_STRING
-        ),
-        openapi.Parameter(
-            'end_date', openapi.IN_QUERY,
-            required=True,
-            description='End Date (YYYY-MM-DD)',
-            type=openapi.TYPE_STRING
-        ),
-        openapi.Parameter(
-            'start_time', openapi.IN_QUERY,
-            description='Start Time - UTC (HH:MM:SS)',
-            type=openapi.TYPE_STRING
-        ),
-        openapi.Parameter(
-            'end_time', openapi.IN_QUERY,
-            description='End Time - UTC (HH:MM:SS)',
-            type=openapi.TYPE_STRING
-        ),
         openapi.Parameter(
             'product', openapi.IN_QUERY,
             required=True,
@@ -130,6 +105,40 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             default='cbam_historical_analysis'
         ),
         openapi.Parameter(
+            'attributes',
+            openapi.IN_QUERY,
+            required=True,
+            description='List of attribute name',
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Items(
+                type=openapi.TYPE_STRING,
+                enum=[],
+                default=''
+            )
+        ),
+        openapi.Parameter(
+            'start_date', openapi.IN_QUERY,
+            required=True,
+            description='Start Date (YYYY-MM-DD)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'start_time', openapi.IN_QUERY,
+            description='Start Time - UTC (HH:MM:SS)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'end_date', openapi.IN_QUERY,
+            required=True,
+            description='End Date (YYYY-MM-DD)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'end_time', openapi.IN_QUERY,
+            description='End Time - UTC (HH:MM:SS)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
             'output_type', openapi.IN_QUERY,
             required=True,
             description='Returned format',
@@ -141,6 +150,31 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 DatasetReaderOutputType.ASCII
             ],
             default=DatasetReaderOutputType.JSON
+        ),
+        openapi.Parameter(
+            'lat', openapi.IN_QUERY,
+            description='Latitude',
+            type=openapi.TYPE_NUMBER
+        ),
+        openapi.Parameter(
+            'lon', openapi.IN_QUERY,
+            description='Longitude',
+            type=openapi.TYPE_NUMBER
+        ),
+        openapi.Parameter(
+            'altitudes', openapi.IN_QUERY,
+            description='2 value of altitudes: alt_min, alt_max',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'bbox', openapi.IN_QUERY,
+            description='Bounding box: xmin, ymin, xmax, ymax',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'location_name', openapi.IN_QUERY,
+            description='User location name that has been uploaded',
+            type=openapi.TYPE_STRING
         ),
     ]
 
@@ -538,32 +572,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
-            *api_parameters,
-            openapi.Parameter(
-                'lat', openapi.IN_QUERY,
-                description='Latitude',
-                type=openapi.TYPE_NUMBER
-            ),
-            openapi.Parameter(
-                'lon', openapi.IN_QUERY,
-                description='Longitude',
-                type=openapi.TYPE_NUMBER
-            ),
-            openapi.Parameter(
-                'bbox', openapi.IN_QUERY,
-                description='Bounding box: xmin, ymin, xmax, ymax',
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'location_name', openapi.IN_QUERY,
-                description='User location name that has been uploaded',
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'altitudes', openapi.IN_QUERY,
-                description='2 value of altitudes: alt_min, alt_max',
-                type=openapi.TYPE_STRING
-            )
+            *api_parameters
         ],
         responses={
             200: openapi.Schema(
