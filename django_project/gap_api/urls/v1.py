@@ -47,6 +47,8 @@ try:
     preferences = Preferences.load()
 except ProgrammingError:
     preferences = Preferences()
+except RuntimeError:
+    preferences = Preferences()
 
 schema_view_v1 = get_schema_view(
     openapi.Info(
@@ -111,7 +113,7 @@ urlpatterns = [
     re_path(
         r'^docs/$',
         schema_view_v1.with_ui('tomorrownow', cache_timeout=0),
-        name='schema-redoc'
+        name='schema-swagger'
     ),
 ]
 urlpatterns += user_urls

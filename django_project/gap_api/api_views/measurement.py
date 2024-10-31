@@ -13,6 +13,7 @@ from django.contrib.gis.geos import (
     Point
 )
 from django.db.models.functions import Lower
+from django.db.utils import ProgrammingError
 from django.http import StreamingHttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -44,28 +45,39 @@ from gap_api.mixins import GAPAPILoggingMixin
 
 def product_type_list():
     """Get product Type list."""
-    return list(
-        DatasetType.objects.exclude(
-            variable_name='default'
-        ).values(
-            'variable_name', 'name'
-        ).order_by('name')
-    )
+    try:
+        return list(
+            DatasetType.objects.exclude(
+                variable_name='default'
+            ).values(
+                'variable_name', 'name'
+            ).order_by('name')
+        )
+    except ProgrammingError:
+        pass
+    except RuntimeError:
+        pass
+    return []
 
 
 def dataset_attribute_by_product():
     """Get dict of product and its attribute."""
     results = {}
-    for dataset_type in DatasetType.objects.all():
-        results[dataset_type.variable_name] = list(
-            DatasetAttribute.objects.select_related(
-                'attribute', 'dataset'
-            ).filter(
-                dataset__type=dataset_type
-            ).values_list(
-                'attribute__variable_name', flat=True
-            ).distinct().order_by('attribute__variable_name')
-        )
+    try:
+        for dataset_type in DatasetType.objects.all():
+            results[dataset_type.variable_name] = list(
+                DatasetAttribute.objects.select_related(
+                    'attribute', 'dataset'
+                ).filter(
+                    dataset__type=dataset_type
+                ).values_list(
+                    'attribute__variable_name', flat=True
+                ).distinct().order_by('attribute__variable_name')
+            )
+    except ProgrammingError:
+        pass
+    except RuntimeError:
+        pass
     return results
 
 
