@@ -4,6 +4,7 @@ Tomorrow Now GAP.
 
 .. note:: GAP API v1 urls.
 """
+import json
 from django.db.utils import ProgrammingError
 from django.urls import include, re_path, path
 from drf_yasg import openapi
@@ -13,7 +14,11 @@ from rest_framework import permissions, authentication
 
 from gap.models.preferences import Preferences
 from gap_api.api_views.crop_insight import CropPlanAPI
-from gap_api.api_views.measurement import MeasurementAPI
+from gap_api.api_views.measurement import (
+    MeasurementAPI,
+    product_type_list,
+    dataset_attribute_by_product
+)
 from gap_api.api_views.user import UserInfo
 from gap_api.api_views.location import LocationAPI
 from gap_api.urls.schema import CustomSchemaGenerator
@@ -24,12 +29,25 @@ class TomorrowNowSwaggerUIRenderer(SwaggerUIRenderer):
 
     template = 'gap/swagger-ui.html'
 
+    def set_context(self, renderer_context, swagger=None):
+        """Add custom context to the renderer."""
+        super().set_context(renderer_context, swagger)
+
+        # Add product type list
+        renderer_context['product_type_list'] = json.dumps(product_type_list())
+        # Add dataset attribute list
+        renderer_context['attribute_dict'] = (
+            json.dumps(dataset_attribute_by_product())
+        )
+
 
 UI_RENDERERS['tomorrownow'] = (TomorrowNowSwaggerUIRenderer, ReDocRenderer)
 
 try:
     preferences = Preferences.load()
 except ProgrammingError:
+    preferences = Preferences()
+except RuntimeError:
     preferences = Preferences()
 
 schema_view_v1 = get_schema_view(
@@ -95,7 +113,7 @@ urlpatterns = [
     re_path(
         r'^docs/$',
         schema_view_v1.with_ui('tomorrownow', cache_timeout=0),
-        name='schema-redoc'
+        name='schema-swagger'
     ),
 ]
 urlpatterns += user_urls

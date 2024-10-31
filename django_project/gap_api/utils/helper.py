@@ -12,10 +12,17 @@ from drf_yasg import openapi
 class ApiTag:
     """Class contains API Tags."""
 
-    USER = 'User'
-    Measurement = 'Measurement'
-    CROP_PLAN = 'Crop plan'
-    Location = 'Location'
+    USER = 'User ID'
+    Measurement = 'Weather & Climate Data'
+    CROP_PLAN = 'Crop Insights Engine'
+    Location = 'Upload Location'
+
+    ORDERS = [
+        USER,
+        Measurement,
+        CROP_PLAN,
+        Location
+    ]
 
 
 # COMMON MANUAL PARAMETERS
