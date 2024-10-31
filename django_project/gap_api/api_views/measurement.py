@@ -13,7 +13,6 @@ from django.contrib.gis.geos import (
     Point
 )
 from django.db.models.functions import Lower
-from django.db.utils import ProgrammingError
 from django.http import StreamingHttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -26,7 +25,8 @@ from gap.models import (
     Dataset,
     DatasetObservationType,
     Attribute,
-    DatasetAttribute
+    DatasetAttribute,
+    DatasetType
 )
 from gap.providers import get_reader_from_dataset
 from gap.utils.reader import (
@@ -42,34 +42,29 @@ from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin
 
 
-def attribute_list():
-    """Attribute list."""
-    try:
-        return list(
-            Attribute.objects.all().values_list(
-                'variable_name', flat=True
-            ).order_by('variable_name')
+def product_type_list():
+    """Get product Type list."""
+    return list(
+        DatasetType.objects.all().values(
+            'variable_name', 'name'
+        ).order_by('name')
+    )
+
+
+def dataset_attribute_by_product():
+    """Get dict of product and its attribute."""
+    results = {}
+    for dataset_type in DatasetType.objects.all():
+        results[dataset_type.variable_name] = list(
+            DatasetAttribute.objects.select_related(
+                'attribute', 'dataset'
+            ).filter(
+                dataset__type=dataset_type
+            ).values_list(
+                'attribute__variable_name', flat=True
+            ).distinct().order_by('attribute__variable_name')
         )
-    except ProgrammingError:
-        pass
-    except RuntimeError:
-        pass
-
-
-def default_attribute_list():
-    """Attribute list."""
-    try:
-        first = Attribute.objects.all().order_by('variable_name').first()
-        if first:
-            return Attribute.objects.all().order_by(
-                'variable_name'
-            ).first().variable_name
-        else:
-            return ''
-    except ProgrammingError:
-        pass
-    except RuntimeError:
-        pass
+    return results
 
 
 class MeasurementAPI(GAPAPILoggingMixin, APIView):
@@ -103,8 +98,8 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             type=openapi.TYPE_ARRAY,
             items=openapi.Items(
                 type=openapi.TYPE_STRING,
-                enum=attribute_list(),
-                default=default_attribute_list()
+                enum=[],
+                default=''
             )
         ),
         openapi.Parameter(

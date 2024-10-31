@@ -5,12 +5,10 @@ Tomorrow Now GAP.
 .. note:: Custom schema.
 """
 
-import json
 from collections import OrderedDict
 from django.conf import settings
 from drf_yasg.generators import OpenAPISchemaGenerator
 
-from gap_api.api_views.measurement import MeasurementAPI
 from gap_api.utils.helper import ApiTag
 
 
@@ -48,7 +46,8 @@ class CustomSchemaGenerator(OpenAPISchemaGenerator):
     def get_paths_object(self, paths):
         """Construct the Swagger Paths object.
 
-        :param OrderedDict[str,openapi.PathItem] paths: mapping of paths to :class:`.PathItem` objects
+        :param OrderedDict[str,openapi.PathItem] paths: mapping of paths
+            to :class:`.PathItem` objects
         :returns: the :class:`.Paths` object
         :rtype: openapi.Paths
         """
