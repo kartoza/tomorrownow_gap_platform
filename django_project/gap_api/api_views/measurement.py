@@ -45,7 +45,9 @@ from gap_api.mixins import GAPAPILoggingMixin
 def product_type_list():
     """Get product Type list."""
     return list(
-        DatasetType.objects.all().values(
+        DatasetType.objects.exclude(
+            variable_name='default'
+        ).values(
             'variable_name', 'name'
         ).order_by('name')
     )
@@ -148,6 +150,11 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             type=openapi.TYPE_NUMBER
         ),
         openapi.Parameter(
+            'altitudes', openapi.IN_QUERY,
+            description='2 value of altitudes: alt_min, alt_max',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
             'bbox', openapi.IN_QUERY,
             description='Bounding box: xmin, ymin, xmax, ymax',
             type=openapi.TYPE_STRING
@@ -157,11 +164,6 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             description='User location name that has been uploaded',
             type=openapi.TYPE_STRING
         ),
-        openapi.Parameter(
-            'altitudes', openapi.IN_QUERY,
-            description='2 value of altitudes: alt_min, alt_max',
-            type=openapi.TYPE_STRING
-        )
     ]
 
     def _get_attribute_filter(self):
