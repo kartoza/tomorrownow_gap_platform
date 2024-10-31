@@ -80,6 +80,22 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
     permission_classes = [IsAuthenticated]
     api_parameters = [
         openapi.Parameter(
+            'product', openapi.IN_QUERY,
+            required=True,
+            description='Product type',
+            type=openapi.TYPE_STRING,
+            enum=[
+                'cbam_historical_analysis',
+                'arable_ground_observation',
+                'disdrometer_ground_observation',
+                'tahmo_ground_observation',
+                'windborne_radiosonde_observation',
+                'cbam_shortterm_forecast',
+                'salient_seasonal_forecast'
+            ],
+            default='cbam_historical_analysis'
+        ),
+        openapi.Parameter(
             'attributes',
             openapi.IN_QUERY,
             required=True,
@@ -98,36 +114,20 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
+            'start_time', openapi.IN_QUERY,
+            description='Start Time - UTC (HH:MM:SS)',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
             'end_date', openapi.IN_QUERY,
             required=True,
             description='End Date (YYYY-MM-DD)',
             type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
-            'start_time', openapi.IN_QUERY,
-            description='Start Time - UTC (HH:MM:SS)',
-            type=openapi.TYPE_STRING
-        ),
-        openapi.Parameter(
             'end_time', openapi.IN_QUERY,
             description='End Time - UTC (HH:MM:SS)',
             type=openapi.TYPE_STRING
-        ),
-        openapi.Parameter(
-            'product', openapi.IN_QUERY,
-            required=True,
-            description='Product type',
-            type=openapi.TYPE_STRING,
-            enum=[
-                'cbam_historical_analysis',
-                'arable_ground_observation',
-                'disdrometer_ground_observation',
-                'tahmo_ground_observation',
-                'windborne_radiosonde_observation',
-                'cbam_shortterm_forecast',
-                'salient_seasonal_forecast'
-            ],
-            default='cbam_historical_analysis'
         ),
         openapi.Parameter(
             'output_type', openapi.IN_QUERY,
@@ -142,6 +142,31 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             ],
             default=DatasetReaderOutputType.JSON
         ),
+        openapi.Parameter(
+            'lat', openapi.IN_QUERY,
+            description='Latitude',
+            type=openapi.TYPE_NUMBER
+        ),
+        openapi.Parameter(
+            'lon', openapi.IN_QUERY,
+            description='Longitude',
+            type=openapi.TYPE_NUMBER
+        ),
+        openapi.Parameter(
+            'bbox', openapi.IN_QUERY,
+            description='Bounding box: xmin, ymin, xmax, ymax',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'location_name', openapi.IN_QUERY,
+            description='User location name that has been uploaded',
+            type=openapi.TYPE_STRING
+        ),
+        openapi.Parameter(
+            'altitudes', openapi.IN_QUERY,
+            description='2 value of altitudes: alt_min, alt_max',
+            type=openapi.TYPE_STRING
+        )
     ]
 
     def _get_attribute_filter(self):
@@ -538,32 +563,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         tags=[ApiTag.Measurement],
         manual_parameters=[
-            *api_parameters,
-            openapi.Parameter(
-                'lat', openapi.IN_QUERY,
-                description='Latitude',
-                type=openapi.TYPE_NUMBER
-            ),
-            openapi.Parameter(
-                'lon', openapi.IN_QUERY,
-                description='Longitude',
-                type=openapi.TYPE_NUMBER
-            ),
-            openapi.Parameter(
-                'bbox', openapi.IN_QUERY,
-                description='Bounding box: xmin, ymin, xmax, ymax',
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'location_name', openapi.IN_QUERY,
-                description='User location name that has been uploaded',
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'altitudes', openapi.IN_QUERY,
-                description='2 value of altitudes: alt_min, alt_max',
-                type=openapi.TYPE_STRING
-            )
+            *api_parameters
         ],
         responses={
             200: openapi.Schema(
