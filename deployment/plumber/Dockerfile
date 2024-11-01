@@ -11,7 +11,7 @@ RUN apt-get update -y && apt-get upgrade -y
 RUN apt install python3.12 -y
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 RUN update-alternatives --set python3 /usr/bin/python3.12
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | PIP_BREAK_SYSTEM_PACKAGES=1 python3
 
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
@@ -28,10 +28,10 @@ RUN install2.r --error tidyverse tidygam mgcv ggpubr classInt zoo
 # Install pip packages
 ADD deployment/docker/requirements.txt /requirements.txt
 RUN apt-get remove -y python3-pil
-RUN python3 -m pip install setuptools Pillow
+RUN PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install setuptools Pillow
 # Fix uwsgi build failure missing cc1
 ARG CPUCOUNT=1
-RUN python3 -m pip install -r /requirements.txt
+RUN PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install -r /requirements.txt
 
 # add django project
 ADD django_project /home/web/django_project
