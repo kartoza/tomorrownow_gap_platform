@@ -10,6 +10,7 @@ import mock
 import datetime
 from django.test import TestCase, RequestFactory, override_settings
 from django.contrib.admin import ModelAdmin
+from fakeredis import FakeConnection
 
 from core.factories import UserF
 from gap.models import DatasetType
@@ -29,6 +30,12 @@ class MockRequestObj(object):
     CACHES={
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': [
+                'redis://127.0.0.1:6379',
+            ],
+            'OPTIONS': {
+                'connection_class': FakeConnection
+            }
         }
     }
 )

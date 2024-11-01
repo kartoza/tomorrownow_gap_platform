@@ -1,0 +1,12 @@
+[
+{
+    "model": "gap_api.apiratelimiter",
+    "pk": 1,
+    "fields": {
+        "user": null,
+        "minute_limit": 1000,
+        "hour_limit": 10000,
+        "day_limit": 100000
+    }
+}
+]

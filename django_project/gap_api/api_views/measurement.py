@@ -40,7 +40,7 @@ from gap.utils.reader import (
 from gap_api.models import DatasetTypeAPIConfig, Location
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
-from gap_api.mixins import GAPAPILoggingMixin
+from gap_api.mixins import GAPAPILoggingMixin, CounterSlidingWindowThrottle
 
 
 def product_type_list():
@@ -87,6 +87,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
     date_format = '%Y-%m-%d'
     time_format = '%H:%M:%S'
     permission_classes = [IsAuthenticated]
+    throttle_classes = [CounterSlidingWindowThrottle]
     api_parameters = [
         openapi.Parameter(
             'product', openapi.IN_QUERY,

@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 from unittest.mock import patch
 
 from django.contrib.gis.geos import Polygon, MultiPolygon, Point
@@ -36,7 +36,7 @@ class MockDatasetReader(BaseDatasetReader):
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime,
             output_type=DatasetReaderOutputType.JSON,
-            altitudes: (float, float) = None
+            altitudes: Tuple[float, float] = None
     ) -> None:
         """Initialize MockDatasetReader class."""
         super().__init__(

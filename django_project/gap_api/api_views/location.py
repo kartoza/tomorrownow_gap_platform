@@ -26,7 +26,7 @@ from gap_api.models.location import Location, UploadFileType
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.serializers.location import LocationSerializer
 from gap_api.utils.helper import ApiTag
-from gap_api.mixins import GAPAPILoggingMixin
+from gap_api.mixins import GAPAPILoggingMixin, CounterSlidingWindowThrottle
 from gap_api.utils.fiona import (
     validate_shapefile_zip,
     validate_collection_crs,
@@ -42,6 +42,7 @@ class LocationAPI(GAPAPILoggingMixin, APIView):
     """API class for uploading location."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [CounterSlidingWindowThrottle]
     parser_classes = (MultiPartParser,)
     api_parameters = [
         openapi.Parameter(

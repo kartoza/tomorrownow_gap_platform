@@ -26,6 +26,7 @@ from gap_api.serializers.crop_insight import (
     CropInsightSerializer, CropInsightGeojsonSerializer
 )
 from gap_api.utils.helper import ApiTag
+from gap_api.mixins import GAPAPILoggingMixin, CounterSlidingWindowThrottle
 
 
 def default_fields():
@@ -41,10 +42,11 @@ def default_fields():
         return []
 
 
-class CropPlanAPI(APIView):
+class CropPlanAPI(GAPAPILoggingMixin, APIView):
     """API class for crop plan data."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [CounterSlidingWindowThrottle]
     outputs = [
         'json',
         'geojson',
