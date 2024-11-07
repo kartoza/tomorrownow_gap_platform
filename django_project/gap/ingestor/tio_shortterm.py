@@ -26,7 +26,11 @@ from django.contrib.gis.db.models.functions import Centroid
 from django.utils import timezone
 
 from core.utils.s3 import zip_folder_in_s3
-from gap.ingestor.base import BaseIngestor, BaseZarrIngestor
+from gap.ingestor.base import (
+    BaseIngestor,
+    BaseZarrIngestor,
+    CoordMapping
+)
 from gap.ingestor.exceptions import (
     MissingCollectorSessionException, FileNotFoundException,
     AdditionalConfigNotFoundException
@@ -144,24 +148,6 @@ class TioShortTermCollector(BaseIngestor):
             raise Exception(e)
         finally:
             pass
-
-
-class CoordMapping:
-    """Mapping coordinate between Grid and Zarr."""
-
-    def __init__(self, value, nearest_idx, nearest_val) -> None:
-        """Initialize coordinate mapping class.
-
-        :param value: lat/lon value from Grid
-        :type value: float
-        :param nearest_idx: nearest index in Zarr
-        :type nearest_idx: int
-        :param nearest_val: nearest value in Zarr
-        :type nearest_val: float
-        """
-        self.value = value
-        self.nearest_idx = nearest_idx
-        self.nearest_val = nearest_val
 
 
 class TioShortTermIngestor(BaseZarrIngestor):
@@ -337,82 +323,6 @@ class TioShortTermIngestor(BaseZarrIngestor):
         ds.close()
         del ds
         del empty_data
-
-    def _is_sorted_and_incremented(self, arr):
-        """Check if array is sorted ascending and incremented by 1.
-
-        :param arr: array
-        :type arr: List
-        :return: True if array is sorted and incremented by 1
-        :rtype: bool
-        """
-        if not arr:
-            return False
-        if len(arr) == 1:
-            return True
-        return all(arr[i] + 1 == arr[i + 1] for i in range(len(arr) - 1))
-
-    def _transform_coordinates_array(
-            self, coord_arr, coord_type) -> List[CoordMapping]:
-        """Find nearest in Zarr for array of lat/lon.
-
-        :param coord_arr: array of lat/lon
-        :type coord_arr: List[float]
-        :param coord_type: lat or lon
-        :type coord_type: str
-        :return: List CoordMapping with nearest val/idx
-        :rtype: List[CoordMapping]
-        """
-        # open existing zarr
-        ds = self._open_zarr_dataset()
-
-        # find nearest coordinate for each item
-        results: List[CoordMapping] = []
-        for target_coord in coord_arr:
-            if coord_type == 'lat':
-                nearest_coord = ds['lat'].sel(
-                    lat=target_coord, method='nearest',
-                    tolerance=self.reindex_tolerance
-                ).item()
-            else:
-                nearest_coord = ds['lon'].sel(
-                    lon=target_coord, method='nearest',
-                    tolerance=self.reindex_tolerance
-                ).item()
-
-            coord_idx = np.where(ds[coord_type].values == nearest_coord)[0][0]
-            results.append(
-                CoordMapping(target_coord, coord_idx, nearest_coord)
-            )
-
-        # close dataset
-        ds.close()
-
-        return results
-
-    def _find_chunk_slices(
-            self, arr_length: int, chunk_size: int) -> List:
-        """Create chunk slices for processing Tio data.
-
-        Given arr with length 300 and chunk_size 150,
-        this method will return [slice(0, 150), slice(150, 300)].
-        :param arr_length: length of array
-        :type arr_length: int
-        :param chunk_size: chunk size
-        :type chunk_size: int
-        :return: list of slice
-        :rtype: List
-        """
-        coord_slices = []
-        for coord_range in range(0, arr_length, chunk_size):
-            max_idx = coord_range + chunk_size
-            coord_slices.append(
-                slice(
-                    coord_range,
-                    max_idx if max_idx < arr_length else arr_length
-                )
-            )
-        return coord_slices
 
     def _update_by_region(
             self, forecast_date: date, lat_arr: List[CoordMapping],
