@@ -19,7 +19,6 @@ import time
 import calendar
 import datetime
 from django.utils import timezone
-from memory_profiler import profile
 from typing import List
 from xarray.core.dataset import Dataset as xrDataset
 
@@ -63,6 +62,19 @@ class CBAMBiasAdjustCollector(BaseIngestor):
             raise RuntimeError('Collector session must have directory_path!')
         self.total_count = 0
         self.data_files = []
+
+    def _parse_filename(self, file_path):
+        """Parse NETCDF filename."""
+        attribute = os.path.split(file_path)[0]
+        netcdf_filename = os.path.split(file_path)[1]
+        netcdf_filename_no_ext = netcdf_filename.split('.')[0]
+        cleaned_name = netcdf_filename_no_ext.replace(
+            f'{attribute}_', '')
+
+        file_date = datetime.datetime.strptime(
+            cleaned_name.split('_')[1], '%Y')
+
+        return attribute, file_date
 
     def _run(self):
         """Collect list of files in the CBAM S3 directory.
@@ -116,11 +128,7 @@ class CBAMBiasAdjustCollector(BaseIngestor):
                     continue
 
                 # parse datetime from filename
-                netcdf_filename = os.path.split(file_path)[1]
-                netcdf_filename_no_ext = netcdf_filename.split('.')[0]
-
-                file_date = datetime.datetime.strptime(
-                    netcdf_filename_no_ext.split('_')[2], '%Y')
+                attribute, file_date = self._parse_filename(file_path)
                 start_datetime = datetime.datetime(
                     file_date.year, 1, 1,
                     0, 0, 0, tzinfo=pytz.UTC
@@ -139,7 +147,7 @@ class CBAMBiasAdjustCollector(BaseIngestor):
                     created_on=timezone.now(),
                     format=DatasetStore.NETCDF,
                     metadata={
-                        'attribute': os.path.split(file_path)[0],
+                        'attribute': attribute,
                         'directory_path': self.dir_path
                     }
                 ))
@@ -450,7 +458,6 @@ class CBAMBiasAdjustIngestor(BaseZarrIngestor):
         new_ds.close()
         del data_vars
 
-    @profile
     def _run(self):
         """Process CBAM NetCDF Files into GAP Zarr file."""
         self.metadata = {
