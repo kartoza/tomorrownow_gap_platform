@@ -555,8 +555,17 @@ class CBAMBiasAdjustIngestor(BaseZarrIngestor):
                     'notes': f'Total time: {time.time() - start_time} s'
                 }
             )
-            self.metadata['start_date'] = source.start_date_time.date()
-            self.metadata['end_date'] = source.end_date_time.date()
+            if (
+                self.metadata['start_date'] is None or
+                self.metadata['start_date'] > source.start_date_time.date()
+            ):
+                self.metadata['start_date'] = source.start_date_time.date()
+
+            if (
+                self.metadata['end_date'] is None or
+                self.metadata['end_date'] < source.end_date_time.date()
+            ):
+                self.metadata['end_date'] = source.end_date_time.date()
 
             # close netcdf ds
             ds.close()
