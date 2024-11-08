@@ -36,6 +36,7 @@ class IngestorType:
     TIO_FORECAST_COLLECTOR = 'Tio Forecast Collector'
     WIND_BORNE_SYSTEMS_API = 'WindBorne Systems API'
     CABI_PRISE_EXCEL = 'Cabi Prise Excel'
+    CBAM_BIAS_ADJUST = 'CBAM Bias Adjusted'
 
 
 class IngestorSessionStatus:
@@ -78,6 +79,7 @@ class BaseSession(models.Model):
                 IngestorType.CABI_PRISE_EXCEL,
                 IngestorType.CABI_PRISE_EXCEL
             ),
+            (IngestorType.CBAM_BIAS_ADJUST, IngestorType.CBAM_BIAS_ADJUST),
         ),
         max_length=512
     )
@@ -125,6 +127,7 @@ class CollectorSession(BaseSession):
         from gap.ingestor.cbam import CBAMCollector
         from gap.ingestor.salient import SalientCollector
         from gap.ingestor.tio_shortterm import TioShortTermCollector
+        from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustCollector
 
         ingestor = None
         if self.ingestor_type == IngestorType.CBAM:
@@ -133,6 +136,8 @@ class CollectorSession(BaseSession):
             ingestor = SalientCollector(self, working_dir)
         elif self.ingestor_type == IngestorType.TIO_FORECAST_COLLECTOR:
             ingestor = TioShortTermCollector(self, working_dir)
+        elif self.ingestor_type == IngestorType.CBAM_BIAS_ADJUST:
+            ingestor = CBAMBiasAdjustCollector(self, working_dir)
 
         if ingestor:
             ingestor.run()
@@ -199,6 +204,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.wind_borne_systems import WindBorneSystemsIngestor
         from gap.ingestor.tio_shortterm import TioShortTermIngestor
         from gap.ingestor.cabi_prise import CabiPriseIngestor
+        from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -221,6 +227,8 @@ class IngestorSession(BaseSession):
             ingestor = TioShortTermIngestor
         elif self.ingestor_type == IngestorType.CABI_PRISE_EXCEL:
             ingestor = CabiPriseIngestor
+        elif self.ingestor_type == IngestorType.CBAM_BIAS_ADJUST:
+            ingestor = CBAMBiasAdjustIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()

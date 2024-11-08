@@ -68,8 +68,7 @@
               }
             }
 
-            // attach to observer to listen when weather block is opened
-            setTimeout(function() {
+            function observerWeatherBlock() {
               var targetElement = $(mainWeatherBlockID)[0];
 
               // Set up a MutationObserver to listen for attribute changes
@@ -115,7 +114,16 @@
 
               // Configure the observer to watch for attribute changes
               observer.observe(targetElement, { attributes: true });
-            }, 200)
+            }
+
+            // attach to observer to listen when weather block is opened
+            var stateCheck = setInterval(function(){
+              var targetElement = $(mainWeatherBlockID)[0];
+              if (targetElement) {
+                clearInterval(stateCheck);
+                observerWeatherBlock();
+              }
+            }, 500);
         });
     </script>
 {% endblock %}

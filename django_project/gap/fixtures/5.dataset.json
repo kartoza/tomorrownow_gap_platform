@@ -138,5 +138,19 @@
       "is_internal_use": false,
       "observation_type": "UPPER_AIR_OBSERVATION"
     }
+  },
+  {
+    "model": "gap.dataset",
+    "pk": 11,
+    "fields": {
+      "name": "CBAM Climate Reanalysis (Bias-Corrected)",
+      "description": null,
+      "provider": 2,
+      "type": 9,
+      "time_step": "DAILY",
+      "store_type": "ZARR",
+      "is_internal_use": false,
+      "observation_type": "NOT_SPECIFIED"
+    }
   }
 ]

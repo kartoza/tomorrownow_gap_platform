@@ -1065,5 +1065,49 @@
       "source_unit": 7,
       "ensembles": false
     }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 98,
+    "fields": {
+      "dataset": 11,
+      "attribute": 9,
+      "source": "max_total_temperature",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 99,
+    "fields": {
+      "dataset": 11,
+      "attribute": 17,
+      "source": "min_total_temperature",
+      "source_unit": 5,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 100,
+    "fields": {
+      "dataset": 11,
+      "attribute": 12,
+      "source": "total_solar_irradiance",
+      "source_unit": 3,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 101,
+    "fields": {
+      "dataset": 11,
+      "attribute": 15,
+      "source": "total_rainfall",
+      "source_unit": 1,
+      "ensembles": false
+    }
   }
 ]

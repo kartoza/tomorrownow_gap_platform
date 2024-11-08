@@ -78,5 +78,15 @@
       "type": "historical",
       "variable_name": "arable_ground_observation"
     }
+  },
+  {
+    "model": "gap.datasettype",
+    "pk": 9,
+    "fields": {
+      "name": "CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023)",
+      "description": "",
+      "type": "historical",
+      "variable_name": "cbam_historical_analysis_bias_adjust"
+    }
   }
 ]
