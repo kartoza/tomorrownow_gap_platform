@@ -42,6 +42,7 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 |---------|----------|------------|--------|---------|------------------|
 | **Historical Data** |
 | CBAM Daily Historical Reanalysis (2012 - 2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis |
+| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis_bias_adjust |
 | Ground Observations (TAHMO stations) | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
 | Ground Observations (Arable stations) | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
 | Disdrometer Observation Data | disdrometers | | Tahmo (API) | | disdrometer_ground_observation |
@@ -99,6 +100,11 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | CBAM Daily Historical Reanalysis (2012 - 2023) | Max Night Temperature | Maximum night-time temperature (1900:0500) | °C | max_night_temperature |
 | CBAM Daily Historical Reanalysis (2012 - 2023) | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
 | CBAM Daily Historical Reanalysis (2012 - 2023) | Total Evapotranspiration Flux | Total Evapotranspiration flux with respect to grass cover (0000:2300) | mm | total_evapotranspiration_flux |
+| **CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023)** |
+| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Min Total Temperature | Minimum temperature (0000:2300) | °C | min_temperature |
+| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Total Rainfall | Total rainfall (0000:2300) | mm | total_rainfall |
+| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Total Solar Irradiance | Total solar irradiance reaching the surface (0000:2300) | MJ/sqm | total_solar_irradiance |
+| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
 | **Ground Observations (TAHMO stations)** |
 | Ground Observations (TAHMO stations) | Precipitation | | mm/day | precipitation |
 | Ground Observations (TAHMO stations) | Solar radiation | | Wh/m2 | solar_radiation |
@@ -167,13 +173,13 @@ Please note that the data in the examples provided below DO NOT reflect the actu
 
 ## Accessing the OSIRIS II API
 
-To use the API click on the API either 1️⃣ GET or 2️⃣ POST API you want to use.
+To use the API click on the Weather & Climate Data 1️⃣.
 
 ![Measurement API](./img/api-guide-4.png)
 
-**GET API:**
+**Weather & Climate Data API:**
 
-Click on the GET API it will show the attribute to enter to get the data. Click on the 1️⃣ `Try it out` button, to fill the detailed in the 2️⃣ available fields. After filling the details click on the 3️⃣ `Execute` button, to run the API.
+Click on the GET API it will show the parameters to enter to get the data. Click on the 1️⃣ `Try it out` button, to fill the detailed in the 2️⃣ available request parameters. After filling the details click on the 3️⃣ `Execute` button, to run the API.
 
 ![GET API](./img/api-guide-5.png)
 ![GET API](./img/api-guide-6.png)
@@ -245,13 +251,18 @@ $.ajax(settings).done(function (response) {
 ```
 
 
-**POST API:**
+**Upload Location API:**
 
-Using the POST API, you can query the data by polygon or list of point. Click on the 1️⃣ measurement POST API to view the usage option. Click on the 2️⃣ `Try it out` button, to enable the fields to enter the attributes.
+Using the Location API, you can upload the geometry to query the data by polygon or list of point. You can upload the geometry in one of format: geojson/shapefile/gpkg. The file must be in WGS84 or CRS 4326. The uploaded location will have expiry date time (2 months). Once the server removes your geometry after the expiry time, you need to reupload your geometry.
+
+Note: when using shapefile, the .shp, .dbf, .shx files must be in the zip root directory.
+
+
+Click on the 1️⃣ Upload Location POST API to view the usage option. Click on the 2️⃣ `Try it out` button, to enable the fields to enter the attributes.
 
 ![POST API](./img/api-guide-9.png)
 
-Fill the attributes in the 1️⃣ available fields. After filling the details click on the 2️⃣ `Execute` button, to run the API.
+Fill the location_name and select your file to upload in the 1️⃣ available fields. After filling the details click on the 2️⃣ `Execute` button, to run the API.
 
 ![POST API](./img/api-guide-10.png)
 
@@ -259,6 +270,7 @@ Fill the attributes in the 1️⃣ available fields. After filling the details c
 
 ![POST API RESPONSE](./img/api-guide-11.png)
 
+You can see the expiry date time for your geometry in the `expired_on` field.
 
 ## API Postman Collection
 
@@ -277,3 +289,4 @@ You can download the postman collection below and import the API collection usin
 | 400 | Attribute with ensemble cannot be mixed with non-ensemble | When requesting for product type salient_seasonal_forecast and output is csv, the attribute that is in ensemble (50-values) cannot be requested with the attribute that does not have ensemble. Please use netcdf output format instead! |
 | 400 | Incorrect output type | Use either json, csv, netcdf or ascii |
 | 404 | No weather data is found for given queries | |
+| 429 | Too many requests | You have hit the rate limit |
