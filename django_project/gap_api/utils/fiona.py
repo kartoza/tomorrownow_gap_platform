@@ -8,7 +8,6 @@ import os
 import zipfile
 import fiona
 from fiona.crs import from_epsg
-from fiona.io import MemoryFile
 from fiona.collection import Collection
 from django.core.files.temp import NamedTemporaryFile
 from django.core.files.uploadedfile import (
@@ -163,8 +162,7 @@ def open_fiona_collection(file_obj, type: str) -> Collection:
             tmp_file = _store_zip_memory_to_temp_file(file_obj)
             return fiona.open(tmp_file)
         else:
-            # geojson/geopackage can be read using MemoryFile
-            return MemoryFile(file_obj.file).open()
+            return fiona.open(file_obj.file)
     else:
         # TemporaryUploadedFile or just string to file path
         if isinstance(file_obj, TemporaryUploadedFile):
