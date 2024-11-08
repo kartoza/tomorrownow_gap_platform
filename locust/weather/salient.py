@@ -55,6 +55,3 @@ class SalientWeatherUser(BaseUserScenario):
 
     # output
     default_output_type = 'netcdf'
-
-
-

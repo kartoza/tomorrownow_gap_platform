@@ -76,8 +76,9 @@ class Api:
         return default_name if len(names) == 0 else '_'.join(names)
 
     def weather(
-            self, product_type, output_type, attributes, start_date, end_date,
-            lat=None, lon=None, bbox=None, location_name=None, group_modes=None):
+        self, product_type, output_type, attributes, start_date, end_date,
+        lat=None, lon=None, bbox=None, location_name=None, group_modes=None
+    ):
         """Call weather API."""
         if group_modes is None:
             group_modes = [
