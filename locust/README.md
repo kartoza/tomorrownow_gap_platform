@@ -6,7 +6,7 @@ Load test using Locust.
 
 - Python based class
 - Easy to generate scenario test using python
-- Nice UI and charts (in real time)
+- Nice UI and charts that updates in real time
 
 
 ## Authentication Config
@@ -69,7 +69,7 @@ Web UI is available on http://localhost:8089/
 
 ## Usage: Docker Compose
 
-TODO: check failure when running the docker compose
+TODO: docker compose for running locust
 
 
 ## Using Locust Web UI
@@ -78,8 +78,9 @@ TODO: add screenshots.
 
 To start a new test:
 1. Pick one or more the User class
-2. Set number of users
-3. Set ramp up
-4. Set the host
-5. (Advanced Options) Set maximum run time
-6. Click Start
+2. (Optional) Configure tags in User class 
+3. Set number of users
+4. Set ramp up
+5. Set the host
+6. (Advanced Options) Set maximum run time
+7. Click Start
