@@ -7,10 +7,10 @@ Tomorrow Now GAP.
 
 import random
 import datetime
-from locust import HttpUser
+from locust import HttpUser, tag, task
 
 from common.auth import auth_config
-from common.api import Api
+from common.api import Api, ApiTaskTag, ApiWeatherGroupMode
 
 
 class BaseUserScenario(HttpUser):
@@ -29,12 +29,19 @@ class BaseUserScenario(HttpUser):
     max_date = datetime.date(2023, 12, 31)
     min_rand_dates = 1
     max_rand_dates = 30
+    default_dates = (
+        datetime.date(2019, 3, 1),
+        datetime.date(2019, 3, 15),
+    )
 
     # TODO: generate random?
     # location
     point = (-1.404244, 35.008688,)
     bbox = ''
     location_name = None
+
+    # output
+    default_output_type = 'csv'
 
     def on_start(self):
         """Set the test."""
@@ -81,3 +88,90 @@ class BaseUserScenario(HttpUser):
     def get_random_output_type(self):
         """Generate random output type."""
         return random.sample(self.output_types, 1)[0]
+
+
+    @tag(ApiTaskTag.RANDOM_VAR)
+    @task
+    def random_variables(self):
+        """Test with random variables."""
+        group_modes = [
+            ApiWeatherGroupMode.BY_PRODUCT_TYPE,
+            ApiWeatherGroupMode.BY_ATTRIBUTE_LENGTH
+        ]
+
+        # test with random variables
+        self.api.weather(
+            self.product_type,
+            self.default_output_type,
+            self.get_random_attributes(),
+            self.default_dates[0],
+            self.default_dates[1],
+            lat=self.point[0],
+            lon=self.point[1],
+            group_modes=group_modes
+        )
+
+    @tag(ApiTaskTag.RANDOM_DATE)
+    @task
+    def random_date(self):
+        """Test with random date."""
+        group_modes = [
+            ApiWeatherGroupMode.BY_PRODUCT_TYPE,
+            ApiWeatherGroupMode.BY_DATE_COUNT
+        ]
+        dates1 = self.get_random_date_range()
+
+        # test with random variables
+        self.api.weather(
+            self.product_type,
+            self.default_output_type,
+            self.attributes[0:3],
+            dates1[0],
+            dates1[1],
+            lat=self.point[0],
+            lon=self.point[1],
+            group_modes=group_modes
+        )
+
+    @tag(ApiTaskTag.RANDOM_OUTPUT)
+    @task
+    def random_output(self):
+        """Test with random output_type."""
+        group_modes = [
+            ApiWeatherGroupMode.BY_PRODUCT_TYPE,
+            ApiWeatherGroupMode.BY_OUTPUT_TYPE
+        ]
+        # test with random variables
+        self.api.weather(
+            self.product_type,
+            self.get_random_output_type(),
+            self.attributes[0:3],
+            self.default_dates[0],
+            self.default_dates[1],
+            lat=self.point[0],
+            lon=self.point[1],
+            group_modes=group_modes
+        )
+
+    @tag(ApiTaskTag.RANDOM_ALL)
+    @task
+    def random_all(self):
+        """Test with random all."""
+        group_modes = [
+            ApiWeatherGroupMode.BY_PRODUCT_TYPE,
+            ApiWeatherGroupMode.BY_OUTPUT_TYPE,
+            ApiWeatherGroupMode.BY_ATTRIBUTE_LENGTH,
+            ApiWeatherGroupMode.BY_DATE_COUNT
+        ]
+        dates1 = self.get_random_date_range()
+        # test with random variables
+        self.api.weather(
+            self.product_type,
+            self.get_random_output_type(),
+            self.get_random_attributes(),
+            dates1[0],
+            dates1[1],
+            lat=self.point[0],
+            lon=self.point[1],
+            group_modes=group_modes
+        )

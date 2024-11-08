@@ -6,6 +6,15 @@ Tomorrow Now GAP.
 """
 
 
+class ApiTaskTag:
+    """Represent the tag for a task."""
+
+    RANDOM_VAR = 'rand_var'
+    RANDOM_OUTPUT = 'rand_out'
+    RANDOM_DATE = 'rand_date'
+    RANDOM_ALL = 'rand_all'
+
+
 class ApiWeatherGroupMode:
     """Represents how to group the API requests."""
 
@@ -51,9 +60,9 @@ class Api:
             elif mode == ApiWeatherGroupMode.BY_OUTPUT_TYPE:
                 name = output_type
             elif mode == ApiWeatherGroupMode.BY_ATTRIBUTE_LENGTH:
-                name = str(len(attributes))
+                name = f'ATTR{len(attributes)}'
             elif mode == ApiWeatherGroupMode.BY_DATE_COUNT:
-                name = str((end_date - start_date).days)
+                name = f'DT{(end_date - start_date).days}'
             elif mode == ApiWeatherGroupMode.BY_QUERY_TYPE:
                 name = 'point'
                 if bbox is not None:

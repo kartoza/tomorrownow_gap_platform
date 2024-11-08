@@ -50,6 +50,20 @@ pip3 install locust
 locust -f weather --class-picker
 ```
 
+There are currently 4 task types:
+- `rand_var`: Random attributes length
+- `rand_out`: Random output_type
+- `rand_date`: Random date range
+- `rand_all`: Random all
+
+These types are represented as task tag, so we can filter out the task that we only want to run by using parameter in the command line.
+
+For example, we want to run task with random attributes length:
+```
+locust -f weather --class-picker --tags rand_var
+```
+
+The tags can also be configured in web ui for each UserClass.
 Web UI is available on http://localhost:8089/
 
 

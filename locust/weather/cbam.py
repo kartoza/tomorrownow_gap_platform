@@ -6,10 +6,7 @@ Tomorrow Now GAP.
 """
 
 import datetime
-from locust import task
 
-from common.api import Api, ApiWeatherGroupMode
-from common.auth import auth_config
 from common.base_user import BaseUserScenario
 
 
@@ -34,38 +31,69 @@ class CBAMWeatherUser(BaseUserScenario):
     min_date = datetime.date(2013, 1, 1)
     max_date = datetime.date(2023, 12, 31)
     min_rand_dates = 1
-    max_rand_dates = 30
+    max_rand_dates = 90
 
     # location
     point = (-1.404244, 35.008688,)
 
-    def on_start(self):
-        """Set up the test."""
-        self.api = Api(
-            self.client, auth_config.get_user()
-        )
+    # output
+    default_output_type = 'netcdf'
 
-    @task
-    def random_variables(self):
-        """Test with random variables and output types."""
-        group_modes = [
-            ApiWeatherGroupMode.BY_PRODUCT_TYPE,
-            ApiWeatherGroupMode.BY_OUTPUT_TYPE,
-            ApiWeatherGroupMode.BY_ATTRIBUTE_LENGTH
-        ]
-        dates1 = (
-            datetime.date(2012, 3, 1),
-            datetime.date(2012, 3, 31),
-        )
 
-        # test with random variables
-        self.api.weather(
-            self.product_type,
-            self.get_random_output_type(),
-            self.get_random_attributes(),
-            dates1[0],
-            dates1[1],
-            lat=self.point[0],
-            lon=self.point[1],
-            group_modes=group_modes
-        )
+class CBAMBiasAdjustWeatherUser(BaseUserScenario):
+    """User scenario that accessing CBAM Bias Adjust historical data."""
+
+    product_type = 'cbam_historical_analysis_bias_adjust'
+    attributes = [
+        'min_temperature',
+        'total_rainfall',
+        'total_solar_irradiance',
+        'max_temperature'
+    ]
+
+    # dates
+    min_date = datetime.date(2013, 1, 1)
+    max_date = datetime.date(2023, 12, 31)
+    min_rand_dates = 1
+    max_rand_dates = 90
+
+    # location
+    point = (-1.404244, 35.008688,)
+
+    # output
+    default_output_type = 'netcdf'
+
+
+class CBAMShortTermWeatherUser(BaseUserScenario):
+    """User scenario that accessing CBAM Short-term forecast data."""
+
+    product_type = 'cbam_shortterm_forecast'
+    attributes = [
+        'total_rainfall',
+        'total_evapotranspiration_flux',
+        'max_temperature',
+        'min_temperature',
+        'precipitation_probability',
+        'humidity_maximum',
+        'humidity_minimum',
+        'wind_speed_avg',
+        'solar_radiation'
+    ]
+
+    # dates
+    min_date = datetime.datetime.now().date()
+    max_date = (
+        datetime.datetime.now().date() + datetime.timedelta(days=14)
+    )
+    min_rand_dates = 1
+    max_rand_dates = 14
+    default_dates = (
+        min_date,
+        max_date,
+    )
+
+    # location
+    point = (-0.02378, 35.008688,)
+
+    # output
+    default_output_type = 'netcdf'
