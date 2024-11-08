@@ -119,9 +119,7 @@
             // attach to observer to listen when weather block is opened
             var stateCheck = setInterval(function(){
               var targetElement = $(mainWeatherBlockID)[0];
-              console.log('check interval');
               if (targetElement) {
-                console.log('check success');
                 clearInterval(stateCheck);
                 observerWeatherBlock();
               }

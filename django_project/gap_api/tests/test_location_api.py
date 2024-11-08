@@ -181,3 +181,23 @@ class TestAPILocation(BaseAPIViewTest):
         request = self._get_request(file_path, 'multipolygon')
         response = view(request)
         self._check_success(response, check_type=LocationInputType.POLYGON)
+
+    def test_upload_multipoint(self):
+        """Test upload with multipoint."""
+        view = LocationAPI.as_view()
+        file_path = absolute_path(
+            'gap_api', 'tests', 'utils', 'data', 'multipoint.geojson')
+        request = self._get_request(file_path, 'test_multipoint')
+        response = view(request)
+        self._check_success(
+            response, check_type=LocationInputType.LIST_OF_POINT)
+
+    def test_upload_gpkg(self):
+        """Test upload with geopackage."""
+        view = LocationAPI.as_view()
+        file_path = absolute_path(
+            'gap_api', 'tests', 'utils', 'data', 'gpkg.gpkg')
+        request = self._get_request(file_path, 'test_gpkg')
+        response = view(request)
+        self._check_success(
+            response, check_type=LocationInputType.POLYGON)
