@@ -47,5 +47,12 @@
     "fields": {
         "max_daterange": 30
     }
+},
+{
+    "model": "gap_api.datasettypeapiconfig",
+    "pk": 9,
+    "fields": {
+        "max_daterange": 366
+    }
 }
 ]
