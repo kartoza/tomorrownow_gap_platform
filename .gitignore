@@ -29,3 +29,6 @@ docs/mkdocs.yml
 
 # ignore .env in root project for vscode
 .env
+
+# locust auth files
+locust_auth.json
