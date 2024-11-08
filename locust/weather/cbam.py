@@ -42,17 +42,17 @@ class CBAMWeatherUser(BaseUserScenario):
     def on_start(self):
         """Set up the test."""
         self.api = Api(
-            self.client, auth_config.get_user(),
-            weather_group_modes=[
-                ApiWeatherGroupMode.BY_PRODUCT_TYPE,
-                ApiWeatherGroupMode.BY_OUTPUT_TYPE,
-                ApiWeatherGroupMode.BY_ATTRIBUTE_LENGTH
-            ]
+            self.client, auth_config.get_user()
         )
 
     @task
     def random_variables(self):
         """Test with random variables and output types."""
+        group_modes = [
+            ApiWeatherGroupMode.BY_PRODUCT_TYPE,
+            ApiWeatherGroupMode.BY_OUTPUT_TYPE,
+            ApiWeatherGroupMode.BY_ATTRIBUTE_LENGTH
+        ]
         dates1 = (
             datetime.date(2012, 3, 1),
             datetime.date(2012, 3, 31),
@@ -66,5 +66,6 @@ class CBAMWeatherUser(BaseUserScenario):
             dates1[0],
             dates1[1],
             lat=self.point[0],
-            lon=self.point[1]
+            lon=self.point[1],
+            group_modes=group_modes
         )

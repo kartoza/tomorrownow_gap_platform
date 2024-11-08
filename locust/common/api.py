@@ -30,25 +30,19 @@ class ApiWeatherGroupMode:
 class Api:
     """Provides api call to TNGAP."""
 
-    def __init__(self, client, user, weather_group_modes = None):
+    def __init__(self, client, user):
         """Initialize the class."""
         self.client = client
         self.user = user
-        self.weather_group_modes = weather_group_modes
-        if self.weather_group_modes is None:
-            self.weather_group_modes = [
-                ApiWeatherGroupMode.BY_PRODUCT_TYPE,
-                ApiWeatherGroupMode.BY_OUTPUT_TYPE
-            ]
 
     def get_weather_request_name(
-            self, product_type, output_type, attributes, start_date, end_date,
-            lat=None, lon=None, bbox=None, location_name=None,
-            default_name=None):
+            self, group_modes, product_type, output_type, attributes,
+            start_date, end_date, lat=None, lon=None, bbox=None,
+            location_name=None, default_name=None):
         """Return request name."""
         names = []
         for mode in ApiWeatherGroupMode.as_list():
-            if mode not in self.weather_group_modes:
+            if mode not in group_modes:
                 continue
 
             name = ''
@@ -74,12 +68,17 @@ class Api:
 
     def weather(
             self, product_type, output_type, attributes, start_date, end_date,
-            lat=None, lon=None, bbox=None, location_name=None):
+            lat=None, lon=None, bbox=None, location_name=None, group_modes=None):
         """Call weather API."""
+        if group_modes is None:
+            group_modes = [
+                ApiWeatherGroupMode.BY_PRODUCT_TYPE,
+                ApiWeatherGroupMode.BY_OUTPUT_TYPE
+            ]
         request_name = self.get_weather_request_name(
-            product_type, output_type, attributes, start_date, end_date,
-            lat=lat, lon=lon, bbox=bbox, location_name=location_name,
-            default_name='weather'
+            group_modes, product_type, output_type, attributes,
+            start_date, end_date, lat=lat, lon=lon, bbox=bbox,
+            location_name=location_name, default_name='weather'
         )
         attributes_str = ','.join(attributes)
         url = (
