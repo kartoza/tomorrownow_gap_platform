@@ -12,6 +12,7 @@ from typing import Union, List
 
 import numpy as np
 import pytz
+from django.db.models import QuerySet
 from django.contrib.gis.geos import (
     Point, Polygon, MultiPolygon, GeometryCollection, MultiPoint, GEOSGeometry
 )
@@ -265,13 +266,13 @@ class DatasetReaderValue:
     chunk_size_in_bytes = 81920  # 80KB chunks
 
     def __init__(
-            self, val: Union[xrDataset, List[DatasetTimelineValue]],
+            self, val: Union[xrDataset, List[DatasetTimelineValue], QuerySet],
             location_input: DatasetReaderInput,
-            attributes: List[DatasetAttribute]) -> None:
+            attributes: List[DatasetAttribute], result_count = None) -> None:
         """Initialize DatasetReaderValue class.
 
         :param val: value that has been read
-        :type val: Union[xrDataset, List[DatasetTimelineValue]]
+        :type val: Union[xrDataset, List[DatasetTimelineValue], QuerySet]
         :param location_input: location input query
         :type location_input: DatasetReaderInput
         :param attributes: list of dataset attributes
@@ -281,13 +282,14 @@ class DatasetReaderValue:
         self._is_xr_dataset = isinstance(val, xrDataset)
         self.location_input = location_input
         self.attributes = attributes
+        self._result_count = result_count
         self._post_init()
 
     def _post_init(self):
         """Rename source variable into attribute name."""
-        if self.is_empty():
-            return
         if not self._is_xr_dataset:
+            return
+        if self.is_empty():
             return
         renamed_dict = {}
         for attr in self.attributes:
@@ -312,6 +314,12 @@ class DatasetReaderValue:
         """
         return self._val
 
+    def count(self):
+        """Return the count for QuerySet."""
+        if self._result_count is not None:
+            return self._result_count
+        return len(self.values)
+
     def is_empty(self) -> bool:
         """Check if value is empty.
 
@@ -320,7 +328,8 @@ class DatasetReaderValue:
         """
         if self._val is None:
             return True
-        return len(self.values) == 0
+
+        return self.count() == 0
 
     def _to_dict(self) -> dict:
         """Convert into dict.
@@ -330,7 +339,7 @@ class DatasetReaderValue:
         """
         if (
             self.location_input is None or self._val is None or
-            len(self.values) == 0
+            self.count() == 0
         ):
             return {}
 

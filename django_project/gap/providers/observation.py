@@ -10,9 +10,10 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import tempfile
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, F, FloatField, QuerySet
+from django.db.models.functions.datetime import TruncDate, TruncTime
 from django.contrib.gis.geos import Polygon, Point
-from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.db.models.functions import Distance, GeoFunc
 from typing import List, Tuple
 
 from gap.models import (
@@ -26,10 +27,23 @@ from gap.models import (
 from gap.utils.reader import (
     LocationInputType,
     DatasetReaderInput,
-    DatasetTimelineValue,
     BaseDatasetReader,
     DatasetReaderValue
 )
+
+
+class ST_X(GeoFunc):
+    """Custom GeoFunc to extract lon."""
+
+    output_field = FloatField()
+    function = 'ST_X'
+
+
+class ST_Y(GeoFunc):
+    """Custom GeoFunc to extract lat."""
+
+    output_field = FloatField()
+    function = 'ST_Y'
 
 
 class CSVBuffer:
@@ -44,14 +58,16 @@ class ObservationReaderValue(DatasetReaderValue):
     """Class that convert Dataset to TimelineValues."""
 
     date_variable = 'date'
+    csv_chunk_size = 50000
 
     def __init__(
-            self, val: List[DatasetTimelineValue],
+            self, val: QuerySet,
             location_input: DatasetReaderInput,
             attributes: List[DatasetAttribute],
             start_date: datetime,
             end_date: datetime,
-            nearest_stations) -> None:
+            nearest_stations,
+            result_count) -> None:
         """Initialize ObservationReaderValue class.
 
         :param val: value that has been read
@@ -61,7 +77,10 @@ class ObservationReaderValue(DatasetReaderValue):
         :param attributes: list of dataset attributes
         :type attributes: List[DatasetAttribute]
         """
-        super().__init__(val, location_input, attributes)
+        super().__init__(
+            val, location_input, attributes,
+            result_count=result_count
+        )
         self.start_date = start_date
         self.end_date = end_date
         self.nearest_stations = nearest_stations
@@ -83,51 +102,70 @@ class ObservationReaderValue(DatasetReaderValue):
             DatasetObservationType.UPPER_AIR_OBSERVATION
         )
         headers = ['date']
+        fields = {
+            'date': TruncDate('date_time'),
+            'loc_x': ST_X('geom'),
+            'loc_y': ST_Y('geom'),
+            'attr_id': F('dataset_attribute__attribute__id'),
+        }
+        field_index = [
+            'date'
+        ]
 
         # add time if time_step is not daily
         if time_col_exists:
             headers.append('time')
+            fields.update({
+                'time': TruncTime('date_time')
+            })
+            field_index.append('time')
 
         # add lat and lon
         headers.extend(['lat', 'lon'])
+        field_index.extend(['loc_y', 'loc_x'])
 
         # add altitude if it's upper air observation
         if alt_col_exists:
             headers.append('altitude')
+            fields.update({
+                'loc_alt': F('alt')
+            })
+            field_index.append('loc_alt')
 
         # write headers
-        for attr in self.attributes:
+        sorted_attrs = sorted(self.attributes, key=lambda x: x.attribute.id)
+        for attr in sorted_attrs:
             headers.append(attr.attribute.variable_name)
         yield bytes(','.join(headers) + '\n', 'utf-8')
 
-        for val in self.values:
-            data = [val.get_datetime_repr('%Y-%m-%d')]
+        # annotate and select required fields only
+        measurements = self._val.annotate(**fields).values(
+            *(list(fields.keys()) + ['value'])
+        )
+        # Convert to DataFrame
+        df = pd.DataFrame(list(measurements))
 
-            # add time if time_step is not daily
-            if time_col_exists:
-                data.append(val.get_datetime_repr('%H:%M:%S'))
+        # Pivot the data to make attributes columns
+        df_pivot = df.pivot_table(
+            index=field_index,
+            columns='attr_id',
+            values='value'
+        ).reset_index()
 
-            # add lat and lon
-            data.extend([
-                str(val.location.y),
-                str(val.location.x)
-            ])
+        # add other attributes
+        for attr in sorted_attrs:
+            if attr.attribute.id not in df_pivot.columns:
+                df_pivot[attr.attribute.id] = None
 
-            # add altitude if it's upper air observation
-            if alt_col_exists:
-                data.append(
-                    str(val.altitude) if val.altitude else ''
-                )
+        # reorder columns
+        df_pivot = df_pivot[
+            field_index + [attr.attribute.id for attr in sorted_attrs]
+        ]
 
-            for attr in self.attributes:
-                var_name = attr.attribute.variable_name
-                if var_name in val.values:
-                    data.append(str(val.values[var_name]))
-                else:
-                    data.append('')
-
-            # write row
-            yield bytes(','.join(data) + '\n', 'utf-8')
+        # Write the data in chunks
+        for start in range(0, len(df), self.csv_chunk_size):
+            chunk = df_pivot.iloc[start:start + self.csv_chunk_size]
+            yield chunk.to_csv(index=False, header=False, float_format='%g')
 
     def _get_date_array(self):
         """Get date range from result values."""
@@ -249,7 +287,8 @@ class ObservationDatasetReader(BaseDatasetReader):
             dataset, attributes, location_input, start_date, end_date,
             altitudes=altitudes
         )
-        self.results: List[DatasetTimelineValue] = []
+        self.results: QuerySet = QuerySet.none
+        self.result_count = 0
         self.nearest_stations = None
 
     def query_by_altitude(self, qs):
@@ -334,17 +373,18 @@ class ObservationDatasetReader(BaseDatasetReader):
     def get_measurements(self, start_date: datetime, end_date: datetime):
         """Return measurements data."""
         self.nearest_stations = self.get_nearest_stations()
-        if self.nearest_stations is None or len(self.nearest_stations) == 0:
+        if self.nearest_stations is None or self.nearest_stations.count() == 0:
             return
-        return Measurement.objects.select_related(
-            'dataset_attribute', 'dataset_attribute__attribute',
-            'station', 'station_history'
+
+        return Measurement.objects.annotate(
+            geom=F('station__geometry'),
+            alt=F('station__altitude')
         ).filter(
             date_time__gte=start_date,
             date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
             station__in=self.nearest_stations
-        ).order_by('date_time', 'station', 'dataset_attribute')
+        ).order_by('date_time')
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -355,53 +395,11 @@ class ObservationDatasetReader(BaseDatasetReader):
         :type end_date: datetime
         """
         measurements = self.get_measurements(start_date, end_date)
-        if measurements is None or measurements.count() == 0:
+        self.result_count = measurements.count()
+        if measurements is None or self.result_count == 0:
             return
 
-        # final result, group by datetime
-        self.results = []
-
-        iter_dt = None
-        iter_loc = None
-        iter_alt = None
-        # group by location and date_time
-        dt_loc_val = {}
-        for measurement in measurements:
-            # if it has history, use history location
-            station_history = measurement.station_history
-            if station_history:
-                measurement_loc = station_history.geometry
-                measurement_alt = station_history.altitude
-            else:
-                measurement_loc = measurement.station.geometry
-                measurement_alt = measurement.station.altitude
-
-            if iter_dt is None:
-                iter_dt = measurement.date_time
-                iter_loc = measurement_loc
-                iter_alt = measurement_alt
-            elif (
-                    iter_loc != measurement_loc or
-                    iter_dt != measurement.date_time or
-                    iter_alt != measurement_alt
-            ):
-                self.results.append(
-                    DatasetTimelineValue(
-                        iter_dt, dt_loc_val, iter_loc, iter_alt
-                    )
-                )
-                iter_dt = measurement.date_time
-                iter_loc = measurement_loc
-                iter_alt = measurement_alt
-                dt_loc_val = {}
-            dt_loc_val[
-                measurement.dataset_attribute.attribute.variable_name
-            ] = measurement.value
-        self.results.append(
-            DatasetTimelineValue(
-                iter_dt, dt_loc_val, iter_loc, iter_alt
-            )
-        )
+        self.results = measurements
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
@@ -411,5 +409,6 @@ class ObservationDatasetReader(BaseDatasetReader):
         """
         return ObservationReaderValue(
             self.results, self.location_input, self.attributes,
-            self.start_date, self.end_date, self.nearest_stations
+            self.start_date, self.end_date, self.nearest_stations,
+            self.result_count
         )

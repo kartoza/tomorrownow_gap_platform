@@ -494,7 +494,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             )
 
         dataset_attributes = DatasetAttribute.objects.select_related(
-            'dataset'
+            'dataset', 'attribute'
         ).filter(
             attribute__in=attributes,
             dataset__is_internal_use=False,
