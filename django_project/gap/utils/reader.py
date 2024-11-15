@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Helper for reading dataset
 """
 
-import json
 import tempfile
 from datetime import datetime
 from typing import Union, List
@@ -381,25 +380,7 @@ class DatasetReaderValue:
         :return: Dictionary of metadata and data
         :rtype: dict
         """
-        if (
-            self.location_input is None or self._val is None or
-            self.count() == 0
-        ):
-            return {}
-
-        altitude = None
-        try:
-            altitude = self.values[0].altitude
-        except IndexError:
-            pass
-
-        output = {
-            'geometry': json.loads(self.location_input.geometry.json),
-        }
-        if altitude is not None:
-            output['altitude'] = altitude
-        output['data'] = [result.to_dict() for result in self.values]
-        return output
+        return {}
 
     def _xr_dataset_to_dict(self) -> dict:
         """Convert xArray Dataset to dictionary.

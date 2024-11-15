@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Observation Data Reader
 """
 
+import json
 from datetime import datetime
 import pandas as pd
 import tempfile
@@ -12,7 +13,7 @@ from django.db.models import Exists, OuterRef, F, FloatField, QuerySet
 from django.db.models.functions.datetime import TruncDate, TruncTime
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance, GeoFunc
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from gap.models import (
     Dataset,
@@ -90,8 +91,6 @@ class ObservationReaderValue(DatasetReaderValue):
         :return: Data frame
         :rtype: pd.DataFrame
         """
-        time_col_exists = self.has_time_column
-        alt_col_exists = self.has_altitude_column
         fields = {
             'date': (
                 TruncDate('date_time') if use_separate_time_col else
@@ -106,7 +105,7 @@ class ObservationReaderValue(DatasetReaderValue):
         ]
 
         # add time if time_step is not daily
-        if time_col_exists and use_separate_time_col:
+        if self.has_time_column and use_separate_time_col:
             fields.update({
                 'time': TruncTime('date_time')
             })
@@ -116,7 +115,7 @@ class ObservationReaderValue(DatasetReaderValue):
         field_index.extend(['loc_y', 'loc_x'])
 
         # add altitude if it's upper air observation
-        if alt_col_exists:
+        if self.has_altitude_column:
             fields.update({
                 'loc_alt': F('alt')
             })
@@ -150,19 +149,17 @@ class ObservationReaderValue(DatasetReaderValue):
 
     def _get_headers(self, use_separate_time_col=True):
         """Get list of headers that allign with dataframce columns."""
-        time_col_exists = self.has_time_column
-        alt_col_exists = self.has_altitude_column
         headers = ['date']
 
         # add time if time_step is not daily
-        if time_col_exists and use_separate_time_col:
+        if self.has_time_column and use_separate_time_col:
             headers.append('time')
 
         # add lat and lon
         headers.extend(['lat', 'lon'])
 
         # add altitude if it's upper air observation
-        if alt_col_exists:
+        if self.has_altitude_column:
             headers.append('altitude')
 
         field_indices = [header for header in headers]
@@ -241,6 +238,41 @@ class ObservationReaderValue(DatasetReaderValue):
                         break
                     yield chunk
 
+    def _to_dict(self) -> dict:
+        """Convert into dict.
+
+        :return: Dictionary of metadata and data
+        :rtype: dict
+        """
+        if (
+            self.location_input is None or self._val is None or
+            self.count() == 0
+        ):
+            return {}
+
+        has_altitude = self.has_altitude_column
+        output = {
+            'geometry': json.loads(self.location_input.geometry.json),
+            'data': []
+        }
+
+        # get dataframe
+        df_pivot = self._get_data_frame(
+            use_separate_time_col=False
+        )
+        for _, row in df_pivot.iterrows():
+            values = {}
+            for attr in self.attributes:
+                values[attr.attribute.variable_name] = row[attr.attribute.id]
+            output['data'].append({
+                'datetime': row['date'].isoformat(timespec='seconds'),
+                'values': values
+            })
+            if has_altitude:
+                output['altitude'] = row['loc_alt']
+
+        return output
+
 
 class ObservationDatasetReader(BaseDatasetReader):
     """Class to read observation ground observation data."""
@@ -271,6 +303,18 @@ class ObservationDatasetReader(BaseDatasetReader):
         self.results: QuerySet = QuerySet.none
         self.result_count = 0
         self.nearest_stations = None
+
+    def _get_count(self, values: Union[List, QuerySet]) -> int:
+        """Get count of a list of queryset.
+
+        :param values: List or QuerySet object
+        :type values: Union[List, QuerySet]
+        :return: count
+        :rtype: int
+        """
+        if isinstance(values, list):
+            return len(values)
+        return values.count()
 
     def query_by_altitude(self, qs):
         """Query by altitude."""
@@ -354,7 +398,10 @@ class ObservationDatasetReader(BaseDatasetReader):
     def get_measurements(self, start_date: datetime, end_date: datetime):
         """Return measurements data."""
         self.nearest_stations = self.get_nearest_stations()
-        if self.nearest_stations is None or self.nearest_stations.count() == 0:
+        if (
+            self.nearest_stations is None or
+            self._get_count(self.nearest_stations) == 0
+        ):
             return
 
         return Measurement.objects.annotate(
