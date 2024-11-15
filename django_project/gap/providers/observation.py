@@ -313,7 +313,6 @@ class ObservationDatasetReader(BaseDatasetReader):
         :return: count
         :rtype: int
         """
-        print(values)
         if isinstance(values, (list, dict_values,)):
             return len(values)
         return values.count()
