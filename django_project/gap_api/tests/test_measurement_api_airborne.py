@@ -145,7 +145,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(response.status_code, 200)
         results = response.data['results']
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]['geometry']['coordinates'], [0.0, 0.0])
+        self.assertEqual(results[0]['geometry']['coordinates'], [0, 0])
         self.assertEqual(results[0]['altitude'], 1)
         self.assertEqual(len(results[0]['data']), 1)
         self.assertEqual(
@@ -153,7 +153,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         )
         self.assertEqual(
             results[0]['data'][0]['values'],
-            {'atmospheric_pressure': 100.0, 'temperature': 1.0}
+            {'atmospheric_pressure': 100, 'temperature': 1}
         )
 
         # Getting lat lon 10,10
@@ -168,7 +168,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(response.status_code, 200)
         results = response.data['results']
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]['geometry']['coordinates'], [10.0, 10.0])
+        self.assertEqual(results[0]['geometry']['coordinates'], [10, 10])
         self.assertEqual(results[0]['altitude'], 2)
         self.assertEqual(len(results[0]['data']), 1)
         self.assertEqual(
@@ -176,7 +176,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         )
         self.assertEqual(
             results[0]['data'][0]['values'],
-            {'atmospheric_pressure': 200.0, 'temperature': 2.0}
+            {'atmospheric_pressure': 200, 'temperature': 2}
         )
 
     def read_csv(self, response):
@@ -221,12 +221,12 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0],
-            ['2000-02-01', '00:00:00', '10.0', '10.0', '2.0', '200.0', '2.0']
+            ['2000-02-01', '00:00:00', '10', '10', '2', '200', '2']
         )
         self.assertEqual(
             rows[1],
-            ['2000-03-01', '00:00:00', '100.0', '100.0', '3.0', '300.0',
-             '3.0']
+            ['2000-03-01', '00:00:00', '100', '100', '3', '300',
+             '3']
         )
 
         # Second request
@@ -249,7 +249,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(len(rows), 1)
         self.assertEqual(
             rows[0],
-            ['2000-02-01', '00:00:00', '10.0', '10.0', '2.0', '200.0', '2.0']
+            ['2000-02-01', '00:00:00', '10', '10', '2', '200', '2']
         )
 
         # Return data with altitude between 1.5-5, should return history 2 & 3
@@ -273,11 +273,11 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0],
-            ['2000-02-01', '00:00:00', '10.0', '10.0', '2.0', '200.0', '2.0']
+            ['2000-02-01', '00:00:00', '10', '10', '2', '200', '2']
         )
         self.assertEqual(
             rows[1],
-            ['2000-03-01', '00:00:00', '100.0', '100.0', '3.0', '300.0', '3.0']
+            ['2000-03-01', '00:00:00', '100', '100', '3', '300', '3']
         )
 
     def test_read_to_netcdf(self):

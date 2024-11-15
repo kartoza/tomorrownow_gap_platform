@@ -26,8 +26,7 @@ from gap.factories import (
 )
 from gap.utils.reader import (
     DatasetReaderInput,
-    LocationInputType,
-    DatasetTimelineValue
+    LocationInputType
 )
 
 
@@ -137,7 +136,7 @@ class TestObsrvationReader(TestCase):
             datetime(2010, 11, 1, 0, 0, 0),
             datetime(2010, 11, 1, 0, 0, 0))
         data_value = reader.get_data_values()
-        self.assertEqual(len(data_value._val), 0)
+        self.assertEqual(data_value.count(), 0)
 
     def test_read_historical_data_by_point(self):
         """Test read by stations that has same point for different dataset."""
@@ -174,8 +173,9 @@ class TestObsrvationReader(TestCase):
         data_value = reader.get_data_values()
         # should return above measurement
         self.assertEqual(len(data_value._val), 1)
+        dict_value = data_value.to_json()
         self.assertEqual(
-            data_value.values[0].values['surface_air_temperature'],
+            dict_value['data'][0]['values']['surface_air_temperature'],
             measurement.value
         )
 
@@ -217,16 +217,30 @@ class TestObsrvationReader(TestCase):
 
     def test_observation_to_netcdf_stream(self):
         """Test convert observation value to netcdf stream."""
-        val = DatasetTimelineValue(
-            self.start_date,
-            {
-                self.dataset_attr.attribute.variable_name: 20
-            },
-            self.location_input.point
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        dt2 = datetime(2019, 11, 2, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
         )
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt2,
+            value=200
+        )
+        reader = ObservationDatasetReader(
+            self.dataset, [self.dataset_attr], self.location_input,
+            dt1, dt2
+        )
+        qs = reader.get_measurements(dt1, dt2)
         reader_value = ObservationReaderValue(
-            [val], self.location_input, [self.dataset_attr],
-            self.start_date, self.end_date, [self.station])
+            qs, self.location_input, [self.dataset_attr],
+            self.start_date, self.end_date, [self.station],
+            qs.count()
+        )
         d = reader_value.to_netcdf_stream()
         res = list(d)
         self.assertIsNotNone(res)

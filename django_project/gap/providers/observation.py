@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import json
+from _collections_abc import dict_values
 from datetime import datetime
 import pandas as pd
 import tempfile
@@ -312,7 +313,8 @@ class ObservationDatasetReader(BaseDatasetReader):
         :return: count
         :rtype: int
         """
-        if isinstance(values, list):
+        print(values)
+        if isinstance(values, (list, dict_values,)):
             return len(values)
         return values.count()
 

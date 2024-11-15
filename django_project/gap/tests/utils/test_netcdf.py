@@ -261,8 +261,9 @@ class TestDatasetReaderValue(TestCase):
         csv_stream = self.dataset_reader_value_xr.to_csv_stream()
         csv_data = list(csv_stream)
         self.assertIsNotNone(csv_data)
-        data = str(csv_data[0], encoding='utf-8').splitlines()
-        self.assertEqual(len(data), 41)
+        data = csv_data[1].splitlines()
+        # rows without header
+        self.assertEqual(len(data), 40)
 
     def test_to_netcdf_stream(self):
         """Test convert to netcdf."""
