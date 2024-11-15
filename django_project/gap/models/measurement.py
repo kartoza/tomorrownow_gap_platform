@@ -91,3 +91,9 @@ class Measurement(models.Model):
 
     class Meta:  # noqa
         unique_together = ('station', 'dataset_attribute', 'date_time')
+        indexes = [
+            models.Index(fields=['dataset_attribute', 'date_time']),
+            models.Index(
+                fields=['station_history', 'dataset_attribute', 'date_time']
+            ),
+        ]

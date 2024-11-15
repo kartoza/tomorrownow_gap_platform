@@ -12,6 +12,7 @@ from typing import Union, List
 
 import numpy as np
 import pytz
+from django.db.models import QuerySet
 from django.contrib.gis.geos import (
     Point, Polygon, MultiPolygon, GeometryCollection, MultiPoint, GEOSGeometry
 )
@@ -22,8 +23,11 @@ from gap.models import (
     Attribute,
     Unit,
     Dataset,
-    DatasetAttribute
+    DatasetAttribute,
+    DatasetTimeStep,
+    DatasetObservationType
 )
+from gap.utils.dask import execute_dask_compute
 
 
 class DatasetVariable:
@@ -263,15 +267,16 @@ class DatasetReaderValue:
 
     date_variable = 'date'
     chunk_size_in_bytes = 81920  # 80KB chunks
+    csv_chunk_size = 50000
 
     def __init__(
-            self, val: Union[xrDataset, List[DatasetTimelineValue]],
+            self, val: Union[xrDataset, List[DatasetTimelineValue], QuerySet],
             location_input: DatasetReaderInput,
-            attributes: List[DatasetAttribute]) -> None:
+            attributes: List[DatasetAttribute], result_count = None) -> None:
         """Initialize DatasetReaderValue class.
 
         :param val: value that has been read
-        :type val: Union[xrDataset, List[DatasetTimelineValue]]
+        :type val: Union[xrDataset, List[DatasetTimelineValue], QuerySet]
         :param location_input: location input query
         :type location_input: DatasetReaderInput
         :param attributes: list of dataset attributes
@@ -281,18 +286,30 @@ class DatasetReaderValue:
         self._is_xr_dataset = isinstance(val, xrDataset)
         self.location_input = location_input
         self.attributes = attributes
+        self._result_count = result_count
         self._post_init()
 
     def _post_init(self):
         """Rename source variable into attribute name."""
-        if self.is_empty():
-            return
         if not self._is_xr_dataset:
+            return
+        if self.is_empty():
             return
         renamed_dict = {}
         for attr in self.attributes:
             renamed_dict[attr.source] = attr.attribute.variable_name
         self._val = self._val.rename(renamed_dict)
+
+    def _get_dataset(self) -> Dataset:
+        """Get dataset from attribute.
+
+        :return: dataset object
+        :rtype: Dataset
+        """
+        if len(self.attributes) > 0:
+            return self.attributes[0].dataset
+
+        return None
 
     @property
     def xr_dataset(self) -> xrDataset:
@@ -312,6 +329,41 @@ class DatasetReaderValue:
         """
         return self._val
 
+    @property
+    def has_time_column(self) -> bool:
+        """Check if the output has time column.
+
+        :return: True if time column should exist
+        :rtype: bool
+        """
+        dataset = self._get_dataset()
+
+        return (
+            dataset.time_step != DatasetTimeStep.DAILY if
+            dataset else False
+        )
+
+    @property
+    def has_altitude_column(self) -> bool:
+        """Check if the output has altitude column.
+
+        :return: True if altitude column should exist
+        :rtype: bool
+        """
+        dataset = self._get_dataset()
+
+        return (
+            dataset.observation_type ==
+            DatasetObservationType.UPPER_AIR_OBSERVATION if
+            dataset else False
+        )
+
+    def count(self):
+        """Return the count for QuerySet."""
+        if self._result_count is not None:
+            return self._result_count
+        return len(self.values)
+
     def is_empty(self) -> bool:
         """Check if value is empty.
 
@@ -320,7 +372,8 @@ class DatasetReaderValue:
         """
         if self._val is None:
             return True
-        return len(self.values) == 0
+
+        return self.count() == 0
 
     def _to_dict(self) -> dict:
         """Convert into dict.
@@ -378,8 +431,11 @@ class DatasetReaderValue:
             tempfile.NamedTemporaryFile(
                 suffix=".nc", delete=True, delete_on_close=False)
         ) as tmp_file:
-            self.xr_dataset.to_netcdf(
-                tmp_file.name, format='NETCDF4', engine='h5netcdf')
+            x = self.xr_dataset.to_netcdf(
+                tmp_file.name, format='NETCDF4', engine='h5netcdf',
+                compute=False
+            )
+            execute_dask_compute(x)
             with open(tmp_file.name, 'rb') as f:
                 while True:
                     chunk = f.read(self.chunk_size_in_bytes)
@@ -412,19 +468,15 @@ class DatasetReaderValue:
             # reordered_cols.insert(0, 'ensemble')
         df = self.xr_dataset.to_dataframe(dim_order=dim_order)
         df_reordered = df[reordered_cols]
-        with (
-            tempfile.NamedTemporaryFile(
-                suffix=suffix, delete=True, delete_on_close=False)
-        ) as tmp_file:
-            df_reordered.to_csv(
-                tmp_file.name, index=True, header=True, sep=separator,
-                mode='w', lineterminator='\n', float_format='%.4f')
-            with open(tmp_file.name, 'rb') as f:
-                while True:
-                    chunk = f.read(self.chunk_size_in_bytes)
-                    if not chunk:
-                        break
-                    yield chunk
+
+        # write headers
+        headers = dim_order + list(df_reordered.columns)
+        yield bytes(','.join(headers) + '\n', 'utf-8')
+
+        # Write the data in chunks
+        for start in range(0, len(df_reordered), self.csv_chunk_size):
+            chunk = df_reordered.iloc[start:start + self.csv_chunk_size]
+            yield chunk.to_csv(index=True, header=False, float_format='%g')
 
 
 class BaseDatasetReader:

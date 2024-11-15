@@ -60,8 +60,9 @@ class PreferencesAdmin(admin.ModelAdmin):
             }
         ),
         (
-            'Logging', {
+            'API Config', {
                 'fields': (
+                    'dask_threads_num_api',
                     'api_log_batch_size',
                 )
             }

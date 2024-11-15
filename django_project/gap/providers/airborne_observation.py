@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 
 from datetime import datetime
 
+from django.db.models import F, QuerySet
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Polygon, Point
 
@@ -79,15 +80,23 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
     def get_measurements(self, start_date: datetime, end_date: datetime):
         """Return measurements."""
         nearest_histories = self.get_nearest_stations()
-        if nearest_histories is None or len(nearest_histories) == 0:
+        if isinstance(nearest_histories, QuerySet):
+            nearest_histories = nearest_histories.filter(
+                date_time__gte=start_date,
+                date_time__lte=end_date
+            )
+        if (
+            nearest_histories is None or
+            self._get_count(nearest_histories) == 0
+        ):
             return None
 
-        return Measurement.objects.select_related(
-            'dataset_attribute', 'dataset_attribute__attribute',
-            'station', 'station_history'
+        return Measurement.objects.annotate(
+            geom=F('station_history__geometry'),
+            alt=F('station_history__altitude')
         ).filter(
             date_time__gte=start_date,
             date_time__lte=end_date,
             dataset_attribute__in=self.attributes,
             station_history__in=nearest_histories
-        ).order_by('date_time', 'station', 'dataset_attribute')
+        ).order_by('date_time')

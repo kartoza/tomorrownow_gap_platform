@@ -109,6 +109,14 @@ class Preferences(SingletonModel):
         )
     )
 
+    dask_threads_num_api = models.IntegerField(
+        default=2,
+        help_text=(
+            'Number of threads for dask parallel computation in API, '
+            'higher number will use more memory.'
+        )
+    )
+
     # ingestor config
     ingestor_config = models.JSONField(
         default=dict,
