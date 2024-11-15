@@ -6,9 +6,7 @@ Tomorrow Now GAP.
 """
 
 from datetime import datetime
-import numpy as np
 import pandas as pd
-import xarray as xr
 import tempfile
 from django.db.models import Exists, OuterRef, F, FloatField, QuerySet
 from django.db.models.functions.datetime import TruncDate, TruncTime
@@ -20,9 +18,7 @@ from gap.models import (
     Dataset,
     DatasetAttribute,
     Station,
-    Measurement,
-    DatasetTimeStep,
-    DatasetObservationType
+    Measurement
 )
 from gap.utils.reader import (
     LocationInputType,
@@ -30,6 +26,7 @@ from gap.utils.reader import (
     BaseDatasetReader,
     DatasetReaderValue
 )
+from gap.utils.dask import execute_dask_compute
 
 
 class ST_X(GeoFunc):
@@ -58,7 +55,6 @@ class ObservationReaderValue(DatasetReaderValue):
     """Class that convert Dataset to TimelineValues."""
 
     date_variable = 'date'
-    csv_chunk_size = 50000
 
     def __init__(
             self, val: QuerySet,
@@ -84,6 +80,98 @@ class ObservationReaderValue(DatasetReaderValue):
         self.start_date = start_date
         self.end_date = end_date
         self.nearest_stations = nearest_stations
+        self.attributes = sorted(
+            self.attributes, key=lambda x: x.attribute.id
+        )
+
+    def _get_data_frame(self, use_separate_time_col=True) -> pd.DataFrame:
+        """Create a dataframe from query result.
+
+        :return: Data frame
+        :rtype: pd.DataFrame
+        """
+        time_col_exists = self.has_time_column
+        alt_col_exists = self.has_altitude_column
+        fields = {
+            'date': (
+                TruncDate('date_time') if use_separate_time_col else
+                F('date_time')
+            ),
+            'loc_x': ST_X('geom'),
+            'loc_y': ST_Y('geom'),
+            'attr_id': F('dataset_attribute__attribute__id'),
+        }
+        field_index = [
+            'date'
+        ]
+
+        # add time if time_step is not daily
+        if time_col_exists and use_separate_time_col:
+            fields.update({
+                'time': TruncTime('date_time')
+            })
+            field_index.append('time')
+
+        # add lat and lon
+        field_index.extend(['loc_y', 'loc_x'])
+
+        # add altitude if it's upper air observation
+        if alt_col_exists:
+            fields.update({
+                'loc_alt': F('alt')
+            })
+            field_index.append('loc_alt')
+
+        # annotate and select required fields only
+        measurements = self._val.annotate(**fields).values(
+            *(list(fields.keys()) + ['value'])
+        )
+        # Convert to DataFrame
+        df = pd.DataFrame(list(measurements))
+
+        # Pivot the data to make attributes columns
+        df = df.pivot_table(
+            index=field_index,
+            columns='attr_id',
+            values='value'
+        ).reset_index()
+
+        # add other attributes
+        for attr in self.attributes:
+            if attr.attribute.id not in df.columns:
+                df[attr.attribute.id] = None
+
+        # reorder columns
+        df = df[
+            field_index + [attr.attribute.id for attr in self.attributes]
+        ]
+
+        return df
+
+    def _get_headers(self, use_separate_time_col=True):
+        """Get list of headers that allign with dataframce columns."""
+        time_col_exists = self.has_time_column
+        alt_col_exists = self.has_altitude_column
+        headers = ['date']
+
+        # add time if time_step is not daily
+        if time_col_exists and use_separate_time_col:
+            headers.append('time')
+
+        # add lat and lon
+        headers.extend(['lat', 'lon'])
+
+        # add altitude if it's upper air observation
+        if alt_col_exists:
+            headers.append('altitude')
+
+        field_indices = [header for header in headers]
+
+        # add headers
+        for attr in self.attributes:
+            headers.append(attr.attribute.variable_name)
+
+        return headers, field_indices
 
     def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream.
@@ -95,164 +183,57 @@ class ObservationReaderValue(DatasetReaderValue):
         :yield: bytes of csv file
         :rtype: bytes
         """
-        dataset = self.attributes[0].dataset
-        time_col_exists = dataset.time_step != DatasetTimeStep.DAILY
-        alt_col_exists = (
-            dataset.observation_type ==
-            DatasetObservationType.UPPER_AIR_OBSERVATION
-        )
-        headers = ['date']
-        fields = {
-            'date': TruncDate('date_time'),
-            'loc_x': ST_X('geom'),
-            'loc_y': ST_Y('geom'),
-            'attr_id': F('dataset_attribute__attribute__id'),
-        }
-        field_index = [
-            'date'
-        ]
-
-        # add time if time_step is not daily
-        if time_col_exists:
-            headers.append('time')
-            fields.update({
-                'time': TruncTime('date_time')
-            })
-            field_index.append('time')
-
-        # add lat and lon
-        headers.extend(['lat', 'lon'])
-        field_index.extend(['loc_y', 'loc_x'])
-
-        # add altitude if it's upper air observation
-        if alt_col_exists:
-            headers.append('altitude')
-            fields.update({
-                'loc_alt': F('alt')
-            })
-            field_index.append('loc_alt')
+        headers, _ = self._get_headers()
 
         # write headers
-        sorted_attrs = sorted(self.attributes, key=lambda x: x.attribute.id)
-        for attr in sorted_attrs:
-            headers.append(attr.attribute.variable_name)
         yield bytes(','.join(headers) + '\n', 'utf-8')
 
-        # annotate and select required fields only
-        measurements = self._val.annotate(**fields).values(
-            *(list(fields.keys()) + ['value'])
-        )
-        # Convert to DataFrame
-        df = pd.DataFrame(list(measurements))
-
-        # Pivot the data to make attributes columns
-        df_pivot = df.pivot_table(
-            index=field_index,
-            columns='attr_id',
-            values='value'
-        ).reset_index()
-
-        # add other attributes
-        for attr in sorted_attrs:
-            if attr.attribute.id not in df_pivot.columns:
-                df_pivot[attr.attribute.id] = None
-
-        # reorder columns
-        df_pivot = df_pivot[
-            field_index + [attr.attribute.id for attr in sorted_attrs]
-        ]
+        # get dataframe
+        df_pivot = self._get_data_frame()
 
         # Write the data in chunks
-        for start in range(0, len(df), self.csv_chunk_size):
+        for start in range(0, len(df_pivot), self.csv_chunk_size):
             chunk = df_pivot.iloc[start:start + self.csv_chunk_size]
             yield chunk.to_csv(index=False, header=False, float_format='%g')
 
-    def _get_date_array(self):
-        """Get date range from result values."""
-        dataset = self.attributes[0].dataset
-
-        first_dt = self.values[0].get_datetime()
-        last_dt = self.values[-1].get_datetime()
-
-        if dataset.time_step == DatasetTimeStep.DAILY:
-            first_dt = first_dt.date()
-            last_dt = last_dt.date()
-
-        return pd.date_range(
-            first_dt, last_dt,
-            freq=DatasetTimeStep.to_freq(dataset.time_step))
-
-    def _get_date_index(
-            self, date_array: pd.DatetimeIndex, datetime: datetime):
-        """Get date index from date_array."""
-        dataset = self.attributes[0].dataset
-        dt = (
-            datetime.replace(hour=0, minute=0, second=0, tzinfo=None) if
-            dataset.time_step == DatasetTimeStep.DAILY else datetime
-        )
-        return date_array.get_loc(dt)
-
     def to_netcdf_stream(self):
         """Generate NetCDF."""
-        # create date array
-        date_array = self._get_date_array()
+        time_col_exists = self.has_time_column
 
-        # sort lat and lon array
-        lat_array = set()
-        lon_array = set()
-        station: Station
-        for station in self.nearest_stations:
-            x = round(station.geometry.x, 5)
-            y = round(station.geometry.y, 5)
-            lon_array.add(x)
-            lat_array.add(y)
-        lat_array = sorted(lat_array)
-        lon_array = sorted(lon_array)
-        lat_array = pd.Index(lat_array, dtype='float64')
-        lon_array = pd.Index(lon_array, dtype='float64')
-
-        # define the data variables
-        data_vars = {}
-        empty_shape = (len(date_array), len(lat_array), len(lon_array))
-        for attr in self.attributes:
-            var = attr.attribute.variable_name
-            data_vars[var] = (
-                ['date', 'lat', 'lon'],
-                np.empty(empty_shape)
-            )
-
-        # create the dataset
-        ds = xr.Dataset(
-            data_vars=data_vars,
-            coords={
-                'date': ('date', date_array),
-                'lat': ('lat', lat_array),
-                'lon': ('lon', lon_array)
-            }
+        # if time column exists, in netcdf we should use datetime
+        # instead of separating the date and time columns
+        headers, field_indices = self._get_headers(
+            use_separate_time_col=not time_col_exists
         )
 
-        # assign values to the dataset
-        for val in self.values:
-            date_idx = self._get_date_index(date_array, val.get_datetime())
-            loc = val.location
-            lat_idx = lat_array.get_loc(round(loc.y, 5))
-            lon_idx = lon_array.get_loc(round(loc.x, 5))
+        # get dataframe
+        df_pivot = self._get_data_frame(
+            use_separate_time_col=not time_col_exists
+        )
 
-            for attr in self.attributes:
-                var_name = attr.attribute.variable_name
-                if var_name not in val.values:
-                    continue
-                ds[var_name][date_idx, lat_idx, lon_idx] = (
-                    val.values[var_name]
-                )
+        # rename columns
+        if time_col_exists:
+            headers[0] = 'time'
+            field_indices[0] = 'time'
+        df_pivot.columns = headers
+
+        # convert date/datetime objects
+        date_coord = 'date' if not time_col_exists else 'time'
+        df_pivot[date_coord] = pd.to_datetime(df_pivot[date_coord])
+
+        # Convert to xarray Dataset
+        ds = df_pivot.set_index(field_indices).to_xarray()
 
         # write to netcdf
         with (
             tempfile.NamedTemporaryFile(
                 suffix=".nc", delete=True, delete_on_close=False)
         ) as tmp_file:
-            ds.to_netcdf(
-                tmp_file.name, format='NETCDF4', engine='netcdf4')
+            x = ds.to_netcdf(
+                tmp_file.name, format='NETCDF4', engine='netcdf4',
+                compute=False
+            )
+            execute_dask_compute(x, is_api=True)
             with open(tmp_file.name, 'rb') as f:
                 while True:
                     chunk = f.read(self.chunk_size_in_bytes)

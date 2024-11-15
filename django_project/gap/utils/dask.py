@@ -12,13 +12,19 @@ from concurrent.futures import ThreadPoolExecutor
 from gap.models import Preferences
 
 
-def execute_dask_compute(x: Delayed):
+def execute_dask_compute(x: Delayed, is_api=False):
     """Execute dask computation based on number of threads config.
 
     :param x: Dask delayed object
     :type x: Delayed
+    :param is_api: Whether the computation is in GAP API, default to False
+    :type is_api: bool
     """
-    num_of_threads = Preferences.load().dask_threads_num
+    preferences = Preferences.load()
+    num_of_threads = (
+        preferences.dask_threads_num_api if is_api else
+        preferences.dask_threads_num
+    )
     if num_of_threads <= 0:
         # use everything
         x.compute()
