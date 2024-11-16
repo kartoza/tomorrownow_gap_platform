@@ -25,7 +25,6 @@ const GapContextProvider = (props: AppProps) => {
         setTimeout(() => {
             const element = document.getElementById('gap-base-context')
             if (element) {
-                console.log(element.innerHTML)
                 setContextData(JSON.parse(element.innerHTML))
             } else {
                 console.log('Warning: no base context is found.')
