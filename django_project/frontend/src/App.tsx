@@ -5,6 +5,7 @@ import './styles/index.scss';
 import reportWebVitals from './reportWebVitals';
 import Home from "./Home";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { GapContextProvider } from "./contexts/GapContext";
 
 
 Sentry.init({
@@ -17,7 +18,9 @@ const rootElement = document.getElementById('app')!
 const root = createRoot(rootElement);
 root.render(
     <ErrorBoundary>
-        <Home/>
+        <GapContextProvider>
+            <Home/>
+        </GapContextProvider>
     </ErrorBoundary>
 );
 
