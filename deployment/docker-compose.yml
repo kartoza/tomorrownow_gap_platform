@@ -27,7 +27,7 @@ services:
       - redis-data:/bitnami/redis/data
 
   db:
-    image: kartoza/postgis:14-3.3
+    image: kartoza/postgis:16-3.4
     volumes:
       - data-volume:/opt/postgres/data
     environment:
@@ -38,7 +38,7 @@ services:
       - POSTGRES_PASS=${DATABASE_PASSWORD:-docker}
 
   dbbackups:
-    image: kartoza/postgis:14-3.3
+    image: kartoza/postgis:16-3.4
     volumes:
       - data-volume:/backups
     environment:
