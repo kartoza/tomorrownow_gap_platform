@@ -20,6 +20,7 @@ class HomeView(TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
+        """Get context data for Home view."""
         context = super().get_context_data(**kwargs)
 
         preferences = Preferences.load()
