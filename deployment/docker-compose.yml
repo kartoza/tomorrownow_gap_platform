@@ -1,7 +1,6 @@
 version: '3.9'
 
 volumes:
-  static-data:
   conf-data:
   database:
   nginx-cache:
@@ -14,8 +13,6 @@ x-common-django:
   image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}:${DJANGO_TAG:-1.0.0}
   env_file:
     - .env
-  volumes:
-    - static-data:/home/web/static
   restart: on-failure
 
 services:
@@ -27,7 +24,7 @@ services:
       - redis-data:/bitnami/redis/data
 
   db:
-    image: kartoza/postgis:14-3.3
+    image: kartoza/postgis:16-3.4
     volumes:
       - data-volume:/opt/postgres/data
     environment:
@@ -49,8 +46,6 @@ services:
   django:
     <<: *default-common-django
     command: 'uwsgi --ini /uwsgi.conf'
-    volumes:
-      - static-data:/home/web/static
     links:
       - db
       - worker
@@ -70,7 +65,6 @@ services:
     hostname: nginx
     volumes:
       - conf-data:/etc/nginx/conf.d:ro
-      - static-data:/home/web/static
       - nginx-cache:/home/web/nginx_cache
     links:
       - django

@@ -67,6 +67,7 @@ CACHE_MIDDLEWARE_KEY_PREFIX = os.getenv(
     'COMPOSE_PROJECT_NAME', 'kartoza_django_project')
 
 MIDDLEWARE = (
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -132,6 +133,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.sitemaps',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'django.contrib.messages'
