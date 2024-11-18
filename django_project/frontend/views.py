@@ -9,12 +9,28 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, View
+from django.urls import reverse
+
+from gap.models.preferences import Preferences
 
 
 class HomeView(TemplateView):
     """Home page view."""
 
     template_name = 'home.html'
+
+    def get_context_data(self, **kwargs):
+        """Get context data for Home view."""
+        context = super().get_context_data(**kwargs)
+
+        preferences = Preferences.load()
+
+        context['gap_base_context'] = json.dumps({
+            'api_swagger_url': reverse('api:v1:schema-swagger'),
+            'api_docs_url': preferences.documentation_url
+        })
+
+        return context
 
 
 @method_decorator(csrf_exempt, name="dispatch")
