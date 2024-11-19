@@ -174,6 +174,7 @@ class DataSourceFileCache(models.Model):
         null=True,
         blank=True
     )
+    size = models.PositiveIntegerField(default=0)
 
     class Meta:
         """Meta class for DataSourceFileCache."""

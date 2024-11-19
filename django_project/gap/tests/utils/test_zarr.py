@@ -27,7 +27,9 @@ from gap.providers import (
 )
 from gap.admin.main import (
     load_source_zarr_cache,
-    clear_source_zarr_cache
+    clear_source_zarr_cache,
+    clear_zarr_dir_cache,
+    calculate_zarr_cache_size
 )
 from gap.factories import (
     DataSourceFileFactory,
@@ -318,6 +320,79 @@ class TestAdminZarrFileActions(TestCase):
 
         # Call the clear_source_zarr_cache function
         clear_source_zarr_cache(mock_modeladmin, mock_request, mock_queryset)
+
+        # Assertions
+        mock_os_path_exists.assert_called_once_with('/tmp/test_zarr')
+        mock_rmtree.assert_called_once_with('/tmp/test_zarr')
+        mock_modeladmin.message_user.assert_called_once_with(
+            mock_request,
+            '/tmp/test_zarr has been cleared!',
+            messages.SUCCESS
+        )
+
+    @patch('gap.admin.main.get_directory_size')
+    @patch('os.path.exists')
+    def test_calculate_zarr_cache_size(
+        self, mock_os_path_exists, mock_calculate
+    ):
+        """Test calculate zarr cache size."""
+        # Mock the queryset with a Zarr file
+        data_source = DataSourceFileFactory.create(
+            format=DatasetStore.ZARR,
+            name='test.zarr'
+        )
+        cache_file = DataSourceFileCacheFactory.create(
+            source_file=data_source
+        )
+
+        mock_queryset = [cache_file]
+
+        # Mock os.path.exists to return True
+        mock_os_path_exists.return_value = True
+        # Mock get_directory_size to return 10000
+        mock_calculate.return_value = 10000
+
+        # Mock the modeladmin and request objects
+        mock_modeladmin = MagicMock()
+        mock_request = MagicMock()
+
+        calculate_zarr_cache_size(mock_modeladmin, mock_request, mock_queryset)
+
+        # Assertions
+        mock_os_path_exists.assert_called_once_with('/tmp/test_zarr')
+        mock_calculate.assert_called_once_with('/tmp/test_zarr')
+        mock_modeladmin.message_user.assert_called_once_with(
+            mock_request,
+            'Calculate zarr cache size successful!',
+            messages.SUCCESS
+        )
+        cache_file.refresh_from_db()
+        self.assertEqual(cache_file.size, 10000)
+
+    @patch('shutil.rmtree')
+    @patch('os.path.exists')
+    def test_clear_zarr_dir_cache(self, mock_os_path_exists, mock_rmtree):
+        """Test clear_zarr_dir_cache."""
+        # Mock the queryset with a Zarr file
+        data_source = DataSourceFileFactory.create(
+            format=DatasetStore.ZARR,
+            name='test.zarr'
+        )
+        cache_file = DataSourceFileCacheFactory.create(
+            source_file=data_source
+        )
+
+        mock_queryset = [cache_file]
+
+        # Mock os.path.exists to return True
+        mock_os_path_exists.return_value = True
+
+        # Mock the modeladmin and request objects
+        mock_modeladmin = MagicMock()
+        mock_request = MagicMock()
+
+        # Call the clear_zarr_dir_cache function
+        clear_zarr_dir_cache(mock_modeladmin, mock_request, mock_queryset)
 
         # Assertions
         mock_os_path_exists.assert_called_once_with('/tmp/test_zarr')
