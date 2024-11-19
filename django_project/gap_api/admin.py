@@ -79,6 +79,11 @@ class GapAPIRequestLogAdmin(APIRequestLogAdmin):
         :return: product in json query_params
         :rtype: str
         """
+        if obj.query_params is None:
+            return '-'
+        if not isinstance(obj.query_params, dict):
+            return '-'
+
         return obj.query_params.get('product', '-')
 
     product_type.short_description = 'Product Type'

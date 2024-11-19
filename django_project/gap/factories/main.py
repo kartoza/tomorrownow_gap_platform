@@ -141,6 +141,7 @@ class DataSourceFileCacheFactory(DjangoModelFactory):
     source_file = factory.SubFactory(DataSourceFileFactory)
     hostname = factory.Faker('text')
     created_on = factory.Faker('date_time')
+    size = 0
 
 
 class VillageFactory(DjangoModelFactory):

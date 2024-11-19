@@ -11,6 +11,7 @@ from django.contrib import admin, messages
 from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from core.admin import AbstractDefinitionAdmin
+from core.utils.file import get_directory_size, format_size
 from gap.models import (
     Attribute, Country, Provider, Measurement, IngestorSession,
     IngestorSessionProgress, Dataset, DatasetAttribute, DataSourceFile,
@@ -175,30 +176,39 @@ def load_source_zarr_cache(modeladmin, request, queryset):
         )
 
 
-@admin.action(description='Clear zarr cache')
-def clear_source_zarr_cache(modeladmin, request, queryset):
-    """Clear DataSourceFile zarr cache."""
-    name = None
-    for query in queryset:
-        if query.format != DatasetStore.ZARR:
-            continue
-        name = query.name
-        zarr_path = BaseZarrReader.get_zarr_cache_dir(name)
-        if os.path.exists(zarr_path):
-            shutil.rmtree(zarr_path)
-        break
-    if name is not None:
-        modeladmin.message_user(
-            request,
-            f'{zarr_path} has been cleared!',
-            messages.SUCCESS
-        )
-    else:
+def _clear_zarr_cache(source: DataSourceFile, modeladmin, request):
+    """Clear zarr cache directory."""
+    if source.format != DatasetStore.ZARR:
         modeladmin.message_user(
             request,
             'Please select zarr data source!',
             messages.WARNING
         )
+        return
+
+    name = source.name
+    zarr_path = BaseZarrReader.get_zarr_cache_dir(name)
+    if os.path.exists(zarr_path):
+        shutil.rmtree(zarr_path)
+
+    modeladmin.message_user(
+        request,
+        f'{zarr_path} has been cleared!',
+        messages.SUCCESS
+    )
+
+    # update cache size to 0
+    DataSourceFileCache.objects.filter(
+        source_file=source
+    ).update(size=0)
+
+
+@admin.action(description='Clear zarr cache')
+def clear_source_zarr_cache(modeladmin, request, queryset):
+    """Clear single DataSourceFile zarr cache."""
+    for query in queryset:
+        _clear_zarr_cache(query, modeladmin, request)
+        break
 
 
 @admin.register(DataSourceFile)
@@ -213,15 +223,43 @@ class DataSourceFileAdmin(admin.ModelAdmin):
     actions = (load_source_zarr_cache, clear_source_zarr_cache,)
 
 
+@admin.action(description='Calculate zarr cache size')
+def calculate_zarr_cache_size(modeladmin, request, queryset):
+    """Calculate the size of zarr cache."""
+    for query in queryset:
+        name = query.source_file.name
+        zarr_path = BaseZarrReader.get_zarr_cache_dir(name)
+        if not os.path.exists(zarr_path):
+            continue
+
+        query.size = get_directory_size(zarr_path)
+        query.save()
+
+    modeladmin.message_user(
+        request,
+        'Calculate zarr cache size successful!',
+        messages.SUCCESS
+    )
+
+
+@admin.action(description='Clear zarr cache')
+def clear_zarr_dir_cache(modeladmin, request, queryset):
+    """Clear DataSourceFile zarr cache."""
+    for query in queryset:
+        _clear_zarr_cache(query.source_file, modeladmin, request)
+        break
+
+
 @admin.register(DataSourceFileCache)
 class DataSourceFileCacheAdmin(admin.ModelAdmin):
     """DataSourceFileCache admin."""
 
     list_display = (
         'get_name', 'get_dataset', 'hostname',
-        'created_on', 'expired_on'
+        'get_cache_size', 'created_on', 'expired_on'
     )
     list_filter = ('hostname',)
+    actions = (calculate_zarr_cache_size, clear_zarr_dir_cache,)
 
     def get_name(self, obj: DataSourceFileCache):
         """Get name of data source.
@@ -243,10 +281,16 @@ class DataSourceFileCacheAdmin(admin.ModelAdmin):
         """
         return obj.source_file.dataset.name
 
+    def get_cache_size(self, obj: DataSourceFileCache):
+        """Get the cache size."""
+        return format_size(obj.size)
+
     get_name.short_description = 'Name'
     get_name.admin_order_field = 'source_file__name'
     get_dataset.short_description = 'Dataset'
     get_dataset.admin_order_field = 'source_file__dataset__name'
+    get_cache_size.short_description = 'Cache Size'
+    get_cache_size.admin_order_field = 'size'
 
 
 @admin.register(Village)
