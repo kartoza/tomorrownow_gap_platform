@@ -169,7 +169,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         ),
         openapi.Parameter(
             'bbox', openapi.IN_QUERY,
-            description='Bounding box: xmin, ymin, xmax, ymax',
+            description='Bounding box: long min, lat min, long max, lat max',
             type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
