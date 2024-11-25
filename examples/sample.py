@@ -73,6 +73,8 @@ if __name__ == "__main__":
     # for single point query, we can use lat and lon parameters
     # lat = '',
     # lon = ''
+    # for custom polygon/bounding box, you can upload a shapefile and provides the location_name
+    # location_name = ''
 
     # Construct the API URL
     api_url = (

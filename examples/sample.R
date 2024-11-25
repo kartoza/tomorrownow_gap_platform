@@ -32,6 +32,8 @@ query_params <- list(
     # for single point query, we can use lat and lon parameters
     # lat = '',
     # lon = ''
+    # for custom polygon/bounding box, you can upload a shapefile and provides the location_name
+    # location_name = ''
 )
 
 # Define user agent of the request
