@@ -1,3 +1,4 @@
+"""Sample code calling GAP API."""
 import requests
 from requests.auth import HTTPBasicAuth
 import time
@@ -7,7 +8,7 @@ import os
 
 def download_file(api_url, username, password, local_filename):
     """
-    Downloads a file from a GET API endpoint using Basic Authentication.
+    Download a file from a GET API endpoint using Basic Authentication.
 
     Parameters:
         api_url (str): The API endpoint URL to download the file.
@@ -23,7 +24,11 @@ def download_file(api_url, username, password, local_filename):
         start_time = time.time()
 
         # Perform the GET request with Basic Authentication
-        response = requests.get(api_url, auth=HTTPBasicAuth(username, password), stream=True)
+        response = requests.get(
+            api_url,
+            auth=HTTPBasicAuth(username, password),
+            stream=True
+        )
 
         # Stop the timer and calculate response time
         response_time = time.time() - start_time
@@ -32,7 +37,8 @@ def download_file(api_url, username, password, local_filename):
         if response.status_code == 200:
             # Write the content to a local file
             with open(local_filename, 'wb') as file:
-                for chunk in response.iter_content(chunk_size=8192):  # Download in chunks
+                # Download in chunks
+                for chunk in response.iter_content(chunk_size=8192):
                     file.write(chunk)
 
             # Get the file size
@@ -44,7 +50,10 @@ def download_file(api_url, username, password, local_filename):
 
             return local_filename
         else:
-            print(f"Failed to download file. HTTP Status Code: {response.status_code}")
+            print(
+                "Failed to download file. "
+                f"HTTP Status Code: {response.status_code}"
+            )
             print("Response:", response.text)
             return None
     except Exception as e:
@@ -55,7 +64,8 @@ def download_file(api_url, username, password, local_filename):
 # Example usage
 if __name__ == "__main__":
     # product type and attribute list can be viewed in
-    # https://kartoza.github.io/tomorrownow_gap/developer/api/guide/measurement/#gap-input-data-table
+    # https://kartoza.github.io/tomorrownow_gap/developer/api/guide/
+    # measurement/#gap-input-data-table
     product = 'cbam_historical_analysis'
     # Define the attributes to fetch
     attribs = [
@@ -73,21 +83,24 @@ if __name__ == "__main__":
     # for single point query, we can use lat and lon parameters
     # lat = '',
     # lon = ''
-    # for custom polygon/bounding box, you can upload a shapefile and provides the location_name
+    # for custom polygon/bounding box, you can upload a shapefile and
+    # provides the location_name
     # location_name = ''
 
     # Construct the API URL
     api_url = (
-        f"https://tngap.sta.do.kartoza.com/api/v1/measurement/?product={product}&" +
+        "https://tngap.sta.do.kartoza.com/api/v1/measurement/?" +
+        f"product={product}&" +
         "attributes=" + ",".join(attribs) + "&" +
-        f"start_date={start_date}&end_date={end_date}&output_type={output_type}&"
+        f"start_date={start_date}&end_date={end_date}&" +
+        f"output_type={output_type}&"
         f"bbox={bbox}"
     )
 
     # Set your username and password
     username = ""
     password = ""
-    
+
     # Set the output file path
     local_filename = "data.nc"
 
