@@ -1,13 +1,6 @@
 [
 {
     "model": "gap_api.datasettypeapiconfig",
-    "pk": 1,
-    "fields": {
-        "max_daterange": 366
-    }
-},
-{
-    "model": "gap_api.datasettypeapiconfig",
     "pk": 2,
     "fields": {
         "max_daterange": 15
@@ -22,20 +15,6 @@
 },
 {
     "model": "gap_api.datasettypeapiconfig",
-    "pk": 8,
-    "fields": {
-        "max_daterange": 30
-    }
-},
-{
-    "model": "gap_api.datasettypeapiconfig",
-    "pk": 4,
-    "fields": {
-        "max_daterange": 30
-    }
-},
-{
-    "model": "gap_api.datasettypeapiconfig",
     "pk": 5,
     "fields": {
         "max_daterange": 30
@@ -45,14 +24,7 @@
     "model": "gap_api.datasettypeapiconfig",
     "pk": 3,
     "fields": {
-        "max_daterange": 30
-    }
-},
-{
-    "model": "gap_api.datasettypeapiconfig",
-    "pk": 9,
-    "fields": {
-        "max_daterange": 366
+        "max_daterange": 120
     }
 }
 ]
