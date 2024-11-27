@@ -24,6 +24,7 @@ from gap.utils.reader import (
     DatasetReaderInput, DatasetReaderOutputType, BaseDatasetReader,
     LocationInputType
 )
+from gap_api.models.api_config import DatasetTypeAPIConfig
 from gap_api.api_views.measurement import MeasurementAPI
 from gap_api.factories import LocationFactory
 
@@ -218,8 +219,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         '5.dataset.json',
         '6.unit.json',
         '7.attribute.json',
-        '8.dataset_attribute.json',
-        '1.datasettype_apiconfig.json'
+        '8.dataset_attribute.json'
     ]
 
     def test_read_historical_data_empty(self):
@@ -395,6 +395,10 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         """Test validate date_range."""
         shortterm_forecast = DatasetType.objects.get(
             variable_name='cbam_shortterm_forecast'
+        )
+        DatasetTypeAPIConfig.objects.create(
+            type=shortterm_forecast,
+            max_daterange=15
         )
         view = MeasurementAPI()
         with self.assertRaises(ValidationError) as ctx:
