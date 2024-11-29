@@ -14,7 +14,6 @@ services:
       target: prod
     volumes:
       - ../django_project:/home/web/django_project
-      - ./volumes/static:/home/web/static
 
   worker:
     build:
@@ -22,12 +21,10 @@ services:
       dockerfile: deployment/docker/Dockerfile
     volumes:
       - ../django_project:/home/web/django_project
-      - ./volumes/static:/home/web/static
 
   nginx:
     volumes:
       - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
-      - ./volumes/static:/home/web/static
     ports:
       - "${HTTP_PORT:-8888}:80"
     links:
@@ -41,7 +38,6 @@ services:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
     volumes:
       - ../django_project:/home/web/django_project
-      - ./volumes/static:/home/web/static
     ports:
       # for django test server
       - "5000:8080"

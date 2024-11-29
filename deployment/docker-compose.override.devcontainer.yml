@@ -20,7 +20,6 @@ services:
     volumes:
       - ../:/home/web/project
       - ../django_project:/home/web/django_project
-      - ./volumes/static:/home/web/static
 
   dev:
     image: kartoza/${COMPOSE_PROJECT_NAME:-django_project}_dev
@@ -33,7 +32,6 @@ services:
       - .env
     volumes:
       - ../:/home/web/project
-      - ./volumes/static:/home/web/static
     links:
       - db
       - worker
