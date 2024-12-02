@@ -147,6 +147,7 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['geometry']['coordinates'], [0, 0])
         self.assertEqual(results[0]['altitude'], 1)
+        self.assertEqual(results[0]['station_id'], 'test-1')
         self.assertEqual(len(results[0]['data']), 1)
         self.assertEqual(
             results[0]['data'][0]['datetime'], '2000-01-01T00:00:00+00:00'
@@ -188,8 +189,8 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         csv_reader = csv.reader(csv_file)
         headers = next(csv_reader, None)
         ordered_headers = [
-            'date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
-            'temperature'
+            'date', 'time', 'lat', 'lon', 'altitude', 'station_id',
+            'atmospheric_pressure', 'temperature'
         ]
         rows = []
         for row in csv_reader:
@@ -215,17 +216,17 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
-            ['date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
-             'temperature']
+            ['date', 'time', 'lat', 'lon', 'altitude', 'station_id',
+             'atmospheric_pressure', 'temperature']
         )
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0],
-            ['2000-02-01', '00:00:00', '10', '10', '2', '200', '2']
+            ['2000-02-01', '00:00:00', '10', '10', '2', 'test-1', '200', '2']
         )
         self.assertEqual(
             rows[1],
-            ['2000-03-01', '00:00:00', '100', '100', '3', '300',
+            ['2000-03-01', '00:00:00', '100', '100', '3', 'test-1', '300',
              '3']
         )
 
@@ -243,13 +244,13 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
-            ['date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
-             'temperature']
+            ['date', 'time', 'lat', 'lon', 'altitude', 'station_id',
+             'atmospheric_pressure', 'temperature']
         )
         self.assertEqual(len(rows), 1)
         self.assertEqual(
             rows[0],
-            ['2000-02-01', '00:00:00', '10', '10', '2', '200', '2']
+            ['2000-02-01', '00:00:00', '10', '10', '2', 'test-1', '200', '2']
         )
 
         # Return data with altitude between 1.5-5, should return history 2 & 3
@@ -267,17 +268,18 @@ class HistoricalAPITest(CommonMeasurementAPITest):
         headers, rows = self.read_csv(response)
         self.assertEqual(
             headers,
-            ['date', 'time', 'lat', 'lon', 'altitude', 'atmospheric_pressure',
-             'temperature']
+            ['date', 'time', 'lat', 'lon', 'altitude', 'station_id',
+             'atmospheric_pressure', 'temperature']
         )
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0],
-            ['2000-02-01', '00:00:00', '10', '10', '2', '200', '2']
+            ['2000-02-01', '00:00:00', '10', '10', '2', 'test-1', '200', '2']
         )
         self.assertEqual(
             rows[1],
-            ['2000-03-01', '00:00:00', '100', '100', '3', '300', '3']
+            ['2000-03-01', '00:00:00', '100', '100', '3', 'test-1', '300',
+             '3']
         )
 
     def test_read_to_netcdf(self):

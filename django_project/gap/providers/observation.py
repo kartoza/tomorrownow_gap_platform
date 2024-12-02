@@ -86,7 +86,9 @@ class ObservationReaderValue(DatasetReaderValue):
             self.attributes, key=lambda x: x.attribute.id
         )
 
-    def _get_data_frame(self, use_separate_time_col=True) -> pd.DataFrame:
+    def _get_data_frame(
+            self, use_separate_time_col=True,
+            use_station_id=False) -> pd.DataFrame:
         """Create a dataframe from query result.
 
         :return: Data frame
@@ -122,6 +124,13 @@ class ObservationReaderValue(DatasetReaderValue):
             })
             field_index.append('loc_alt')
 
+        # add station id if needed
+        if use_station_id:
+            fields.update({
+                's_id': F('station__code')
+            })
+            field_index.append('s_id')
+
         # annotate and select required fields only
         measurements = self._val.annotate(**fields).values(
             *(list(fields.keys()) + ['value'])
@@ -148,7 +157,7 @@ class ObservationReaderValue(DatasetReaderValue):
 
         return df
 
-    def _get_headers(self, use_separate_time_col=True):
+    def _get_headers(self, use_separate_time_col=True, use_station_id=False):
         """Get list of headers that allign with dataframce columns."""
         headers = ['date']
 
@@ -162,6 +171,10 @@ class ObservationReaderValue(DatasetReaderValue):
         # add altitude if it's upper air observation
         if self.has_altitude_column:
             headers.append('altitude')
+
+        # add station_id
+        if use_station_id:
+            headers.append('station_id')
 
         field_indices = [header for header in headers]
 
@@ -181,13 +194,13 @@ class ObservationReaderValue(DatasetReaderValue):
         :yield: bytes of csv file
         :rtype: bytes
         """
-        headers, _ = self._get_headers()
+        headers, _ = self._get_headers(use_station_id=True)
 
         # write headers
         yield bytes(','.join(headers) + '\n', 'utf-8')
 
         # get dataframe
-        df_pivot = self._get_data_frame()
+        df_pivot = self._get_data_frame(use_station_id=True)
 
         # Write the data in chunks
         for start in range(0, len(df_pivot), self.csv_chunk_size):
@@ -254,12 +267,14 @@ class ObservationReaderValue(DatasetReaderValue):
         has_altitude = self.has_altitude_column
         output = {
             'geometry': json.loads(self.location_input.geometry.json),
+            'station_id': '',
             'data': []
         }
 
         # get dataframe
         df_pivot = self._get_data_frame(
-            use_separate_time_col=False
+            use_separate_time_col=False,
+            use_station_id=True
         )
         for _, row in df_pivot.iterrows():
             values = {}
@@ -269,8 +284,11 @@ class ObservationReaderValue(DatasetReaderValue):
                 'datetime': row['date'].isoformat(timespec='seconds'),
                 'values': values
             })
+
             if has_altitude:
                 output['altitude'] = row['loc_alt']
+
+            output['station_id'] = row['s_id']
 
         return output
 
