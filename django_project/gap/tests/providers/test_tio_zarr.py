@@ -6,7 +6,8 @@ Tomorrow Now GAP.
 """
 
 from django.test import TestCase
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -66,7 +67,7 @@ class TestTioZarrReaderValue(TestCase):
         self.mock_location_input = DatasetReaderInput.from_point(point)
 
         # Creating filtered xarray dataset
-        forecast_days = np.array([0, 1, 2])
+        forecast_days = pd.date_range(start='2023-01-01', end='2023-01-03')
         lats = np.array([10, 20])
         lons = np.array([30, 40])
         temperature_data = np.random.rand(
@@ -75,11 +76,11 @@ class TestTioZarrReaderValue(TestCase):
         self.mock_xr_dataset = xr.Dataset(
             {
                 "max_temperature": (
-                    ["forecast_day_idx", "lat", "lon"], temperature_data
+                    ["date", "lat", "lon"], temperature_data
                 ),
             },
             coords={
-                "forecast_day_idx": forecast_days,
+                "date": forecast_days,
                 "lat": lats,
                 "lon": lons,
             }
@@ -87,16 +88,13 @@ class TestTioZarrReaderValue(TestCase):
         # Mock forecast_date
         self.forecast_date = np.datetime64('2023-01-01')
         variables = [
-            'forecast_day_idx',
+            'date',
             'max_temperature'
         ]
         self.mock_xr_dataset = self.mock_xr_dataset[variables].sel(
             lat=point.y,
             lon=point.x, method='nearest'
-        ).where(
-            (self.mock_xr_dataset['forecast_day_idx'] >= 0) &
-            (self.mock_xr_dataset['forecast_day_idx'] <= 1),
-            drop=True)
+        )
 
         # TioZarrReaderValue initialization with xarray dataset
         self.tio_reader_value_xr = TioZarrReaderValue(
@@ -116,17 +114,20 @@ class TestTioZarrReaderValue(TestCase):
         """Test post initialization method."""
         # Check if the renaming happened correctly
         self.assertIn(
-            'forecast_day', self.tio_reader_value_xr.xr_dataset.coords)
+            'date', self.tio_reader_value_xr.xr_dataset.coords)
         self.assertIn(
             'max_temperature', self.tio_reader_value_xr.xr_dataset.data_vars)
         self.assertNotIn(
             'forecast_day_idx', self.tio_reader_value_xr.xr_dataset.coords
         )
+        self.assertNotIn(
+            'forecast_date', self.tio_reader_value_xr.xr_dataset.coords
+        )
 
         # Check if forecast_day has been updated to actual dates
-        forecast_days = pd.date_range('2023-01-01', periods=2)
+        forecast_days = pd.date_range('2023-01-01', periods=3)
         xr_forecast_days = pd.to_datetime(
-            self.tio_reader_value_xr.xr_dataset.forecast_day.values)
+            self.tio_reader_value_xr.xr_dataset.date.values)
         pd.testing.assert_index_equal(
             pd.Index(xr_forecast_days), forecast_days)
 
@@ -217,8 +218,8 @@ class TestTioZarrReader(TestCase):
 
     def test_read_forecast_data(self):
         """Test for reading forecast data."""
-        dt1 = datetime(2024, 10, 3)
-        dt2 = datetime(2024, 10, 5)
+        dt1 = datetime(2024, 10, 3, tzinfo=pytz.UTC)
+        dt2 = datetime(2024, 10, 5, tzinfo=pytz.UTC)
         with patch.object(self.reader, 'open_dataset') as mock_open:
             mock_open.return_value = mock_open_zarr_dataset()
             self.reader.read_forecast_data(dt1, dt2)
@@ -231,8 +232,8 @@ class TestTioZarrReader(TestCase):
 
     def test_read_from_bbox(self):
         """Test for reading forecast data using bbox."""
-        dt1 = datetime(2024, 10, 3)
-        dt2 = datetime(2024, 10, 5)
+        dt1 = datetime(2024, 10, 3, tzinfo=pytz.UTC)
+        dt2 = datetime(2024, 10, 5, tzinfo=pytz.UTC)
         with patch.object(self.reader, 'open_dataset') as mock_open:
             mock_open.return_value = mock_open_zarr_dataset()
             self.reader.location_input = DatasetReaderInput.from_bbox(
@@ -254,8 +255,8 @@ class TestTioZarrReader(TestCase):
 
     def test_read_from_points(self):
         """Test for reading forecast data using points."""
-        dt1 = datetime(2024, 10, 3)
-        dt2 = datetime(2024, 10, 5)
+        dt1 = datetime(2024, 10, 3, tzinfo=pytz.UTC)
+        dt2 = datetime(2024, 10, 5, tzinfo=pytz.UTC)
         with patch.object(self.reader, 'open_dataset') as mock_open:
             mock_open.return_value = mock_open_zarr_dataset()
             p1 = Point(LON_METADATA['min'], LAT_METADATA['min'])
@@ -275,3 +276,116 @@ class TestTioZarrReader(TestCase):
             self.assertTrue(isinstance(data_value._val, xr.Dataset))
             dataset = data_value.xr_dataset
             self.assertIn('max_temperature', dataset.data_vars)
+
+    def test_read_past_forecast_data(self):
+        """Test for reading forecast data."""
+        dt1 = datetime(2024, 8, 1, tzinfo=pytz.UTC)
+        dt2 = datetime(2024, 8, 2, tzinfo=pytz.UTC)
+        with patch.object(self.reader, 'open_dataset') as mock_open:
+            mock_open.return_value = mock_open_zarr_dataset()
+            self.reader.read_forecast_data(dt1, dt2)
+            self.assertEqual(len(self.reader.xrDatasets), 1)
+            data_value = self.reader.get_data_values().to_json()
+            mock_open.assert_called_once()
+            result_data = data_value['data']
+            self.assertEqual(len(result_data), 0)
+
+    def test_read_past_forecast_data_using_bbox(self):
+        """Test for reading forecast data using bbox."""
+        dt1 = datetime(2024, 8, 1, tzinfo=pytz.UTC)
+        dt2 = datetime(2024, 8, 2, tzinfo=pytz.UTC)
+        with patch.object(self.reader, 'open_dataset') as mock_open:
+            mock_open.return_value = mock_open_zarr_dataset()
+            self.reader.location_input = DatasetReaderInput.from_bbox(
+                [
+                    LON_METADATA['min'],
+                    LAT_METADATA['min'],
+                    LON_METADATA['min'] + LON_METADATA['inc'],
+                    LAT_METADATA['min'] + LAT_METADATA['inc']
+                ]
+            )
+            self.reader.read_forecast_data(dt1, dt2)
+            self.assertEqual(len(self.reader.xrDatasets), 1)
+            data_value = self.reader.get_data_values()
+            mock_open.assert_called_once()
+            self.assertTrue(isinstance(data_value, DatasetReaderValue))
+            self.assertTrue(isinstance(data_value._val, xr.Dataset))
+            dataset = data_value.xr_dataset
+            self.assertIn('max_temperature', dataset.data_vars)
+
+    def test_read_past_forecast_data_using_points(self):
+        """Test for reading forecast data using points."""
+        dt1 = datetime(2024, 8, 1, tzinfo=pytz.UTC)
+        dt2 = datetime(2024, 8, 2, tzinfo=pytz.UTC)
+        with patch.object(self.reader, 'open_dataset') as mock_open:
+            mock_open.return_value = mock_open_zarr_dataset()
+            p1 = Point(LON_METADATA['min'], LAT_METADATA['min'])
+            p2 = Point(
+                LON_METADATA['min'] + LON_METADATA['inc'],
+                LAT_METADATA['min'] + LAT_METADATA['inc']
+            )
+            self.reader.location_input = DatasetReaderInput(
+                MultiPoint([p1, p2]),
+                LocationInputType.LIST_OF_POINT
+            )
+            self.reader.read_forecast_data(dt1, dt2)
+            self.assertEqual(len(self.reader.xrDatasets), 1)
+            data_value = self.reader.get_data_values()
+            mock_open.assert_called_once()
+            self.assertTrue(isinstance(data_value, DatasetReaderValue))
+            self.assertTrue(isinstance(data_value._val, xr.Dataset))
+            dataset = data_value.xr_dataset
+            self.assertIn('max_temperature', dataset.data_vars)
+
+    def test_entirely_in_past(self):
+        """Test split date range entirely in past."""
+        start_date = datetime(2024, 11, 20)
+        end_date = datetime(2024, 11, 25)
+        now = datetime(2024, 12, 1)
+        result = self.reader._split_date_range(start_date, end_date, now)
+        self.assertEqual(
+            result, {'past': (start_date, end_date), 'future': None}
+        )
+
+    def test_entirely_in_future(self):
+        """Test split date range entirely in future."""
+        start_date = datetime(2024, 12, 10)
+        end_date = datetime(2024, 12, 15)
+        now = datetime(2024, 12, 1)
+        result = self.reader._split_date_range(start_date, end_date, now)
+        self.assertEqual(
+            result, {'past': None, 'future': (start_date, end_date)}
+        )
+
+    def test_split_between_past_and_future(self):
+        """Test split date range between past and future."""
+        start_date = datetime(2024, 11, 20)
+        end_date = datetime(2024, 12, 10)
+        now = datetime(2024, 12, 1)
+        result = self.reader._split_date_range(start_date, end_date, now)
+        self.assertEqual(result, {
+            'past': (start_date, now - timedelta(days=1)),
+            'future': (now, end_date)
+        })
+
+    def test_now_equals_start_date(self):
+        """Test split date range now = start_date."""
+        start_date = datetime(2024, 12, 1)
+        end_date = datetime(2024, 12, 10)
+        now = datetime(2024, 12, 1)
+        result = self.reader._split_date_range(start_date, end_date, now)
+        self.assertEqual(result, {
+            'past': None,
+            'future': (now, end_date)
+        })
+
+    def test_now_equals_end_date(self):
+        """Test split date range now = end_date."""
+        start_date = datetime(2024, 11, 20)
+        end_date = datetime(2024, 12, 1)
+        now = datetime(2024, 12, 1)
+        result = self.reader._split_date_range(start_date, end_date, now)
+        self.assertEqual(result, {
+            'past': (start_date, now - timedelta(days=1)),
+            'future': (now, now)
+        })

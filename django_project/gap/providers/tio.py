@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Tuple
 
 import pytz
 import requests
@@ -132,7 +132,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime, verbose = False,
-            altitudes: (float, float) = None
+            altitudes: Tuple[float, float] = None
     ) -> None:
         """Initialize Dataset Reader."""
         super().__init__(
@@ -499,7 +499,7 @@ class TomorrowIODatasetReader(BaseDatasetReader):
 class TioZarrReaderValue(DatasetReaderValue):
     """Class that convert Tio Zarr Dataset to TimelineValues."""
 
-    date_variable = 'forecast_day'
+    date_variable = 'date'
 
     def __init__(
             self, val: xrDataset | List[DatasetTimelineValue],
@@ -524,21 +524,10 @@ class TioZarrReaderValue(DatasetReaderValue):
         if not self._is_xr_dataset:
             return
 
-        # rename attributes and the forecast_day
-        renamed_dict = {
-            'forecast_day_idx': 'forecast_day'
-        }
+        renamed_dict = {}
         for attr in self.attributes:
             renamed_dict[attr.source] = attr.attribute.variable_name
         self._val = self._val.rename(renamed_dict)
-
-        # replace forecast_day to actualdates
-        initial_date = pd.Timestamp(self.forecast_date)
-        forecast_day_timedelta = pd.to_timedelta(
-            self._val.forecast_day, unit='D')
-        forecast_day = initial_date + forecast_day_timedelta
-        self._val = self._val.assign_coords(
-            forecast_day=('forecast_day', forecast_day))
 
     def _xr_dataset_to_dict(self) -> dict:
         """Convert xArray Dataset to dictionary.
@@ -582,7 +571,7 @@ class TioZarrReader(BaseZarrReader):
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
             end_date: datetime,
-            altitudes: (float, float) = None
+            altitudes: Tuple[float, float] = None
     ) -> None:
         """Initialize TioZarrReader class."""
         super().__init__(
@@ -609,14 +598,41 @@ class TioZarrReader(BaseZarrReader):
         if zarr_file is None:
             return
         ds = self.open_dataset(zarr_file)
+
         # get latest forecast date
         self.latest_forecast_date = ds['forecast_date'][-1].values
-        if np.datetime64(start_date) < self.latest_forecast_date:
-            return
-        val = self.read_variables(ds, start_date, end_date)
-        if val is None:
-            return
-        self.xrDatasets.append(val)
+
+        # split date range
+        ranges = self._split_date_range(
+            start_date, end_date,
+            pd.Timestamp(self.latest_forecast_date).to_pydatetime().replace(
+                tzinfo=pytz.UTC
+            )
+        )
+
+        if ranges['future']:
+            val = self.read_variables(
+                ds, ranges['future'][0], ranges['future'][1]
+            )
+            if val:
+                dval = val.drop_vars('forecast_date').rename({
+                    'forecast_day_idx': 'date'
+                })
+                initial_date = pd.Timestamp(self.latest_forecast_date)
+                forecast_day_timedelta = pd.to_timedelta(dval.date, unit='D')
+                forecast_day = initial_date + forecast_day_timedelta
+                dval = dval.assign_coords(date=('date', forecast_day))
+                self.xrDatasets.append(dval)
+
+        if ranges['past']:
+            val = self.read_variables(
+                ds, ranges['past'][0], ranges['past'][1]
+            )
+            if val:
+                val = val.drop_vars(self.date_variable).rename({
+                    'forecast_date': 'date'
+                })
+                self.xrDatasets.append(val)
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
@@ -625,8 +641,12 @@ class TioZarrReader(BaseZarrReader):
         :rtype: DatasetReaderValue
         """
         val = None
-        if len(self.xrDatasets) > 0:
+        if len(self.xrDatasets) == 1:
             val = self.xrDatasets[0]
+        elif len(self.xrDatasets) == 2:
+            val = xr.concat(self.xrDatasets, dim='date').sortby('date')
+            val = val.chunk({'date': 30})
+
         return TioZarrReaderValue(
             val, self.location_input, self.attributes,
             self.latest_forecast_date)
@@ -654,6 +674,15 @@ class TioZarrReader(BaseZarrReader):
         :rtype: xrDataset
         """
         point = self.location_input.point
+
+        if start_dt < self.latest_forecast_date:
+            return dataset[variables].sel(
+                forecast_date=slice(start_dt, end_dt),
+                **{self.date_variable: 0}
+            ).sel(
+                lat=point.y,
+                lon=point.x, method='nearest')
+
         min_idx = self._get_forecast_day_idx(start_dt)
         max_idx = self._get_forecast_day_idx(end_dt)
         return dataset[variables].sel(
@@ -685,6 +714,15 @@ class TioZarrReader(BaseZarrReader):
         lat_max = points[1].y
         lon_min = points[0].x
         lon_max = points[1].x
+
+        if start_dt < self.latest_forecast_date:
+            return dataset[variables].sel(
+                forecast_date=slice(start_dt, end_dt),
+                lat=slice(lat_min, lat_max),
+                lon=slice(lon_min, lon_max),
+                **{self.date_variable: 0}
+            )
+
         min_idx = self._get_forecast_day_idx(start_dt)
         max_idx = self._get_forecast_day_idx(end_dt)
         # output results is in two dimensional array
@@ -712,15 +750,25 @@ class TioZarrReader(BaseZarrReader):
         :return: Dataset that has been filtered
         :rtype: xrDataset
         """
-        min_idx = self._get_forecast_day_idx(start_dt)
-        max_idx = self._get_forecast_day_idx(end_dt)
         # Convert the polygon to a format compatible with shapely
         shapely_multipolygon = shape(
             json.loads(self.location_input.polygon.geojson))
 
         # Create a mask using regionmask from the shapely polygon
         mask = regionmask.Regions([shapely_multipolygon]).mask(dataset)
+
+        if start_dt < self.latest_forecast_date:
+            return dataset[variables].sel(
+                forecast_date=slice(start_dt, end_dt),
+                **{self.date_variable: 0}
+            ).where(
+                mask == 0,
+                drop=True
+            )
+
         # Mask the dataset
+        min_idx = self._get_forecast_day_idx(start_dt)
+        max_idx = self._get_forecast_day_idx(end_dt)
         return dataset[variables].sel(
             forecast_date=self.latest_forecast_date,
             **{self.date_variable: slice(min_idx, max_idx)}
@@ -746,8 +794,6 @@ class TioZarrReader(BaseZarrReader):
         :return: Dataset that has been filtered
         :rtype: xrDataset
         """
-        min_idx = self._get_forecast_day_idx(start_dt)
-        max_idx = self._get_forecast_day_idx(end_dt)
         # use the 0 index for it's date variable
         mask = np.zeros_like(dataset[variables[0]][0][0], dtype=bool)
 
@@ -763,6 +809,18 @@ class TioZarrReader(BaseZarrReader):
                 'lat': dataset['lat'], 'lon': dataset['lon']
             }, dims=['lat', 'lon']
         )
+
+        if start_dt < self.latest_forecast_date:
+            return dataset[variables].sel(
+                forecast_date=slice(start_dt, end_dt),
+                **{self.date_variable: 0}
+            ).where(
+                mask_da,
+                drop=True
+            )
+
+        min_idx = self._get_forecast_day_idx(start_dt)
+        max_idx = self._get_forecast_day_idx(end_dt)
         # Apply the mask to the dataset
         return dataset[variables].sel(
             forecast_date=self.latest_forecast_date,
