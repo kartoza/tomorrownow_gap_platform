@@ -7,8 +7,8 @@ Tomorrow Now GAP.
 
 import json
 import tempfile
-from datetime import datetime
-from typing import Union, List
+from datetime import datetime, timedelta
+from typing import Union, List, Tuple
 
 import numpy as np
 import pytz
@@ -487,7 +487,7 @@ class BaseDatasetReader:
             location_input: DatasetReaderInput,
             start_date: datetime, end_date: datetime,
             output_type=DatasetReaderOutputType.JSON,
-            altitudes: (float, float) = None
+            altitudes: Tuple[float, float] = None
     ) -> None:
         """Initialize BaseDatasetReader class.
 
@@ -578,3 +578,21 @@ class BaseDatasetReader:
         :type end_date: datetime
         """
         pass
+
+    def _split_date_range(
+            self, start_date: datetime, end_date: datetime,
+            now: datetime
+    ) -> dict:
+        """Split a date range into past and future ranges."""
+        if end_date < now:
+            # Entire range is in the past
+            return {'past': (start_date, end_date), 'future': None}
+        elif start_date >= now:
+            # Entire range is in the future
+            return {'past': None, 'future': (start_date, end_date)}
+        else:
+            # Split into past and future
+            return {
+                'past': (start_date, now - timedelta(days=1)),
+                'future': (now, end_date)
+            }
