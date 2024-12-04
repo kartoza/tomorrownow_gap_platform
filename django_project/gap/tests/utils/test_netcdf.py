@@ -261,7 +261,12 @@ class TestDatasetReaderValue(TestCase):
         csv_stream = self.dataset_reader_value_xr.to_csv_stream()
         csv_data = list(csv_stream)
         self.assertIsNotNone(csv_data)
-        data = csv_data[1].splitlines()
+        data = []
+        for idx, d in enumerate(csv_data):
+            if idx == 0:
+                continue
+            data.extend(d.splitlines())
+
         # rows without header
         self.assertEqual(len(data), 40)
 
