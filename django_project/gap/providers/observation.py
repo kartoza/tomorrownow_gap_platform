@@ -233,7 +233,8 @@ class ObservationReaderValue(DatasetReaderValue):
         df_pivot[date_coord] = pd.to_datetime(df_pivot[date_coord])
 
         # Convert to xarray Dataset
-        ds = df_pivot.set_index(field_indices).to_xarray()
+        df_pivot.set_index(field_indices, inplace=True)
+        ds = df_pivot.to_xarray()
 
         # write to netcdf
         with (

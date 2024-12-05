@@ -7,6 +7,8 @@ Tomorrow Now GAP.
 
 import json
 import tempfile
+import dask
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Union, List, Tuple
 
@@ -27,7 +29,7 @@ from gap.models import (
     DatasetTimeStep,
     DatasetObservationType
 )
-from gap.utils.dask import execute_dask_compute
+from gap.utils.dask import execute_dask_compute, get_num_of_threads
 
 
 class DatasetVariable:
@@ -443,6 +445,15 @@ class DatasetReaderValue:
                         break
                     yield chunk
 
+    def _get_chunk_indices(self, chunks):
+        indices = []
+        start = 0
+        for size in chunks:
+            stop = start + size
+            indices.append((start, stop))
+            start = stop
+        return indices
+
     def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream.
 
@@ -457,6 +468,12 @@ class DatasetReaderValue:
         reordered_cols = [
             attribute.attribute.variable_name for attribute in self.attributes
         ]
+        # use date chunk = 1 to order by date
+        rechunk = {
+            self.date_variable: 1,
+            'lat': 300,
+            'lon': 300
+        }
         if 'lat' in self.xr_dataset.dims:
             dim_order.append('lat')
             dim_order.append('lon')
@@ -465,18 +482,43 @@ class DatasetReaderValue:
             reordered_cols.insert(0, 'lat')
         if 'ensemble' in self.xr_dataset.dims:
             dim_order.append('ensemble')
-            # reordered_cols.insert(0, 'ensemble')
-        df = self.xr_dataset.to_dataframe(dim_order=dim_order)
-        df_reordered = df[reordered_cols]
+            rechunk['ensemble'] = 50
 
-        # write headers
-        headers = dim_order + list(df_reordered.columns)
-        yield bytes(','.join(headers) + '\n', 'utf-8')
+        # rechunk dataset
+        ds = self.xr_dataset.chunk(rechunk)
+        date_indices = self._get_chunk_indices(
+            ds.chunksizes[self.date_variable]
+        )
+        lat_indices = self._get_chunk_indices(ds.chunksizes['lat'])
+        lon_indices = self._get_chunk_indices(ds.chunksizes['lon'])
+        write_headers = True
 
-        # Write the data in chunks
-        for start in range(0, len(df_reordered), self.csv_chunk_size):
-            chunk = df_reordered.iloc[start:start + self.csv_chunk_size]
-            yield chunk.to_csv(index=True, header=False, float_format='%g')
+        # cannot use dask utils because to_dataframe is not returning
+        # delayed object
+        with dask.config.set(
+            pool=ThreadPoolExecutor(get_num_of_threads(is_api=True))
+        ):
+            # iterate foreach chunk
+            for date_start, date_stop in date_indices:
+                for lat_start, lat_stop in lat_indices:
+                    for lon_start, lon_stop in lon_indices:
+                        slice_dict = {
+                            self.date_variable: slice(date_start, date_stop),
+                            'lat': slice(lat_start, lat_stop),
+                            'lon': slice(lon_start, lon_stop)
+                        }
+                        chunk = ds.isel(**slice_dict)
+                        chunk_df = chunk.to_dataframe(dim_order=dim_order)
+                        chunk_df = chunk_df[reordered_cols]
+
+                        if write_headers:
+                            headers = dim_order + list(chunk_df.columns)
+                            yield bytes(','.join(headers) + '\n', 'utf-8')
+                            write_headers = False
+
+                        yield chunk_df.to_csv(
+                            index=True, header=False, float_format='%g'
+                        )
 
 
 class BaseDatasetReader:
