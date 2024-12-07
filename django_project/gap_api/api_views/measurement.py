@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Measurement APIs
 """
 
+import os
 from datetime import date, datetime, time
 from typing import Dict
 
@@ -21,6 +22,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.core.files.storage import storages
+from storages.backends.s3boto3 import S3Boto3Storage
 
 from gap.models import (
     Dataset,
@@ -340,12 +343,37 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         reader_value = self._read_data(reader)
         if reader_value.is_empty():
             return None
-        response = StreamingHttpResponse(
-            reader_value.to_netcdf_stream(),
-            content_type='application/x-netcdf'
-        )
-        response['Content-Disposition'] = 'attachment; filename="data.nc"'
 
+        file_name = 'data.nc'
+        # TODO: get config for using X-Accel-Redirect
+        use_accel_redirect = False
+        if not use_accel_redirect:
+            response = StreamingHttpResponse(
+                reader_value.to_netcdf_stream(),
+                content_type='application/x-netcdf'
+            )
+        else:
+            s3_storage: S3Boto3Storage = storages["gap_products"]
+            file_path = reader_value.to_netcdf_stream(
+                direct_stream=False
+            ).replace(
+                f's3://{s3_storage.bucket.name}', ''
+            )
+            file_name = os.path.basename(file_path)
+
+            rs_link = s3_storage.url(file_path)
+            response = Response(
+                status=200
+            )
+            response['X-Accel-Redirect'] = (
+                '/userfiles/http/minio:9000/'
+                f'{rs_link.replace('http://minio:9000/', '')}'
+            )
+            response['Content-Type'] = 'application/x-netcdf'
+
+        response['Content-Disposition'] = (
+            f'attachment; filename="{file_name}"'
+        )
         return response
 
     def _read_data_as_csv(

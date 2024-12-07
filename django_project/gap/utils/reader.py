@@ -5,12 +5,15 @@ Tomorrow Now GAP.
 .. note:: Helper for reading dataset
 """
 
+import os
 import json
 import tempfile
 import dask
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Union, List, Tuple
+import fsspec
 
 import numpy as np
 import pytz
@@ -427,23 +430,79 @@ class DatasetReaderValue:
             return self._xr_dataset_to_dict()
         return self._to_dict()
 
-    def to_netcdf_stream(self):
+    def _get_s3_variables(self) -> dict:
+        """Get s3 env variables for Zarr file.
+
+        :return: Dictionary of S3 env vars
+        :rtype: dict
+        """
+        prefix = 'MINIO'
+        keys = [
+            'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+            'AWS_ENDPOINT_URL', 'AWS_REGION_NAME'
+        ]
+        results = {}
+        for key in keys:
+            results[key] = os.environ.get(f'{prefix}_{key}', '')
+        results['AWS_BUCKET_NAME'] = os.environ.get(
+            'MINIO_GAP_AWS_BUCKET_NAME', '')
+        results['AWS_DIR_PREFIX'] = os.environ.get(
+            'MINIO_GAP_AWS_DIR_PREFIX', '')
+        return results
+
+    def to_netcdf_stream(self, direct_stream=True):
         """Generate netcdf stream."""
-        with (
-            tempfile.NamedTemporaryFile(
-                suffix=".nc", delete=True, delete_on_close=False)
-        ) as tmp_file:
-            x = self.xr_dataset.to_netcdf(
-                tmp_file.name, format='NETCDF4', engine='h5netcdf',
-                compute=False
+        output = None
+        if direct_stream:
+            with (
+                tempfile.NamedTemporaryFile(
+                    suffix=".nc", delete=True, delete_on_close=False)
+            ) as tmp_file:
+                x = self.xr_dataset.to_netcdf(
+                    tmp_file.name, format='NETCDF4', engine='h5netcdf',
+                    compute=False
+                )
+                execute_dask_compute(x)
+                with open(tmp_file.name, 'rb') as f:
+                    while True:
+                        chunk = f.read(self.chunk_size_in_bytes)
+                        if not chunk:
+                            break
+                        yield chunk
+                output = tmp_file.name
+        else:
+            # s3 variables to product bucket
+            s3 = self._get_s3_variables()
+
+            output_url = (
+                f's3://{s3["AWS_BUCKET_NAME"]}/{s3["AWS_DIR_PREFIX"]}'
             )
-            execute_dask_compute(x)
-            with open(tmp_file.name, 'rb') as f:
-                while True:
-                    chunk = f.read(self.chunk_size_in_bytes)
-                    if not chunk:
-                        break
-                    yield chunk
+            if not output_url.endswith('/'):
+                output_url += '/'
+            output_url += f'user_data/{uuid.uuid4().hex}.nc'
+
+            outfile = fsspec.open(
+                f'simplecache::{output_url}',
+                mode='wb',
+                s3={
+                    'key': s3.get('AWS_ACCESS_KEY_ID'),
+                    'secret': s3.get('AWS_SECRET_ACCESS_KEY'),
+                    'endpoint_url': s3.get('AWS_ENDPOINT_URL'),
+                    'region_name': s3.get('AWS_REGION_NAME'),
+                    'max_concurrency': 2,
+                    'default_block_size': 200 * 1024 * 1024
+                }
+            )
+
+            with outfile as tmp_file:
+                x = self.xr_dataset.to_netcdf(
+                    tmp_file.name, format='NETCDF4', engine='h5netcdf',
+                    compute=False
+                )
+                execute_dask_compute(x)
+            output = output_url
+
+        return output
 
     def _get_chunk_indices(self, chunks):
         indices = []
