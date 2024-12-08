@@ -431,7 +431,7 @@ class DatasetReaderValue:
         return self._to_dict()
 
     def _get_s3_variables(self) -> dict:
-        """Get s3 env variables for Zarr file.
+        """Get s3 env variables for product bucket.
 
         :return: Dictionary of S3 env vars
         :rtype: dict
