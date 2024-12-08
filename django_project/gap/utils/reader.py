@@ -450,57 +450,63 @@ class DatasetReaderValue:
             'MINIO_GAP_AWS_DIR_PREFIX', '')
         return results
 
-    def to_netcdf_stream(self, direct_stream=True):
+    def _get_fsspec_remote_url(self, suffix, mode='wb', **kwargs):
+        # s3 variables to product bucket
+        s3 = self._get_s3_variables()
+
+        output_url = (
+            f's3://{s3["AWS_BUCKET_NAME"]}/{s3["AWS_DIR_PREFIX"]}'
+        )
+        if not output_url.endswith('/'):
+            output_url += '/'
+        output_url += f'user_data/{uuid.uuid4().hex}{suffix}'
+
+        outfile = fsspec.open(
+            f'simplecache::{output_url}',
+            mode=mode,
+            s3={
+                'key': s3.get('AWS_ACCESS_KEY_ID'),
+                'secret': s3.get('AWS_SECRET_ACCESS_KEY'),
+                'endpoint_url': s3.get('AWS_ENDPOINT_URL'),
+                # 'region_name': s3.get('AWS_REGION_NAME'),
+                'max_concurrency': kwargs.get('max_concurrency', 2),
+                'default_block_size': kwargs.get(
+                    'default_block_size',
+                    200 * 1024 * 1024
+                )
+            }
+        )
+
+        return outfile, output_url
+
+    def to_netcdf_stream(self):
         """Generate netcdf stream."""
-        output = None
-        if direct_stream:
-            with (
-                tempfile.NamedTemporaryFile(
-                    suffix=".nc", delete=True, delete_on_close=False)
-            ) as tmp_file:
-                x = self.xr_dataset.to_netcdf(
-                    tmp_file.name, format='NETCDF4', engine='h5netcdf',
-                    compute=False
-                )
-                execute_dask_compute(x)
-                with open(tmp_file.name, 'rb') as f:
-                    while True:
-                        chunk = f.read(self.chunk_size_in_bytes)
-                        if not chunk:
-                            break
-                        yield chunk
-                output = tmp_file.name
-        else:
-            # s3 variables to product bucket
-            s3 = self._get_s3_variables()
-
-            output_url = (
-                f's3://{s3["AWS_BUCKET_NAME"]}/{s3["AWS_DIR_PREFIX"]}'
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=".nc", delete=True, delete_on_close=False)
+        ) as tmp_file:
+            x = self.xr_dataset.to_netcdf(
+                tmp_file.name, format='NETCDF4', engine='h5netcdf',
+                compute=False
             )
-            if not output_url.endswith('/'):
-                output_url += '/'
-            output_url += f'user_data/{uuid.uuid4().hex}.nc'
+            execute_dask_compute(x)
+            with open(tmp_file.name, 'rb') as f:
+                while True:
+                    chunk = f.read(self.chunk_size_in_bytes)
+                    if not chunk:
+                        break
+                    yield chunk
 
-            outfile = fsspec.open(
-                f'simplecache::{output_url}',
-                mode='wb',
-                s3={
-                    'key': s3.get('AWS_ACCESS_KEY_ID'),
-                    'secret': s3.get('AWS_SECRET_ACCESS_KEY'),
-                    'endpoint_url': s3.get('AWS_ENDPOINT_URL'),
-                    'region_name': s3.get('AWS_REGION_NAME'),
-                    'max_concurrency': 2,
-                    'default_block_size': 200 * 1024 * 1024
-                }
+    def to_netcdf(self, **kwargs):
+        """Generate netcdf file to object storage."""
+        outfile, output = self._get_fsspec_remote_url('.nc', **kwargs)
+
+        with outfile as tmp_file:
+            x = self.xr_dataset.to_netcdf(
+                tmp_file.name, format='NETCDF4', engine='h5netcdf',
+                compute=False
             )
-
-            with outfile as tmp_file:
-                x = self.xr_dataset.to_netcdf(
-                    tmp_file.name, format='NETCDF4', engine='h5netcdf',
-                    compute=False
-                )
-                execute_dask_compute(x)
-            output = output_url
+            execute_dask_compute(x)
 
         return output
 
@@ -572,12 +578,83 @@ class DatasetReaderValue:
 
                         if write_headers:
                             headers = dim_order + list(chunk_df.columns)
-                            yield bytes(','.join(headers) + '\n', 'utf-8')
+                            yield bytes(
+                                separator.join(headers) + '\n',
+                                'utf-8'
+                            )
                             write_headers = False
 
                         yield chunk_df.to_csv(
-                            index=True, header=False, float_format='%g'
+                            index=True, header=False, float_format='%g',
+                            sep=separator
                         )
+
+    def to_csv(self, suffix='.csv', separator=',', **kwargs):
+        """Generate csv file to object storage."""
+        dim_order = [self.date_variable]
+        reordered_cols = [
+            attribute.attribute.variable_name for attribute in self.attributes
+        ]
+        # use date chunk = 1 to order by date
+        rechunk = {
+            self.date_variable: 1,
+            'lat': 300,
+            'lon': 300
+        }
+        if 'lat' in self.xr_dataset.dims:
+            dim_order.append('lat')
+            dim_order.append('lon')
+        else:
+            reordered_cols.insert(0, 'lon')
+            reordered_cols.insert(0, 'lat')
+        if 'ensemble' in self.xr_dataset.dims:
+            dim_order.append('ensemble')
+            rechunk['ensemble'] = 50
+
+        # rechunk dataset
+        ds = self.xr_dataset.chunk(rechunk)
+        date_indices = self._get_chunk_indices(
+            ds.chunksizes[self.date_variable]
+        )
+        lat_indices = self._get_chunk_indices(ds.chunksizes['lat'])
+        lon_indices = self._get_chunk_indices(ds.chunksizes['lon'])
+        write_headers = True
+        output = None
+
+        # cannot use dask utils because to_dataframe is not returning
+        # delayed object
+        with dask.config.set(
+            pool=ThreadPoolExecutor(get_num_of_threads(is_api=True))
+        ):
+            outfile, output = self._get_fsspec_remote_url(
+                suffix, mode='w', **kwargs
+            )
+
+            with outfile as tmp_file:
+                # iterate foreach chunk
+                for date_start, date_stop in date_indices:
+                    for lat_start, lat_stop in lat_indices:
+                        for lon_start, lon_stop in lon_indices:
+                            slice_dict = {
+                                self.date_variable: slice(
+                                    date_start, date_stop
+                                ),
+                                'lat': slice(lat_start, lat_stop),
+                                'lon': slice(lon_start, lon_stop)
+                            }
+                            chunk = ds.isel(**slice_dict)
+                            chunk_df = chunk.to_dataframe(dim_order=dim_order)
+                            chunk_df = chunk_df[reordered_cols]
+
+                            chunk_df.to_csv(
+                                tmp_file.name, index=True, mode='a',
+                                header=write_headers,
+                                float_format='%g', sep=separator
+                            )
+                            if write_headers:
+                                write_headers = False
+
+        return output
 
 
 class BaseDatasetReader:

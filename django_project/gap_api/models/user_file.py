@@ -71,9 +71,7 @@ class UserFile(models.Model):
         return hashlib.sha512(combined_str.encode()).hexdigest()
 
     def save(self, *args, **kwargs):
-        """
-        Override the save method to automatically calculate and set the hash.
-        """
+        """Override the save method to calculate and set the hash."""
         if not self.query_hash:
             self.query_hash = self._calculate_hash()
         super().save(*args, **kwargs)
@@ -82,6 +80,15 @@ class UserFile(models.Model):
         """Generate pre-signed url to the storage."""
         s3_storage: S3Boto3Storage = storages["gap_products"]
         return s3_storage.url(self.name)
+
+    def find_in_cache(self):
+        """Find UserFile object in cache."""
+        if not self.query_hash:
+            self.query_hash = self._calculate_hash()
+
+        return UserFile.objects.filter(
+            query_hash=self.query_hash
+        ).order_by('-created_on').first()
 
 
 @receiver(post_delete, sender=UserFile)
