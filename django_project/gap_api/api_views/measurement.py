@@ -345,11 +345,11 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         response = Response(
             status=200
         )
+        url = presigned_url.replace(
+            f"{parse_result.scheme}://{parse_result.netloc}/", ""
+        )
         response['X-Accel-Redirect'] = (
-            f'/userfiles/{parse_result.scheme}/{parse_result.netloc}/'
-            f'{presigned_url.replace(
-                f"{parse_result.scheme}://{parse_result.netloc}/", ""
-            )}'
+            f'/userfiles/{parse_result.scheme}/{parse_result.netloc}/{url}'
         )
         response['Content-Type'] = content_type
         response['Content-Disposition'] = (

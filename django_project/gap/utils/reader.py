@@ -519,16 +519,7 @@ class DatasetReaderValue:
             start = stop
         return indices
 
-    def to_csv_stream(self, suffix='.csv', separator=','):
-        """Generate csv bytes stream.
-
-        :param suffix: file extension, defaults to '.csv'
-        :type suffix: str, optional
-        :param separator: separator, defaults to ','
-        :type separator: str, optional
-        :yield: bytes of csv file
-        :rtype: bytes
-        """
+    def _get_dataset_for_csv(self):
         dim_order = [self.date_variable]
         reordered_cols = [
             attribute.attribute.variable_name for attribute in self.attributes
@@ -551,6 +542,21 @@ class DatasetReaderValue:
 
         # rechunk dataset
         ds = self.xr_dataset.chunk(rechunk)
+
+        return ds, dim_order, reordered_cols
+
+    def to_csv_stream(self, suffix='.csv', separator=','):
+        """Generate csv bytes stream.
+
+        :param suffix: file extension, defaults to '.csv'
+        :type suffix: str, optional
+        :param separator: separator, defaults to ','
+        :type separator: str, optional
+        :yield: bytes of csv file
+        :rtype: bytes
+        """
+        ds, dim_order, reordered_cols = self._get_dataset_for_csv()
+
         date_indices = self._get_chunk_indices(
             ds.chunksizes[self.date_variable]
         )
@@ -591,28 +597,8 @@ class DatasetReaderValue:
 
     def to_csv(self, suffix='.csv', separator=',', **kwargs):
         """Generate csv file to object storage."""
-        dim_order = [self.date_variable]
-        reordered_cols = [
-            attribute.attribute.variable_name for attribute in self.attributes
-        ]
-        # use date chunk = 1 to order by date
-        rechunk = {
-            self.date_variable: 1,
-            'lat': 300,
-            'lon': 300
-        }
-        if 'lat' in self.xr_dataset.dims:
-            dim_order.append('lat')
-            dim_order.append('lon')
-        else:
-            reordered_cols.insert(0, 'lon')
-            reordered_cols.insert(0, 'lat')
-        if 'ensemble' in self.xr_dataset.dims:
-            dim_order.append('ensemble')
-            rechunk['ensemble'] = 50
+        ds, dim_order, reordered_cols = self._get_dataset_for_csv()
 
-        # rechunk dataset
-        ds = self.xr_dataset.chunk(rechunk)
         date_indices = self._get_chunk_indices(
             ds.chunksizes[self.date_variable]
         )
