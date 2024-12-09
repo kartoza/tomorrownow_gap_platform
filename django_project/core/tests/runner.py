@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Test runner.
 """
 
+import os
 from django.conf import settings
 from django.test.runner import DiscoverRunner
 
@@ -33,4 +34,7 @@ class CustomTestRunner(DiscoverRunner):
         """Prepare test env."""
         CustomTestRunner.__disable_celery()
         create_s3_bucket(settings.MINIO_AWS_BUCKET_NAME)
+        create_s3_bucket(
+            os.environ.get("MINIO_GAP_AWS_BUCKET_NAME", "tngap-products")
+        )
         super(CustomTestRunner, self).setup_test_environment(**kwargs)
