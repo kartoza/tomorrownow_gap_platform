@@ -14,7 +14,7 @@ from django.core.files.storage import storages
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.contrib.gis.geos import Point
 
-from core.utils.s3 import create_s3_bucket, remove_s3_folder
+from core.utils.s3 import remove_s3_folder
 from gap.models import DatasetAttribute, Dataset, Preferences
 from gap_api.models import UserFile
 from gap_api.tasks.cleanup import cleanup_user_files
@@ -80,7 +80,6 @@ class TestUserFileAPI(CommonMeasurementAPITest):
         preferences.save()
 
         self.s3_storage: S3Boto3Storage = storages["gap_products"]
-        create_s3_bucket(self.s3_storage.bucket.name)
 
     def tearDown(self):
         """Cleanup resources."""
