@@ -399,7 +399,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                         'default_block_size')
                 )
             ).replace(
-                f's3://{s3_storage.bucket.name}', ''
+                f's3://{s3_storage.bucket.name}/', ''
             )
             file_name = os.path.basename(file_path)
             presigned_link = s3_storage.url(file_path)
@@ -460,7 +460,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                         'default_block_size')
                 )
             ).replace(
-                f's3://{s3_storage.bucket.name}', ''
+                f's3://{s3_storage.bucket.name}/', ''
             )
             file_name = os.path.basename(file_path)
             presigned_link = s3_storage.url(file_path)

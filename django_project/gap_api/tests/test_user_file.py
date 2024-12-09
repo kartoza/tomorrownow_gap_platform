@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Unit tests for UserFile.
 """
 
-import os
 from datetime import timedelta, datetime
 from typing import List, Tuple
 from unittest.mock import patch
@@ -15,7 +14,7 @@ from django.core.files.storage import storages
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.contrib.gis.geos import Point
 
-from core.utils.s3 import remove_s3_folder, create_s3_bucket
+from core.utils.s3 import remove_s3_folder
 from gap.models import DatasetAttribute, Dataset, Preferences
 from gap_api.models import UserFile
 from gap_api.tasks.cleanup import cleanup_user_files
@@ -80,7 +79,6 @@ class TestUserFileAPI(CommonMeasurementAPITest):
         preferences.api_use_x_accel_redirect = True
         preferences.save()
 
-        create_s3_bucket(os.environ.get("MINIO_GAP_AWS_BUCKET_NAME"))
         self.s3_storage: S3Boto3Storage = storages["gap_products"]
 
     def tearDown(self):
