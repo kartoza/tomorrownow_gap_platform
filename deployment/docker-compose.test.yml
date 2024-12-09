@@ -64,6 +64,8 @@ services:
       - MINIO_AWS_ENDPOINT_URL=http://minio:9000/
       - MINIO_AWS_BUCKET_NAME=tomorrownow
       - MINIO_AWS_DIR_PREFIX=dev/media
+      - MINIO_GAP_AWS_BUCKET_NAME=tngap-products
+      - MINIO_GAP_AWS_DIR_PREFIX=dev
     entrypoint: [ ]
     ports:
       # for django test server
