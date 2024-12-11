@@ -389,18 +389,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             )
         else:
             s3_storage: S3Boto3Storage = storages["gap_products"]
-            file_path = reader_value.to_netcdf(
-                max_concurrency=(
-                    self._preferences.user_file_uploader_config.get(
-                        'max_concurrency')
-                ),
-                default_block_size=(
-                    self._preferences.user_file_uploader_config.get(
-                        'default_block_size')
-                )
-            ).replace(
-                f's3://{s3_storage.bucket.name}/', ''
-            )
+            file_path = reader_value.to_netcdf()
             file_name = os.path.basename(file_path)
             presigned_link = s3_storage.url(file_path)
             response = self._get_accel_redirect_response(
@@ -450,17 +439,7 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             s3_storage: S3Boto3Storage = storages["gap_products"]
             file_path = reader_value.to_csv(
                 suffix=suffix,
-                separator=separator,
-                max_concurrency=(
-                    self._preferences.user_file_uploader_config.get(
-                        'max_concurrency')
-                ),
-                default_block_size=(
-                    self._preferences.user_file_uploader_config.get(
-                        'default_block_size')
-                )
-            ).replace(
-                f's3://{s3_storage.bucket.name}/', ''
+                separator=separator
             )
             file_name = os.path.basename(file_path)
             presigned_link = s3_storage.url(file_path)

@@ -15,7 +15,8 @@ from django.db.models.functions.datetime import TruncDate, TruncTime
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance, GeoFunc
 from typing import List, Tuple, Union
-from fsspec.core import OpenFile
+from django.core.files.storage import storages
+from storages.backends.s3boto3 import S3Boto3Storage
 
 from gap.models import (
     Dataset,
@@ -210,19 +211,20 @@ class ObservationReaderValue(DatasetReaderValue):
                 sep=separator
             )
 
-    def to_csv(self, suffix='.csv', separator=',', **kwargs):
+    def to_csv(self, suffix='.csv', separator=','):
         """Generate csv file to object storage."""
         headers, _ = self._get_headers(use_station_id=True)
 
         # get dataframe
         df_pivot = self._get_data_frame(use_station_id=True)
 
-        outfile: OpenFile = None
-        outfile, output = self._get_fsspec_remote_url(
-            suffix, mode='w', **kwargs
-        )
+        output = self._get_file_remote_url(suffix)
+        s3_storage: S3Boto3Storage = storages["gap_products"]
 
-        with outfile as tmp_file:
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=suffix, delete=True, delete_on_close=False)
+        ) as tmp_file:
             # write headers
             write_headers = True
 
@@ -240,6 +242,8 @@ class ObservationReaderValue(DatasetReaderValue):
 
                 if write_headers:
                     write_headers = False
+
+            s3_storage.save(output, tmp_file)
 
         return output
 
@@ -293,20 +297,24 @@ class ObservationReaderValue(DatasetReaderValue):
                         break
                     yield chunk
 
-    def to_netcdf(self, **kwargs):
+    def to_netcdf(self):
         """Generate netcdf file to object storage."""
         ds = self._get_xarray_dataset()
-
-        outfile, output = self._get_fsspec_remote_url('.nc', **kwargs)
-
-        with outfile as tmp_file:
+        output_url = self._get_file_remote_url('.nc')
+        s3_storage: S3Boto3Storage = storages["gap_products"]
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=".nc", delete=True, delete_on_close=False)
+        ) as tmp_file:
             x = ds.to_netcdf(
                 tmp_file.name, format='NETCDF4', engine='h5netcdf',
                 compute=False
             )
             execute_dask_compute(x)
 
-        return output
+            s3_storage.save(output_url, tmp_file)
+
+        return output_url
 
     def _to_dict(self) -> dict:
         """Convert into dict.
