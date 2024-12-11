@@ -59,6 +59,39 @@ class MockXArrayDatasetReader(BaseDatasetReader):
         )
 
 
+class MockXArray1DimDatasetReader(BaseDatasetReader):
+    """Class to mock a dataset reader."""
+
+    def __init__(
+            self, dataset, attributes: List[DatasetAttribute],
+            location_input: DatasetReaderInput, start_date: datetime,
+            end_date: datetime,
+            output_type=DatasetReaderOutputType.JSON,
+            altitudes: Tuple[float, float] = None
+    ) -> None:
+        """Initialize MockDatasetReader class."""
+        super().__init__(
+            dataset, attributes, location_input,
+            start_date, end_date, output_type)
+
+    def get_data_values(self) -> DatasetReaderValue:
+        """Override data values with a mock object."""
+        if self.location_input.type == LocationInputType.POLYGON:
+            p = Point(0, 0)
+        else:
+            p = self.location_input.point
+        ds = mock_open_zarr_dataset()
+        ds = ds.sel(
+            lat=p.y,
+            lon=p.x, method='nearest'
+        )
+        return DatasetReaderValue(
+            ds,
+            DatasetReaderInput.from_point(p),
+            self.attributes
+        )
+
+
 class TestUserFileAPI(CommonMeasurementAPITest):
     """Test UserFile in the API."""
 
@@ -149,6 +182,33 @@ class TestUserFileAPI(CommonMeasurementAPITest):
         ).exists())
 
     @patch('gap_api.api_views.measurement.get_reader_from_dataset')
+    def test_api_netcdf_request_with1Dim(self, mocked_reader):
+        """Test generate to netcdf."""
+        view = MeasurementAPI.as_view()
+        mocked_reader.return_value = MockXArray1DimDatasetReader
+        dataset = Dataset.objects.get(
+            type__variable_name='cbam_historical_analysis_bias_adjust'
+        )
+        attribute1 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='max_temperature'
+        ).first()
+        attribs = [attribute1.attribute.variable_name]
+        point = Point(x=26.9665, y=-12.5969)
+        request = self._get_measurement_request_point(
+            product='cbam_historical_analysis_bias_adjust',
+            attributes=','.join(attribs),
+            lat=point.y, lon=point.x,
+            start_dt='2023-01-01',
+            end_dt='2023-01-01',
+            output_type='netcdf'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertIn('X-Accel-Redirect', response.headers)
+
+    @patch('gap_api.api_views.measurement.get_reader_from_dataset')
     def test_api_csv_request(self, mocked_reader):
         """Test generate to csv."""
         view = MeasurementAPI.as_view()
@@ -183,6 +243,33 @@ class TestUserFileAPI(CommonMeasurementAPITest):
             query_params__start_date='2023-01-01',
             query_params__end_date='2023-01-01'
         ).exists())
+
+    @patch('gap_api.api_views.measurement.get_reader_from_dataset')
+    def test_api_csv_request_with1Dim(self, mocked_reader):
+        """Test generate to csv."""
+        view = MeasurementAPI.as_view()
+        mocked_reader.return_value = MockXArray1DimDatasetReader
+        dataset = Dataset.objects.get(
+            type__variable_name='cbam_historical_analysis_bias_adjust'
+        )
+        attribute1 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='max_temperature'
+        ).first()
+        attribs = [attribute1.attribute.variable_name]
+        point = Point(x=26.9665, y=-12.5969)
+        request = self._get_measurement_request_point(
+            product='cbam_historical_analysis_bias_adjust',
+            attributes=','.join(attribs),
+            lat=point.y, lon=point.x,
+            start_dt='2023-01-01',
+            end_dt='2023-01-01',
+            output_type='csv'
+        )
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertIn('X-Accel-Redirect', response.headers)
 
     @patch('gap_api.api_views.measurement.get_reader_from_dataset')
     def test_api_cached_request(self, mocked_reader):
