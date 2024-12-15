@@ -192,7 +192,7 @@ class Preferences(SingletonModel):
         conf = Preferences.load().user_file_uploader_config
         return TransferConfig(
             multipart_chunksize=(
-                conf.get('default_block_size', 500) * 1024 * 1024
+                conf.get('default_block_size', 500)
             ),
             use_threads=True,
             max_concurrency=(
