@@ -89,7 +89,7 @@ class ObservationAirborneDatasetReader(ObservationDatasetReader):
             nearest_histories is None or
             self._get_count(nearest_histories) == 0
         ):
-            return None
+            return Measurement.objects.none()
 
         return Measurement.objects.annotate(
             geom=F('station_history__geometry'),

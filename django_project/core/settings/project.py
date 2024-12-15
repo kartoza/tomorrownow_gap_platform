@@ -53,7 +53,7 @@ AWS_TRANSFER_CONFIG = TransferConfig(
 AWS_PRODUCTS_TRANSFER_CONFIG = TransferConfig(
     multipart_chunksize=300 * MB,
     use_threads=True,
-    max_concurrency=4
+    max_concurrency=2
 )
 MINIO_AWS_ACCESS_KEY_ID = os.environ.get("MINIO_AWS_ACCESS_KEY_ID")
 MINIO_AWS_SECRET_ACCESS_KEY = os.environ.get("MINIO_AWS_SECRET_ACCESS_KEY")
@@ -84,7 +84,6 @@ STORAGES = {
             "secret_key": MINIO_AWS_SECRET_ACCESS_KEY,
             "bucket_name": os.environ.get("MINIO_GAP_AWS_BUCKET_NAME"),
             "file_overwrite": False,
-            "max_memory_size": 500 * MB,  # 500MB
             "transfer_config": AWS_PRODUCTS_TRANSFER_CONFIG,
             "endpoint_url": MINIO_AWS_ENDPOINT_URL
         },

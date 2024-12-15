@@ -31,7 +31,8 @@ from gap.models import (
     Dataset,
     DatasetAttribute,
     DatasetTimeStep,
-    DatasetObservationType
+    DatasetObservationType,
+    Preferences
 )
 from gap.utils.dask import execute_dask_compute, get_num_of_threads
 
@@ -495,6 +496,10 @@ class DatasetReaderValue:
             )
             execute_dask_compute(x, is_api=True)
 
+            # upload to s3
+            s3_storage.transfer_config = (
+                Preferences.user_file_s3_transfer_config()
+            )
             s3_storage.save(output_url, tmp_file)
 
         return output_url
@@ -684,6 +689,9 @@ class DatasetReaderValue:
                             write_headers = False
 
                 # save to s3
+                s3_storage.transfer_config = (
+                    Preferences.user_file_s3_transfer_config()
+                )
                 s3_storage.save(output, tmp_file)
 
         return output

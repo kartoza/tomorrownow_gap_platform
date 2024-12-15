@@ -10,6 +10,7 @@ from datetime import datetime, tzinfo
 
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Polygon
+from boto3.s3.transfer import TransferConfig
 
 from core.models.singleton import SingletonModel
 from gap.utils.dms import dms_string_to_point
@@ -184,3 +185,17 @@ class Preferences(SingletonModel):
             crop_plan_config_default()['tz']
         )
         return datetime.strptime(timezone, "%z").tzinfo
+
+    @staticmethod
+    def user_file_s3_transfer_config() -> TransferConfig:
+        """Get S3 transfer config for GAP Products."""
+        conf = Preferences.load().user_file_uploader_config
+        return TransferConfig(
+            multipart_chunksize=(
+                conf.get('default_block_size', 500) * 1024 * 1024
+            ),
+            use_threads=True,
+            max_concurrency=(
+                conf.get('max_concurrency', 2)
+            )
+        )
