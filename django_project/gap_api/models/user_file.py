@@ -38,7 +38,7 @@ class UserFile(models.Model):
         editable=False,
         blank=True
     )
-    size = models.IntegerField(default=0)
+    size = models.PositiveBigIntegerField(default=0)
 
     def _calculate_hash(self):
         """Calculate hash from query params."""
