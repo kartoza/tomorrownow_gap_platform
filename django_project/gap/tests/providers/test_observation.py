@@ -30,7 +30,7 @@ from gap.utils.reader import (
 )
 
 
-class TestObsrvationReader(TestCase):
+class TestObservationReader(TestCase):
     """Unit test for ObservationDatasetReader class."""
 
     def setUp(self):
@@ -57,6 +57,16 @@ class TestObsrvationReader(TestCase):
             self.dataset, [self.dataset_attr], self.location_input,
             self.start_date, self.end_date
         )
+
+    def test_find_nearest_station_empty(self):
+        """Test find nearest station empty."""
+        new_provider = ProviderFactory(name='test_provider')
+        self.station.provider = new_provider
+        self.station.save()
+
+        self.reader.read_historical_data(self.start_date, self.end_date)
+        data_value = self.reader.get_data_values()
+        self.assertTrue(data_value.is_empty())
 
     def test_find_nearest_station_by_point(self):
         """Test find nearest station from single point."""

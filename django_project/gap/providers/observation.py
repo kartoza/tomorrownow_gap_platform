@@ -485,7 +485,7 @@ class ObservationDatasetReader(BaseDatasetReader):
             self.nearest_stations is None or
             self._get_count(self.nearest_stations) == 0
         ):
-            return
+            return Measurement.objects.none()
 
         return Measurement.objects.annotate(
             geom=F('station__geometry'),
