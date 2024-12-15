@@ -22,7 +22,8 @@ from gap.models import (
     Dataset,
     DatasetAttribute,
     Station,
-    Measurement
+    Measurement,
+    Preferences
 )
 from gap.utils.reader import (
     LocationInputType,
@@ -243,6 +244,10 @@ class ObservationReaderValue(DatasetReaderValue):
                 if write_headers:
                     write_headers = False
 
+            # upload to s3
+            s3_storage.transfer_config = (
+                Preferences.user_file_s3_transfer_config()
+            )
             s3_storage.save(output, tmp_file)
 
         return output
@@ -312,6 +317,10 @@ class ObservationReaderValue(DatasetReaderValue):
             )
             execute_dask_compute(x)
 
+            # upload to s3
+            s3_storage.transfer_config = (
+                Preferences.user_file_s3_transfer_config()
+            )
             s3_storage.save(output_url, tmp_file)
 
         return output_url
