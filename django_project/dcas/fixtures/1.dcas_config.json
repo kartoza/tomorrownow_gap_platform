@@ -1,0 +1,11 @@
+[
+{
+    "model": "dcas.dcasconfig",
+    "pk": 1,
+    "fields": {
+        "name": "Default",
+        "description": "DCAS Default Configuration",
+        "is_default": true
+    }
+}
+]
