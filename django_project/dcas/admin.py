@@ -10,7 +10,6 @@ from django.contrib import admin
 from dcas.models import (
     DCASConfig,
     DCASConfigCountry,
-    DCASParameter,
     DCASRule
 )
 
@@ -29,12 +28,6 @@ class DCASConfigAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'is_default')
     inlines = (ConfigByCountryInline,)
 
-
-@admin.register(DCASParameter)
-class DCASParameterAdmin(admin.ModelAdmin):
-    """Admin page for DCASParameter."""
-
-    pass
 
 @admin.register(DCASRule)
 class DCASRuleAdmin(admin.ModelAdmin):

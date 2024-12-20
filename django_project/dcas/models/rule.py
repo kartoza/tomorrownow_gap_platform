@@ -8,9 +8,8 @@ Tomorrow Now GAP DCAS.
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
-from gap.models import Crop, CropGrowthStage, CropStageType
+from gap.models import Crop, CropGrowthStage, CropStageType, Attribute
 from dcas.models.config import DCASConfig
-from dcas.models.parameter import DCASParameter
 
 
 class DCASRule(models.Model):
@@ -33,7 +32,7 @@ class DCASRule(models.Model):
     )
 
     parameter = models.ForeignKey(
-        DCASParameter, on_delete=models.CASCADE
+        Attribute, on_delete=models.CASCADE
     )
 
     min_range = models.FloatField()
