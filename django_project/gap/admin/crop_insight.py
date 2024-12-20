@@ -13,7 +13,8 @@ from gap.models import (
     Crop, FarmShortTermForecast, FarmShortTermForecastData,
     FarmProbabilisticWeatherForcast,
     FarmSuitablePlantingWindowSignal, FarmPlantingWindowTable,
-    FarmPestManagement, FarmCropVariety, CropInsightRequest
+    FarmPestManagement, FarmCropVariety, CropInsightRequest,
+    CropStageType, CropGrowthStage
 )
 from gap.tasks.crop_insight import generate_insight_report
 
@@ -140,3 +141,17 @@ class CropInsightRequestAdmin(admin.ModelAdmin):
             f"task_name__in={','.join(CropInsightRequest.task_names)}"
         )
         return format_html(f'<a target="_blank" href={url}>link</a>')
+
+
+@admin.register(CropStageType)
+class CropStageTypeAdmin(admin.ModelAdmin):
+    """Admin for CropStageType."""
+
+    pass
+
+
+@admin.register(CropGrowthStage)
+class CropGrowthStageAdmin(admin.ModelAdmin):
+    """Admin for CropGrowthStage."""
+
+    pass
