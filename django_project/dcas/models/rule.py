@@ -39,6 +39,9 @@ class DCASRule(models.Model):
     max_range = models.FloatField()
     code = models.CharField(max_length=50)
 
+    def __str__(self):
+        return f'{self.crop.name}_{self.crop_stage_type.name}'
+
     class Meta:  # noqa
         db_table = 'dcas_rule'
         verbose_name = _('Rule')

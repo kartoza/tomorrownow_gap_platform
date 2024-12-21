@@ -126,5 +126,29 @@
       "name": "hPa",
       "description": ""
     }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 18,
+    "fields": {
+      "name": "mm/mm",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 19,
+    "fields": {
+      "name": "mm/stage",
+      "description": ""
+    }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 20,
+    "fields": {
+      "name": "mm/season",
+      "description": ""
+    }
   }
 ]

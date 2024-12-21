@@ -33,4 +33,11 @@ class DCASConfigAdmin(admin.ModelAdmin):
 class DCASRuleAdmin(admin.ModelAdmin):
     """Admin page for DCASRule."""
 
-    pass
+    list_display = (
+        'crop', 'crop_stage_type', 'crop_growth_stage',
+        'parameter', 'min_range', 'max_range', 'code'
+    )
+    list_filter = (
+        'crop', 'crop_stage_type', 'crop_growth_stage',
+        'parameter'
+    )
