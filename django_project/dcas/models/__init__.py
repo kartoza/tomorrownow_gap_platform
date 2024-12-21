@@ -6,3 +6,4 @@ Tomorrow Now GAP.
 """
 
 from dcas.models.config import *  # noqa
+from dcas.models.rule import *  # noqa

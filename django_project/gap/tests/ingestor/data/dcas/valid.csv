@@ -1,0 +1,3 @@
+crop,parameter,growth_stage,min_range,max_range,code
+Cassava_Early,P/PET,Germination,0,0.96,202400000
+Cassava_Early,P/PET,Germination,0.96,1.2,202400001

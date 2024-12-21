@@ -40,6 +40,23 @@ class Crop(Definition):
     pass
 
 
+class CropStageType(Definition):
+    """Model representing crop stage type."""
+
+    alias = models.CharField(
+        max_length=50,
+        help_text='Name Alias',
+        null=True,
+        blank=True
+    )
+
+
+class CropGrowthStage(Definition):
+    """Model representing crop growth stage."""
+
+    pass
+
+
 class FarmShortTermForecast(models.Model):
     """Model representing Farm Short-Term Weather Forecast Table."""
 

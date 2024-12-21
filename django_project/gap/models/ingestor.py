@@ -37,6 +37,7 @@ class IngestorType:
     WIND_BORNE_SYSTEMS_API = 'WindBorne Systems API'
     CABI_PRISE_EXCEL = 'Cabi Prise Excel'
     CBAM_BIAS_ADJUST = 'CBAM Bias Adjusted'
+    DCAS_RULE = 'DCAS Rules'
 
 
 class IngestorSessionStatus:
@@ -80,6 +81,7 @@ class BaseSession(models.Model):
                 IngestorType.CABI_PRISE_EXCEL
             ),
             (IngestorType.CBAM_BIAS_ADJUST, IngestorType.CBAM_BIAS_ADJUST),
+            (IngestorType.DCAS_RULE, IngestorType.DCAS_RULE),
         ),
         max_length=512
     )
@@ -205,6 +207,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.tio_shortterm import TioShortTermIngestor
         from gap.ingestor.cabi_prise import CabiPriseIngestor
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
+        from gap.ingestor.dcas_rule import DcasRuleIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -229,6 +232,8 @@ class IngestorSession(BaseSession):
             ingestor = CabiPriseIngestor
         elif self.ingestor_type == IngestorType.CBAM_BIAS_ADJUST:
             ingestor = CBAMBiasAdjustIngestor
+        elif self.ingestor_type == IngestorType.DCAS_RULE:
+            ingestor = DcasRuleIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()

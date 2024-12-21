@@ -1,0 +1,130 @@
+[
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 1,
+    "fields": {
+        "name": "Germination",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 2,
+    "fields": {
+        "name": "Establishment",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 3,
+    "fields": {
+        "name": "Root Growth",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 4,
+    "fields": {
+        "name": "Flowering",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 5,
+    "fields": {
+        "name": "Vegetative Growth",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 6,
+    "fields": {
+        "name": "Pod Formation",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 7,
+    "fields": {
+        "name": "Grain Filling",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 8,
+    "fields": {
+        "name": "Physiological Maturity",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 9,
+    "fields": {
+        "name": "Pod Grain filling",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 10,
+    "fields": {
+        "name": "Maturity",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 11,
+    "fields": {
+        "name": "Seedling",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 12,
+    "fields": {
+        "name": "Grain filling & maturity",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 13,
+    "fields": {
+        "name": "Seedling stage",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 14,
+    "fields": {
+        "name": "Seed setting",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 15,
+    "fields": {
+        "name": "Flowering/tuberization",
+        "description": ""
+    }
+},
+{
+    "model": "gap.cropgrowthstage",
+    "pk": 16,
+    "fields": {
+        "name": "Seedling & Establishment",
+        "description": ""
+    }
+}
+]
