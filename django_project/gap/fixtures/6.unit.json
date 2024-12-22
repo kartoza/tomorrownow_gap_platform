@@ -150,5 +150,13 @@
       "name": "mm/season",
       "description": ""
     }
+  },
+  {
+    "model": "gap.unit",
+    "pk": 21,
+    "fields": {
+      "name": "Quality Flag",
+      "description": ""
+    }
   }
 ]
