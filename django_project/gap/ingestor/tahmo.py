@@ -11,6 +11,7 @@ import os
 import shutil
 import uuid
 import tempfile
+import logging
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
@@ -24,6 +25,9 @@ from gap.models import (
     DatasetStore, DatasetAttribute
 )
 from gap.ingestor.base import BaseIngestor
+
+
+logger = logging.getLogger(__name__)
 
 
 class TahmoVariable:
@@ -52,7 +56,7 @@ class TahmoIngestor(BaseIngestor):
         self.dataset_type = DatasetType.objects.get(
             variable_name='tahmo_ground_observation'
         )
-        self.dataset, _ = Dataset.objects.get_or_create(
+        self.dataset = Dataset.objects.get(
             name='Tahmo Ground Observational',
             provider=self.provider,
             type=self.dataset_type,
@@ -62,6 +66,25 @@ class TahmoIngestor(BaseIngestor):
 
     def _run(self, dir_path):
         """Run the ingestor."""
+        # check if ingestor should clear existing data.
+        clear_existing_data = self.get_config('reset_data', False)
+        if clear_existing_data:
+            qs = Measurement.objects.filter(
+                dataset_attribute__dataset=self.dataset,
+                station__provider=self.provider
+            )
+            logger.info(
+                f'TahmoIngestor: Clear existing data - {qs.count()} records'
+            )
+            qs.delete()
+
+        # check if we should only ingest after certain date
+        min_date = self.get_config('min_date', None)
+        if min_date:
+            min_date = datetime.strptime(
+                min_date, '%Y-%m-%d'
+            ).replace(tzinfo=timezone.utc)
+
         # Data is coming from CSV.
         # CSV headers:
         # - longitude
@@ -166,6 +189,10 @@ class TahmoIngestor(BaseIngestor):
                             continue
 
                         date_time.replace(second=0)
+
+                        # skip if date is lesser than min_date
+                        if min_date and min_date.date() > date_time.date():
+                            continue
 
                         # Save all data
                         for key, value in data.items():  # noqa
