@@ -658,5 +658,49 @@
       "unit": 20,
       "is_active": true
     }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 61,
+    "fields": {
+      "name": "Precipitation Total ERA5",
+      "description": "",
+      "variable_name": "precipitation_total_era5",
+      "unit": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 62,
+    "fields": {
+      "name": "Precipitation Total CHIRPS",
+      "description": "",
+      "variable_name": "precipitation_total_chirps",
+      "unit": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 63,
+    "fields": {
+      "name": "Precipitation Total Quality Flag",
+      "description": "",
+      "variable_name": "precipitation_total_qflag",
+      "unit": 21,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 64,
+    "fields": {
+      "name": "Precipitation Total CHIRPS Quality Flag",
+      "description": "",
+      "variable_name": "precipitation_total_chirps_qflag",
+      "unit": 21,
+      "is_active": true
+    }
   }
 ]
