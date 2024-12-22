@@ -36,8 +36,8 @@ def get_reader_from_dataset(dataset: Dataset):
         return CBAMZarrReader
     elif dataset.provider.name == NetCDFProvider.SALIENT:
         return SalientZarrReader
-    elif dataset.name == 'Tahmo Ground Observational':
-        return TahmoParquetReader
+    # elif dataset.name == 'Tahmo Ground Observational':
+    #     return TahmoParquetReader
     elif dataset.provider.name in ['Tahmo', 'Arable']:
         return ObservationDatasetReader
     elif dataset.provider.name in [WINBORNE_PROVIDER]:
