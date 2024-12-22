@@ -60,4 +60,3 @@ class TahmoWeatherUser(BaseUserScenario):
             bbox='33.9, -4.67, 41.89, 5.5',
             group_modes=group_modes
         )
-

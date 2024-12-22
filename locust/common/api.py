@@ -96,7 +96,7 @@ class Api:
             f'start_date={start_date}&end_date={end_date}&' +
             f'product={product_type}&output_type={output_type}'
         )
-        
+
         if location_name:
             url += f'&location_name={location_name}'
         elif bbox:
