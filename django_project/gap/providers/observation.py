@@ -690,7 +690,7 @@ class TahmoParquetReader(ObservationDatasetReader):
         :type end_date: datetime
         """
         if self.location_input.type != LocationInputType.BBOX:
-            raise NotImplementedError(f'Only BBOX is supported!')
+            raise NotImplementedError('Only BBOX is supported!')
 
         attributes = ', '.join(
             [a.attribute.variable_name for a in self.attributes]

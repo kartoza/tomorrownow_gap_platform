@@ -18,8 +18,7 @@ from shapely.wkt import loads
 from django.contrib.gis.db.models.functions import AsWKT
 
 from gap.models import (
-    Measurement, Dataset,
-    Provider, Country
+    Measurement, Dataset, Country
 )
 from gap.providers.observation import ST_X, ST_Y
 
@@ -83,9 +82,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Run the export tahmo dataset."""
         country = Country.objects.get(name='Kenya')
-        provider = Provider.objects.get(
-            name="Tahmo"
-        )
         dataset = Dataset.objects.get(
             name="Tahmo Ground Observational"
         )
@@ -121,7 +117,7 @@ class Command(BaseCommand):
                 date_time__year=year
             ).order_by('date_time', 'station_id')
             print(f'Year {year} total_count: {measurements.count()}')
-            
+
             measurements = measurements.annotate(
                 geom=F('station__geometry'),
             ).annotate(**fields).values(
@@ -160,7 +156,7 @@ class Command(BaseCommand):
             # Set the CRS (update 'EPSG:4326'
             # if your geometry usesa different CRS)
             gdf.set_crs(epsg=4326, inplace=True)
-        
+
             # View the GeoDataFrame
             # print(gdf)
 
