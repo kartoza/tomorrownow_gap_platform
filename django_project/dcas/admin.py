@@ -9,7 +9,8 @@ from django.contrib import admin
 
 from dcas.models import (
     DCASConfig,
-    DCASConfigCountry
+    DCASConfigCountry,
+    DCASRule
 )
 
 
@@ -26,3 +27,17 @@ class DCASConfigAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'description', 'is_default')
     inlines = (ConfigByCountryInline,)
+
+
+@admin.register(DCASRule)
+class DCASRuleAdmin(admin.ModelAdmin):
+    """Admin page for DCASRule."""
+
+    list_display = (
+        'crop', 'crop_stage_type', 'crop_growth_stage',
+        'parameter', 'min_range', 'max_range', 'code'
+    )
+    list_filter = (
+        'crop', 'crop_stage_type', 'crop_growth_stage',
+        'parameter'
+    )

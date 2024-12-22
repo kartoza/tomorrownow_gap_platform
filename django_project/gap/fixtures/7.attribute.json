@@ -625,5 +625,38 @@
       "unit": 16,
       "is_active": true
     }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 58,
+    "fields": {
+      "name": "P/PET",
+      "description": "",
+      "variable_name": "p_pet",
+      "unit": 18,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 59,
+    "fields": {
+      "name": "Growth Stage Precipitation",
+      "description": "",
+      "variable_name": "growth_stage_precipitation",
+      "unit": 19,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gap.attribute",
+    "pk": 60,
+    "fields": {
+      "name": "Seasonal Precipitation",
+      "description": "",
+      "variable_name": "seasonal_precipitation",
+      "unit": 20,
+      "is_active": true
+    }
   }
 ]

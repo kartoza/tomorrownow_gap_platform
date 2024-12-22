@@ -1,0 +1,29 @@
+[
+{
+    "model": "gap.cropstagetype",
+    "pk": 1,
+    "fields": {
+        "name": "Early",
+        "description": "",
+        "alias": null
+    }
+},
+{
+    "model": "gap.cropstagetype",
+    "pk": 2,
+    "fields": {
+        "name": "Mid",
+        "description": "",
+        "alias": "Medium"
+    }
+},
+{
+    "model": "gap.cropstagetype",
+    "pk": 3,
+    "fields": {
+        "name": "Late",
+        "description": "",
+        "alias": null
+    }
+}
+]

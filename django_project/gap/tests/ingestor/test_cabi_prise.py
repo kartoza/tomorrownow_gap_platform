@@ -2,7 +2,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Unit tests for Tahmo Ingestor.
+.. note:: Unit tests for CABI Prise Ingestor.
 """
 import os
 
