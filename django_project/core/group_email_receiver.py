@@ -1,7 +1,7 @@
 """
 Tomorrow Now GAP.
 
-.. note:: Definition admin
+.. note:: Group for crop plan email receiver
 """
 from django.contrib.auth.models import Group
 

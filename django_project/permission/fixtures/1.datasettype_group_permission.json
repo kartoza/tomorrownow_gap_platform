@@ -1,0 +1,56 @@
+[
+{
+    "model": "permission.datasettypegroupobjectpermission",
+    "pk": 1,
+    "fields": {
+        "permission": 92,
+        "group": 2,
+        "content_object": 1
+    }
+},
+{
+    "model": "permission.datasettypegroupobjectpermission",
+    "pk": 2,
+    "fields": {
+        "permission": 92,
+        "group": 2,
+        "content_object": 9
+    }
+},
+{
+    "model": "permission.datasettypegroupobjectpermission",
+    "pk": 3,
+    "fields": {
+        "permission": 92,
+        "group": 2,
+        "content_object": 7
+    }
+},
+{
+    "model": "permission.datasettypegroupobjectpermission",
+    "pk": 4,
+    "fields": {
+        "permission": 92,
+        "group": 2,
+        "content_object": 8
+    }
+},
+{
+    "model": "permission.datasettypegroupobjectpermission",
+    "pk": 5,
+    "fields": {
+        "permission": 92,
+        "group": 2,
+        "content_object": 4
+    }
+},
+{
+    "model": "permission.datasettypegroupobjectpermission",
+    "pk": 6,
+    "fields": {
+        "permission": 92,
+        "group": 2,
+        "content_object": 5
+    }
+}
+]
