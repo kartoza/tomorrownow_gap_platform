@@ -13,7 +13,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from django.core.management.base import BaseCommand
 from django.db.models import F
-from django.db.models.functions.datetime import TruncDate
+from django.db.models.functions.datetime import TruncDate, ExtractYear
 from shapely.wkt import loads
 from django.contrib.gis.db.models.functions import AsWKT
 
@@ -107,7 +107,15 @@ class Command(BaseCommand):
             client_kwargs=self.get_s3_client_kwargs()
         )
 
-        years = [2018, 2019, 2020, 2021, 2022, 2023]
+        years = list(Measurement.objects.annotate(
+            year=ExtractYear('date_time')
+        ).filter(
+            dataset_attribute__dataset=dataset,
+            station__country=country
+        ).order_by('year').distinct('year').values_list(
+            'year',
+            flat=True
+        ))
         s3_path = self._get_directory_path()
 
         for year in years:
