@@ -12,6 +12,7 @@ from unittest.mock import patch
 from django.contrib.gis.geos import Polygon, MultiPolygon, Point
 from django.urls import reverse
 from rest_framework.exceptions import ValidationError
+from guardian.shortcuts import assign_perm
 
 from core.tests.common import FakeResolverMatchV1, BaseAPIViewTest
 from gap.factories import (
@@ -27,6 +28,7 @@ from gap.utils.reader import (
 from gap_api.models.api_config import DatasetTypeAPIConfig
 from gap_api.api_views.measurement import MeasurementAPI
 from gap_api.factories import LocationFactory
+from permission.models import PermissionType
 
 
 class MockDatasetReader(BaseDatasetReader):
@@ -423,3 +425,52 @@ class HistoricalAPITest(CommonMeasurementAPITest):
             datetime(2024, 10, 1, 0, 0, 0),
             datetime(2024, 10, 30, 0, 0, 0)
         )
+
+    @patch('gap_api.api_views.measurement.get_reader_from_dataset')
+    def test_access_validation(self, mocked_reader):
+        """Test invalid access API."""
+        view = MeasurementAPI.as_view()
+        mocked_reader.return_value = MockDatasetReader
+        dataset = Dataset.objects.get(name='CBAM Climate Reanalysis')
+        attribute1 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='max_temperature'
+        ).first()
+        attribute2 = DatasetAttribute.objects.filter(
+            dataset=dataset,
+            attribute__variable_name='total_rainfall'
+        ).first()
+        attribs = [
+            attribute1.attribute.variable_name,
+            attribute2.attribute.variable_name
+        ]
+        request = self._get_measurement_request_point(
+            attributes=','.join(attribs)
+        )
+        request.user = self.user_1
+        response = view(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('Missing Permission', response.data)
+        self.assertIn(
+            dataset.type.variable_name,
+            response.data['Missing Permission']
+        )
+        mocked_reader.assert_not_called()
+
+        # add permission to user
+        assign_perm(
+            PermissionType.VIEW_DATASET_TYPE,
+            self.user_1,
+            dataset.type
+        )
+        request = self._get_measurement_request_point(
+            attributes=','.join(attribs)
+        )
+        request.user = self.user_1
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        mocked_reader.assert_called_once_with(attribute1.dataset)
+        self.assertIn('metadata', response.data)
+        self.assertIn('results', response.data)
+        results = response.data['results']
+        self.assertEqual(len(results), 1)

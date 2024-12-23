@@ -37,7 +37,8 @@ PROJECT_APPS = (
     'spw',
     'message',
     'prise',
-    'dcas'
+    'dcas',
+    'permission'
 )
 INSTALLED_APPS = INSTALLED_APPS + PROJECT_APPS
 
