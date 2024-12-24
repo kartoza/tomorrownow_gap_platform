@@ -270,7 +270,9 @@ class TioShortTermIngestor(BaseZarrIngestor):
             }
         }
         for var in self.variables:
-            empty_data = da.full(empty_shape, np.nan, dtype='f8', chunks=chunks)
+            empty_data = da.full(
+                empty_shape, np.nan, dtype='f8', chunks=chunks
+            )
             data_vars[var] = (
                 ['forecast_date', 'forecast_day_idx', 'lat', 'lon'],
                 empty_data
