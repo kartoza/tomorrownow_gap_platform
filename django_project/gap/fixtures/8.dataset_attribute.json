@@ -1109,5 +1109,49 @@
       "source_unit": 1,
       "ensembles": false
     }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 102,
+    "fields": {
+      "dataset": 1,
+      "attribute": 61,
+      "source": "pr_total_ERA5",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 103,
+    "fields": {
+      "dataset": 1,
+      "attribute": 62,
+      "source": "pr_total_CHIRPS",
+      "source_unit": 1,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 104,
+    "fields": {
+      "dataset": 1,
+      "attribute": 63,
+      "source": "pr_total_flag",
+      "source_unit": 21,
+      "ensembles": false
+    }
+  },
+  {
+    "model": "gap.datasetattribute",
+    "pk": 105,
+    "fields": {
+      "dataset": 1,
+      "attribute": 64,
+      "source": "pr_total_flag_CHIRPS",
+      "source_unit": 21,
+      "ensembles": false
+    }
   }
 ]
