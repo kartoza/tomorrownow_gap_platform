@@ -43,7 +43,7 @@ class DCASData:
         """Get list of rule data."""
         return [
             {
-                DCASVariable.PARAMETER: parameter['name'],
+                DCASVariable.PARAMETER: parameter['id'],
                 DCASVariable.GROWTH_STAGE: self.growth_stage_id,
                 DCASVariable.VALUE: parameter['value']
             } for parameter in self.parameters
