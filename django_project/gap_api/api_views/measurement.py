@@ -18,7 +18,7 @@ from django.db.utils import ProgrammingError
 from django.http import StreamingHttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -46,6 +46,7 @@ from gap_api.models import DatasetTypeAPIConfig, Location, UserFile
 from gap_api.serializers.common import APIErrorSerializer
 from gap_api.utils.helper import ApiTag
 from gap_api.mixins import GAPAPILoggingMixin, CounterSlidingWindowThrottle
+from permission.models import PermissionType
 
 
 def product_type_list():
@@ -357,7 +358,6 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
         )
         return response
 
-
     def _read_data_as_netcdf(
             self, reader_dict: Dict[int, BaseDatasetReader],
             start_dt: datetime, end_dt: datetime,
@@ -460,6 +460,32 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             reader_dict, start_dt, end_dt,
             suffix='.txt', separator='\t', content_type='text/ascii'
         )
+
+    def validate_product_type(self, product_filter):
+        """Validate user has access to product type.
+
+        :param product_filter: list of product type
+        :type product_filter: list
+        :raises PermissionDenied: no permission to the product type
+        """
+        dataset_types = DatasetType.objects.filter(
+            variable_name__in=product_filter
+        )
+        has_perm = True
+        for dataset_type in dataset_types:
+            has_perm = (
+                has_perm and
+                self.request.user.has_perm(
+                    PermissionType.VIEW_DATASET_TYPE, dataset_type
+                )
+            )
+
+        if not has_perm:
+            raise PermissionDenied({
+                'Missing Permission': (
+                    f'You don\'t have access to {product_filter}!'
+                )
+            })
 
     def validate_output_format(
             self, dataset: Dataset, product_type: str,
@@ -595,6 +621,10 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
             attribute__is_active=True
         )
         product_filter = self._get_product_filter()
+
+        # validate product type access
+        self.validate_product_type(product_filter)
+
         dataset_attributes = dataset_attributes.annotate(
             product_name=Lower('dataset__type__variable_name')
         ).filter(
