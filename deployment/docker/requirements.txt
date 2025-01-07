@@ -88,3 +88,13 @@ django-admin-inline-paginator==0.4.0
 
 # durable rules engine
 durable-rules==2.0.28
+
+# sqlalchemy
+sqlalchemy==2.0.36
+GeoAlchemy2==0.16.0
+
+# dask geopandas
+dask-geopandas==0.4.2
+
+# duckdb
+duckdb==1.1.3
