@@ -9,12 +9,13 @@ from django.contrib.gis.geos import Point
 import logging
 from gap.ingestor.base import BaseIngestor
 from gap.models import (
-    Farm, Crop, FarmRegistry, FarmRegistryGroup, Country,
-    IngestorSession, IngestorSessionProgress, IngestorSessionStatus,
+    Farm, Crop, FarmRegistry, FarmRegistryGroup,
+    IngestorSession,
 )
 from django.db import transaction
 
 logger = logging.getLogger(__name__)
+
 
 class DCASFarmRegistryIngestor(BaseIngestor):
     """Ingestor for DCAS Farmer Registry data."""
@@ -41,7 +42,9 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         os.makedirs(dir_path, exist_ok=True)
 
         with self.session.file.open('rb') as zip_file:
-            with tempfile.NamedTemporaryFile(delete=False, dir=self.working_dir) as tmp_file:
+            with tempfile.NamedTemporaryFile(
+                delete=False, dir=self.working_dir) as tmp_file:
+
                 tmp_file.write(zip_file.read())
                 tmp_file_path = tmp_file.name
 
@@ -53,14 +56,10 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
     def _create_registry_group(self):
         """Create a new FarmRegistryGroup."""
-        self.group = FarmRegistryGroup.objects.create(
+        self.group = self.group_model.objects.create(
             date_time=datetime.now(timezone.utc),
-            country=self.session.country,
             is_latest=True
         )
-        # Mark previous groups as not latest for this country (if applicable)
-        if self.session.country:
-            FarmRegistryGroup.objects.filter(country=self.session.country).exclude(id=self.group.id).update(is_latest=False)
 
     def _process_row(self, row):
         """Process a single row from the input file."""
@@ -72,7 +71,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
             # Get or create the Farm instance
             farm, _ = Farm.objects.get_or_create(
-                code=row['FarmerId'],
+                unique_id=row['FarmerId'],
                 defaults={
                     'geometry': point
                 }
@@ -84,7 +83,8 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             )
 
             # Parse the planting date
-            planting_date = datetime.strptime(row['PlantingDate'], '%m/%d/%Y').date()
+            planting_date = datetime.strptime(
+                row['PlantingDate'], '%m/%d/%Y').date()
 
             # Create the FarmRegistry entry
             FarmRegistry.objects.update_or_create(
@@ -92,9 +92,6 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                 farm=farm,
                 crop=crop,
                 planting_date=planting_date,
-                defaults={
-                    # Add additional fields if required here
-                }
             )
 
         except Exception as e:
