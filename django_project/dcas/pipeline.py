@@ -18,6 +18,7 @@ from pprint import pprint
 from django.db import connection
 from django.db.models import Min
 import dask.dataframe as dd
+from dask.dataframe.core import DataFrame as dask_df
 from django.core.management.base import BaseCommand
 from sqlalchemy import create_engine, select, distinct, column, cast
 from sqlalchemy.ext.automap import automap_base
@@ -36,13 +37,15 @@ from dcas.rules.rule_engine import DCASRuleEngine
 
 
 logger = logging.getLogger(__name__)
+# Enable SQLAlchemy engine logging
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
 class DCASDataPipeline:
     """Class for DCAS data pipeline."""
 
-    NUM_PARTITIONS = 50
-    LIMIT = 100000
+    NUM_PARTITIONS = 10
+    LIMIT = 1000000
 
     def __init__(
         self, farm_registry_group: FarmRegistryGroup,
@@ -58,7 +61,7 @@ class DCASDataPipeline:
         """
         self.farm_registry_group = farm_registry_group
         self.config = config
-        self.rule_engine = DCASRuleEngine(self.config)
+        # self.rule_engine = DCASRuleEngine(self.config)
         self.base_schema = None
         self.fs = None
         self.minimum_plant_date = None
@@ -68,7 +71,7 @@ class DCASDataPipeline:
 
     def setup(self):
         """Set the data pipeline."""
-        self.rule_engine.initialize()
+        # self.rule_engine.initialize()
         self._init_schema()
 
         self._setup_s3fs()
@@ -179,6 +182,7 @@ class DCASDataPipeline:
 
     def load_grid_data(self) -> pd.DataFrame:
         subquery = select(
+            self.grid.c.id.label('gdid'),
             self.grid.c.id.label('grid_id'),
             ST_Centroid(self.grid.c.geometry).label('centroid')
         ).select_from(self.farmregistry).join(
@@ -197,16 +201,17 @@ class DCASDataPipeline:
 
         subquery = subquery.subquery('grid_data')
         sql_query = select(
-            distinct(column('grid_id')),
+            distinct(column('gdid')),
             ST_Y(column('centroid')).label('lat'),
             ST_X(column('centroid')).label('lon'),
+            column('grid_id')
         ).select_from(subquery)
         print(sql_query)
 
         return pd.read_sql_query(
             sql_query,
             con=self._conn_str(),
-            index_col='grid_id',
+            index_col='gdid',
         )
 
     def load_grid_weather_data(self, df) -> pd.DataFrame:
@@ -275,7 +280,7 @@ class DCASDataPipeline:
         df = df.drop(columns=intermediate_columns)
         return df
 
-    def load_farm_registry_data(self) -> dd:
+    def _get_farm_registry_query(self):
         subquery = select(
             self.farmregistry.c.id.label('farmregistry_id'),
             self.farmregistry.c.planting_date.label('planting_date'),
@@ -313,7 +318,11 @@ class DCASDataPipeline:
         ).order_by(
             self.grid.c.id, self.farmregistry.c.id
         )
-        
+
+        return subquery
+
+    def load_farm_registry_data(self) -> dask_df:
+        subquery = self._get_farm_registry_query()        
         if self.LIMIT:
             # for testing purpose
             subquery = subquery.limit(self.LIMIT)
@@ -322,59 +331,87 @@ class DCASDataPipeline:
 
         sql_query = select(subquery)
 
-        return dd.read_sql_query(
+        df = dd.read_sql_query(
             sql=sql_query,
             con=self._conn_str(),
             index_col='farmregistry_id',
             npartitions=self.NUM_PARTITIONS,
         )
 
-    def merge_farm_registry_grid_data(self, farm_df: dd, grid_df: pd.DataFrame) -> dd:
-        return farm_df.map_partitions(lambda part: part.merge(grid_df, on=['grid_id', 'crop_id']))
+        df = df.assign(
+            date=pd.Timestamp(self.request_date),
+            year=lambda x: x.date.dt.year,
+            month=lambda x: x.date.dt.month,
+            day=lambda x: x.date.dt.day
+        )
+        return df
 
-    def preproses_gdd_columns(self, df: dd) -> dd:
+    def load_farm_registry_meta(self) -> pd.DataFrame:
+        subquery = self._get_farm_registry_query()   
+        subquery = subquery.limit(1)
+        subquery = subquery.subquery('farm_data')
+
+        sql_query = select(subquery)
+        df = pd.read_sql_query(
+            sql_query,
+            con=self._conn_str(),
+            index_col='farmregistry_id',
+        )
+    
+        df = df.assign(
+            date=pd.Timestamp(self.request_date),
+            year=lambda x: x.date.dt.year,
+            month=lambda x: x.date.dt.month,
+            day=lambda x: x.date.dt.day
+        )
+        return df
+
+    def merge_farm_registry_grid_data(self, farm_df: dask_df, grid_df: pd.DataFrame, meta_combined) -> dask_df:
+        return farm_df.map_partitions(lambda part: part.merge(grid_df, on=['grid_id', 'crop_id'], how='inner'), meta=meta_combined)
+
+    def preproses_gdd_columns(self, df: dask_df) -> dask_df:
         pass
 
-    def preproses_total_rainfall_columns(self, df: dd) -> dd:
+    def preproses_total_rainfall_columns(self, df: dask_df) -> dask_df:
         pass
 
-    def calculate_total_gdd(self, df: dd) -> dd:
+    def calculate_total_gdd(self, df: dask_df) -> dask_df:
         pass
 
-    def clean_max_min_temperature_before_today(self, df: dd) -> dd:
+    def clean_max_min_temperature_before_today(self, df: dask_df) -> dask_df:
         pass
 
-    def calculate_temperature(self, df: dd) -> dd:
+    def calculate_temperature(self, df: dask_df) -> dask_df:
         pass
 
-    def calculate_humidity(self, df: dd) -> dd:
+    def calculate_humidity(self, df: dask_df) -> dask_df:
         pass
     
-    def calculate_p_pet(self, df: dd) -> dd:
+    def calculate_p_pet(self, df: dask_df) -> dask_df:
         pass
 
-    def calculate_seasonal_precipitation(self, df:dd) -> dd:
+    def calculate_seasonal_precipitation(self, df:dask_df) -> dask_df:
         pass
 
-    def clean_intermediate_columns(self, df: dd) -> dd:
+    def clean_intermediate_columns(self, df: dask_df) -> dask_df:
         pass
 
-    def calculate_growth_stage(self, df: dd) -> dd:
+    def calculate_growth_stage(self, df: dask_df) -> dask_df:
         pass
 
-    def clean_total_rainfall_before_growth_start_date(self, df: dd) -> dd:
+    def clean_total_rainfall_before_growth_start_date(self, df: dask_df) -> dask_df:
         pass
 
-    def calculate_growth_stage_precipitation(self, df: dd) -> dd:
+    def calculate_growth_stage_precipitation(self, df: dask_df) -> dask_df:
         pass
 
-    def clean_total_rainfall_intermetediate_columns(self, df: dd) -> dd:
+    def clean_total_rainfall_intermetediate_columns(self, df: dask_df) -> dask_df:
         pass
 
-    def run_rule_engine(self, df: dd) -> dd:
+    def run_rule_engine(self, df: dask_df) -> dask_df:
         pass
 
-    def save(self, df: dd):
+    def save(self, df: dask_df):
         df_geo = dg.from_dask_dataframe(
             df,
             geometry=dg.from_wkb(df['geometry'])
@@ -406,7 +443,7 @@ class DCASDataPipeline:
         grid_df = self.calculate_gdd(grid_df)
 
         # print(grid_df)
-        # print(grid_df.columns)
+        print(grid_df.columns)
 
         # memory = grid_df.memory_usage(deep=True)
         # total_memory = memory.sum()  # Total memory usage in bytes
@@ -416,7 +453,16 @@ class DCASDataPipeline:
         # # 760 MB for 33K grid data
 
         farm_df = self.load_farm_registry_data()
+        print(farm_df.columns)
+        farm_df_meta = self.load_farm_registry_meta()
 
-        farm_df = self.merge_farm_registry_grid_data(farm_df, grid_df)
+        meta1 = farm_df_meta.head(0)  # Empty DataFrame with same structure as df1
+        meta2 = grid_df.head(0)
+        meta_combined = pd.concat([meta1, meta2], axis=1).loc[:, ~pd.concat([meta1, meta2], axis=1).columns.duplicated()]
+
+        print([c for c in meta_combined.columns if c == 'grid_id'])
+        print([c for c in meta_combined.columns if c == 'crop_id'])
+
+        farm_df = self.merge_farm_registry_grid_data(farm_df, grid_df, meta_combined)
 
         self.save(farm_df)
