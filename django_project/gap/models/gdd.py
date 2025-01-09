@@ -5,11 +5,9 @@ Tomorrow Now GAP GDD.
 """
 
 from django.contrib.gis.db import models
-from django.utils.translation import gettext_lazy as _
-
-from django.db import models
 from gap.models.crop_insight import Crop, CropGrowthStage
 from dcas.models import DCASConfig
+
 
 class GDDConfig(models.Model):
     """Model to store base and cap values for each crop."""
