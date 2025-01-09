@@ -68,7 +68,8 @@ class DCASRuleEngine:
         message_code = None
         try:
             result = self.host.post(ruleset_name, item)
-            message_code = result.get(DCASVariable.MESSAGE_CODE, None)
+            if result:
+                message_code = result.get(DCASVariable.MESSAGE_CODE, None)
         except MessageNotHandledException:
             # no rule is found
             pass
