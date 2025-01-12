@@ -6,7 +6,9 @@ Tomorrow Now GAP GDD.
 """
 
 from django.contrib.gis.db import models
-from gap.models.crop_insight import Crop, CropStageType
+from gap.models.crop_insight import (
+    Crop, CropStageType, CropGrowthStage
+)
 from dcas.models import DCASConfig
 
 
@@ -32,6 +34,8 @@ class GDDMatrix(models.Model):
     crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
     growth_stage_type = models.ForeignKey(
         CropStageType, on_delete=models.CASCADE)
+    growth_stage = models.ForeignKey(
+        CropGrowthStage, on_delete=models.CASCADE)
     gdd_threshold = models.FloatField()
     config = models.ForeignKey(DCASConfig, on_delete=models.CASCADE)
 
