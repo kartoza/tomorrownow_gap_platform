@@ -10,7 +10,8 @@ from django.contrib import admin
 from dcas.models import (
     DCASConfig,
     DCASConfigCountry,
-    DCASRule
+    DCASRule,
+    DCASRequest
 )
 
 
@@ -41,3 +42,11 @@ class DCASRuleAdmin(admin.ModelAdmin):
         'crop', 'crop_stage_type', 'crop_growth_stage',
         'parameter'
     )
+
+
+@admin.register(DCASRequest)
+class DCASRequestAdmin(admin.ModelAdmin):
+    """Admin page for DCASRequest."""
+
+    list_display = ('requested_at', 'country', 'start_time', 'end_time')
+    list_filter = ('country',)
