@@ -12,6 +12,7 @@ import random
 import uuid
 import datetime
 import fsspec
+import time
 from functools import partial
 import numpy as np
 import pandas as pd
@@ -39,10 +40,6 @@ from dcas.models import DCASConfig
 from dcas.rules.rule_engine import DCASRuleEngine
 from dcas.rules.variables import DCASData
 
-
-# DEBUG
-from warnings import simplefilter
-simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 logger = logging.getLogger(__name__)
 # Enable SQLAlchemy engine logging
@@ -79,29 +76,39 @@ def process_partition_total_gdd(df: pd.DataFrame, parquet_file_path, epoch_list)
     df['gdd_cap'] = np.random.random_integers(low=25, high=40, size=df.shape[0])
 
     # add new column to normalize max and min temperature
+    norm_temperature = {}
     for epoch in epoch_list:
-        df[f'max_temperature_{epoch}'] = df[f'max_temperature_{epoch}'].clip(upper=df['gdd_cap'])
-        df[f'min_temperature_{epoch}'] = df[f'min_temperature_{epoch}'].clip(lower=df['gdd_base'])
+        norm_temperature[f'max_temperature_{epoch}'] = df[f'max_temperature_{epoch}'].clip(upper=df['gdd_cap'])
+        norm_temperature[f'min_temperature_{epoch}'] = df[f'min_temperature_{epoch}'].clip(lower=df['gdd_base'])
+
+    norm_temperature_df = pd.DataFrame(norm_temperature)
 
     # calculate gdd foreach day from planting_date
     gdd_cols = []
+    gdd_dfs = {}
     for epoch in epoch_list:
         c_name = f'gdd_{epoch}'
-        df[c_name] = np.where(
+        gdd_dfs[c_name] = np.where(
             df['planting_date_epoch'] > epoch,
             np.nan,
-            ((df[f'max_temperature_{epoch}'] + df[f'min_temperature_{epoch}']) / 2) - df['gdd_base']
+            ((norm_temperature_df[f'max_temperature_{epoch}'] + norm_temperature_df[f'min_temperature_{epoch}']) / 2) - df['gdd_base']
         )
         gdd_cols.append(c_name)
 
-    # calculate total_gdd
-    df['total_gdd'] = df[gdd_cols].sum(axis=1)
+    gdd_temp_df = pd.DataFrame(gdd_dfs)
+
+    # Calculate cumulative sum for each gdd column
+    cumsum_gdd_df = gdd_temp_df.cumsum(axis=1)
+    cumsum_gdd_df.columns = [f"gdd_sum_{epoch}" for epoch in epoch_list]
 
     # data cleanup
     grid_column_list.remove('grid_id')
     grid_column_list.append('gdd_base')
     grid_column_list.append('gdd_cap')
-    df = df.drop(columns=grid_column_list + gdd_cols)
+    df = df.drop(columns=grid_column_list)
+
+    # combine df with cumulative sum of gdd
+    df = pd.concat([df, cumsum_gdd_df], axis=1)
 
     return df
 
@@ -150,8 +157,17 @@ def process_partition_growth_stage(df: pd.DataFrame, growth_stage_list, current_
     def calculate_growth_stage(row, gs_list, current_date):
         # TODO: lookup the growth_stage based on total_gdd value
         row['growth_stage_id'] = random.choice(gs_list)
+
+        # possible scenario:
+        # - no prev_growth_stage_start_date or prev_growth_stage_id
+        # - growth_stage_id is the same with prev_growth_stage_id
+        # - growth_stage_id is different with prev_growth_stage_id
+        # 
+        # for 2nd scenario, use the prev_growth_stage_start_date
+        # for 1st and 3rd scenario, we need to find the date that growth stage is changed
+
         if (
-            row['growth_stage_start_date'] is None or
+            row['prev_growth_stage_start_date'] is None or
             pd.isnull(row['prev_growth_stage_id']) or
             pd.isna(row['prev_growth_stage_id']) or
             row['growth_stage_id'] != row['prev_growth_stage_id']
@@ -244,7 +260,7 @@ class DCASDataPipeline:
     NUM_PARTITIONS = 10
     GRID_CROP_NUM_PARTITIONS = 5 # for 1M 
     # GRID_CROP_NUM_PARTITIONS = 2
-    LIMIT = 1000000
+    LIMIT = 10000
     TMP_BASE_DIR = '/tmp/dcas'
 
     def __init__(
@@ -755,8 +771,10 @@ class DCASDataPipeline:
         grid_crop_df = self.load_grid_data_with_crop()
         grid_crop_df_meta = self.load_grid_data_with_crop_meta()
 
-        # Process total_gdd
-        grid_crop_df_meta['total_gdd'] = np.nan
+        # Process gdd cumulative
+        for epoch in self.max_temperature_epoch:
+            grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
+
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_total_gdd,
             grid_data_file_path,
@@ -827,12 +845,16 @@ class DCASDataPipeline:
             meta=meta6
         )
 
-        self.save_local_parquet(grid_crop_df, 'grid_crop')
+        return grid_crop_df
+
 
     def run(self):
         self.setup()
         
+        start_time = time.time()
         self.data_collection()
-        self.process_grid_crop_data()
+        grid_crop_df = self.process_grid_crop_data()
 
-        print('Finished')
+        self.save_local_parquet(grid_crop_df, 'grid_crop')
+
+        print(f'Finished {time.time() - start_time} seconds.')

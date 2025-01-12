@@ -20,19 +20,32 @@ logging.basicConfig(level=logging.DEBUG)
 class Command(BaseCommand):
     """Command to process DCAS Pipeline."""
 
+    def export_to_csv(self, sql):
+        conn = duckdb.connect()
+        final_query = (
+            f"""
+            COPY({sql})
+            TO 'output.csv'
+            (HEADER, DELIMITER ',');
+            """
+        )
+        conn.sql(final_query)
+        conn.close()
+
     def handle(self, *args, **options):
         """Run DCAS Pipeline."""
         grid_path = os.path.join(
             '/tmp', 'dcas', 'grid_crop'
         )
-        conn = duckdb.connect()
+        
         sql = (
             f"""
-            SELECT grid_id, crop_id, crop_stage_type_id,
-            planting_date, growth_stage_id,
-            message, message_2, message_3, message_4, message_5
-            FROM read_parquet('{grid_path}/*.parquet');
+            SELECT *
+            FROM read_parquet('{grid_path}/*.parquet')
             """
         )
-        conn.sql(sql).show()
-        conn.close()
+        self.export_to_csv(sql)
+
+        # conn = duckdb.connect()
+        # conn.sql(sql).show()
+        # conn.close()
