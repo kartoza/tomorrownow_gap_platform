@@ -11,7 +11,8 @@ from dcas.models import (
     DCASConfig,
     DCASConfigCountry,
     DCASRule,
-    DCASRequest
+    DCASRequest,
+    DCASOutput
 )
 
 
@@ -50,3 +51,11 @@ class DCASRequestAdmin(admin.ModelAdmin):
 
     list_display = ('requested_at', 'country', 'start_time', 'end_time')
     list_filter = ('country',)
+
+
+@admin.register(DCASOutput)
+class DCASOutputAdmin(admin.ModelAdmin):
+    """Admin page for DCASOutput."""
+
+    list_display = ('delivered_at', 'request', 'file_name', 'status')
+    list_filter = ('request', 'status')    
