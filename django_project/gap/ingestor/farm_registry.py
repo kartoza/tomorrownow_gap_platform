@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Tomorrow Now GAP
+Tomorrow Now GAP.
 
 .. note:: Ingestor for DCAS Farmer Registry data
 """

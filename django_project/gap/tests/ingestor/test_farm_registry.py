@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Tomorrow Now GAP
+Tomorrow Now GAP.
 
 .. note:: Unit tests for DCASFarmRegistryIngestor.
 """
