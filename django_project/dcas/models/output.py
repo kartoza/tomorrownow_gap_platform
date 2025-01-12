@@ -42,6 +42,8 @@ class DCASOutput(models.Model):
     )
 
     class Meta:
+        """Meta class for DCASOutput."""
+
         db_table = 'dcas_output'
         verbose_name = _('Output')
         ordering = ['-delivered_at']

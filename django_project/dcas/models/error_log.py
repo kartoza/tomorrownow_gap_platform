@@ -34,6 +34,8 @@ class DCASErrorLog(models.Model):
     )
 
     class Meta:
+        """Meta class for DCASErrorLog."""
+
         db_table = 'dcas_error_log'
         verbose_name = _('Error Log')
         ordering = ['-logged_at']

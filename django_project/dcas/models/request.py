@@ -32,6 +32,8 @@ class DCASRequest(models.Model):
     )
 
     class Meta:  # noqa
+        """Meta class for DCASRequest."""
+
         db_table = 'dcas_request'
         verbose_name = _('Request')
         ordering = ['-requested_at']
