@@ -10,7 +10,9 @@ from django.contrib import admin
 from dcas.models import (
     DCASConfig,
     DCASConfigCountry,
-    DCASRule
+    DCASRule,
+    GDDConfig,
+    GDDMatrix
 )
 
 
@@ -41,3 +43,21 @@ class DCASRuleAdmin(admin.ModelAdmin):
         'crop', 'crop_stage_type', 'crop_growth_stage',
         'parameter'
     )
+
+# GDD Config and Matrix
+
+
+@admin.register(GDDConfig)
+class GDDConfigAdmin(admin.ModelAdmin):
+    """Admin interface for GDDConfig."""
+
+    list_display = ('crop', 'base_temperature', 'cap_temperature', 'config')
+    list_filter = ('config', 'crop')
+
+
+@admin.register(GDDMatrix)
+class GDDMatrixAdmin(admin.ModelAdmin):
+    """Admin interface for GDDMatrix."""
+
+    list_display = ('crop', 'growth_stage_type', 'gdd_threshold', 'config')
+    list_filter = ('crop', 'growth_stage_type', 'config')
