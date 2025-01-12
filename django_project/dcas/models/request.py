@@ -9,7 +9,6 @@ from django.contrib.gis.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from core.models.common import Definition
 from gap.models.common import Country
 
 
@@ -34,5 +33,5 @@ class DCASRequest(models.Model):
 
     class Meta:  # noqa
         db_table = 'dcas_request'
-        verbose_name = _('DCAS Request')
+        verbose_name = _('Request')
         ordering = ['-requested_at']

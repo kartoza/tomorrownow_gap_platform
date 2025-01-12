@@ -9,3 +9,4 @@ from dcas.models.config import *  # noqa
 from dcas.models.rule import *  # noqa
 from dcas.models.request import *  # noqa
 from dcas.models.output import *  # noqa
+from dcas.models.error_log import *  # noqa

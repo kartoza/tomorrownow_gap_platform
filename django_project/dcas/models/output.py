@@ -9,9 +9,7 @@ from django.utils import timezone
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models.common import Definition
 from core.models.background_task import TaskStatus
-from gap.models.common import Country
 from dcas.models.request import DCASRequest
 
 
@@ -45,6 +43,5 @@ class DCASOutput(models.Model):
 
     class Meta:
         db_table = 'dcas_output'
-        verbose_name = 'DCAS Output'
-        verbose_name_plural = 'DCAS Outputs'
+        verbose_name = _('Output')
         ordering = ['-delivered_at']

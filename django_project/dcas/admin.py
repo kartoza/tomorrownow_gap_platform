@@ -12,7 +12,8 @@ from dcas.models import (
     DCASConfigCountry,
     DCASRule,
     DCASRequest,
-    DCASOutput
+    DCASOutput,
+    DCASErrorLog
 )
 
 
@@ -58,4 +59,14 @@ class DCASOutputAdmin(admin.ModelAdmin):
     """Admin page for DCASOutput."""
 
     list_display = ('delivered_at', 'request', 'file_name', 'status')
-    list_filter = ('request', 'status')    
+    list_filter = ('request', 'status')
+
+
+@admin.register(DCASErrorLog)
+class DCASErrorLogAdmin(admin.ModelAdmin):
+    """Admin page for DCASErrorLog."""
+
+    list_display = ('logged_at', 'request', 'farm_id', 'error_message')
+    list_filter = ('request', 'farm_id')
+    search_fields = ('error_message',)
+    ordering = ('-logged_at',)
