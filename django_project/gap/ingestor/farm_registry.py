@@ -8,13 +8,51 @@ from datetime import datetime, timezone
 from django.contrib.gis.geos import Point
 import logging
 from gap.ingestor.base import BaseIngestor
+from gap.ingestor.exceptions import (
+    FileNotFoundException, FileIsNotCorrectException,
+)
 from gap.models import (
     Farm, Crop, FarmRegistry, FarmRegistryGroup,
-    IngestorSession,
+    IngestorSession, CropStageType
 )
 from django.db import transaction
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
+
+
+class Keys:
+    """Keys for the data."""
+
+    CROP = 'crop'
+    PARAMETER = 'parameter'
+    GROWTH_STAGE = 'growth_stage'
+    MIN_RANGE = 'min_range'
+    MAX_RANGE = 'max_range'
+    CODE = 'code'
+
+    @staticmethod
+    def check_columns(df) -> bool:
+        """Check if all columns exist in dataframe.
+
+        :param df: dataframe from csv
+        :type df: pd.DataFrame
+        :raises FileIsNotCorrectException: When column is missing
+        """
+        keys = [
+            Keys.CROP, Keys.PARAMETER, Keys.GROWTH_STAGE,
+            Keys.MIN_RANGE, Keys.MAX_RANGE, Keys.CODE
+        ]
+
+        missing = []
+        for key in keys:
+            if key not in df.columns:
+                missing.append(key)
+
+        if missing:
+            raise FileIsNotCorrectException(
+                f'Column(s) missing: {",".join(missing)}'
+            )
 
 
 class DCASFarmRegistryIngestor(BaseIngestor):
@@ -77,9 +115,17 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                 }
             )
 
-            # Get the Crop instance
+            # get crop and stage type
+            crop_with_stage = row[Keys.CROP].lower().split('_')
             crop, _ = Crop.objects.get_or_create(
-                name=row['CropName']
+                name__iexact=crop_with_stage[0],
+                defaults={
+                    'name': crop_with_stage[0].title()
+                }
+            )
+            stage_type = CropStageType.objects.get(
+                Q(name__iexact=crop_with_stage[1]) |
+                Q(alias__iexact=crop_with_stage[1])
             )
 
             # Parse the planting date
@@ -91,6 +137,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                 group=self.group,
                 farm=farm,
                 crop=crop,
+                crop_stage_type=stage_type,
                 planting_date=planting_date,
             )
 
@@ -117,8 +164,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
     def run(self):
         """Run the ingestion process."""
         if not self.session.file:
-            raise FileNotFoundError("No file found in the session.")
-
+            raise FileNotFoundException("No file found for ingestion.")
         dir_path = self._extract_zip_file()
         try:
             self._run(dir_path)
