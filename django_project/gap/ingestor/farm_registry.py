@@ -1,3 +1,10 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP
+
+.. note:: Ingestor for DCAS Farmer Registry data
+"""
+
 import csv
 import os
 import shutil

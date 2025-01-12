@@ -1,3 +1,10 @@
+# coding: utf-8
+"""
+Tomorrow Now GAP
+
+.. note:: Unit tests for DCASFarmRegistryIngestor.
+"""
+
 import os
 import logging
 from django.core.files.uploadedfile import SimpleUploadedFile
