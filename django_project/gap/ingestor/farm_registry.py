@@ -31,12 +31,11 @@ logger = logging.getLogger(__name__)
 class Keys:
     """Keys for the data."""
 
-    CROP = 'crop'
-    PARAMETER = 'parameter'
-    GROWTH_STAGE = 'growth_stage'
-    MIN_RANGE = 'min_range'
-    MAX_RANGE = 'max_range'
-    CODE = 'code'
+    CROP = 'CropName'
+    FARMER_ID = 'FarmerId'
+    FINAL_LATITUDE = 'FinalLatitude'
+    FINAL_LONGITUDE = 'FinalLongitude'
+    PLANTING_DATE = 'PlantingDate'
 
     @staticmethod
     def check_columns(df) -> bool:
@@ -47,8 +46,8 @@ class Keys:
         :raises FileIsNotCorrectException: When column is missing
         """
         keys = [
-            Keys.CROP, Keys.PARAMETER, Keys.GROWTH_STAGE,
-            Keys.MIN_RANGE, Keys.MAX_RANGE, Keys.CODE
+            Keys.CROP, Keys.FARMER_ID, Keys.FINAL_LATITUDE,
+            Keys.FINAL_LONGITUDE, Keys.PLANTING_DATE
         ]
 
         missing = []
@@ -110,17 +109,9 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         """Process a single row from the input file."""
         try:
             # Parse latitude and longitude to create a geometry point
-            latitude = float(row['FinalLatitude'])
-            longitude = float(row['FinalLongitude'])
+            latitude = float(row[Keys.FINAL_LATITUDE])
+            longitude = float(row[Keys.FINAL_LONGITUDE])
             point = Point(x=longitude, y=latitude, srid=4326)
-
-            # Get or create the Farm instance
-            farm, _ = Farm.objects.get_or_create(
-                unique_id=row['FarmerId'],
-                defaults={
-                    'geometry': point
-                }
-            )
 
             # get crop and stage type
             crop_with_stage = row[Keys.CROP].lower().split('_')
@@ -137,7 +128,17 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
             # Parse the planting date
             planting_date = datetime.strptime(
-                row['PlantingDate'], '%m/%d/%Y').date()
+                row[Keys.PLANTING_DATE], '%m/%d/%Y').date()
+
+            # Get or create the Farm instance
+            logger.debug(f"FARMER_ID: {row[Keys.FARMER_ID]}")
+            farm, _ = Farm.objects.get_or_create(
+                unique_id=row[Keys.FARMER_ID].strip(),
+                defaults={
+                    'geometry': point,
+                    'crop': crop
+                }
+            )
 
             # Create the FarmRegistry entry
             FarmRegistry.objects.update_or_create(
