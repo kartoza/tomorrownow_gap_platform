@@ -13,7 +13,7 @@ from dcas.models import (
     DCASRule,
     DCASRequest,
     DCASOutput,
-    DCASErrorLog
+    DCASErrorLog,
     GDDConfig,
     GDDMatrix
 )
