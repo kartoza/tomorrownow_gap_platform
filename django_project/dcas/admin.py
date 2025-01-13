@@ -11,6 +11,9 @@ from dcas.models import (
     DCASConfig,
     DCASConfigCountry,
     DCASRule,
+    DCASRequest,
+    DCASOutput,
+    DCASErrorLog,
     GDDConfig,
     GDDMatrix
 )
@@ -43,6 +46,32 @@ class DCASRuleAdmin(admin.ModelAdmin):
         'crop', 'crop_stage_type', 'crop_growth_stage',
         'parameter'
     )
+
+
+@admin.register(DCASRequest)
+class DCASRequestAdmin(admin.ModelAdmin):
+    """Admin page for DCASRequest."""
+
+    list_display = ('requested_at', 'country', 'start_time', 'end_time')
+    list_filter = ('country',)
+
+
+@admin.register(DCASOutput)
+class DCASOutputAdmin(admin.ModelAdmin):
+    """Admin page for DCASOutput."""
+
+    list_display = ('delivered_at', 'request', 'file_name', 'status')
+    list_filter = ('request', 'status')
+
+
+@admin.register(DCASErrorLog)
+class DCASErrorLogAdmin(admin.ModelAdmin):
+    """Admin page for DCASErrorLog."""
+
+    list_display = ('logged_at', 'request', 'farm_id', 'error_message')
+    list_filter = ('request', 'farm_id')
+    search_fields = ('error_message',)
+    ordering = ('-logged_at',)
 
 # GDD Config and Matrix
 
