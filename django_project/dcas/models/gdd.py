@@ -32,9 +32,9 @@ class GDDMatrix(models.Model):
     """Model to store the matrix of crops and their growth stages."""
 
     crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
-    growth_stage_type = models.ForeignKey(
+    crop_stage_type = models.ForeignKey(
         CropStageType, on_delete=models.CASCADE)
-    growth_stage = models.ForeignKey(
+    crop_growth_stage = models.ForeignKey(
         CropGrowthStage, on_delete=models.CASCADE)
     gdd_threshold = models.FloatField()
     config = models.ForeignKey(DCASConfig, on_delete=models.CASCADE)
@@ -44,4 +44,4 @@ class GDDMatrix(models.Model):
 
         db_table = 'gdd_matrix'
         verbose_name = 'GDD Matrix'
-        unique_together = ('crop', 'growth_stage_type', 'config')
+        unique_together = ('crop', 'crop_stage_type', 'config')

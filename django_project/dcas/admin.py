@@ -59,5 +59,5 @@ class GDDConfigAdmin(admin.ModelAdmin):
 class GDDMatrixAdmin(admin.ModelAdmin):
     """Admin interface for GDDMatrix."""
 
-    list_display = ('crop', 'growth_stage_type', 'gdd_threshold', 'config')
-    list_filter = ('crop', 'growth_stage_type', 'config')
+    list_display = ('crop', 'crop_stage_type', 'gdd_threshold', 'config')
+    list_filter = ('crop', 'crop_stage_type', 'config')
