@@ -14,6 +14,8 @@ from dcas.models import (
     DCASRequest,
     DCASOutput,
     DCASErrorLog
+    GDDConfig,
+    GDDMatrix
 )
 
 
@@ -70,3 +72,21 @@ class DCASErrorLogAdmin(admin.ModelAdmin):
     list_filter = ('request', 'farm_id')
     search_fields = ('error_message',)
     ordering = ('-logged_at',)
+
+# GDD Config and Matrix
+
+
+@admin.register(GDDConfig)
+class GDDConfigAdmin(admin.ModelAdmin):
+    """Admin interface for GDDConfig."""
+
+    list_display = ('crop', 'base_temperature', 'cap_temperature', 'config')
+    list_filter = ('config', 'crop')
+
+
+@admin.register(GDDMatrix)
+class GDDMatrixAdmin(admin.ModelAdmin):
+    """Admin interface for GDDMatrix."""
+
+    list_display = ('crop', 'crop_stage_type', 'gdd_threshold', 'config')
+    list_filter = ('crop', 'crop_stage_type', 'config')
