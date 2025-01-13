@@ -32,3 +32,5 @@ docs/mkdocs.yml
 
 # locust auth files
 locust_auth.json
+
+.vscode-extensions/
