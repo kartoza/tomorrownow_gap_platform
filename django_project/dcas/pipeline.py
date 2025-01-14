@@ -323,7 +323,9 @@ class DCASDataPipeline:
 
         # load grid with crop and planting date
         grid_crop_df = self.load_grid_data_with_crop()
-        grid_crop_df_meta = self.data_query.grid_data_with_crop_meta()
+        grid_crop_df_meta = self.data_query.grid_data_with_crop_meta(
+            self.farm_registry_group
+        )
 
         # Process gdd cumulative
         for epoch in self.max_temperature_epoch:
