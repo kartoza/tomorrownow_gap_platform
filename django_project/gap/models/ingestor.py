@@ -39,6 +39,7 @@ class IngestorType:
     CBAM_BIAS_ADJUST = 'CBAM Bias Adjusted'
     DCAS_RULE = 'DCAS Rules'
     FARM_REGISTRY = 'Farm Registry'
+    GDD = 'GDD'
 
 
 class IngestorSessionStatus:
@@ -211,6 +212,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
         from gap.ingestor.dcas_rule import DcasRuleIngestor
         from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
+        from gap.ingestor.gdd_ingestor import GDDIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -239,6 +241,8 @@ class IngestorSession(BaseSession):
             ingestor = DcasRuleIngestor
         elif self.ingestor_type == IngestorType.FARM_REGISTRY:
             ingestor = DCASFarmRegistryIngestor
+        elif self.ingestor_type == IngestorType.GDD:
+            ingestor = GDDIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()
