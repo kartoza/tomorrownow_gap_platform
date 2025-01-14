@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gap', '0045_alter_collectorsession_ingestor_type_and_more'),
         ('dcas', '0004_dcasrequest_dcasoutput_dcaserrorlog'),
     ]
 
