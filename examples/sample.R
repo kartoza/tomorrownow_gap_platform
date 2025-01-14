@@ -36,9 +36,6 @@ query_params <- list(
     # location_name = ''
 )
 
-# Define user agent of the request
-user_agent_string <- "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-
 # Set the output file path
 output_file <- "data.nc"
 
@@ -47,7 +44,7 @@ response <- GET(
     url = base_url,
     authenticate(username, password),
     query = query_params,
-    add_headers(`User-Agent` = user_agent_string),
+    user_agent("httr"),
     write_disk(output_file, overwrite = TRUE)
 )
 # Check the response
