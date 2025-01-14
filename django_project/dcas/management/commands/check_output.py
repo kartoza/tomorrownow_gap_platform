@@ -13,14 +13,13 @@ import duckdb
 
 
 logger = logging.getLogger(__name__)
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
 
 
 class Command(BaseCommand):
     """Command to process DCAS Pipeline."""
 
     def export_to_csv(self, sql):
+        """Export as csv."""
         conn = duckdb.connect()
         final_query = (
             f"""
@@ -33,11 +32,11 @@ class Command(BaseCommand):
         conn.close()
 
     def handle(self, *args, **options):
-        """Run DCAS Pipeline."""
+        """Check Data Output."""
         grid_path = os.path.join(
             '/tmp', 'dcas', 'grid_crop'
         )
-        
+
         sql = (
             f"""
             SELECT *
