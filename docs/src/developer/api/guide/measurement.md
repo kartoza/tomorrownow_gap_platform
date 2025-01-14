@@ -117,7 +117,6 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Ground Observations (TAHMO stations) | Air Temperature Average | | °C | average_air_temperature |
 | Ground Observations (TAHMO stations) | Air Temperature Max | | °C | max_air_temperature |
 | Ground Observations (TAHMO stations) | Air Temperature Min | | °C | min_air_temperature |
-
 | **Ground Observations (Arable stations)** |
 | Ground Observations (Arable stations) | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
 | Ground Observations (Arable stations) | Relative Humidity Max | | % | max_relative_humidity |
