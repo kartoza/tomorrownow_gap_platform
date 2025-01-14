@@ -44,4 +44,10 @@ class GDDMatrix(models.Model):
 
         db_table = 'gdd_matrix'
         verbose_name = 'GDD Matrix'
-        unique_together = ('crop', 'crop_stage_type', 'config')
+        unique_together = (
+            'crop',
+            'crop_stage_type',
+            'config',
+            'crop_growth_stage',
+            'gdd_threshold'
+        )
