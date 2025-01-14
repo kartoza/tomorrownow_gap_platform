@@ -3,7 +3,7 @@
         "model": "dcas.gddconfig",
         "pk": 1,
         "fields": {
-            "crop": 1,
+            "crop": 2,
             "base_temperature": 10,
             "cap_temperature": 35,
             "config": 1
@@ -13,7 +13,7 @@
         "model": "dcas.gddconfig",
         "pk": 2,
         "fields": {
-            "crop": 2,
+            "crop": 8,
             "base_temperature": 9,
             "cap_temperature": 25,
             "config": 1
@@ -23,7 +23,7 @@
         "model": "dcas.gddconfig",
         "pk": 3,
         "fields": {
-            "crop": 3,
+            "crop": 6,
             "base_temperature": 10,
             "cap_temperature": 35,
             "config": 1
@@ -33,7 +33,7 @@
         "model": "dcas.gddconfig",
         "pk": 4,
         "fields": {
-            "crop": 4,
+            "crop": 10,
             "base_temperature": 12,
             "cap_temperature": 35,
             "config": 1
@@ -43,7 +43,7 @@
         "model": "dcas.gddconfig",
         "pk": 5,
         "fields": {
-            "crop": 5,
+            "crop": 3,
             "base_temperature": 4.5,
             "cap_temperature": 20,
             "config": 1
@@ -53,7 +53,7 @@
         "model": "dcas.gddconfig",
         "pk": 6,
         "fields": {
-            "crop": 6,
+            "crop": 5,
             "base_temperature": 10,
             "cap_temperature": 30,
             "config": 1
@@ -73,7 +73,7 @@
         "model": "dcas.gddconfig",
         "pk": 8,
         "fields": {
-            "crop": 8,
+            "crop": 4,
             "base_temperature": 10,
             "cap_temperature": 35,
             "config": 1
@@ -84,6 +84,16 @@
         "pk": 9,
         "fields": {
             "crop": 9,
+            "base_temperature": 10,
+            "cap_temperature": 30,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddconfig",
+        "pk": 10,
+        "fields": {
+            "crop": 1,
             "base_temperature": 10,
             "cap_temperature": 30,
             "config": 1
