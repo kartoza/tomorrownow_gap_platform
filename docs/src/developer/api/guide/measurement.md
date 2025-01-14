@@ -107,12 +107,17 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
 | **Ground Observations (TAHMO stations)** |
 | Ground Observations (TAHMO stations) | Precipitation | | mm/day | precipitation |
+| Ground Observations (TAHMO stations) | Precipitation Total Chirps | | % | precipitation_total_chirps |
+| Ground Observations (TAHMO stations) | Precipitation Total Chirps Qflag | | % | precipitation_total_chirps_qflag |
+| Ground Observations (TAHMO stations) | Precipitation Total Era5 | | % | precipitation_total_era5 |
+| Ground Observations (TAHMO stations) | Precipitation Total Qflag | | % | precipitation_total_qflag |
 | Ground Observations (TAHMO stations) | Solar radiation | | Wh/m2 | solar_radiation |
 | Ground Observations (TAHMO stations) | Relative Humidity Max | | % | max_relative_humidity |
 | Ground Observations (TAHMO stations) | Relative Humidity Min | | % | min_relative_humidity |
 | Ground Observations (TAHMO stations) | Air Temperature Average | | °C | average_air_temperature |
 | Ground Observations (TAHMO stations) | Air Temperature Max | | °C | max_air_temperature |
 | Ground Observations (TAHMO stations) | Air Temperature Min | | °C | min_air_temperature |
+
 | **Ground Observations (Arable stations)** |
 | Ground Observations (Arable stations) | Total Evapotranspiration Flux | | mm | total_evapotranspiration_flux |
 | Ground Observations (Arable stations) | Relative Humidity Max | | % | max_relative_humidity |
