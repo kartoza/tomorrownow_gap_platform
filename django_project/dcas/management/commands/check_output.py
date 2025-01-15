@@ -34,13 +34,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Check Data Output."""
         grid_path = os.path.join(
-            '/tmp', 'dcas', 'grid_crop'
+            '/tmp', 'dcas', 'grid_data'
         )
 
         sql = (
             f"""
             SELECT *
-            FROM read_parquet('{grid_path}/*.parquet')
+            FROM read_parquet('{grid_path}.parquet')
             """
         )
         self.export_to_csv(sql)

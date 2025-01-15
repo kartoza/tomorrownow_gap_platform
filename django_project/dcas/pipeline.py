@@ -14,8 +14,9 @@ from django.db import connection
 from django.db.models import Min
 import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
+from django.contrib.gis.db.models import Union
 
-from gap.models import FarmRegistryGroup, FarmRegistry, CropGrowthStage
+from gap.models import FarmRegistryGroup, FarmRegistry, CropGrowthStage, Grid
 from dcas.models import DCASConfig
 from dcas.partitions import (
     process_partition_total_gdd,
@@ -27,6 +28,7 @@ from dcas.partitions import (
 )
 from dcas.queries import DataQuery
 from dcas.outputs import DCASPipelineOutput, OutputType
+from dcas.inputs import DCASPipelineInput
 
 
 logger = logging.getLogger(__name__)
@@ -58,9 +60,9 @@ class DCASDataPipeline:
         self.minimum_plant_date = None
         self.crops = []
         self.request_date = request_date
-        self.max_temperature_epoch = []
         self.data_query = DataQuery(self._conn_str(), self.LIMIT)
         self.data_output = DCASPipelineOutput(request_date)
+        self.data_input = DCASPipelineInput(request_date)
 
     def setup(self):
         """Set the data pipeline."""
@@ -78,18 +80,11 @@ class DCASDataPipeline:
         ).distinct('crop_id')
         self.crops = list(farm_qs)
 
-        self.max_temperature_epoch = []
-        dates = pd.date_range(
-            self.minimum_plant_date,
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
-        )
-        for date in dates:
-            epoch = int(date.timestamp())
-            self.max_temperature_epoch.append(epoch)
-
         # initialize output
         self.data_output.setup()
+
+        # initialize input
+        self.data_input.setup(self.minimum_plant_date)
 
     def _conn_str(self):
         return 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'.format(
@@ -117,56 +112,19 @@ class DCASDataPipeline:
         :return: Grid DataFrame with weather columns
         :rtype: pd.DataFrame
         """
-        columns = {}
-        dates = pd.date_range(
-            self.minimum_plant_date,
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
+        # Combine all geometries and compute the bounding box
+        combined_bbox = (
+            Grid.objects.filter(
+                id__in=df.index.unique()
+            ).aggregate(
+                combined_geometry=Union('geometry')
+            )
         )
 
-        for date in dates:
-            epoch = int(date.timestamp())
-            columns[f'max_temperature_{epoch}'] = (
-                np.random.uniform(low=25, high=40, size=df.shape[0])
-            )
-            columns[f'min_temperature_{epoch}'] = (
-                np.random.uniform(low=5, high=15, size=df.shape[0])
-            )
-            columns[f'total_rainfall_{epoch}'] = (
-                np.random.uniform(low=10, high=200, size=df.shape[0])
-            )
+        bbox = combined_bbox['combined_geometry'].extent
+        print(f"Bounding Box: {bbox}")
 
-        dates_humidity = pd.date_range(
-            self.request_date,
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
-        )
-        for date in dates_humidity:
-            epoch = int(date.timestamp())
-            columns[f'max_humidity_{epoch}'] = (
-                np.random.uniform(low=55, high=90, size=df.shape[0])
-            )
-            columns[f'min_humidity_{epoch}'] = (
-                np.random.uniform(low=10, high=50, size=df.shape[0])
-            )
-
-        dates_precip = pd.date_range(
-            self.request_date - datetime.timedelta(days=6),
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
-        )
-        for date in dates_precip:
-            epoch = int(date.timestamp())
-            columns[f'precipitation_{epoch}'] = (
-                np.random.uniform(low=10, high=200, size=df.shape[0])
-            )
-            columns[f'evapotranspiration_{epoch}'] = (
-                np.random.uniform(low=10, high=200, size=df.shape[0])
-            )
-
-        new_df = pd.DataFrame(columns, index=df.index)
-
-        return pd.concat([df, new_df], axis=1)
+        return self.data_input.collect_data(bbox, df)
 
     def postprocess_grid_weather_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate value for Grid parameters.
@@ -297,18 +255,6 @@ class DCASDataPipeline:
 
         grid_df = self.postprocess_grid_weather_data(grid_df)
 
-        # # print(grid_df)
-        # print(grid_df.columns)
-
-        # print(f'length grid {grid_df.shape[0]}')
-        # memory = grid_df.memory_usage(deep=True)
-        # total_memory = memory.sum()  # Total memory usage in bytes
-
-        # print(memory)
-        # print(f"Total memory usage: {total_memory / 1024:.2f} KB")
-        # # # 760 MB for 33K grid data
-
-        # print(grid_df.columns)
         self.data_output.save(OutputType.GRID_DATA, grid_df)
         del grid_df
 
@@ -328,13 +274,13 @@ class DCASDataPipeline:
         )
 
         # Process gdd cumulative
-        for epoch in self.max_temperature_epoch:
+        for epoch in self.data_input.historical_epoch:
             grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
 
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_total_gdd,
             grid_data_file_path,
-            self.max_temperature_epoch,
+            self.data_input.historical_epoch,
             meta=grid_crop_df_meta
         )
 
@@ -345,7 +291,7 @@ class DCASDataPipeline:
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_seasonal_precipitation,
             grid_data_file_path,
-            self.max_temperature_epoch,
+            self.data_input.historical_epoch,
             meta=meta2
         )
 
@@ -383,7 +329,7 @@ class DCASDataPipeline:
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage_precipitation,
             grid_data_file_path,
-            self.max_temperature_epoch,
+            self.data_input.historical_epoch,
             meta=meta5
         )
 
@@ -409,8 +355,8 @@ class DCASDataPipeline:
 
         start_time = time.time()
         self.data_collection()
-        grid_crop_df = self.process_grid_crop_data()
+        # grid_crop_df = self.process_grid_crop_data()
 
-        self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
+        # self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
 
         print(f'Finished {time.time() - start_time} seconds.')
