@@ -1,3 +1,10 @@
+# coding=utf-8
+"""
+Tomorrow Now GAP.
+
+.. note:: Test Service for Growth Stage
+"""
+
 from django.test import TestCase
 from django.core.cache import cache
 from dcas.models import GDDMatrix
@@ -5,6 +12,8 @@ from dcas.service import GrowthStageService
 
 
 class GrowthStageServiceTest(TestCase):
+    """Test Growth Stage Service."""
+
     fixtures = [
         '6.unit.json',
         '7.attribute.json',
@@ -64,7 +73,6 @@ class GrowthStageServiceTest(TestCase):
 
     def test_get_growth_stage_early_upper(self):
         """Test retrieving growth stage."""
-
         # Maize,  Early
         stage = GrowthStageService.get_growth_stage(2, 1, 1000)
         self.assertIsNotNone(stage)
@@ -79,7 +87,6 @@ class GrowthStageServiceTest(TestCase):
 
     def test_get_growth_stage_below_threshold(self):
         """Test retrieving growth stage."""
-
         # Soybeans, Late
         stage = GrowthStageService.get_growth_stage(7, 3, 700)
         self.assertIsNotNone(stage)
@@ -94,6 +101,5 @@ class GrowthStageServiceTest(TestCase):
 
     def test_get_growth_stage_no_matrix(self):
         """Test when no GDDMatrix exists for the crop and stage type."""
-
         stage = GrowthStageService.get_growth_stage(99, 99, 150)
         self.assertIsNone(stage)
