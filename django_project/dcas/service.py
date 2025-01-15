@@ -11,9 +11,7 @@ from dcas.models import GDDMatrix
 
 class GrowthStageService:
     """
-    A service to retrieve the growth stage,
-    based on crop_id, crop_stage_type_id,
-    and total GDD.
+    A service to get the growth stage.
     """
 
     CACHE_KEY_TEMPLATE = "gdd_matrix:{crop_id}:{crop_stage_type_id}"
@@ -21,8 +19,7 @@ class GrowthStageService:
     @staticmethod
     def get_growth_stage(crop_id, crop_stage_type_id, total_gdd):
         """
-        Retrieve the growth stage based on the crop ID,
-        stage type, and total GDD.
+        Get the growth stage: crop ID, stage type, and total GDD.
 
         :param crop_id: ID of the crop
         :type crop_id: int
