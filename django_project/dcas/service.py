@@ -10,9 +10,7 @@ from dcas.models import GDDMatrix
 
 
 class GrowthStageService:
-    """
-    A service to get the growth stage.
-    """
+    """A service to get the growth stage."""
 
     CACHE_KEY_TEMPLATE = "gdd_matrix:{crop_id}:{crop_stage_type_id}"
 
