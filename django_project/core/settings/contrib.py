@@ -19,7 +19,8 @@ INSTALLED_APPS = INSTALLED_APPS + (
     'django_celery_results',
     'drf_yasg',
     'rest_framework_tracking',
-    'django_admin_inline_paginator'
+    'django_admin_inline_paginator',
+    'import_export'
 )
 
 WEBPACK_LOADER = {
