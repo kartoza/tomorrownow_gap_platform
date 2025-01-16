@@ -71,7 +71,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 13,
             "gdd_threshold": 450,
             "config": 1
         }
@@ -82,7 +82,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 13,
             "gdd_threshold": 660,
             "config": 1
         }
@@ -93,7 +93,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 13,
             "gdd_threshold": 1240,
             "config": 1
         }
@@ -137,7 +137,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 14,
             "gdd_threshold": 750,
             "config": 1
         }
@@ -148,7 +148,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 14,
             "gdd_threshold": 990,
             "config": 1
         }
@@ -159,7 +159,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 14,
             "gdd_threshold": 1530,
             "config": 1
         }
@@ -170,7 +170,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 1,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1050,
             "config": 1
         }
@@ -181,7 +181,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 2,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1320,
             "config": 1
         }
@@ -192,7 +192,7 @@
         "fields": {
             "crop": 2,
             "crop_stage_type": 3,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 8,
             "gdd_threshold": 2700,
             "config": 1
         }
@@ -269,7 +269,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 284,
             "config": 1
         }
@@ -280,7 +280,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 905,
             "config": 1
         }
@@ -291,7 +291,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 1108,
             "config": 1
         }
@@ -335,7 +335,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 7,
             "gdd_threshold": 554,
             "config": 1
         }
@@ -346,7 +346,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 7,
             "gdd_threshold": 1162,
             "config": 1
         }
@@ -357,7 +357,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 7,
             "gdd_threshold": 1378,
             "config": 1
         }
@@ -368,7 +368,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 1,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 10,
             "gdd_threshold": 743,
             "config": 1
         }
@@ -379,7 +379,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 2,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 10,
             "gdd_threshold": 1243,
             "config": 1
         }
@@ -390,7 +390,7 @@
         "fields": {
             "crop": 8,
             "crop_stage_type": 3,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 10,
             "gdd_threshold": 1675,
             "config": 1
         }
@@ -434,7 +434,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 1,
-            "crop_growth_stage": 2,
+            "crop_growth_stage": 16,
             "gdd_threshold": 400,
             "config": 1
         }
@@ -445,7 +445,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 2,
-            "crop_growth_stage": 2,
+            "crop_growth_stage": 16,
             "gdd_threshold": 680,
             "config": 1
         }
@@ -456,7 +456,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 3,
-            "crop_growth_stage": 2,
+            "crop_growth_stage": 16,
             "gdd_threshold": 500,
             "config": 1
         }
@@ -467,7 +467,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 4,
             "gdd_threshold": 680,
             "config": 1
         }
@@ -478,7 +478,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 4,
             "gdd_threshold": 1060,
             "config": 1
         }
@@ -489,7 +489,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 4,
             "gdd_threshold": 1125,
             "config": 1
         }
@@ -500,7 +500,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 1,
-            "crop_growth_stage": 4,
+            "crop_growth_stage": 7,
             "gdd_threshold": 900,
             "config": 1
         }
@@ -511,7 +511,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 2,
-            "crop_growth_stage": 4,
+            "crop_growth_stage": 7,
             "gdd_threshold": 1430,
             "config": 1
         }
@@ -522,7 +522,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 3,
-            "crop_growth_stage": 4,
+            "crop_growth_stage": 7,
             "gdd_threshold": 1750,
             "config": 1
         }
@@ -533,7 +533,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1120,
             "config": 1
         }
@@ -544,7 +544,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1870,
             "config": 1
         }
@@ -555,7 +555,7 @@
         "fields": {
             "crop": 6,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 2250,
             "config": 1
         }
@@ -698,7 +698,7 @@
         "fields": {
             "crop": 10,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 3988,
             "config": 1
         }
@@ -709,7 +709,7 @@
         "fields": {
             "crop": 10,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 4150,
             "config": 1
         }
@@ -720,7 +720,7 @@
         "fields": {
             "crop": 10,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 4600,
             "config": 1
         }
@@ -797,7 +797,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 754,
             "config": 1
         }
@@ -808,7 +808,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 1059,
             "config": 1
         }
@@ -819,7 +819,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 1059,
             "config": 1
         }
@@ -830,7 +830,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 1,
-            "crop_growth_stage": 4,
+            "crop_growth_stage": 15,
             "gdd_threshold": 1131,
             "config": 1
         }
@@ -841,7 +841,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 2,
-            "crop_growth_stage": 4,
+            "crop_growth_stage": 15,
             "gdd_threshold": 1494,
             "config": 1
         }
@@ -852,7 +852,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 3,
-            "crop_growth_stage": 4,
+            "crop_growth_stage": 15,
             "gdd_threshold": 1566,
             "config": 1
         }
@@ -863,7 +863,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1494,
             "config": 1
         }
@@ -874,7 +874,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1929,
             "config": 1
         }
@@ -885,7 +885,7 @@
         "fields": {
             "crop": 3,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 8,
             "gdd_threshold": 2001,
             "config": 1
         }
@@ -962,7 +962,7 @@
         "fields": {
             "crop": 5,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 410,
             "config": 1
         }
@@ -973,7 +973,7 @@
         "fields": {
             "crop": 5,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 510,
             "config": 1
         }
@@ -984,7 +984,7 @@
         "fields": {
             "crop": 5,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 560,
             "config": 1
         }
@@ -1028,7 +1028,7 @@
         "fields": {
             "crop": 5,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 12,
             "gdd_threshold": 1000,
             "config": 1
         }
@@ -1039,7 +1039,7 @@
         "fields": {
             "crop": 5,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 12,
             "gdd_threshold": 1180,
             "config": 1
         }
@@ -1050,7 +1050,7 @@
         "fields": {
             "crop": 5,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 12,
             "gdd_threshold": 1340,
             "config": 1
         }
@@ -1127,7 +1127,7 @@
         "fields": {
             "crop": 7,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 520,
             "config": 1
         }
@@ -1138,7 +1138,7 @@
         "fields": {
             "crop": 7,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 560,
             "config": 1
         }
@@ -1149,7 +1149,7 @@
         "fields": {
             "crop": 7,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 580,
             "config": 1
         }
@@ -1193,7 +1193,7 @@
         "fields": {
             "crop": 7,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 12,
             "gdd_threshold": 990,
             "config": 1
         }
@@ -1204,7 +1204,7 @@
         "fields": {
             "crop": 7,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 12,
             "gdd_threshold": 1290,
             "config": 1
         }
@@ -1215,7 +1215,7 @@
         "fields": {
             "crop": 7,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 12,
             "gdd_threshold": 1450,
             "config": 1
         }
@@ -1292,7 +1292,7 @@
         "fields": {
             "crop": 4,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 833,
             "config": 1
         }
@@ -1303,7 +1303,7 @@
         "fields": {
             "crop": 4,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 1058,
             "config": 1
         }
@@ -1314,7 +1314,7 @@
         "fields": {
             "crop": 4,
             "crop_stage_type": 3,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 1283,
             "config": 1
         }
@@ -1358,7 +1358,7 @@
         "fields": {
             "crop": 4,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 7,
             "gdd_threshold": 2025,
             "config": 1
         }
@@ -1369,7 +1369,7 @@
         "fields": {
             "crop": 4,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 7,
             "gdd_threshold": 2340,
             "config": 1
         }
@@ -1380,7 +1380,7 @@
         "fields": {
             "crop": 4,
             "crop_stage_type": 3,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 7,
             "gdd_threshold": 2970,
             "config": 1
         }
@@ -1413,7 +1413,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 1,
-            "crop_growth_stage": 2,
+            "crop_growth_stage": 11,
             "gdd_threshold": 180,
             "config": 1
         }
@@ -1424,7 +1424,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 2,
-            "crop_growth_stage": 2,
+            "crop_growth_stage": 11,
             "gdd_threshold": 225,
             "config": 1
         }
@@ -1435,7 +1435,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 1,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 630,
             "config": 1
         }
@@ -1446,7 +1446,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 2,
-            "crop_growth_stage": 3,
+            "crop_growth_stage": 5,
             "gdd_threshold": 750,
             "config": 1
         }
@@ -1479,7 +1479,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 1,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 6,
             "gdd_threshold": 810,
             "config": 1
         }
@@ -1490,7 +1490,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 2,
-            "crop_growth_stage": 5,
+            "crop_growth_stage": 6,
             "gdd_threshold": 930,
             "config": 1
         }
@@ -1501,7 +1501,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 1,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 9,
             "gdd_threshold": 915,
             "config": 1
         }
@@ -1512,7 +1512,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 2,
-            "crop_growth_stage": 6,
+            "crop_growth_stage": 9,
             "gdd_threshold": 1035,
             "config": 1
         }
@@ -1523,7 +1523,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 1,
-            "crop_growth_stage": 7,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1125,
             "config": 1
         }
@@ -1534,7 +1534,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 2,
-            "crop_growth_stage": 7,
+            "crop_growth_stage": 8,
             "gdd_threshold": 1245,
             "config": 1
         }
@@ -1545,7 +1545,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 1,
-            "crop_growth_stage": 8,
+            "crop_growth_stage": 10,
             "gdd_threshold": 1200,
             "config": 1
         }
@@ -1556,7 +1556,7 @@
         "fields": {
             "crop": 9,
             "crop_stage_type": 2,
-            "crop_growth_stage": 8,
+            "crop_growth_stage": 10,
             "gdd_threshold": 1350,
             "config": 1
         }
