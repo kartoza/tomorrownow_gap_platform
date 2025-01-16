@@ -5,12 +5,14 @@ Tomorrow Now GAP.
 .. note:: Unit tests for DCAS Pipeline Inputs.
 """
 
+import mock
 import xarray as xr
 import numpy as np
 import pandas as pd
 import datetime
 from django.test import TestCase
 
+from gap.providers.tio import TioZarrReaderValue
 from dcas.inputs import DCASPipelineInput
 
 
@@ -141,3 +143,73 @@ class DCASPipelineInputsTest(TestCase):
             vap_df[f'total_rainfall_{epoch}'].values, expected_results,
             atol=1e-5
         )
+
+    def test_generate_random(self):
+        """Test generate random data."""
+        grid_list = [1, 2, 3, 4, 5]
+        df = pd.DataFrame({
+            'grid_id': grid_list
+        }, index=grid_list)
+
+        df = self.input._generate_random(df)
+
+        epoch1 = self.input.historical_epoch[0]
+        epoch2 = self.input.historical_epoch[-1]
+        self.assertIn(f'max_temperature_{epoch1}', df.columns)
+        self.assertIn(f'max_temperature_{epoch2}', df.columns)
+        self.assertIn(f'max_humidity_{epoch2}', df.columns)
+        self.assertIn(f'precipitation_{epoch2}', df.columns)
+        self.assertEqual(len(df[f'max_temperature_{epoch1}']), len(grid_list))
+
+    @mock.patch('dcas.inputs.TioZarrReader.read')
+    @mock.patch('dcas.inputs.TioZarrReader.get_data_values')
+    def test_download_data(self, mock_data_values, mock_read):
+        """Test download data."""
+        mock_data_values.return_value = TioZarrReaderValue(
+            self.ds,
+            None,
+            [],
+            None
+        )
+
+        self.input._download_data(
+            ['temperature'],
+            [0, 2, 4, 6],
+            self.input.historical_dates[0],
+            self.input.historical_dates[-1],
+            '/tmp/test.nc'
+        )
+
+        mock_read.assert_called_once()
+        mock_data_values.assert_called_once()
+
+    @mock.patch('xarray.open_dataset')
+    def test_merge_data(self, mock_read):
+        """Test merge data."""
+        grid_list = [1, 2]
+        grid_df = pd.DataFrame({
+            'grid_id': grid_list,
+            'lat': [2, 4],
+            'lon': [2, 4]
+        }, index=grid_list)
+
+        mock_read.return_value = self.ds
+
+        df = self.input.merge_dataset(
+            'test.nc',
+            ['temperature'],
+            {
+                'temperature': 'temperature'
+            },
+            self.input.historical_dates,
+            grid_df
+        )
+
+        expected_results = [22, 34]
+        epoch = self.input.historical_epoch[-1]
+        np.testing.assert_allclose(
+            df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
+        )
+        # no date from mock ds should have all na
+        epoch = self.input.historical_epoch[0]
+        self.assertTrue(df[f'temperature_{epoch}'].isna().all())
