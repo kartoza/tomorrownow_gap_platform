@@ -38,7 +38,7 @@ class DCASDataPipeline:
     """Class for DCAS data pipeline."""
 
     NUM_PARTITIONS = 10
-    GRID_CROP_NUM_PARTITIONS = 5  # for 1M
+    GRID_CROP_NUM_PARTITIONS = 100
     # GRID_CROP_NUM_PARTITIONS = 2
     LIMIT = 10000
 
@@ -274,8 +274,10 @@ class DCASDataPipeline:
         )
 
         # Process gdd cumulative
+        gdd_columns = []
         for epoch in self.data_input.historical_epoch:
             grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
+            gdd_columns.append(f'gdd_sum_{epoch}')
 
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_total_gdd,
@@ -284,34 +286,11 @@ class DCASDataPipeline:
             meta=grid_crop_df_meta
         )
 
-        # Process seasonal_precipitation
-        meta2 = grid_crop_df_meta.assign(
-            seasonal_precipitation=np.nan
-        )
-        grid_crop_df = grid_crop_df.map_partitions(
-            process_partition_seasonal_precipitation,
-            grid_data_file_path,
-            self.data_input.historical_epoch,
-            meta=meta2
-        )
-
-        # Add temperature, humidity, and p_pet
-        meta3 = meta2.assign(
-            temperature=np.nan,
-            humidity=np.nan,
-            p_pet=np.nan,
-        )
-        grid_crop_df = grid_crop_df.map_partitions(
-            process_partition_other_params,
-            grid_data_file_path,
-            meta=meta3
-        )
-
         # Identify crop growth stage
         growth_id_list = list(
             CropGrowthStage.objects.all().values_list('id', flat=True)
         )
-        meta4 = meta3.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             growth_stage_start_date=pd.Series(dtype='double'),
             growth_stage_id=pd.Series(dtype='int')
         )
@@ -319,22 +298,49 @@ class DCASDataPipeline:
             process_partition_growth_stage,
             growth_id_list,
             request_date_epoch,
-            meta=meta4
+            meta=grid_crop_df_meta
+        )
+
+        # drop gdd columns
+        grid_crop_df = grid_crop_df.drop(columns=gdd_columns)
+        grid_crop_df_meta = grid_crop_df_meta.drop(columns=gdd_columns)
+
+        # Process seasonal_precipitation
+        grid_crop_df_meta = grid_crop_df_meta.assign(
+            seasonal_precipitation=np.nan
+        )
+        grid_crop_df = grid_crop_df.map_partitions(
+            process_partition_seasonal_precipitation,
+            grid_data_file_path,
+            self.data_input.historical_epoch,
+            meta=grid_crop_df_meta
+        )
+
+        # Add temperature, humidity, and p_pet
+        grid_crop_df_meta = grid_crop_df_meta.assign(
+            temperature=np.nan,
+            humidity=np.nan,
+            p_pet=np.nan,
+        )
+        grid_crop_df = grid_crop_df.map_partitions(
+            process_partition_other_params,
+            grid_data_file_path,
+            meta=grid_crop_df_meta
         )
 
         # Calculate growth_stage_precipitation
-        meta5 = meta4.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             growth_stage_precipitation=np.nan
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage_precipitation,
             grid_data_file_path,
             self.data_input.historical_epoch,
-            meta=meta5
+            meta=grid_crop_df_meta
         )
 
         # Calculate message codes
-        meta6 = meta5.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             message=None,
             message_2=None,
             message_3=None,
@@ -344,7 +350,7 @@ class DCASDataPipeline:
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_message_output,
             self.config.id,
-            meta=meta6
+            meta=grid_crop_df_meta
         )
 
         return grid_crop_df
