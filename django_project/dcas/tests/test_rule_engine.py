@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Unit tests for DCAS RuleEngine.
 """
 
+import numpy as np
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -78,6 +79,28 @@ class DCASRuleEngineTest(TestCase):
         param = {
             'id': parameter.id,
             'value': 999
+        }
+        data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
+        rule_engine.execute_rule(data)
+
+        # assert
+        self.assertEqual(len(data.message_codes), 0)
+
+        # test value with nan/inf
+        param = {
+            'id': parameter.id,
+            'value': np.nan
+        }
+        data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
+        rule_engine.execute_rule(data)
+
+        # assert
+        self.assertEqual(len(data.message_codes), 1)
+        self.assertIn('202400000', data.message_codes)
+
+        param = {
+            'id': parameter.id,
+            'value': np.inf
         }
         data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
         rule_engine.execute_rule(data)

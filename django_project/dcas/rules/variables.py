@@ -5,6 +5,7 @@ Tomorrow Now GAP DCAS.
 .. note:: DCAS Rule Engine Variables
 """
 
+import numpy as np
 
 
 class DCASVariable:
@@ -45,6 +46,13 @@ class DCASData:
             {
                 DCASVariable.PARAMETER: parameter['id'],
                 DCASVariable.GROWTH_STAGE: self.growth_stage_id,
-                DCASVariable.VALUE: parameter['value']
+                DCASVariable.VALUE: self._normalize_value(parameter['value'])
             } for parameter in self.parameters
         ]
+
+    def _normalize_value(self, val):
+        if np.isnan(val):
+            return 0
+        if np.isinf(val):
+            return 999999
+        return val

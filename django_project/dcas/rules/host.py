@@ -25,3 +25,7 @@ class DCASHost(engine.Host):
             c.s.message_code = action_name
 
         return get_message_code
+
+    def _run(self):
+        # disable timer creation as we run synchronously
+        pass
