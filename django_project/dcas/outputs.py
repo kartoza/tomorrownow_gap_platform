@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: DCAS Outputs
 """
 
+import paramiko
 import os
 import shutil
 import fsspec
@@ -23,12 +24,20 @@ class OutputType:
     GRID_DATA = 1
     GRID_CROP_DATA = 2
     FARM_CROP_DATA = 3
+    MESSAGE_DATA = 4
 
 
 class DCASPipelineOutput:
     """Class to manage pipeline output."""
 
     TMP_BASE_DIR = '/tmp/dcas'
+
+    # Docker SFTP Configuration
+    SFTP_HOST = "127.0.0.1"
+    SFTP_PORT = 2222  # Port mapped in Docker
+    SFTP_USERNAME = "user"
+    SFTP_PASSWORD = "password"
+    SFTP_REMOTE_PATH = "/home/user/upload/message_data.csv"
 
     def __init__(self, request_date):
         """Initialize DCASPipelineOutput."""
@@ -63,6 +72,14 @@ class DCASPipelineOutput:
         return os.path.join(
             self.TMP_BASE_DIR,
             'grid_crop'
+        )
+
+    @property
+    def csv_data_output_file(self):
+        """Return full path to csv data output directory."""
+        return os.path.join(
+            self.TMP_BASE_DIR,
+            'message_data.csv'
         )
 
     def _setup_s3fs(self):
@@ -138,6 +155,8 @@ class DCASPipelineOutput:
             self._save_grid_crop_data(df)
         elif type == OutputType.FARM_CROP_DATA:
             self._save_farm_crop_data(df)
+        elif type == OutputType.MESSAGE_DATA:
+            self._save_message_output_csv(df)
         else:
             raise ValueError(f'Invalid output type {type} to be saved!')
 
@@ -179,3 +198,50 @@ class DCASPipelineOutput:
         file_path = self.grid_data_file_path
         print(f'writing dataframe to {file_path}')
         df.to_parquet(file_path)
+
+    def _save_message_output_csv(self, df: dask_df):
+        """Save message output as CSV."""
+        df = df.compute()  # Convert Dask to Pandas
+
+        # Define output CSV file path
+        dir_path = os.path.dirname(self.csv_data_output_file)
+        file_path = self.csv_data_output_file
+
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        print('Saving to CSV')
+        # Save to CSV
+        x = df.to_csv(dir_path, index=False)
+        execute_dask_compute(x)
+        # Upload to SFTP Docker container
+        self._upload_to_sftp(file_path)
+
+    def _upload_to_sftp(self, local_file):
+        """Upload CSV file to Docker SFTP."""
+        try:
+            print(f'Connecting to SFTP server at '
+                  f'{self.SFTP_HOST}:{self.SFTP_PORT}...')
+            transport = paramiko.Transport(
+                (self.SFTP_HOST, self.SFTP_PORT)
+            )
+            transport.connect(
+                username=self.SFTP_USERNAME, password=self.SFTP_PASSWORD
+            )
+
+            sftp = paramiko.SFTPClient.from_transport(transport)
+
+            print(f"Uploading {local_file} to {self.SFTP_REMOTE_PATH}...")
+            sftp.put(local_file, self.SFTP_REMOTE_PATH)
+
+            print("Upload to Docker SFTP successful!")
+
+            # Close connection
+            sftp.close()
+            transport.close()
+
+        except Exception as e:
+            print(f"Failed to upload to SFTP: {e}")

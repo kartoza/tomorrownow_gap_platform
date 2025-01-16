@@ -413,4 +413,6 @@ class DCASDataPipeline:
 
         self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
 
+        self.data_output.save(OutputType.MESSAGE_DATA, grid_crop_df)
+
         print(f'Finished {time.time() - start_time} seconds.')
