@@ -102,3 +102,4 @@ pyarrow==18.1.0
 
 # djngo-import-export
 django-import-export==4.3.4
+django-import-export-celery==1.7.1

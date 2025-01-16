@@ -16,6 +16,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework_tracking.admin import APIRequestLogAdmin
 from rest_framework_tracking.models import APIRequestLog as BaseAPIRequestLog
 from import_export.admin import ExportMixin
+from import_export_celery.admin_actions import create_export_job_action
 
 from core.utils.file import format_size
 from gap.models import DatasetType
@@ -61,6 +62,7 @@ class GapAPIRequestLogAdmin(ExportMixin, APIRequestLogAdmin):
     """Admin class for APIRequestLog model."""
 
     resource_class = APIRequestLogResource
+    actions = [create_export_job_action]
 
     list_display = (
         "id",

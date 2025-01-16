@@ -20,7 +20,8 @@ INSTALLED_APPS = INSTALLED_APPS + (
     'drf_yasg',
     'rest_framework_tracking',
     'django_admin_inline_paginator',
-    'import_export'
+    'import_export',
+    'import_export_celery'
 )
 
 WEBPACK_LOADER = {
@@ -55,6 +56,11 @@ AUTHENTICATION_BACKENDS = (
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_EXTENDED = True
+IMPORT_EXPORT_CELERY_TASK = 'import_export.tasks.export'
+IMPORT_EXPORT_CELERY_INIT_MODULE = 'GAP.celery'
+IMPORT_EXPORT_CELERY_EXCLUDED_FORMATS = [
+    "tsv", "json", "yaml", "html",
+]
 
 TEMPLATES[0]['OPTIONS']['context_processors'] += [
     'django.template.context_processors.request',

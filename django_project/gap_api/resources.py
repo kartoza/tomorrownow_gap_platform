@@ -4,11 +4,12 @@ Tomorrow Now GAP.
 
 .. note:: Resource classes for Models
 """
-from import_export import resources
+
+from import_export.resources import ModelResource
 from gap_api.models import APIRequestLog
 
 
-class APIRequestLogResource(resources.ModelResource):
+class APIRequestLogResource(ModelResource):
     """Resource class for APIRequestLog."""
 
     class Meta:

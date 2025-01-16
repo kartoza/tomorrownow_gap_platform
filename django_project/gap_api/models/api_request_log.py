@@ -26,3 +26,12 @@ class APIRequestLog(BaseAPIRequestLog):
         null=True,
         blank=True
     )
+
+    @classmethod
+    def export_resource_classes(cls):
+        """"""
+        from gap_api.resources import APIRequestLogResource
+        return {
+            "APIRequestedLog": (
+                "APIRequestLog Resource", APIRequestLogResource)
+        }
