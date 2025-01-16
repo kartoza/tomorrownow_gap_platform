@@ -13,6 +13,8 @@ class APIRequestLogResource(ModelResource):
     """Resource class for APIRequestLog."""
 
     class Meta:
+        """Meta class for APIRequestLogResource."""
+
         model = APIRequestLog
         fields = [
             "id", "user__username", "query_params", "requested_at",
