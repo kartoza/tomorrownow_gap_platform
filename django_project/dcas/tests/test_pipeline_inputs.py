@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import datetime
 from django.test import TestCase
-from unittest.mock import patch
 
 from dcas.inputs import DCASPipelineInput
 
@@ -82,7 +81,7 @@ class DCASPipelineInputsTest(TestCase):
         np.testing.assert_allclose(
             vap_df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
         )
-        
+
         # sel with nearest will result to 2, 6, 10
         in_lat = [1, 5, 9]
         in_lon = [1, 5, 9]
@@ -102,7 +101,7 @@ class DCASPipelineInputsTest(TestCase):
             vap_df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
         )
 
-        # using large diff        
+        # using large diff
         in_lat = [-2, 15]
         in_lon = [-2, 15]
         vap_df = self.input._get_values_at_points(
@@ -114,7 +113,6 @@ class DCASPipelineInputsTest(TestCase):
             self.dates[0]
         )
         self.assertTrue(vap_df.isna().all().all())
-        
 
     def test_multiple_attributes(self):
         """Test selection with multiple attributes."""

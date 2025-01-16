@@ -158,7 +158,7 @@ class DCASPipelineInput:
         """Merge dataset and make columns for each date in collected data.
 
         If there is no data for specific date, then
-        it will be initialized with np.nan. 
+        it will be initialized with np.nan.
         :param nc_file_path: File path to the NetCDF file
         :type nc_file_path: str
         :param attribute_list: list of attribute to be read and merged
@@ -255,7 +255,7 @@ class DCASPipelineInput:
         execute_dask_compute(x)
 
     def _generate_random(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Function to generate random input data."""
+        """Generate random input data."""
         columns = {}
         for epoch in self.historical_epoch:
             columns[f'max_temperature_{epoch}'] = (
