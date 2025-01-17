@@ -97,3 +97,10 @@ if STORAGE_DIR_PREFIX and not STORAGE_DIR_PREFIX.endswith("/"):
     STORAGE_DIR_PREFIX = f"{STORAGE_DIR_PREFIX}/"
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1500
+
+# Required for import_export_celery tasks
+MIDDLEWARE_CELERY = (
+    'author.middlewares.AuthorDefaultBackendMiddleware',
+)
+
+MIDDLEWARE = MIDDLEWARE + MIDDLEWARE_CELERY
