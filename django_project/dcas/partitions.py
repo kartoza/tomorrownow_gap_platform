@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 from gap.models import Attribute
-from dcas.models import DCASConfig
+from dcas.models import DCASConfig, GDDConfig
 from dcas.rules.rule_engine import DCASRuleEngine
 from dcas.utils import read_grid_data
 from dcas.functions import (
@@ -46,13 +46,8 @@ def process_partition_total_gdd(
     # merge the df with grid_data
     df = df.merge(grid_data_df, on=['grid_id'], how='inner')
 
-    # TODO: change from configuration based on crop
-    df['gdd_base'] = np.random.random_integers(
-        low=5, high=15, size=df.shape[0]
-    )
-    df['gdd_cap'] = np.random.random_integers(
-        low=25, high=40, size=df.shape[0]
-    )
+    # merge with base and cap temperature in gdd config
+    df = _merge_partition_gdd_config(df)
 
     # add new column to normalize max and min temperature
     norm_temperature = {}
@@ -280,3 +275,32 @@ def process_partition_message_output(
     )
 
     return df
+
+
+def _merge_partition_gdd_config(df: pd.DataFrame) -> pd.DataFrame:
+    """Merge dataframe with GDD config: base and cap temperature.
+
+    :param df: input DataFrame that has column: config_id and crop_id
+    :type df: pd.DataFrame
+    :return: dataframe with new columns: gdd_base, gdd_cap
+    :rtype: pd.DataFrame
+    """
+    crop_list = []
+    config_list = []
+    base_list = []
+    cap_list = []
+    configs = GDDConfig.objects.all().order_by('config_id', 'crop_id')
+    for gdd_config in configs:
+        config_list.append(gdd_config.config.id)
+        crop_list.append(gdd_config.crop.id)
+        base_list.append(gdd_config.base_temperature)
+        cap_list.append(gdd_config.cap_temperature)
+
+    gdd_config_df = pd.DataFrame({
+        'crop_id': crop_list,
+        'config_id': config_list,
+        'gdd_base': base_list,
+        'gdd_cap': cap_list
+    })
+
+    return df.merge(gdd_config_df, how='inner', on=['crop_id', 'config_id'])
