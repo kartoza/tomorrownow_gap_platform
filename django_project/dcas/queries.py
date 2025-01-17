@@ -72,11 +72,15 @@ class DataQuery:
         subquery = select(
             self.grid.c.id.label(self.grid_id_index_col),
             self.grid.c.id.label('grid_id'),
+            self.country.c.iso_a3.label('iso_a3'),
+            self.country.c.id.label('country_id'),
             ST_Centroid(self.grid.c.geometry).label('centroid')
         ).select_from(self.farmregistry).join(
             self.farm, self.farmregistry.c.farm_id == self.farm.c.id
         ).join(
             self.grid, self.farm.c.grid_id == self.grid.c.id
+        ).join(
+            self.country, self.grid.c.country_id == self.country.c.id
         ).where(
             self.farmregistry.c.group_id == farm_registry_group.id
         ).order_by(
@@ -92,7 +96,9 @@ class DataQuery:
             distinct(column(self.grid_id_index_col)),
             ST_Y(column('centroid')).label('lat'),
             ST_X(column('centroid')).label('lon'),
-            column('grid_id')
+            column('grid_id'),
+            column('iso_a3'),
+            column('country_id'),
         ).select_from(subquery)
 
     def _grid_data_with_crop_subquery(self, farm_registry_group):
@@ -190,8 +196,6 @@ class DataQuery:
             self.farm.c.geometry.label('geometry'),
             self.grid.c.id.label('grid_id'),
             self.grid.c.unique_id.label('grid_unique_id'),
-            self.country.c.name.label('country'),
-            self.country.c.iso_a3.label('iso_a3'),
             self.farmregistry.c.id.label('registry_id'),
             self.cropgrowthstage.c.name.label('growth_stage'),
             (self.crop.c.name + '_' + self.cropstagetype.c.name).label('crop')
@@ -199,8 +203,6 @@ class DataQuery:
             self.farm, self.farmregistry.c.farm_id == self.farm.c.id
         ).join(
             self.grid, self.farm.c.grid_id == self.grid.c.id
-        ).join(
-            self.country, self.grid.c.country_id == self.country.c.id
         ).join(
             self.crop, self.farmregistry.c.crop_id == self.crop.c.id
         ).join(
