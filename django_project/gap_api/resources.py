@@ -34,22 +34,27 @@ class APIRequestLogResource(ModelResource):
         export_order = fields
 
     def _extract_from_query_params(self, obj, key):
-        """Helper method to safely extract values from query_params."""
+        """Extract key from query_params."""
         if obj.query_params and isinstance(obj.query_params, dict):
             return obj.query_params.get(key, "")
         return ""
 
     def dehydrate_product(self, obj):
+        """Dehydrate product field."""
         return self._extract_from_query_params(obj, "product")
 
     def dehydrate_attributes(self, obj):
+        """Dehydrate attributes field."""
         return self._extract_from_query_params(obj, "attributes")
 
     def dehydrate_output_type(self, obj):
+        """Dehydrate output_type field."""
         return self._extract_from_query_params(obj, "output_type")
 
     def dehydrate_start_date(self, obj):
+        """Dehydrate start_date field."""
         return self._extract_from_query_params(obj, "start_date")
 
     def dehydrate_end_date(self, obj):
+        """Dehydrate end_date field."""
         return self._extract_from_query_params(obj, "end_date")
