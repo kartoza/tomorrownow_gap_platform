@@ -7,7 +7,7 @@ Tomorrow Now GAP DCAS.
 
 from durable.engine import MessageNotHandledException
 
-from dcas.models import DCASConfig, DCASRule
+from dcas.models import DCASRule
 from dcas.rules.host import DCASHost
 from dcas.rules.variables import DCASData, DCASVariable
 
@@ -15,20 +15,19 @@ from dcas.rules.variables import DCASData, DCASVariable
 class DCASRuleEngine:
     """Class for DCAS Rule Engine."""
 
-    def __init__(self, config: DCASConfig):
+    def __init__(self):
         """Initialize DCASRuleEngine."""
-        self.config = config
         self.host = DCASHost()
 
     def initialize(self):
         """Load rule engine."""
-        rules = DCASRule.objects.filter(
-            config=self.config
-        )
+        rules = DCASRule.objects.all()
 
         ruleset_definitions = {}
         for idx, rule in enumerate(rules):
-            ruleset_name = f'{rule.crop.id}_{rule.crop_stage_type.id}'
+            ruleset_name = (
+                f'{rule.config.id}_{rule.crop.id}_{rule.crop_stage_type.id}'
+            )
             rule_name = f'r_{idx}'
             condition = {
                 'm': {
