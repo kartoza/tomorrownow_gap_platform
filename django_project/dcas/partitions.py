@@ -32,7 +32,7 @@ def process_partition_total_gdd(
     :return: DataFrame with GDD cumulative sum for each day columns
     :rtype: pd.DataFrame
     """
-    grid_column_list = ['grid_id']
+    grid_column_list = ['grid_id', 'config_id']
     for epoch in epoch_list:
         grid_column_list.append(f'max_temperature_{epoch}')
         grid_column_list.append(f'min_temperature_{epoch}')
@@ -159,7 +159,7 @@ def process_partition_other_params(
 
 
 def process_partition_growth_stage(
-    df: pd.DataFrame, growth_stage_list: list, current_date
+    df: pd.DataFrame, growth_stage_list: list, current_date, last_gdd_epoch
 ) -> pd.DataFrame:
     """Calculate growth_stage and its start date for df partition.
 
@@ -169,13 +169,16 @@ def process_partition_growth_stage(
     :type growth_stage_list: list
     :param current_date: request date
     :type current_date: date
+    :param last_gdd_epoch: Epoch for last cumulative GDD
+    :type last_gdd_epoch: int
     :return: DataFrame with growth_stage_id and
         growth_stage_start_date columns
     :rtype: pd.DataFrame
     """
     df = df.assign(
         growth_stage_start_date=pd.Series(dtype='double'),
-        growth_stage_id=pd.Series(dtype='int')
+        growth_stage_id=pd.Series(dtype='int'),
+        total_gdd=df[f'gdd_sum_{last_gdd_epoch}']
     )
 
     df = df.apply(

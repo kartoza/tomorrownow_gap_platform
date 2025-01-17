@@ -286,9 +286,9 @@ class DCASDataPipeline:
         """Run Data Collection step."""
         grid_df = self.load_grid_data()
 
-        # grid_df = self.load_grid_weather_data(grid_df)
+        grid_df = self.load_grid_weather_data(grid_df)
 
-        # grid_df = self.postprocess_grid_weather_data(grid_df)
+        grid_df = self.postprocess_grid_weather_data(grid_df)
 
         self.data_output.save(OutputType.GRID_DATA, grid_df)
         del grid_df
@@ -327,12 +327,14 @@ class DCASDataPipeline:
         )
         grid_crop_df_meta = grid_crop_df_meta.assign(
             growth_stage_start_date=pd.Series(dtype='double'),
-            growth_stage_id=pd.Series(dtype='int')
+            growth_stage_id=pd.Series(dtype='int'),
+            total_gdd=np.nan
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage,
             growth_id_list,
             request_date_epoch,
+            self.data_input.historical_epoch[-1],
             meta=grid_crop_df_meta
         )
 
@@ -396,8 +398,8 @@ class DCASDataPipeline:
 
         start_time = time.time()
         self.data_collection()
-        # grid_crop_df = self.process_grid_crop_data()
+        grid_crop_df = self.process_grid_crop_data()
 
-        # self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
+        self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
 
         print(f'Finished {time.time() - start_time} seconds.')
