@@ -90,6 +90,7 @@ def calculate_message_output(
         } for key, attribute_id in attrib_dict.items()
     ]
     data = DCASData(
+        row['config_id'],
         row['crop_id'],
         row['crop_stage_type_id'],
         row['growth_stage_id'],

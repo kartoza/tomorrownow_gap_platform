@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 from gap.models import Attribute
-from dcas.models import DCASConfig, GDDConfig
+from dcas.models import GDDConfig
 from dcas.rules.rule_engine import DCASRuleEngine
 from dcas.utils import read_grid_data
 from dcas.functions import (
@@ -85,6 +85,7 @@ def process_partition_total_gdd(
 
     # data cleanup
     grid_column_list.remove('grid_id')
+    grid_column_list.remove('config_id')
     grid_column_list.append('gdd_base')
     grid_column_list.append('gdd_cap')
     df = df.drop(columns=grid_column_list)
@@ -231,15 +232,11 @@ def process_partition_growth_stage_precipitation(
     return df
 
 
-def process_partition_message_output(
-    df: pd.DataFrame, config_id: int
-) -> pd.DataFrame:
+def process_partition_message_output(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate message codes for DataFrame partition.
 
     :param df: DataFrame partition to be processed
     :type df: pd.DataFrame
-    :param config_id: DCAS Config ID
-    :type config_id: int
     :return: DataFrame with message columns
     :rtype: pd.DataFrame
     """
@@ -265,7 +262,7 @@ def process_partition_message_output(
         ).id
     }
 
-    rule_engine = DCASRuleEngine(DCASConfig.objects.get(id=config_id))
+    rule_engine = DCASRuleEngine()
     rule_engine.initialize()
 
     df = df.apply(

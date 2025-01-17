@@ -54,7 +54,7 @@ class DCASRuleEngineTest(TestCase):
 
     def test_execute_rule(self):
         """Test rule execution."""
-        rule_engine = DCASRuleEngine(self.default_config)
+        rule_engine = DCASRuleEngine()
         rule_engine.initialize()
 
         # get data
@@ -68,7 +68,10 @@ class DCASRuleEngineTest(TestCase):
             'id': parameter.id,
             'value': 0.5
         }
-        data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
+        data = DCASData(
+            self.default_config.id, crop.id, stage_type.id,
+            growth_stage.id, [param]
+        )
         rule_engine.execute_rule(data)
 
         # assert
@@ -80,7 +83,10 @@ class DCASRuleEngineTest(TestCase):
             'id': parameter.id,
             'value': 999
         }
-        data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
+        data = DCASData(
+            self.default_config.id, crop.id, stage_type.id,
+            growth_stage.id, [param]
+        )
         rule_engine.execute_rule(data)
 
         # assert
@@ -91,7 +97,10 @@ class DCASRuleEngineTest(TestCase):
             'id': parameter.id,
             'value': np.nan
         }
-        data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
+        data = DCASData(
+            self.default_config.id, crop.id, stage_type.id,
+            growth_stage.id, [param]
+        )
         rule_engine.execute_rule(data)
 
         # assert
@@ -102,7 +111,10 @@ class DCASRuleEngineTest(TestCase):
             'id': parameter.id,
             'value': np.inf
         }
-        data = DCASData(crop.id, stage_type.id, growth_stage.id, [param])
+        data = DCASData(
+            self.default_config.id, crop.id, stage_type.id,
+            growth_stage.id, [param]
+        )
         rule_engine.execute_rule(data)
 
         # assert
