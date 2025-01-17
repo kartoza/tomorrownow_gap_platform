@@ -309,6 +309,10 @@ class DCASDataPipeline:
         )
 
         # Process gdd cumulative
+        # add config_id
+        grid_crop_df_meta = grid_crop_df_meta.assign(
+            config_id=pd.Series(dtype='Int64')
+        )
         gdd_columns = []
         for epoch in self.data_input.historical_epoch:
             grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
@@ -386,7 +390,6 @@ class DCASDataPipeline:
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_message_output,
-            self.config.id,
             meta=grid_crop_df_meta
         )
 

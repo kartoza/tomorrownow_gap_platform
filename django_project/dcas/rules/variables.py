@@ -21,23 +21,25 @@ class DCASVariable:
 class DCASData:
     """Represent data that is used in rule engine."""
 
-    def __init__(self, crop_id, stage_type_id, growth_stage_id, parameters):
+    def __init__(
+        self, config_id, crop_id, stage_type_id, growth_stage_id, parameters
+    ):
         """Initialize DCASData."""
+        self.config_id = config_id
         self.crop_id = crop_id
         self.stage_type_id = stage_type_id
         self.growth_stage_id = growth_stage_id
         self.parameters = parameters
-        self.message_codes = []
+        self.message_codes = set()
 
     def add_message_code(self, code):
         """Append message code."""
-        if code not in self.message_codes:
-            self.message_codes.append(code)
+        self.message_codes.add(code)
 
     @property
     def ruleset_key(self):
         """Get ruleset key for this data."""
-        return f'{self.crop_id}_{self.stage_type_id}'
+        return f'{self.config_id}_{self.crop_id}_{self.stage_type_id}'
 
     @property
     def rule_data(self):
