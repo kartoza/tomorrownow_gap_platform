@@ -17,7 +17,7 @@ from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
 
 from gap.models import FarmRegistryGroup, FarmRegistry, CropGrowthStage, Grid
-from dcas.models import DCASConfig
+from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
     process_partition_total_gdd,
     process_partition_growth_stage,
@@ -38,8 +38,8 @@ class DCASDataPipeline:
     """Class for DCAS data pipeline."""
 
     NUM_PARTITIONS = 10
-    GRID_CROP_NUM_PARTITIONS = 100
-    # GRID_CROP_NUM_PARTITIONS = 2
+    # GRID_CROP_NUM_PARTITIONS = 100
+    GRID_CROP_NUM_PARTITIONS = 2
     LIMIT = 10000
 
     def __init__(
@@ -97,11 +97,46 @@ class DCASDataPipeline:
         :return: DataFrame of Grid Data
         :rtype: pd.DataFrame
         """
-        return pd.read_sql_query(
+        df = pd.read_sql_query(
             self.data_query.grid_data_query(self.farm_registry_group),
             con=self._conn_str(),
             index_col=self.data_query.grid_id_index_col,
         )
+
+        return self._merge_grid_data_with_config(df)
+
+    def _merge_grid_data_with_config(self, df: pd.DataFrame) -> pd.DataFrame:
+        default_config = DCASConfig.objects.filter(
+            is_default=True
+        ).first()
+        config_map = {}
+        countries = Grid.objects.filter(
+            id__in=df.index.unique()
+        ).distinct(
+            'country_id'
+        ).order_by('country_id').values_list(
+            'country_id',
+            flat=True
+        )
+        for country_id in countries:
+            if country_id is None:
+                continue
+            config_for_country = DCASConfigCountry.objects.filter(
+                country_id=country_id
+            ).first()
+            if config_for_country:
+                config_map[country_id] = config_for_country.config.id
+
+        if config_map:
+            df['config_id'] = df['country_id'].map(
+                config_map
+            ).fillna(default_config.id)
+        else:
+            df['config_id'] = default_config.id
+
+        df['config_id'] = df['config_id'].astype('Int64')
+
+        return df
 
     def load_grid_weather_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Load Grid Weather data.
@@ -292,12 +327,14 @@ class DCASDataPipeline:
         )
         grid_crop_df_meta = grid_crop_df_meta.assign(
             growth_stage_start_date=pd.Series(dtype='double'),
-            growth_stage_id=pd.Series(dtype='int')
+            growth_stage_id=pd.Series(dtype='int'),
+            total_gdd=np.nan
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage,
             growth_id_list,
             request_date_epoch,
+            self.data_input.historical_epoch[-1],
             meta=grid_crop_df_meta
         )
 
@@ -361,8 +398,8 @@ class DCASDataPipeline:
 
         start_time = time.time()
         self.data_collection()
-        # grid_crop_df = self.process_grid_crop_data()
+        grid_crop_df = self.process_grid_crop_data()
 
-        # self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
+        self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
 
         print(f'Finished {time.time() - start_time} seconds.')
