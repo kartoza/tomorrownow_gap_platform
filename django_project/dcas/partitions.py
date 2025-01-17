@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 from gap.models import Attribute
-from dcas.models import DCASConfig, GDDConfig
+from dcas.models import GDDConfig
 from dcas.rules.rule_engine import DCASRuleEngine
 from dcas.utils import read_grid_data
 from dcas.functions import (
