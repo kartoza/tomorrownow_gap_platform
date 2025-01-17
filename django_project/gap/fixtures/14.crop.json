@@ -31,7 +31,7 @@
         "model": "gap.crop",
         "pk": 3,
         "fields": {
-            "name": "Potatoes"
+            "name": "Potato"
         }
     },
     {
@@ -45,14 +45,14 @@
         "model": "gap.crop",
         "pk": 7,
         "fields": {
-            "name": "Soybeans"
+            "name": "Soybean"
         }
     },
     {
         "model": "gap.crop",
         "pk": 4,
         "fields": {
-            "name": "Green Grams"
+            "name": "Green Gram"
         }
     },
     {
