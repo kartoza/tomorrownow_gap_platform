@@ -16,7 +16,7 @@ import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
 
-from gap.models import FarmRegistryGroup, FarmRegistry, CropGrowthStage, Grid
+from gap.models import FarmRegistryGroup, FarmRegistry, Grid
 from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
     process_partition_total_gdd,
@@ -295,11 +295,6 @@ class DCASDataPipeline:
 
     def process_grid_crop_data(self):
         """Process Grid and Crop Data."""
-        request_date_epoch = datetime.datetime(
-            self.request_date.year, self.request_date.month,
-            self.request_date.day,
-            0, 0, 0
-        ).timestamp()
         grid_data_file_path = self.data_output.grid_data_file_path
 
         # load grid with crop and planting date
@@ -322,9 +317,6 @@ class DCASDataPipeline:
         )
 
         # Identify crop growth stage
-        growth_id_list = list(
-            CropGrowthStage.objects.all().values_list('id', flat=True)
-        )
         grid_crop_df_meta = grid_crop_df_meta.assign(
             growth_stage_start_date=pd.Series(dtype='double'),
             growth_stage_id=pd.Series(dtype='int'),
@@ -332,9 +324,7 @@ class DCASDataPipeline:
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage,
-            growth_id_list,
-            request_date_epoch,
-            self.data_input.historical_epoch[-1],
+            self.data_input.historical_epoch,
             meta=grid_crop_df_meta
         )
 

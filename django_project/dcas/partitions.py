@@ -159,22 +159,19 @@ def process_partition_other_params(
 
 
 def process_partition_growth_stage(
-    df: pd.DataFrame, growth_stage_list: list, current_date, last_gdd_epoch
+    df: pd.DataFrame, epoch_list: list
 ) -> pd.DataFrame:
     """Calculate growth_stage and its start date for df partition.
 
     :param df: DataFrame partition to be processed
     :type df: pd.DataFrame
-    :param growth_stage_list: list of growth stage
-    :type growth_stage_list: list
-    :param current_date: request date
-    :type current_date: date
-    :param last_gdd_epoch: Epoch for last cumulative GDD
-    :type last_gdd_epoch: int
+    :param epoch_list: list of epoch
+    :type epoch_list: list
     :return: DataFrame with growth_stage_id and
         growth_stage_start_date columns
     :rtype: pd.DataFrame
     """
+    last_gdd_epoch = epoch_list[-1]
     df = df.assign(
         growth_stage_start_date=pd.Series(dtype='double'),
         growth_stage_id=pd.Series(dtype='int'),
@@ -184,7 +181,7 @@ def process_partition_growth_stage(
     df = df.apply(
         calculate_growth_stage,
         axis=1,
-        args=(growth_stage_list, current_date)
+        args=(epoch_list,)
     )
 
     return df

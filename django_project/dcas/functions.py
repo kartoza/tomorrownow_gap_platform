@@ -5,31 +5,26 @@ Tomorrow Now GAP.
 .. note:: DCAS Functions to process row data.
 """
 
-import random
 import pandas as pd
 
 from dcas.rules.rule_engine import DCASRuleEngine
 from dcas.rules.variables import DCASData
+from dcas.service import GrowthStageService
 
 
 def calculate_growth_stage(
-    row: pd.Series, growth_stage_list: list, current_date
+    row: pd.Series, epoch_list: list
 ) -> pd.Series:
     """Identify the growth stage and its start date.
 
     The calculation will be using GDD cumulative sum for each day.
     :param row: single row
     :type row: pd.Series
-    :param growth_stage_list: list of growth stage
-    :type growth_stage_list: list
-    :param current_date: request date
-    :type current_date: date
+    :param epoch_list: list of processing date epoch
+    :type epoch_list: list
     :return: row with growth_stage_id and growth_stage_start_date
     :rtype: pd.Series
     """
-    # TODO: lookup the growth_stage based on total_gdd value
-    row['growth_stage_id'] = random.choice(growth_stage_list)
-
     # possible scenario:
     # - no prev_growth_stage_start_date or prev_growth_stage_id
     # - growth_stage_id is the same with prev_growth_stage_id
@@ -39,13 +34,38 @@ def calculate_growth_stage(
     # for 1st and 3rd scenario, we need to find the date that
     # growth stage is changed
 
-    if (
-        row['prev_growth_stage_start_date'] is None or
-        pd.isnull(row['prev_growth_stage_id']) or
-        pd.isna(row['prev_growth_stage_id']) or
-        row['growth_stage_id'] != row['prev_growth_stage_id']
-    ):
-        row['growth_stage_start_date'] = current_date
+    # check cumulative GDD from last value
+    growth_stage_dict = GrowthStageService.get_growth_stage(
+        row['crop_id'],
+        row['crop_stage_type_id'],
+        row[f'gdd_sum_{epoch_list[-1]}']
+    )
+
+    if growth_stage_dict is None:
+        # no lookup value
+        row['growth_stage_id'] == row['prev_growth_stage_id']
+        row['growth_stage_start_date'] == row['prev_growth_stage_start_date']
+        return row
+
+    gdd_threshold = growth_stage_dict['gdd_threshold']
+    row['growth_stage_id'] == growth_stage_dict['id']
+
+    if row['growth_stage_id'] == row['prev_growth_stage_id']:
+        # the growth_stage_id is not changed
+        row['growth_stage_start_date'] == row['prev_growth_stage_start_date']
+        return row
+
+    for idx, epoch in reversed(list(enumerate(epoch_list))):
+        if idx == len(epoch_list) - 1:
+            # skip last item
+            continue
+        sum_gdd = row[f'gdd_sum_{epoch}']
+
+        if sum_gdd < gdd_threshold:
+            # found first sum_gdd that is lesser than the threshold
+            row['growth_stage_start_date'] == epoch
+            break
+
     return row
 
 
