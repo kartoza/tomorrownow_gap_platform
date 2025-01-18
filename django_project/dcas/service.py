@@ -48,16 +48,19 @@ class GrowthStageService:
                     "crop_growth_stage__name"
                 )
             )
-            cache.set(cache_key, growth_stage_matrix, timeout=None)
+            if len(growth_stage_matrix) > 0:
+                cache.set(cache_key, growth_stage_matrix, timeout=None)
 
         # Find the appropriate growth stage based on total GDD
+        prev_stage = growth_stage_matrix[0] if growth_stage_matrix else None
         for stage in growth_stage_matrix:
-            if total_gdd <= stage["gdd_threshold"]:
+            if total_gdd < stage["gdd_threshold"]:
                 return {
-                    "id": stage["crop_growth_stage__id"],
-                    "label": stage["crop_growth_stage__name"],
-                    "gdd_threshold": stage["gdd_threshold"]
+                    "id": prev_stage["crop_growth_stage__id"],
+                    "label": prev_stage["crop_growth_stage__name"],
+                    "gdd_threshold": prev_stage["gdd_threshold"]
                 }
+            prev_stage = stage
 
         # Return the last stage if total GDD exceeds all thresholds
         if growth_stage_matrix:

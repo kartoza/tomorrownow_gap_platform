@@ -43,28 +43,36 @@ def calculate_growth_stage(
 
     if growth_stage_dict is None:
         # no lookup value
-        row['growth_stage_id'] == row['prev_growth_stage_id']
-        row['growth_stage_start_date'] == row['prev_growth_stage_start_date']
+        row['growth_stage_id'] = row['prev_growth_stage_id']
+        row['growth_stage_start_date'] = row['prev_growth_stage_start_date']
         return row
 
     gdd_threshold = growth_stage_dict['gdd_threshold']
-    row['growth_stage_id'] == growth_stage_dict['id']
+    row['growth_stage_id'] = growth_stage_dict['id']
 
+    row['growth_stage_start_date'] = row['prev_growth_stage_start_date']
     if row['growth_stage_id'] == row['prev_growth_stage_id']:
         # the growth_stage_id is not changed
-        row['growth_stage_start_date'] == row['prev_growth_stage_start_date']
         return row
 
+    prev_epoch = epoch_list[-1]
     for idx, epoch in reversed(list(enumerate(epoch_list))):
         if idx == len(epoch_list) - 1:
+            row['growth_stage_start_date'] = epoch
             # skip last item
             continue
+
+        if epoch < row['planting_date_epoch']:
+            row['growth_stage_start_date'] = row['planting_date_epoch']
+            break
+
         sum_gdd = row[f'gdd_sum_{epoch}']
 
         if sum_gdd < gdd_threshold:
             # found first sum_gdd that is lesser than the threshold
-            row['growth_stage_start_date'] == epoch
+            row['growth_stage_start_date'] = prev_epoch
             break
+        prev_epoch = epoch
 
     return row
 
