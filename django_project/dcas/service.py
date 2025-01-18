@@ -25,7 +25,7 @@ class GrowthStageService:
         :type crop_stage_type_id: int
         :param total_gdd: Total accumulated GDD
         :type total_gdd: float
-        :return: Dictionary containing growth stage ID and label
+        :return: Dictionary containing growth id, label, and gdd_threshold
         :rtype: dict or None
         """
         cache_key = GrowthStageService.CACHE_KEY_TEMPLATE.format(
@@ -48,15 +48,19 @@ class GrowthStageService:
                     "crop_growth_stage__name"
                 )
             )
-            cache.set(cache_key, growth_stage_matrix, timeout=None)
+            if len(growth_stage_matrix) > 0:
+                cache.set(cache_key, growth_stage_matrix, timeout=None)
 
         # Find the appropriate growth stage based on total GDD
+        prev_stage = growth_stage_matrix[0] if growth_stage_matrix else None
         for stage in growth_stage_matrix:
             if total_gdd < stage["gdd_threshold"]:
                 return {
-                    "id": stage["crop_growth_stage__id"],
-                    "label": stage["crop_growth_stage__name"],
+                    "id": prev_stage["crop_growth_stage__id"],
+                    "label": prev_stage["crop_growth_stage__name"],
+                    "gdd_threshold": prev_stage["gdd_threshold"]
                 }
+            prev_stage = stage
 
         # Return the last stage if total GDD exceeds all thresholds
         if growth_stage_matrix:
@@ -64,6 +68,7 @@ class GrowthStageService:
             return {
                 "id": last_stage["crop_growth_stage__id"],
                 "label": last_stage["crop_growth_stage__name"],
+                "gdd_threshold": last_stage["gdd_threshold"]
             }
 
         # No growth stage found

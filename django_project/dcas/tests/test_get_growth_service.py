@@ -11,6 +11,11 @@ from dcas.models import GDDMatrix
 from dcas.service import GrowthStageService
 
 
+def set_cache_dummy(cache_key, growth_stage_matrix, timeout):
+    """Set cache mock."""
+    pass
+
+
 class GrowthStageServiceTest(TestCase):
     """Test Growth Stage Service."""
 
@@ -41,6 +46,7 @@ class GrowthStageServiceTest(TestCase):
                 "crop_growth_stage__name": "Establishment"
             },
         ]
+        mock_cache.set.side_effect = set_cache_dummy
 
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(2, 1, 150)
@@ -56,6 +62,7 @@ class GrowthStageServiceTest(TestCase):
         """Test retrieving growth stage when cache is empty."""
         # Mock cache.get to return None
         mock_cache.get.return_value = None
+        mock_cache.set.side_effect = set_cache_dummy
 
         # Mock cache.set to simulate caching
         mock_cache.set = patch("dcas.service.cache.set").start()
@@ -63,8 +70,8 @@ class GrowthStageServiceTest(TestCase):
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(2, 1, 150)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 2)
-        self.assertEqual(stage["label"], "Establishment")
+        self.assertEqual(stage["id"], 1)
+        self.assertEqual(stage["label"], "Germination")
 
         # Verify cache.set was called to populate the cache
         mock_cache.set.assert_called_once()
@@ -85,12 +92,13 @@ class GrowthStageServiceTest(TestCase):
                 "crop_growth_stage__name": "Physiological Maturity"
             },
         ] if "8" in key else None
+        mock_cache.set.side_effect = set_cache_dummy
 
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(2, 1, 1000)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 8)
-        self.assertEqual(stage["label"], "Physiological Maturity")
+        self.assertEqual(stage["id"], 14)
+        self.assertEqual(stage["label"], "Seed setting")
 
         # Verify cache.get was called
         mock_cache.get.assert_called_with("gdd_matrix:2:1")
@@ -111,12 +119,13 @@ class GrowthStageServiceTest(TestCase):
                 "crop_growth_stage__name": "Seedling"
             },
         ]
+        mock_cache.set.side_effect = set_cache_dummy
 
         # Fetch growth stage
-        stage = GrowthStageService.get_growth_stage(9, 2, 200)
+        stage = GrowthStageService.get_growth_stage(9, 2, 150)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 11)
-        self.assertEqual(stage["label"], "Seedling")
+        self.assertEqual(stage["id"], 10)
+        self.assertEqual(stage["label"], "Maturity")
 
         # Verify cache.get was called
         mock_cache.get.assert_called_once_with("gdd_matrix:9:2")
@@ -126,6 +135,7 @@ class GrowthStageServiceTest(TestCase):
         """Test when no GDDMatrix exists for the crop and stage type."""
         # Mock cache.get to return None
         mock_cache.get.return_value = None
+        mock_cache.set.side_effect = set_cache_dummy
 
         # Ensure no matrix exists in the database
         GDDMatrix.objects.filter(crop_id=99, crop_stage_type_id=99).delete()
