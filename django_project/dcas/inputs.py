@@ -157,7 +157,7 @@ class DCASPipelineInput:
 
     def merge_dataset(
         self, nc_file_path: str, attribute_list: list, column_mapping: dict,
-        dates: list, grid_df: pd.DataFrame
+        dates: list, grid_df: pd.DataFrame, tolerance: float = None
     ) -> pd.DataFrame:
         """Merge dataset and make columns for each date in collected data.
 
@@ -177,30 +177,57 @@ class DCASPipelineInput:
         :rtype: pd.DataFrame
         """
         ds = xr.open_dataset(nc_file_path, engine="h5netcdf")
-        result = [grid_df]
-        for date in dates:
-            vap_df = None
-            if date in ds['date'].values:
-                vap_df = self._get_values_at_points(
-                    ds, attribute_list, column_mapping,
-                    grid_df['lat'],
-                    grid_df['lon'],
-                    date,
-                    grid_df.index
-                )
-            else:
-                # initialize default dataframe
-                epoch = int(pd.Timestamp(date).timestamp())
-                columns = {}
-                for col, new_col in column_mapping.items():
-                    columns[f'{new_col}_{epoch}'] = np.nan
-                vap_df = pd.DataFrame(columns, index=grid_df.index)
+        tolerance = self.NEAREST_TOLERANCE if tolerance is None else tolerance
+        indices = []
+        for idx, lat in enumerate(grid_df['lat']):
+            lon = grid_df['lon'].iloc[idx]
 
-            result.append(vap_df)
+            lat_idx, lon_idx = self._find_nearest_with_tolerance(
+                ds['lat'], ds['lon'], lat, lon, tolerance
+            )
+            if lat_idx is None:
+                print(f'empty {lat} - {lon}')
+            indices.append((lat_idx, lon_idx))
 
-        merged_df = pd.concat(result, axis=1)
+        result = []
+        for i, (lat_idx, lon_idx) in enumerate(indices):
+            if lat_idx is None:
+                # add empty df
+                print('errorr')
+                continue
+            filtered_ds = ds[attribute_list].isel(lat=lat_idx, lon=lon_idx)
+            df = filtered_ds.to_dataframe()
+            df = df.reindex(dates, fill_value=None)
+            df.index.name = 'date'
+            df['lat'] = grid_df['lat'].iloc[idx]
+            df['lon'] = grid_df['lon'].iloc[idx]
+            df = df.reset_index()
+            df = df.set_index(['lat', 'lon'])
+            pivot_df = df.pivot(columns='date', values=attribute_list)
+            pivot_df.columns = [
+                f'{column_mapping[col[0]]}_{int(pd.to_datetime(col[1]).timestamp())}'
+                for col in pivot_df.columns
+            ]
+
+            pivot_df = pivot_df.reset_index(drop=True)
+            result.append(pivot_df)
+
+        merged_rows = pd.concat(result, axis=0)
+        merged_rows = merged_rows.set_index(grid_df.index)
+        merged_df = pd.concat([grid_df, merged_rows], axis=1)
 
         return merged_df
+
+    def _find_nearest_with_tolerance(self, lats, lons, target_lat, target_lon, tolerance):
+        lat_diff = np.abs(lats - target_lat)
+        lon_diff = np.abs(lons - target_lon)
+
+        if lat_diff.min() <= tolerance and lon_diff.min() <= tolerance:
+            lat_index = lat_diff.argmin()
+            lon_index = lon_diff.argmin()
+            return lat_index.values, lon_index.values
+        else:
+            return None, None
 
     def _get_values_at_points(
         self, ds: xrDataset, attribute_list: list, column_mapping: dict,
