@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 import os
 import datetime
+import time
 import pytz
 import pandas as pd
 import xarray as xr
@@ -23,6 +24,7 @@ class DCASPipelineInput:
     """Class to manage data input."""
 
     TMP_BASE_DIR = '/tmp/dcas'
+    NEAREST_TOLERANCE = 0.001
 
     def __init__(self, request_date):
         """Initialize DCASPipelineInput class."""
@@ -141,6 +143,7 @@ class DCASPipelineInput:
         # merge to dataframe
         print('Merging dataframe...')
         for key, data in self.attribute_maps.items():
+            start_time = time.time()
             grid_df = self.merge_dataset(
                 data['file_path'],
                 data['attribute_list'],
@@ -148,6 +151,7 @@ class DCASPipelineInput:
                 data['dates'],
                 grid_df
             )
+            print(f'Merging {key} finished in {time.time() - start_time} s')
 
         return grid_df
 
@@ -179,9 +183,10 @@ class DCASPipelineInput:
             if date in ds['date'].values:
                 vap_df = self._get_values_at_points(
                     ds, attribute_list, column_mapping,
-                    xr.DataArray(grid_df['lat'], dims='gdid'),
-                    xr.DataArray(grid_df['lon'], dims='gdid'),
-                    date
+                    grid_df['lat'],
+                    grid_df['lon'],
+                    date,
+                    grid_df.index
                 )
             else:
                 # initialize default dataframe
@@ -199,22 +204,35 @@ class DCASPipelineInput:
 
     def _get_values_at_points(
         self, ds: xrDataset, attribute_list: list, column_mapping: dict,
-        lat_arr: xr.DataArray, lon_arr: xr.DataArray, date: pd.Timestamp
+        lat_arr: pd.Series, lon_arr: pd.Series, date: pd.Timestamp,
+        df_index, tolerance: float = None
     ):
         epoch = int(date.timestamp())
-        # note: tolerance is chosen from Tio lat/lon increment values
-        values_at_points = ds[attribute_list].sel(
-            date=date
-        ).interp(
-            lat=lat_arr,
-            lon=lon_arr,
-            method='nearest',
-            kwargs={"fill_value": np.nan}
-        )
-        vap_df = values_at_points.to_dataframe()
-        # exclude lat and lon if needed for testing
-        vap_df = vap_df.drop(columns=['date', 'lat', 'lon'])
+        tolerance = self.NEAREST_TOLERANCE if tolerance is None else tolerance
 
+        data = {attribute: [] for attribute in attribute_list}
+
+        for idx, lat in enumerate(lat_arr):
+            lon = lon_arr.iloc[idx]
+
+            try:
+                values_at_point = ds[attribute_list].sel(
+                    date=date
+                ).sel(
+                    lat=lat,
+                    lon=lon,
+                    method='nearest',
+                    tolerance=tolerance
+                )
+                for attribute in attribute_list:
+                    data[attribute].append(
+                        values_at_point[attribute].values.tolist()
+                    )
+            except KeyError:
+                for attribute in attribute_list:
+                    data[attribute].append(np.nan)
+
+        vap_df = pd.DataFrame(data, index=df_index)
         # rename columns
         renamed_columns = {}
         for col, new_col in column_mapping.items():
