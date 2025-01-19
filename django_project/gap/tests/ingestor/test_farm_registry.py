@@ -7,13 +7,17 @@ Tomorrow Now GAP.
 
 import os
 import logging
+import unittest
+from datetime import date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from gap.models import (
     Farm, Crop, FarmRegistry, FarmRegistryGroup,
     IngestorSession, IngestorSessionStatus
 )
-from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
+from gap.ingestor.farm_registry import (
+    DCASFarmRegistryIngestor, Keys
+)
 
 
 logger = logging.getLogger(__name__)
@@ -83,3 +87,63 @@ class DCASFarmRegistryIngestorTest(TestCase):
         # Verify Crop details
         crop = Crop.objects.get(name='Maize')
         self.assertIsNotNone(crop)
+
+
+class TestKeysStaticMethods(unittest.TestCase):
+    """Test static methods in Keys class."""
+
+    def test_get_crop_key(self):
+        """Test get_crop_key."""
+        self.assertEqual(
+            Keys.get_crop_key({'CropName': 'Maize'}), 'CropName')
+        self.assertEqual(
+            Keys.get_crop_key({'crop': 'Wheat'}), 'crop')
+        with self.assertRaises(KeyError):
+            Keys.get_crop_key({'wrong_key': 'Soybean'})
+
+    def test_get_planting_date_key(self):
+        """Test get_planting_date_key."""
+        self.assertEqual(
+            Keys.get_planting_date_key(
+                {'PlantingDate': '2024-01-01'}), 'PlantingDate')
+        self.assertEqual(
+            Keys.get_planting_date_key(
+                {'plantingDate': '2024-01-01'}), 'plantingDate')
+        with self.assertRaises(KeyError):
+            Keys.get_planting_date_key({'date': '2024-01-01'})
+
+    def test_get_farm_id_key(self):
+        """Test get_farm_id_key."""
+        self.assertEqual(
+            Keys.get_farm_id_key({'FarmerId': '123'}), 'FarmerId')
+        self.assertEqual(
+            Keys.get_farm_id_key({'farmer_id': '456'}), 'farmer_id')
+        with self.assertRaises(KeyError):
+            Keys.get_farm_id_key({'id': '789'})
+
+
+class TestDCASFarmRegistryIngestorStaticMethods(unittest.TestCase):
+    """Test static methods in DCASFarmRegistryIngestor."""
+
+    def setUp(self):
+        """Set up a test instance of DCASFarmRegistryIngestor."""
+        self.ingestor = DCASFarmRegistryIngestor(None)
+
+    def test_parse_valid_planting_dates(self):
+        """Test parsing valid planting dates."""
+        self.assertEqual(
+            self.ingestor._parse_planting_date(
+                "01/15/2024"), date(2024, 1, 15))
+        self.assertEqual(
+            self.ingestor._parse_planting_date(
+                "2024-01-15"), date(2024, 1, 15))
+        self.assertEqual(
+            self.ingestor._parse_planting_date(
+                "15-01-2024"), date(2024, 1, 15))
+
+    def test_parse_invalid_planting_date(self):
+        """Test parsing an invalid planting date."""
+        self.assertIsNone(
+            self.ingestor._parse_planting_date("2024/Jan/15"))
+        self.assertIsNone(
+            self.ingestor._parse_planting_date("not a date"))

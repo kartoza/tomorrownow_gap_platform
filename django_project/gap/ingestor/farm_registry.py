@@ -139,7 +139,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             is_latest=True
         )
 
-    def parse_planting_date(self, date_str):
+    def _parse_planting_date(self, date_str):
         """Try multiple date formats for planting date."""
         formats = ['%m/%d/%Y', '%Y-%m-%d', '%d-%m-%Y']
 
@@ -178,7 +178,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
             # Parse planting date dynamically
             planting_date_key = Keys.get_planting_date_key(row)
-            planting_date = self.parse_planting_date(row[planting_date_key])
+            planting_date = self._parse_planting_date(row[planting_date_key])
 
             # Get or create the Farm instance
             farmer_id_key = Keys.get_farm_id_key(row)
