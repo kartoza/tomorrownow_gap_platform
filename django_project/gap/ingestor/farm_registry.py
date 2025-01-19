@@ -20,7 +20,8 @@ from gap.ingestor.exceptions import (
 )
 from gap.models import (
     Farm, Crop, FarmRegistry, FarmRegistryGroup,
-    IngestorSession, CropStageType
+    IngestorSession, CropStageType,
+    IngestorSessionStatus
 )
 from django.db import transaction
 from django.db.models import Q
@@ -32,10 +33,13 @@ class Keys:
     """Keys for the data."""
 
     CROP = 'CropName'
+    ALT_CROP = 'crop'
     FARMER_ID = 'FarmerId'
+    ALT_FARMER_ID = 'farmer_id'
     FINAL_LATITUDE = 'FinalLatitude'
     FINAL_LONGITUDE = 'FinalLongitude'
     PLANTING_DATE = 'PlantingDate'
+    ALT_PLANTING_DATE = 'plantingDate'
 
     @staticmethod
     def check_columns(df) -> bool:
@@ -59,6 +63,36 @@ class Keys:
             raise FileIsNotCorrectException(
                 f'Column(s) missing: {",".join(missing)}'
             )
+
+    @staticmethod
+    def get_crop_key(row):
+        """Handle both 'CropName' and 'crop' key variations."""
+        if Keys.CROP in row:
+            return Keys.CROP
+        elif Keys.ALT_CROP in row:
+            return Keys.ALT_CROP
+        else:
+            raise KeyError(f"No valid crop key found in row: {row}")
+
+    @staticmethod
+    def get_planting_date_key(row):
+        """Handle both 'PlantingDate' and 'plantingDate' key variations."""
+        if Keys.PLANTING_DATE in row:
+            return Keys.PLANTING_DATE
+        elif Keys.ALT_PLANTING_DATE in row:
+            return Keys.ALT_PLANTING_DATE
+        else:
+            raise KeyError(f"No valid planting date key found in row: {row}")
+
+    @staticmethod
+    def get_farm_id_key(row):
+        """Handle both 'FarmerId' and 'farmer_id' key variations."""
+        if Keys.FARMER_ID in row:
+            return Keys.FARMER_ID
+        elif Keys.ALT_FARMER_ID in row:
+            return Keys.ALT_FARMER_ID
+        else:
+            raise KeyError(f"No valid farmer ID key found in row: {row}")
 
 
 class DCASFarmRegistryIngestor(BaseIngestor):
@@ -105,6 +139,21 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             is_latest=True
         )
 
+    def parse_planting_date(self, date_str):
+        """Try multiple date formats for planting date."""
+        formats = ['%m/%d/%Y', '%Y-%m-%d', '%d-%m-%Y']
+
+        for fmt in formats:
+            try:
+                return datetime.strptime(date_str, fmt).date()
+            except ValueError:
+                continue
+
+        # If no format worked, log an error
+        logger.error(f"Invalid date format: {date_str}")
+        return None  # Return None for invalid dates
+
+
     def _process_row(self, row):
         """Process a single row from the input file."""
         try:
@@ -114,7 +163,8 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             point = Point(x=longitude, y=latitude, srid=4326)
 
             # get crop and stage type
-            crop_with_stage = row[Keys.CROP].lower().split('_')
+            crop_key = Keys.get_crop_key(row)
+            crop_with_stage = row[crop_key].lower().split('_')
             crop, _ = Crop.objects.get_or_create(
                 name__iexact=crop_with_stage[0],
                 defaults={
@@ -126,14 +176,14 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                 Q(alias__iexact=crop_with_stage[1])
             )
 
-            # Parse the planting date
-            planting_date = datetime.strptime(
-                row[Keys.PLANTING_DATE], '%m/%d/%Y').date()
+            # Parse planting date dynamically
+            planting_date_key = Keys.get_planting_date_key(row)
+            planting_date = self.parse_planting_date(row[planting_date_key])
 
             # Get or create the Farm instance
-            logger.debug(f"FARMER_ID: {row[Keys.FARMER_ID]}")
+            farmer_id_key = Keys.get_farm_id_key(row)
             farm, _ = Farm.objects.get_or_create(
-                unique_id=row[Keys.FARMER_ID].strip(),
+                unique_id=row[farmer_id_key].strip(),
                 defaults={
                     'geometry': point,
                     'crop': crop
@@ -155,19 +205,47 @@ class DCASFarmRegistryIngestor(BaseIngestor):
     def _run(self, dir_path):
         """Run the ingestion logic."""
         self._create_registry_group()
-        logger.info(f"Created new registry group: {self.group.id}")
+        logger.debug(f"Created new registry group: {self.group.id}")
+        file_found = False
+        has_failures = False
 
         for file_name in os.listdir(dir_path):
             if file_name.endswith('.csv'):
+                file_found = True
                 file_path = os.path.join(dir_path, file_name)
-                with open(file_path, 'r') as file:
-                    reader = csv.DictReader(file)
-                    with transaction.atomic():
-                        for row in reader:
-                            self._process_row(row)
+                try:
+                    with open(file_path, 'r') as file:
+                        reader = csv.DictReader(file)
+                        with transaction.atomic():
+                            for row in reader:
+                                try:
+                                    self._process_row(row)
+                                except KeyError as e:
+                                    logger.error(f"{e} in file {file_name}")
+                                    has_failures = True
+                except Exception as e:
+                    logger.error(f"Failed to process {file_name}: {e}")
+                    self.session.status = IngestorSessionStatus.FAILED
+                    self.session.notes = str(e)
+                    self.session.save()
+                    return  # Stop execution if we can't process the file
+
                 break
+
+        if not file_found:
+            logger.error("No CSV file found in the extracted ZIP.")
+            self.session.status = IngestorSessionStatus.FAILED
+            self.session.notes = "No CSV file found."
+        elif has_failures:
+            self.session.status = IngestorSessionStatus.FAILED
+            self.session.notes = "Some rows failed to process."
         else:
-            raise FileNotFoundError("No CSV file found in the extracted ZIP.")
+            self.session.status = IngestorSessionStatus.SUCCESS
+            logger.info(
+                f"Ingestor session {self.session.id} completed successfully."
+            )
+
+        self.session.save()  # Save session **only once**
 
     def run(self):
         """Run the ingestion process."""

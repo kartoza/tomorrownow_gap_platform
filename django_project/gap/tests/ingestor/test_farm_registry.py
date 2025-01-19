@@ -11,7 +11,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from gap.models import (
     Farm, Crop, FarmRegistry, FarmRegistryGroup,
-    IngestorSession
+    IngestorSession, IngestorSessionStatus
 )
 from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
 
@@ -59,6 +59,12 @@ class DCASFarmRegistryIngestorTest(TestCase):
 
         # Verify session status
         session.refresh_from_db()
+        print(session.status, session.notes)
+        self.assertEqual(
+            session.status,
+            IngestorSessionStatus.SUCCESS,
+            "Session status should be SUCCESS."
+        )
 
         # Verify FarmRegistryGroup was created
         self.assertEqual(FarmRegistryGroup.objects.count(), 1)
