@@ -44,18 +44,14 @@ class DCASDataPipeline:
 
     def __init__(
         self, farm_registry_group: FarmRegistryGroup,
-        config: DCASConfig,
         request_date: datetime.date
     ):
         """Initialize DCAS Data Pipeline.
 
         :param farm_registry_group: _description_
         :type farm_registry_group: FarmRegistryGroup
-        :param config: _description_
-        :type config: DCASConfig
         """
         self.farm_registry_group = farm_registry_group
-        self.config = config
         self.fs = None
         self.minimum_plant_date = None
         self.crops = []
