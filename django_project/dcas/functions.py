@@ -51,7 +51,10 @@ def calculate_growth_stage(
     row['growth_stage_id'] = growth_stage_dict['id']
 
     row['growth_stage_start_date'] = row['prev_growth_stage_start_date']
-    if row['growth_stage_id'] == row['prev_growth_stage_id']:
+    if (
+        not pd.isna(row['prev_growth_stage_id']) and
+        row['growth_stage_id'] == row['prev_growth_stage_id']
+    ):
         # the growth_stage_id is not changed
         return row
 
