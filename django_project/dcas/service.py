@@ -80,9 +80,7 @@ class GrowthStageService:
 
     @staticmethod
     def load_matrix():
-        """
-        Preload all GDD matrices into the cache.
-        """
+        """Preload all GDD matrices into the cache."""
         all_matrices = list(
             GDDMatrix.objects.all()
             .select_related("crop_growth_stage")
