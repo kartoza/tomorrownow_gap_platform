@@ -10,6 +10,7 @@ import datetime
 import time
 import numpy as np
 import pandas as pd
+from django.core.cache import cache
 from django.db import connection
 from django.db.models import Min
 import dask.dataframe as dd
@@ -17,6 +18,7 @@ from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
 
 from gap.models import FarmRegistryGroup, FarmRegistry, Grid
+from dcas.service import GrowthStageService
 from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
     process_partition_total_gdd,
@@ -90,6 +92,12 @@ class DCASDataPipeline:
         return 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'.format(
             **connection.settings_dict
         )
+
+    def cleanup_gdd_matrix(self):
+        """Cleanup GDD Matrix."""
+        # Check if GDD Matrix is in cache
+        if cache.get(GrowthStageService.CACHE_KEY):
+            GrowthStageService.cleanup_matrix()
 
     def load_grid_data(self) -> pd.DataFrame:
         """Load grid data from FarmRegistry table.
@@ -295,6 +303,9 @@ class DCASDataPipeline:
 
     def process_grid_crop_data(self):
         """Process Grid and Crop Data."""
+        # Load GDD Matrix before processing grid crop data
+        GrowthStageService.load_matrix()
+
         grid_data_file_path = self.data_output.grid_data_file_path
 
         # load grid with crop and planting date
@@ -394,5 +405,7 @@ class DCASDataPipeline:
         grid_crop_df = self.process_grid_crop_data()
 
         self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
+
+        self.cleanup_gdd_matrix()
 
         print(f'Finished {time.time() - start_time} seconds.')

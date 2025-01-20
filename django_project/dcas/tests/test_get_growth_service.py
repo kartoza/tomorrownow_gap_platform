@@ -38,24 +38,26 @@ class GrowthStageServiceTest(TestCase):
             {
                 "gdd_threshold": 100,
                 "crop_growth_stage__id": 1,
-                "crop_growth_stage__name": "Germination"
+                "crop_growth_stage__name": "Germination",
+                "config__id": 1
             },
             {
                 "gdd_threshold": 150,
                 "crop_growth_stage__id": 2,
-                "crop_growth_stage__name": "Establishment"
+                "crop_growth_stage__name": "Establishment",
+                "config__id": 1
             },
         ]
         mock_cache.set.side_effect = set_cache_dummy
 
         # Fetch growth stage
-        stage = GrowthStageService.get_growth_stage(2, 1, 150)
+        stage = GrowthStageService.get_growth_stage(2, 1, 150, 1)
         self.assertIsNotNone(stage)
         self.assertEqual(stage["id"], 2)
         self.assertEqual(stage["label"], "Establishment")
 
         # Verify cache.get was called
-        mock_cache.get.assert_called_once_with("gdd_matrix:2:1")
+        mock_cache.get.assert_called_once_with("gdd_matrix:2:1:1")
 
     @patch("dcas.service.cache")
     def test_get_growth_stage_database_fetch(self, mock_cache):
@@ -68,7 +70,7 @@ class GrowthStageServiceTest(TestCase):
         mock_cache.set = patch("dcas.service.cache.set").start()
 
         # Fetch growth stage
-        stage = GrowthStageService.get_growth_stage(2, 1, 150)
+        stage = GrowthStageService.get_growth_stage(2, 1, 150, 1)
         self.assertIsNotNone(stage)
         self.assertEqual(stage["id"], 1)
         self.assertEqual(stage["label"], "Germination")
@@ -84,24 +86,26 @@ class GrowthStageServiceTest(TestCase):
             {
                 "gdd_threshold": 800,
                 "crop_growth_stage__id": 7,
-                "crop_growth_stage__name": "Grain Filling"
+                "crop_growth_stage__name": "Grain Filling",
+                "config__id": 1
             },
             {
                 "gdd_threshold": 900,
                 "crop_growth_stage__id": 8,
-                "crop_growth_stage__name": "Physiological Maturity"
+                "crop_growth_stage__name": "Physiological Maturity",
+                "config__id": 1
             },
         ] if "8" in key else None
         mock_cache.set.side_effect = set_cache_dummy
 
         # Fetch growth stage
-        stage = GrowthStageService.get_growth_stage(2, 1, 1000)
+        stage = GrowthStageService.get_growth_stage(2, 1, 1000, 1)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 14)
-        self.assertEqual(stage["label"], "Seed setting")
+        self.assertEqual(stage["id"], 4)
+        self.assertEqual(stage["label"], "Flowering")
 
         # Verify cache.get was called
-        mock_cache.get.assert_called_with("gdd_matrix:2:1")
+        mock_cache.get.assert_called_with("gdd_matrix:2:1:1")
 
     @patch("dcas.service.cache")
     def test_get_growth_stage_below_threshold(self, mock_cache):
@@ -111,24 +115,26 @@ class GrowthStageServiceTest(TestCase):
             {
                 "gdd_threshold": 100,
                 "crop_growth_stage__id": 10,
-                "crop_growth_stage__name": "Maturity"
+                "crop_growth_stage__name": "Maturity",
+                "config__id": 1
             },
             {
                 "gdd_threshold": 200,
                 "crop_growth_stage__id": 11,
-                "crop_growth_stage__name": "Seedling"
+                "crop_growth_stage__name": "Seedling",
+                "config__id": 1
             },
         ]
         mock_cache.set.side_effect = set_cache_dummy
 
         # Fetch growth stage
-        stage = GrowthStageService.get_growth_stage(9, 2, 150)
+        stage = GrowthStageService.get_growth_stage(9, 2, 150, 1)
         self.assertIsNotNone(stage)
         self.assertEqual(stage["id"], 10)
         self.assertEqual(stage["label"], "Maturity")
 
         # Verify cache.get was called
-        mock_cache.get.assert_called_once_with("gdd_matrix:9:2")
+        mock_cache.get.assert_called_once_with("gdd_matrix:9:2:1")
 
     @patch("dcas.service.cache")
     def test_get_growth_stage_no_matrix(self, mock_cache):
@@ -141,8 +147,83 @@ class GrowthStageServiceTest(TestCase):
         GDDMatrix.objects.filter(crop_id=99, crop_stage_type_id=99).delete()
 
         # Fetch growth stage
-        stage = GrowthStageService.get_growth_stage(99, 99, 150)
+        stage = GrowthStageService.get_growth_stage(99, 99, 150, 99)
         self.assertIsNone(stage)
 
         # Verify cache.get was called
-        mock_cache.get.assert_called_once_with("gdd_matrix:99:99")
+        mock_cache.get.assert_called_once_with("gdd_matrix:99:99:99")
+
+    @patch("dcas.service.cache")
+    @patch("dcas.models.GDDMatrix.objects")
+    def test_load_matrix(self, mock_gdd_matrix_objects, mock_cache):
+        """Test loading all GDD matrices into cache."""
+        mock_gdd_matrices = [
+            {
+                "crop_id": 1,
+                "crop_stage_type_id": 1,
+                "config__id": 1,
+                "gdd_threshold": 100,
+                "crop_growth_stage__id": 1,
+                "crop_growth_stage__name": "Germination",
+            },
+            {
+                "crop_id": 1,
+                "crop_stage_type_id": 1,
+                "config__id": 1,
+                "gdd_threshold": 150,
+                "crop_growth_stage__id": 2,
+                "crop_growth_stage__name": "Establishment",
+            },
+        ]
+
+        mock_queryset = mock_gdd_matrix_objects.all.return_value
+        mock_queryset.select_related.return_value = mock_queryset
+        mock_queryset.values.return_value = mock_gdd_matrices
+
+        GrowthStageService.load_matrix()
+
+        expected_cache_data = {
+            "gdd_matrix:1:1:1": [
+                {
+                    "gdd_threshold": 100,
+                    "crop_growth_stage__id": 1,
+                    "crop_growth_stage__name": "Germination",
+                },
+                {
+                    "gdd_threshold": 150,
+                    "crop_growth_stage__id": 2,
+                    "crop_growth_stage__name": "Establishment",
+                },
+            ]
+        }
+
+        mock_cache.set_many.assert_called_once_with(
+            expected_cache_data, timeout=None)
+
+    @patch("dcas.service.cache")
+    def test_cleanup_matrix(self, mock_cache):
+        """Test cleaning up all GDD matrices from the cache."""
+        mock_gdd_matrices = [
+            {"crop_id": 1, "crop_stage_type_id": 1, "config__id": 1},
+            {"crop_id": 2, "crop_stage_type_id": 1, "config__id": 2},
+        ]
+
+        with patch.object(
+            GDDMatrix.objects,
+            "values",
+            return_value=mock_gdd_matrices
+        ):
+            GrowthStageService.cleanup_matrix()
+
+        mock_cache.delete_many.assert_called_once_with([
+            "gdd_matrix:1:1:1",
+            "gdd_matrix:2:1:2",
+        ])
+
+    @patch("dcas.service.cache")
+    def test_cleanup_matrix_no_keys(self, mock_cache):
+        """Test cleaning up when no cached GDD matrices exist."""
+        with patch.object(GDDMatrix.objects, "values", return_value=[]):
+            GrowthStageService.cleanup_matrix()
+
+        mock_cache.delete_many.assert_not_called()
