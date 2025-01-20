@@ -38,7 +38,8 @@ def calculate_growth_stage(
     growth_stage_dict = GrowthStageService.get_growth_stage(
         row['crop_id'],
         row['crop_stage_type_id'],
-        row[f'gdd_sum_{epoch_list[-1]}']
+        row[f'gdd_sum_{epoch_list[-1]}'],
+        row['config_id']
     )
 
     if growth_stage_dict is None:
