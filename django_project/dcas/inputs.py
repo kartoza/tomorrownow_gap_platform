@@ -187,11 +187,18 @@ class DCASPipelineInput:
             )
             indices.append((lat_idx, lon_idx))
 
+        columns = []
+        for attribute in attribute_list:
+            for date in dates:
+                epoch = int(date.timestamp())
+                columns.append(f'{column_mapping[attribute]}_{epoch}')
         result = []
         for i, (lat_idx, lon_idx) in enumerate(indices):
-            if lat_idx is None:
+            if lat_idx is None or lon_idx is None:
                 # add empty df
-                print('errorr')
+                empty_df = pd.DataFrame(columns=columns)
+                empty_df.loc[0] = np.nan
+                result.append(empty_df)
                 continue
             filtered_ds = ds[attribute_list].isel(lat=lat_idx, lon=lon_idx)
             df = filtered_ds.to_dataframe()

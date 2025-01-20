@@ -219,3 +219,31 @@ class DCASPipelineInputsTest(TestCase):
         # no date from mock ds should have all na
         epoch = self.input.historical_epoch[0]
         self.assertTrue(df[f'temperature_{epoch}'].isna().all())
+
+    @mock.patch('xarray.open_dataset')
+    def test_merge_data_with_invalid_point(self, mock_read):
+        """Test merge data."""
+        grid_list = [1, 2]
+        grid_df = pd.DataFrame({
+            'grid_id': grid_list,
+            'lat': [-11, 4],
+            'lon': [-11, 4]
+        }, index=grid_list)
+
+        mock_read.return_value = self.ds
+
+        df = self.input.merge_dataset(
+            'test.nc',
+            ['temperature'],
+            {
+                'temperature': 'temperature'
+            },
+            self.input.historical_dates,
+            grid_df
+        )
+
+        expected_results = [np.nan, 34]
+        epoch = self.input.historical_epoch[-1]
+        np.testing.assert_allclose(
+            df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
+        )
