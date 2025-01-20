@@ -11,7 +11,7 @@ import numpy as np
 from gap.models import Attribute
 from dcas.models import GDDConfig
 from dcas.rules.rule_engine import DCASRuleEngine
-from dcas.utils import read_grid_data
+from dcas.utils import read_grid_data, read_grid_crop_data
 from dcas.functions import (
     calculate_growth_stage,
     calculate_message_output
@@ -301,3 +301,35 @@ def _merge_partition_gdd_config(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     return df.merge(gdd_config_df, how='inner', on=['crop_id', 'config_id'])
+
+
+def process_partition_farm_registry(
+    df: pd.DataFrame, parquet_file_path: str, growth_stage_mapping: dict
+) -> pd.DataFrame:
+    grid_id_list = df['grid_id'].unique()
+    crop_id_list = df['crop_id'].unique()
+    crop_stage_type_list = df['crop_stage_type_id'].unique()
+
+    # read grid_data_df
+    grid_data_df = read_grid_crop_data(
+        parquet_file_path, grid_id_list,
+        crop_id_list, crop_stage_type_list
+    )
+
+    grid_data_df = grid_data_df.drop(
+        columns=['__null_dask_index__', 'planting_date']
+    )
+
+    # merge the df with grid_data
+    df = df.merge(
+        grid_data_df,
+        on=[
+            'grid_id', 'crop_id', 'crop_stage_type_id',
+            'planting_date_epoch'
+        ],
+        how='inner'
+    )
+
+    df['growth_stage'] = df['growth_stage_id'].map(growth_stage_mapping)
+
+    return df
