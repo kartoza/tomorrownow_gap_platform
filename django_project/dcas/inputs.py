@@ -185,8 +185,6 @@ class DCASPipelineInput:
             lat_idx, lon_idx = self._find_nearest_with_tolerance(
                 ds['lat'], ds['lon'], lat, lon, tolerance
             )
-            if lat_idx is None:
-                print(f'empty {lat} - {lon}')
             indices.append((lat_idx, lon_idx))
 
         result = []
@@ -205,7 +203,8 @@ class DCASPipelineInput:
             df = df.set_index(['lat', 'lon'])
             pivot_df = df.pivot(columns='date', values=attribute_list)
             pivot_df.columns = [
-                f'{column_mapping[col[0]]}_{int(pd.to_datetime(col[1]).timestamp())}'
+                f'{column_mapping[col[0]]}_'
+                f'{int(pd.to_datetime(col[1]).timestamp())}'
                 for col in pivot_df.columns
             ]
 
@@ -218,7 +217,9 @@ class DCASPipelineInput:
 
         return merged_df
 
-    def _find_nearest_with_tolerance(self, lats, lons, target_lat, target_lon, tolerance):
+    def _find_nearest_with_tolerance(
+        self, lats, lons, target_lat, target_lon, tolerance
+    ):
         lat_diff = np.abs(lats - target_lat)
         lon_diff = np.abs(lons - target_lon)
 
