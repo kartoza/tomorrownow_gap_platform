@@ -175,7 +175,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'gdd_sum_123': 420,
             'gdd_sum_124': 440,
             'gdd_sum_125': 450,
-            'gdd_sum_126': 490
+            'gdd_sum_126': 490,
+            'config_id': 1
         }
         epoch_list = [
             123,
@@ -201,7 +202,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'gdd_sum_123': 420,
             'gdd_sum_124': 440,
             'gdd_sum_125': 450,
-            'gdd_sum_126': 490
+            'gdd_sum_126': 490,
+            'config_id': 1
         }
         epoch_list = [
             123,
