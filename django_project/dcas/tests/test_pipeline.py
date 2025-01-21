@@ -33,8 +33,7 @@ class DCASPipelineTest(DCASPipelineBaseTest):
         )
 
         pipeline = DCASDataPipeline(
-            self.farm_registry_group,
-            config, self.request_date
+            self.farm_registry_group, self.request_date
         )
         df = pipeline._merge_grid_data_with_config(df)
         self.assertIn('config_id', df.columns)
@@ -56,8 +55,7 @@ class DCASPipelineTest(DCASPipelineBaseTest):
             'country_id': country_id_list
         }, index=id_list)
         pipeline = DCASDataPipeline(
-            self.farm_registry_group,
-            self.default_config, self.request_date
+            self.farm_registry_group, self.request_date
         )
         df = pipeline._merge_grid_data_with_config(df)
         self.assertIn('config_id', df.columns)
