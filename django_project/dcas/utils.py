@@ -34,3 +34,16 @@ def read_grid_data(
     df = conndb.sql(query).df()
     conndb.close()
     return df
+
+
+def print_df_memory_usage(df: pd.DataFrame):
+    """Print dataframe memory usage.
+
+    :param df: dataframe
+    :type df: pd.DataFrame
+    """
+    memory = df.memory_usage(deep=True)
+    total_memory = memory.sum()  # Total memory usage in bytes
+
+    print(f"Total memory usage: {total_memory / 1024:.2f} KB")
+    # # 760 MB for 33K grid data

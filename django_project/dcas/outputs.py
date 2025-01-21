@@ -51,7 +51,7 @@ class DCASPipelineOutput:
         # clear temp resource
         if os.path.exists(self.TMP_BASE_DIR):
             shutil.rmtree(self.TMP_BASE_DIR)
-        os.makedirs(self.TMP_BASE_DIR)
+        os.makedirs(self.TMP_BASE_DIR, exist_ok=True)
 
     def cleanup(self):
         """Remove temporary directory."""

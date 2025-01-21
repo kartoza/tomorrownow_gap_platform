@@ -14,9 +14,10 @@ from django.db import connection
 from django.db.models import Min
 import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
+from django.contrib.gis.db.models import Union
 
-from gap.models import FarmRegistryGroup, FarmRegistry, CropGrowthStage
-from dcas.models import DCASConfig
+from gap.models import FarmRegistryGroup, FarmRegistry, Grid
+from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
     process_partition_total_gdd,
     process_partition_growth_stage,
@@ -27,6 +28,7 @@ from dcas.partitions import (
 )
 from dcas.queries import DataQuery
 from dcas.outputs import DCASPipelineOutput, OutputType
+from dcas.inputs import DCASPipelineInput
 
 
 logger = logging.getLogger(__name__)
@@ -36,8 +38,8 @@ class DCASDataPipeline:
     """Class for DCAS data pipeline."""
 
     NUM_PARTITIONS = 10
-    GRID_CROP_NUM_PARTITIONS = 5  # for 1M
-    # GRID_CROP_NUM_PARTITIONS = 2
+    # GRID_CROP_NUM_PARTITIONS = 100
+    GRID_CROP_NUM_PARTITIONS = 2
     LIMIT = 10000
 
     def __init__(
@@ -58,9 +60,9 @@ class DCASDataPipeline:
         self.minimum_plant_date = None
         self.crops = []
         self.request_date = request_date
-        self.max_temperature_epoch = []
         self.data_query = DataQuery(self._conn_str(), self.LIMIT)
         self.data_output = DCASPipelineOutput(request_date)
+        self.data_input = DCASPipelineInput(request_date)
 
     def setup(self):
         """Set the data pipeline."""
@@ -78,18 +80,11 @@ class DCASDataPipeline:
         ).distinct('crop_id')
         self.crops = list(farm_qs)
 
-        self.max_temperature_epoch = []
-        dates = pd.date_range(
-            self.minimum_plant_date,
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
-        )
-        for date in dates:
-            epoch = int(date.timestamp())
-            self.max_temperature_epoch.append(epoch)
-
         # initialize output
         self.data_output.setup()
+
+        # initialize input
+        self.data_input.setup(self.minimum_plant_date)
 
     def _conn_str(self):
         return 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'.format(
@@ -102,11 +97,46 @@ class DCASDataPipeline:
         :return: DataFrame of Grid Data
         :rtype: pd.DataFrame
         """
-        return pd.read_sql_query(
+        df = pd.read_sql_query(
             self.data_query.grid_data_query(self.farm_registry_group),
             con=self._conn_str(),
             index_col=self.data_query.grid_id_index_col,
         )
+
+        return self._merge_grid_data_with_config(df)
+
+    def _merge_grid_data_with_config(self, df: pd.DataFrame) -> pd.DataFrame:
+        default_config = DCASConfig.objects.filter(
+            is_default=True
+        ).first()
+        config_map = {}
+        countries = Grid.objects.filter(
+            id__in=df.index.unique()
+        ).distinct(
+            'country_id'
+        ).order_by('country_id').values_list(
+            'country_id',
+            flat=True
+        )
+        for country_id in countries:
+            if country_id is None:
+                continue
+            config_for_country = DCASConfigCountry.objects.filter(
+                country_id=country_id
+            ).first()
+            if config_for_country:
+                config_map[country_id] = config_for_country.config.id
+
+        if config_map:
+            df['config_id'] = df['country_id'].map(
+                config_map
+            ).fillna(default_config.id)
+        else:
+            df['config_id'] = default_config.id
+
+        df['config_id'] = df['config_id'].astype('Int64')
+
+        return df
 
     def load_grid_weather_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Load Grid Weather data.
@@ -117,56 +147,19 @@ class DCASDataPipeline:
         :return: Grid DataFrame with weather columns
         :rtype: pd.DataFrame
         """
-        columns = {}
-        dates = pd.date_range(
-            self.minimum_plant_date,
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
+        # Combine all geometries and compute the bounding box
+        combined_bbox = (
+            Grid.objects.filter(
+                id__in=df.index.unique()
+            ).aggregate(
+                combined_geometry=Union('geometry')
+            )
         )
 
-        for date in dates:
-            epoch = int(date.timestamp())
-            columns[f'max_temperature_{epoch}'] = (
-                np.random.uniform(low=25, high=40, size=df.shape[0])
-            )
-            columns[f'min_temperature_{epoch}'] = (
-                np.random.uniform(low=5, high=15, size=df.shape[0])
-            )
-            columns[f'total_rainfall_{epoch}'] = (
-                np.random.uniform(low=10, high=200, size=df.shape[0])
-            )
+        bbox = combined_bbox['combined_geometry'].extent
+        print(f"Bounding Box: {bbox}")
 
-        dates_humidity = pd.date_range(
-            self.request_date,
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
-        )
-        for date in dates_humidity:
-            epoch = int(date.timestamp())
-            columns[f'max_humidity_{epoch}'] = (
-                np.random.uniform(low=55, high=90, size=df.shape[0])
-            )
-            columns[f'min_humidity_{epoch}'] = (
-                np.random.uniform(low=10, high=50, size=df.shape[0])
-            )
-
-        dates_precip = pd.date_range(
-            self.request_date - datetime.timedelta(days=6),
-            self.request_date + datetime.timedelta(days=3),
-            freq='d'
-        )
-        for date in dates_precip:
-            epoch = int(date.timestamp())
-            columns[f'precipitation_{epoch}'] = (
-                np.random.uniform(low=10, high=200, size=df.shape[0])
-            )
-            columns[f'evapotranspiration_{epoch}'] = (
-                np.random.uniform(low=10, high=200, size=df.shape[0])
-            )
-
-        new_df = pd.DataFrame(columns, index=df.index)
-
-        return pd.concat([df, new_df], axis=1)
+        return self.data_input.collect_data(bbox, df)
 
     def postprocess_grid_weather_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate value for Grid parameters.
@@ -297,28 +290,11 @@ class DCASDataPipeline:
 
         grid_df = self.postprocess_grid_weather_data(grid_df)
 
-        # # print(grid_df)
-        # print(grid_df.columns)
-
-        # print(f'length grid {grid_df.shape[0]}')
-        # memory = grid_df.memory_usage(deep=True)
-        # total_memory = memory.sum()  # Total memory usage in bytes
-
-        # print(memory)
-        # print(f"Total memory usage: {total_memory / 1024:.2f} KB")
-        # # # 760 MB for 33K grid data
-
-        # print(grid_df.columns)
         self.data_output.save(OutputType.GRID_DATA, grid_df)
         del grid_df
 
     def process_grid_crop_data(self):
         """Process Grid and Crop Data."""
-        request_date_epoch = datetime.datetime(
-            self.request_date.year, self.request_date.month,
-            self.request_date.day,
-            0, 0, 0
-        ).timestamp()
         grid_data_file_path = self.data_output.grid_data_file_path
 
         # load grid with crop and planting date
@@ -328,29 +304,51 @@ class DCASDataPipeline:
         )
 
         # Process gdd cumulative
-        for epoch in self.max_temperature_epoch:
+        # add config_id
+        grid_crop_df_meta = grid_crop_df_meta.assign(
+            config_id=pd.Series(dtype='Int64')
+        )
+        gdd_columns = []
+        for epoch in self.data_input.historical_epoch:
             grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
+            gdd_columns.append(f'gdd_sum_{epoch}')
 
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_total_gdd,
             grid_data_file_path,
-            self.max_temperature_epoch,
+            self.data_input.historical_epoch,
             meta=grid_crop_df_meta
         )
 
+        # Identify crop growth stage
+        grid_crop_df_meta = grid_crop_df_meta.assign(
+            growth_stage_start_date=pd.Series(dtype='double'),
+            growth_stage_id=pd.Series(dtype='int'),
+            total_gdd=np.nan
+        )
+        grid_crop_df = grid_crop_df.map_partitions(
+            process_partition_growth_stage,
+            self.data_input.historical_epoch,
+            meta=grid_crop_df_meta
+        )
+
+        # drop gdd columns
+        grid_crop_df = grid_crop_df.drop(columns=gdd_columns)
+        grid_crop_df_meta = grid_crop_df_meta.drop(columns=gdd_columns)
+
         # Process seasonal_precipitation
-        meta2 = grid_crop_df_meta.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             seasonal_precipitation=np.nan
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_seasonal_precipitation,
             grid_data_file_path,
-            self.max_temperature_epoch,
-            meta=meta2
+            self.data_input.historical_epoch,
+            meta=grid_crop_df_meta
         )
 
         # Add temperature, humidity, and p_pet
-        meta3 = meta2.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             temperature=np.nan,
             humidity=np.nan,
             p_pet=np.nan,
@@ -358,37 +356,22 @@ class DCASDataPipeline:
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_other_params,
             grid_data_file_path,
-            meta=meta3
-        )
-
-        # Identify crop growth stage
-        growth_id_list = list(
-            CropGrowthStage.objects.all().values_list('id', flat=True)
-        )
-        meta4 = meta3.assign(
-            growth_stage_start_date=pd.Series(dtype='double'),
-            growth_stage_id=pd.Series(dtype='int')
-        )
-        grid_crop_df = grid_crop_df.map_partitions(
-            process_partition_growth_stage,
-            growth_id_list,
-            request_date_epoch,
-            meta=meta4
+            meta=grid_crop_df_meta
         )
 
         # Calculate growth_stage_precipitation
-        meta5 = meta4.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             growth_stage_precipitation=np.nan
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage_precipitation,
             grid_data_file_path,
-            self.max_temperature_epoch,
-            meta=meta5
+            self.data_input.historical_epoch,
+            meta=grid_crop_df_meta
         )
 
         # Calculate message codes
-        meta6 = meta5.assign(
+        grid_crop_df_meta = grid_crop_df_meta.assign(
             message=None,
             message_2=None,
             message_3=None,
@@ -397,8 +380,7 @@ class DCASDataPipeline:
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_message_output,
-            self.config.id,
-            meta=meta6
+            meta=grid_crop_df_meta
         )
 
         return grid_crop_df

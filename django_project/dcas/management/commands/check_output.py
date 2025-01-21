@@ -18,13 +18,13 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     """Command to process DCAS Pipeline."""
 
-    def export_to_csv(self, sql):
+    def export_to_csv(self, sql, name='output.csv'):
         """Export as csv."""
         conn = duckdb.connect()
         final_query = (
             f"""
             COPY({sql})
-            TO 'output.csv'
+            TO '{name}'
             (HEADER, DELIMITER ',');
             """
         )
@@ -43,8 +43,8 @@ class Command(BaseCommand):
             FROM read_parquet('{grid_path}/*.parquet')
             """
         )
-        self.export_to_csv(sql)
+        self.export_to_csv(sql, name='output.csv')
 
-        # conn = duckdb.connect()
-        # conn.sql(sql).show()
-        # conn.close()
+        conn = duckdb.connect()
+        conn.sql(sql).show(max_rows=250)
+        conn.close()
