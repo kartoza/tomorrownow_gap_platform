@@ -19,7 +19,6 @@ class TestDCASPipelineOutput(unittest.TestCase):
     @patch("pandas.DataFrame.to_csv")  # Mock CSV writing
     def test_save_message_output_csv(self, mock_to_csv, mock_sftp):
         """Test saving message output as CSV and uploading to SFTP."""
-
         # Create a dummy Dask DataFrame
         df = pd.DataFrame({"message": ["Test Message 1", "Test Message 2"]})
         dask_df = dd.from_pandas(df, npartitions=1)
@@ -46,7 +45,6 @@ class TestDCASPipelineOutput(unittest.TestCase):
         mock_sftp_from_transport
     ):
         """Test that SFTP upload is triggered correctly."""
-
         # Set mock environment variables in `settings`
         mock_settings.SFTP_HOST = "127.0.0.1"
         mock_settings.SFTP_PORT = 2222
