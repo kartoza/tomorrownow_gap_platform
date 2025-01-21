@@ -30,6 +30,7 @@ from dcas.partitions import (
 from dcas.queries import DataQuery
 from dcas.outputs import DCASPipelineOutput, OutputType
 from dcas.inputs import DCASPipelineInput
+from dcas.functions import filter_messages_by_weeks
 
 
 logger = logging.getLogger(__name__)
@@ -377,6 +378,13 @@ class DCASDataPipeline:
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_message_output,
+            meta=grid_crop_df_meta
+        )
+        # Apply the new message filtering function
+        grid_crop_df = grid_crop_df.map_partitions(
+            filter_messages_by_weeks,
+            self.data_output.grid_crop_data_dir_path,
+            2,  # Weeks constraint (default: 2 weeks)
             meta=grid_crop_df_meta
         )
 
