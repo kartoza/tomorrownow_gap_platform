@@ -37,15 +37,15 @@ logger = logging.getLogger(__name__)
 class DCASDataPipeline:
     """Class for DCAS data pipeline."""
 
-    NUM_PARTITIONS = 10
+    DEFAULT_NUM_PARTITIONS = 10
     # GRID_CROP_NUM_PARTITIONS = 100
-    GRID_CROP_NUM_PARTITIONS = 2
-    LIMIT = 10000
+    DEFAULT_GRID_CROP_NUM_PARTITIONS = 2
+    LIMIT = None
 
     def __init__(
         self, farm_registry_group: FarmRegistryGroup,
-        config: DCASConfig,
-        request_date: datetime.date
+        request_date: datetime.date, farm_num_partitions = None,
+        grid_crop_num_partitions = None
     ):
         """Initialize DCAS Data Pipeline.
 
@@ -55,7 +55,6 @@ class DCASDataPipeline:
         :type config: DCASConfig
         """
         self.farm_registry_group = farm_registry_group
-        self.config = config
         self.fs = None
         self.minimum_plant_date = None
         self.crops = []
@@ -63,6 +62,14 @@ class DCASDataPipeline:
         self.data_query = DataQuery(self._conn_str(), self.LIMIT)
         self.data_output = DCASPipelineOutput(request_date)
         self.data_input = DCASPipelineInput(request_date)
+        self.NUM_PARTITIONS = (
+            self.DEFAULT_NUM_PARTITIONS if farm_num_partitions is None else
+            farm_num_partitions
+        )
+        self.GRID_CROP_NUM_PARTITIONS = (
+            self.DEFAULT_GRID_CROP_NUM_PARTITIONS if
+            grid_crop_num_partitions is None else grid_crop_num_partitions
+        )
 
     def setup(self):
         """Set the data pipeline."""
