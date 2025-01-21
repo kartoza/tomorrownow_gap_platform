@@ -33,6 +33,8 @@ from dcas.inputs import DCASPipelineInput
 
 
 logger = logging.getLogger(__name__)
+# Enable copy_on_write CoW globally
+pd.set_option("mode.copy_on_write", True)
 
 
 class DCASDataPipeline:
