@@ -13,7 +13,10 @@ from dask.dataframe.core import DataFrame as dask_df
 import dask_geopandas as dg
 from dask_geopandas.io.parquet import to_parquet
 from typing import Union
+import duckdb
+from django.conf import settings
 
+from core.utils.file import format_size
 from gap.utils.dask import execute_dask_compute
 
 
@@ -29,11 +32,13 @@ class DCASPipelineOutput:
     """Class to manage pipeline output."""
 
     TMP_BASE_DIR = '/tmp/dcas'
+    DCAS_OUTPUT_DIR = 'dcas_output'
 
-    def __init__(self, request_date):
+    def __init__(self, request_date, extract_additional_columns=False):
         """Initialize DCASPipelineOutput."""
         self.fs = None
         self.request_date = request_date
+        self.extract_additional_columns = extract_additional_columns
 
     def setup(self):
         """Set DCASPipelineOutput."""
@@ -146,7 +151,7 @@ class DCASPipelineOutput:
         else:
             raise ValueError(f'Invalid output type {type} to be saved!')
 
-    def _save_farm_crop_data(self, df: dask_df, directory_name='dcas_output'):
+    def _save_farm_crop_data(self, df: dask_df):
         df_geo = dg.from_dask_dataframe(
             df,
             geometry=dg.from_wkb(df['geometry'])
@@ -156,12 +161,12 @@ class DCASPipelineOutput:
 
         x = to_parquet(
             df_geo,
-            self._get_directory_path(directory_name),
+            self._get_directory_path(self.DCAS_OUTPUT_DIR),
             partition_on=['iso_a3', 'year', 'month', 'day'],
             filesystem=self.fs,
             compute=False
         )
-        print(f'writing to {self._get_directory_path(directory_name)}')
+        print(f'writing to {self._get_directory_path(self.DCAS_OUTPUT_DIR)}')
         execute_dask_compute(x)
 
     def _save_grid_crop_data(self, df: dask_df):
@@ -184,3 +189,83 @@ class DCASPipelineOutput:
         file_path = self.grid_data_file_path
         print(f'writing dataframe to {file_path}')
         df.to_parquet(file_path)
+
+    def _get_connection(self, s3):
+        endpoint = s3['AWS_ENDPOINT_URL']
+        if settings.DEBUG:
+            endpoint = endpoint.replace('http://', '')
+        else:
+            endpoint = endpoint.replace('https://', '')
+        if endpoint.endswith('/'):
+            endpoint = endpoint[:-1]
+
+        conn = duckdb.connect(config={
+            's3_access_key_id': s3['AWS_ACCESS_KEY_ID'],
+            's3_secret_access_key': s3['AWS_SECRET_ACCESS_KEY'],
+            's3_region': 'us-east-1',
+            's3_url_style': 'path',
+            's3_endpoint': endpoint,
+            's3_use_ssl': not settings.DEBUG
+        })
+        conn.install_extension("httpfs")
+        conn.load_extension("httpfs")
+        conn.install_extension("spatial")
+        conn.load_extension("spatial")
+        return conn
+
+    def convert_to_csv(self):
+        """Convert output to csv file."""
+        dt = self.request_date.strftime('%Y%m%d')
+        file_path = os.path.join(
+            self.TMP_BASE_DIR,
+            f'output_{dt}.csv'
+        )
+        column_list = [
+            'farm_unique_id as farmer_id', 'crop',
+            'planting_date as plantingDate', 'growth_stage as growthStage',
+            'message', 'message_2', 'message_3', 'message_4', 'message_5',
+            'humidity as relativeHumidity',
+            'seasonal_precipitation as seasonalPrecipitation',
+            'temperature', 'p_pet as PPET',
+            'growth_stage_precipitation as growthStagePrecipitation'
+        ]
+        if self.extract_additional_columns:
+            column_list.extend([
+                "total_gdd", "grid_id",
+                "strftime(to_timestamp(growth_stage_start_date)" +
+                ", '%Y-%m-%d') as growth_stage_date"
+            ])
+
+        parquet_path = (
+            f"'{self._get_directory_path(self.DCAS_OUTPUT_DIR)}/"
+            "iso_a3=*/year=*/month=*/day=*/*.parquet'"
+        )
+        s3 = self._get_s3_variables()
+        conn = self._get_connection(s3)
+        sql = (
+            f"""
+            SELECT {','.join(column_list)}
+            FROM read_parquet({parquet_path}, hive_partitioning=true)
+            WHERE year={self.request_date.year} AND
+            month={self.request_date.month} AND
+            day={self.request_date.day}
+            """
+        )
+        final_query = (
+            f"""
+            COPY({sql})
+            TO '{file_path}'
+            (HEADER, DELIMITER ',');
+            """
+        )
+        print(f'Extracting csv to {file_path}')
+        conn.sql(final_query)
+        conn.close()
+
+        file_stats = os.stat(file_path)
+        print(
+            f'Extracted csv {file_path} file size: '
+            f'{format_size(file_stats.st_size)}'
+        )
+
+        return file_path

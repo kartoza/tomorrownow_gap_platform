@@ -306,6 +306,17 @@ def _merge_partition_gdd_config(df: pd.DataFrame) -> pd.DataFrame:
 def process_partition_farm_registry(
     df: pd.DataFrame, parquet_file_path: str, growth_stage_mapping: dict
 ) -> pd.DataFrame:
+    """Merge farm registry dataframe with grid crop data.
+
+    :param df: farm registry dataframe
+    :type df: pd.DataFrame
+    :param parquet_file_path: parquet to grid crop data
+    :type parquet_file_path: str
+    :param growth_stage_mapping: dict mapping of growthstage label
+    :type growth_stage_mapping: dict
+    :return: merged dataframe
+    :rtype: pd.DataFrame
+    """
     grid_id_list = df['grid_id'].unique()
     crop_id_list = df['crop_id'].unique()
     crop_stage_type_list = df['crop_stage_type_id'].unique()

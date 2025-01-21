@@ -246,7 +246,9 @@ class DataQuery:
         )
         return df
 
-    def read_grid_data_crop_meta_parquet(self, parquet_file_path) -> pd.DataFrame:
+    def read_grid_data_crop_meta_parquet(
+        self, parquet_file_path
+    ) -> pd.DataFrame:
         """Read grid data from parquet file.
 
         :param parquet_file_path: file_path to parquet file
@@ -259,12 +261,11 @@ class DataQuery:
         conndb = duckdb.connect()
         query = (
             f"""
-            SELECT * 
+            SELECT *
             FROM read_parquet('{parquet_file_path}')
             LIMIT 1
             """
         )
         df = conndb.sql(query).df()
-        print(df)
         conndb.close()
         return df

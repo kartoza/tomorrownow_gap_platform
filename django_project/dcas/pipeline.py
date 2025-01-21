@@ -382,9 +382,7 @@ class DCASDataPipeline:
 
         self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
 
-        return grid_crop_df_meta
-
-    def process_farm_registry_data(self, grid_crop_df_meta):
+    def process_farm_registry_data(self):
         """Merge with farm registry data."""
         farm_df = self.load_farm_registry_data()
         farm_df_meta = self.data_query.farm_registry_meta(
@@ -392,8 +390,7 @@ class DCASDataPipeline:
         )
 
         # merge with grid crop data meta
-        farm_df_meta = self._append_grid_crop_meta(farm_df_meta, grid_crop_df_meta)
-        print(farm_df_meta.columns)
+        farm_df_meta = self._append_grid_crop_meta(farm_df_meta)
 
         # load mapping for CropGrowthStage
         growth_stage_mapping = {}
@@ -409,12 +406,11 @@ class DCASDataPipeline:
 
         self.data_output.save(OutputType.FARM_CROP_DATA, farm_df)
 
-    def _append_grid_crop_meta(self, farm_df_meta: pd.DataFrame, grid_crop_df_meta: pd.DataFrame):
-        if grid_crop_df_meta is None:
-            # load from grid_crop data
-            grid_crop_df_meta = self.data_query.read_grid_data_crop_meta_parquet(
-                self.data_output.grid_crop_data_dir_path
-            )
+    def _append_grid_crop_meta(self, farm_df_meta: pd.DataFrame):
+        # load from grid_crop data
+        grid_crop_df_meta = self.data_query.read_grid_data_crop_meta_parquet(
+            self.data_output.grid_crop_data_dir_path
+        )
 
         # adding new columns:
         # - prev_growth_stage_id, prev_growth_stage_start_date,
@@ -431,15 +427,21 @@ class DCASDataPipeline:
         meta = meta.assign(growth_stage=None)
         return pd.concat([farm_df_meta, meta], axis=1)
 
+    def extract_csv_output(self):
+        """Extract csv output file."""
+        file_path = self.data_output.convert_to_csv()
+
+        return file_path
+
     def run(self):
         """Run data pipeline."""
         self.setup()
 
         start_time = time.time()
-        # self.data_collection()
-        # grid_crop_df_meta = self.process_grid_crop_data()
+        self.data_collection()
+        self.process_grid_crop_data()
 
-        self.process_farm_registry_data(None)
-
+        self.process_farm_registry_data()
+        self.extract_csv_output()
 
         print(f'Finished {time.time() - start_time} seconds.')
