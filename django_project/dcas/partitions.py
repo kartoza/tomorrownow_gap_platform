@@ -38,7 +38,7 @@ def process_partition_total_gdd(
         grid_column_list.append(f'min_temperature_{epoch}')
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -115,7 +115,7 @@ def process_partition_seasonal_precipitation(
         grid_column_list.append(f'total_rainfall_{epoch}')
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -148,7 +148,7 @@ def process_partition_other_params(
     grid_column_list = ['grid_id', 'temperature', 'humidity', 'p_pet']
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -207,7 +207,7 @@ def process_partition_growth_stage_precipitation(
         grid_column_list.append(f'total_rainfall_{epoch}')
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
