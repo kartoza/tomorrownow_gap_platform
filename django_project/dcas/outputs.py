@@ -15,6 +15,8 @@ import dask_geopandas as dg
 from dask_geopandas.io.parquet import to_parquet
 from typing import Union
 
+from django.conf import settings
+
 from gap.utils.dask import execute_dask_compute
 
 
@@ -31,13 +33,6 @@ class DCASPipelineOutput:
     """Class to manage pipeline output."""
 
     TMP_BASE_DIR = '/tmp/dcas'
-
-    # Docker SFTP Configuration
-    SFTP_HOST = "127.0.0.1"
-    SFTP_PORT = 2222  # Port mapped in Docker
-    SFTP_USERNAME = "user"
-    SFTP_PASSWORD = "password"
-    SFTP_REMOTE_PATH = "/home/user/upload/message_data.csv"
 
     def __init__(self, request_date):
         """Initialize DCASPipelineOutput."""
@@ -224,18 +219,18 @@ class DCASPipelineOutput:
         """Upload CSV file to Docker SFTP."""
         try:
             print(f'Connecting to SFTP server at '
-                  f'{self.SFTP_HOST}:{self.SFTP_PORT}...')
+                  f'{settings.SFTP_HOST}:{settings.SFTP_PORT}...')
             transport = paramiko.Transport(
-                (self.SFTP_HOST, self.SFTP_PORT)
+                (settings.SFTP_HOST, settings.SFTP_PORT)
             )
             transport.connect(
-                username=self.SFTP_USERNAME, password=self.SFTP_PASSWORD
+                username=settings.SFTP_USERNAME,
+                password=settings.SFTP_PASSWORD
             )
 
             sftp = paramiko.SFTPClient.from_transport(transport)
 
-            print(f"Uploading {local_file} to {self.SFTP_REMOTE_PATH}...")
-            sftp.put(local_file, self.SFTP_REMOTE_PATH)
+            sftp.put(local_file, settings.SFTP_REMOTE_PATH)
 
             print("Upload to Docker SFTP successful!")
 
