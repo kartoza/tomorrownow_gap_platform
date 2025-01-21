@@ -46,6 +46,7 @@ class GrowthStageService:
                     config_id=config_id
                 )
                 .select_related("crop_growth_stage")
+                .order_by("gdd_threshold")
                 .values(
                     "gdd_threshold",
                     "crop_growth_stage__id",

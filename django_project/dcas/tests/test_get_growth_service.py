@@ -101,8 +101,8 @@ class GrowthStageServiceTest(TestCase):
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(2, 1, 1000, 1)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 4)
-        self.assertEqual(stage["label"], "Flowering")
+        self.assertEqual(stage["id"], 14)
+        self.assertEqual(stage["label"], "Seed setting")
 
         # Verify cache.get was called
         mock_cache.get.assert_called_with("gdd_matrix:2:1:1")
@@ -162,17 +162,17 @@ class GrowthStageServiceTest(TestCase):
                 "crop_id": 1,
                 "crop_stage_type_id": 1,
                 "config__id": 1,
-                "gdd_threshold": 100,
-                "crop_growth_stage__id": 1,
-                "crop_growth_stage__name": "Germination",
+                "gdd_threshold": 150,
+                "crop_growth_stage__id": 2,
+                "crop_growth_stage__name": "Establishment",
             },
             {
                 "crop_id": 1,
                 "crop_stage_type_id": 1,
                 "config__id": 1,
-                "gdd_threshold": 150,
-                "crop_growth_stage__id": 2,
-                "crop_growth_stage__name": "Establishment",
+                "gdd_threshold": 100,
+                "crop_growth_stage__id": 1,
+                "crop_growth_stage__name": "Germination",
             },
         ]
 
