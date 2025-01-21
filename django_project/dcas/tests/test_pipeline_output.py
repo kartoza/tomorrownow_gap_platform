@@ -50,7 +50,7 @@ class TestDCASPipelineOutput(unittest.TestCase):
         mock_settings.SFTP_PORT = 2222
         mock_settings.SFTP_USERNAME = "user"
         mock_settings.SFTP_PASSWORD = "password"
-        mock_settings.SFTP_REMOTE_PATH = "/home/user/upload/message_data.csv"
+        mock_settings.SFTP_REMOTE_PATH = "upload"
 
         # Mock the transport instance
         mock_transport_instance = mock_transport.return_value
@@ -86,7 +86,8 @@ class TestDCASPipelineOutput(unittest.TestCase):
 
         # Verify file was uploaded via `put()`
         mock_sftp_instance.put.assert_called_once_with(
-            test_file, mock_settings.SFTP_REMOTE_PATH
+            test_file,
+            f'{mock_settings.SFTP_REMOTE_PATH}/test_message_data.csv'
         )
 
         # Verify SFTP client & transport were properly closed

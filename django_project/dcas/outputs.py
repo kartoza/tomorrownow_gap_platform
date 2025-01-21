@@ -210,8 +210,7 @@ class DCASPipelineOutput:
 
         print('Saving to CSV')
         # Save to CSV
-        x = df.to_csv(dir_path, index=False)
-        execute_dask_compute(x)
+        df.to_csv(file_path, index=False)
         # Upload to SFTP Docker container
         self._upload_to_sftp(file_path)
 
@@ -230,7 +229,13 @@ class DCASPipelineOutput:
 
             sftp = paramiko.SFTPClient.from_transport(transport)
 
-            sftp.put(local_file, settings.SFTP_REMOTE_PATH)
+            # Ensure correct remote path
+            remote_file_path = (
+                f"{settings.SFTP_REMOTE_PATH}/{os.path.basename(local_file)}"
+            )
+            print(f"Uploading {local_file} to {remote_file_path}...")
+
+            sftp.put(local_file, remote_file_path)  # Upload file
 
             print("Upload to Docker SFTP successful!")
 
