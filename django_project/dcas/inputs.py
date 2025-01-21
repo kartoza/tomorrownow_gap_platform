@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 import os
 import datetime
+import time
 import pytz
 import pandas as pd
 import xarray as xr
@@ -23,6 +24,7 @@ class DCASPipelineInput:
     """Class to manage data input."""
 
     TMP_BASE_DIR = '/tmp/dcas'
+    NEAREST_TOLERANCE = 0.001
 
     def __init__(self, request_date):
         """Initialize DCASPipelineInput class."""
@@ -141,6 +143,7 @@ class DCASPipelineInput:
         # merge to dataframe
         print('Merging dataframe...')
         for key, data in self.attribute_maps.items():
+            start_time = time.time()
             grid_df = self.merge_dataset(
                 data['file_path'],
                 data['attribute_list'],
@@ -148,12 +151,13 @@ class DCASPipelineInput:
                 data['dates'],
                 grid_df
             )
+            print(f'Merging {key} finished in {time.time() - start_time} s')
 
         return grid_df
 
     def merge_dataset(
         self, nc_file_path: str, attribute_list: list, column_mapping: dict,
-        dates: list, grid_df: pd.DataFrame
+        dates: list, grid_df: pd.DataFrame, tolerance: float = None
     ) -> pd.DataFrame:
         """Merge dataset and make columns for each date in collected data.
 
@@ -173,48 +177,97 @@ class DCASPipelineInput:
         :rtype: pd.DataFrame
         """
         ds = xr.open_dataset(nc_file_path, engine="h5netcdf")
-        result = [grid_df]
-        for date in dates:
-            vap_df = None
-            if date in ds['date'].values:
-                vap_df = self._get_values_at_points(
-                    ds, attribute_list, column_mapping,
-                    xr.DataArray(grid_df['lat'], dims='gdid'),
-                    xr.DataArray(grid_df['lon'], dims='gdid'),
-                    date
-                )
-            else:
-                # initialize default dataframe
-                epoch = int(pd.Timestamp(date).timestamp())
-                columns = {}
-                for col, new_col in column_mapping.items():
-                    columns[f'{new_col}_{epoch}'] = np.nan
-                vap_df = pd.DataFrame(columns, index=grid_df.index)
+        tolerance = self.NEAREST_TOLERANCE if tolerance is None else tolerance
+        indices = []
+        for idx, lat in enumerate(grid_df['lat']):
+            lon = grid_df['lon'].iloc[idx]
 
-            result.append(vap_df)
+            lat_idx, lon_idx = self._find_nearest_with_tolerance(
+                ds['lat'], ds['lon'], lat, lon, tolerance
+            )
+            indices.append((lat_idx, lon_idx))
 
-        merged_df = pd.concat(result, axis=1)
+        columns = []
+        for attribute in attribute_list:
+            for date in dates:
+                epoch = int(date.timestamp())
+                columns.append(f'{column_mapping[attribute]}_{epoch}')
+        result = []
+        for i, (lat_idx, lon_idx) in enumerate(indices):
+            if lat_idx is None or lon_idx is None:
+                # add empty df
+                empty_df = pd.DataFrame(columns=columns)
+                empty_df.loc[0] = np.nan
+                result.append(empty_df)
+                continue
+            filtered_ds = ds[attribute_list].isel(lat=lat_idx, lon=lon_idx)
+            df = filtered_ds.to_dataframe()
+            df = df.reindex(dates, fill_value=None)
+            df.index.name = 'date'
+            df['lat'] = grid_df['lat'].iloc[idx]
+            df['lon'] = grid_df['lon'].iloc[idx]
+            df = df.reset_index()
+            df = df.set_index(['lat', 'lon'])
+            pivot_df = df.pivot(columns='date', values=attribute_list)
+            pivot_df.columns = [
+                f'{column_mapping[col[0]]}_'
+                f'{int(pd.to_datetime(col[1]).timestamp())}'
+                for col in pivot_df.columns
+            ]
+
+            pivot_df = pivot_df.reset_index(drop=True)
+            result.append(pivot_df)
+
+        merged_rows = pd.concat(result, axis=0)
+        merged_rows = merged_rows.set_index(grid_df.index)
+        merged_df = pd.concat([grid_df, merged_rows], axis=1)
 
         return merged_df
 
+    def _find_nearest_with_tolerance(
+        self, lats, lons, target_lat, target_lon, tolerance
+    ):
+        lat_diff = np.abs(lats - target_lat)
+        lon_diff = np.abs(lons - target_lon)
+
+        if lat_diff.min() <= tolerance and lon_diff.min() <= tolerance:
+            lat_index = lat_diff.argmin()
+            lon_index = lon_diff.argmin()
+            return lat_index.values, lon_index.values
+        else:
+            return None, None
+
     def _get_values_at_points(
         self, ds: xrDataset, attribute_list: list, column_mapping: dict,
-        lat_arr: xr.DataArray, lon_arr: xr.DataArray, date: pd.Timestamp
+        lat_arr: pd.Series, lon_arr: pd.Series, date: pd.Timestamp,
+        df_index, tolerance: float = None
     ):
         epoch = int(date.timestamp())
-        # note: tolerance is chosen from Tio lat/lon increment values
-        values_at_points = ds[attribute_list].sel(
-            date=date
-        ).interp(
-            lat=lat_arr,
-            lon=lon_arr,
-            method='nearest',
-            kwargs={"fill_value": np.nan}
-        )
-        vap_df = values_at_points.to_dataframe()
-        # exclude lat and lon if needed for testing
-        vap_df = vap_df.drop(columns=['date', 'lat', 'lon'])
+        tolerance = self.NEAREST_TOLERANCE if tolerance is None else tolerance
 
+        data = {attribute: [] for attribute in attribute_list}
+
+        for idx, lat in enumerate(lat_arr):
+            lon = lon_arr.iloc[idx]
+
+            try:
+                values_at_point = ds[attribute_list].sel(
+                    date=date
+                ).sel(
+                    lat=lat,
+                    lon=lon,
+                    method='nearest',
+                    tolerance=tolerance
+                )
+                for attribute in attribute_list:
+                    data[attribute].append(
+                        values_at_point[attribute].values.tolist()
+                    )
+            except KeyError:
+                for attribute in attribute_list:
+                    data[attribute].append(np.nan)
+
+        vap_df = pd.DataFrame(data, index=df_index)
         # rename columns
         renamed_columns = {}
         for col, new_col in column_mapping.items():

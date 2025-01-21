@@ -69,15 +69,16 @@ class DCASPipelineInputsTest(TestCase):
         epoch = int(self.dates[0].timestamp())
 
         # exact points
-        in_lat = [2, 4]
-        in_lon = [2, 4]
+        in_lat = pd.Series([2, 4])
+        in_lon = pd.Series([2, 4])
         vap_df = self.input._get_values_at_points(
             self.ds, ['temperature'], {
                 'temperature': 'temperature'
             },
-            xr.DataArray(in_lat, dims='gdid'),
-            xr.DataArray(in_lon, dims='gdid'),
-            self.dates[0]
+            in_lat,
+            in_lon,
+            self.dates[0],
+            [0, 1]
         )
         expected_results = [22, 34]
         np.testing.assert_allclose(
@@ -85,57 +86,62 @@ class DCASPipelineInputsTest(TestCase):
         )
 
         # sel with nearest will result to 2, 6, 10
-        in_lat = [1, 5, 9]
-        in_lon = [1, 5, 9]
+        in_lat = pd.Series([1, 5, 9])
+        in_lon = pd.Series([1, 5, 9])
 
         vap_df = self.input._get_values_at_points(
             self.ds, ['temperature'], {
                 'temperature': 'temperature'
             },
-            xr.DataArray(in_lat, dims='gdid'),
-            xr.DataArray(in_lon, dims='gdid'),
-            self.dates[0]
+            in_lat,
+            in_lon,
+            self.dates[0],
+            [0, 1, 2],
+            tolerance=1
         )
 
         self.assertIn(f'temperature_{epoch}', vap_df.columns)
-        expected_results = [10, 34, 58]
+        expected_results = [22, 46, 70]
         np.testing.assert_allclose(
             vap_df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
         )
 
         # using large diff
-        in_lat = [-2, 15]
-        in_lon = [-2, 15]
+        in_lat = pd.Series([-2, 15])
+        in_lon = pd.Series([-2, 15])
         vap_df = self.input._get_values_at_points(
             self.ds, ['temperature'], {
                 'temperature': 'temperature'
             },
-            xr.DataArray(in_lat, dims='gdid'),
-            xr.DataArray(in_lon, dims='gdid'),
-            self.dates[0]
+            in_lat,
+            in_lon,
+            self.dates[0],
+            [0, 1]
         )
         self.assertTrue(vap_df.isna().all().all())
 
     def test_multiple_attributes(self):
         """Test selection with multiple attributes."""
         # sel with nearest will result to 2, 6, 10
-        in_lat = [1, 5, 9]
-        in_lon = [1, 5, 9]
+        in_lat = pd.Series([1, 5, 9])
+        in_lon = pd.Series([1, 5, 9])
 
         vap_df = self.input._get_values_at_points(
             self.ds, ['temperature', 'total_rainfall'], {
                 'temperature': 'temperature',
                 'total_rainfall': 'total_rainfall'
             },
-            xr.DataArray(in_lat, dims='gdid'),
-            xr.DataArray(in_lon, dims='gdid'),
-            self.dates[0]
+            in_lat,
+            in_lon,
+            self.dates[0],
+            [0, 1, 2],
+            tolerance=1
         )
 
         epoch = int(self.dates[0].timestamp())
         self.assertIn(f'temperature_{epoch}', vap_df.columns)
         self.assertIn(f'total_rainfall_{epoch}', vap_df.columns)
-        expected_results = [10, 34, 58]
+        expected_results = [22, 46, 70]
         np.testing.assert_allclose(
             vap_df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
         )
@@ -213,3 +219,31 @@ class DCASPipelineInputsTest(TestCase):
         # no date from mock ds should have all na
         epoch = self.input.historical_epoch[0]
         self.assertTrue(df[f'temperature_{epoch}'].isna().all())
+
+    @mock.patch('xarray.open_dataset')
+    def test_merge_data_with_invalid_point(self, mock_read):
+        """Test merge data."""
+        grid_list = [1, 2]
+        grid_df = pd.DataFrame({
+            'grid_id': grid_list,
+            'lat': [-11, 4],
+            'lon': [-11, 4]
+        }, index=grid_list)
+
+        mock_read.return_value = self.ds
+
+        df = self.input.merge_dataset(
+            'test.nc',
+            ['temperature'],
+            {
+                'temperature': 'temperature'
+            },
+            self.input.historical_dates,
+            grid_df
+        )
+
+        expected_results = [np.nan, 34]
+        epoch = self.input.historical_epoch[-1]
+        np.testing.assert_allclose(
+            df[f'temperature_{epoch}'].values, expected_results, atol=1e-5
+        )
