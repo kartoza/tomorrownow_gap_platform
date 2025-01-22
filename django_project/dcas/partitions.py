@@ -11,7 +11,7 @@ import numpy as np
 from gap.models import Attribute
 from dcas.models import GDDConfig
 from dcas.rules.rule_engine import DCASRuleEngine
-from dcas.utils import read_grid_data
+from dcas.utils import read_grid_data, read_grid_crop_data
 from dcas.functions import (
     calculate_growth_stage,
     calculate_message_output
@@ -38,7 +38,7 @@ def process_partition_total_gdd(
         grid_column_list.append(f'min_temperature_{epoch}')
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -115,7 +115,7 @@ def process_partition_seasonal_precipitation(
         grid_column_list.append(f'total_rainfall_{epoch}')
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -148,7 +148,7 @@ def process_partition_other_params(
     grid_column_list = ['grid_id', 'temperature', 'humidity', 'p_pet']
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -207,7 +207,7 @@ def process_partition_growth_stage_precipitation(
         grid_column_list.append(f'total_rainfall_{epoch}')
 
     # read grid_data_df
-    grid_id_list = df.index.unique()
+    grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
         parquet_file_path, grid_column_list, grid_id_list
     )
@@ -301,3 +301,46 @@ def _merge_partition_gdd_config(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     return df.merge(gdd_config_df, how='inner', on=['crop_id', 'config_id'])
+
+
+def process_partition_farm_registry(
+    df: pd.DataFrame, parquet_file_path: str, growth_stage_mapping: dict
+) -> pd.DataFrame:
+    """Merge farm registry dataframe with grid crop data.
+
+    :param df: farm registry dataframe
+    :type df: pd.DataFrame
+    :param parquet_file_path: parquet to grid crop data
+    :type parquet_file_path: str
+    :param growth_stage_mapping: dict mapping of growthstage label
+    :type growth_stage_mapping: dict
+    :return: merged dataframe
+    :rtype: pd.DataFrame
+    """
+    grid_id_list = df['grid_id'].unique()
+    crop_id_list = df['crop_id'].unique()
+    crop_stage_type_list = df['crop_stage_type_id'].unique()
+
+    # read grid_data_df
+    grid_data_df = read_grid_crop_data(
+        parquet_file_path, grid_id_list,
+        crop_id_list, crop_stage_type_list
+    )
+
+    grid_data_df = grid_data_df.drop(
+        columns=['__null_dask_index__', 'planting_date']
+    )
+
+    # merge the df with grid_data
+    df = df.merge(
+        grid_data_df,
+        on=[
+            'grid_id', 'crop_id', 'crop_stage_type_id',
+            'planting_date_epoch'
+        ],
+        how='inner'
+    )
+
+    df['growth_stage'] = df['growth_stage_id'].map(growth_stage_mapping)
+
+    return df
