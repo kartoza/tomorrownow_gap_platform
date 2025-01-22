@@ -15,7 +15,8 @@ from django.db.models import Min
 import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
-from dcas.service import GrowthStageService
+from sqlalchemy import create_engine
+
 from gap.models import FarmRegistryGroup, FarmRegistry, Grid, CropGrowthStage
 from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
@@ -30,6 +31,7 @@ from dcas.partitions import (
 from dcas.queries import DataQuery
 from dcas.outputs import DCASPipelineOutput, OutputType
 from dcas.inputs import DCASPipelineInput
+from dcas.service import GrowthStageService
 
 
 logger = logging.getLogger(__name__)
@@ -56,16 +58,20 @@ class DCASDataPipeline:
         """
         self.farm_registry_group = farm_registry_group
         self.fs = None
+        self.conn_engine = None
         self.minimum_plant_date = None
         self.crops = []
         self.request_date = request_date
-        self.data_query = DataQuery(self._conn_str(), self.LIMIT)
+        self.data_query = DataQuery(self.LIMIT)
         self.data_output = DCASPipelineOutput(request_date)
         self.data_input = DCASPipelineInput(request_date)
 
     def setup(self):
         """Set the data pipeline."""
-        self.data_query.setup()
+        # initialize sqlalchemy engine
+        self.conn_engine = create_engine(self._conn_str())
+
+        self.data_query.setup(self.conn_engine)
 
         # fetch minimum plant date
         self.minimum_plant_date: datetime.date = FarmRegistry.objects.filter(
@@ -102,7 +108,7 @@ class DCASDataPipeline:
         """
         df = pd.read_sql_query(
             self.data_query.grid_data_query(self.farm_registry_group),
-            con=self._conn_str(),
+            con=self.conn_engine,
             index_col=self.data_query.grid_id_index_col,
         )
 
@@ -451,3 +457,10 @@ class DCASDataPipeline:
         self.cleanup_gdd_matrix()
 
         print(f'Finished {time.time() - start_time} seconds.')
+
+    def cleanup(self):
+        """Cleanup resources."""
+        if self.conn_engine:
+            self.conn_engine.dispose()
+
+        self.data_output.cleanup()

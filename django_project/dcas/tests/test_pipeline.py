@@ -11,6 +11,7 @@ from mock import patch, MagicMock
 import pandas as pd
 import dask.dataframe as dd
 from django.test import TransactionTestCase
+from sqlalchemy import create_engine
 
 from gap.models import Crop, CropStageType
 from dcas.models import DCASConfig, DCASConfigCountry
@@ -84,7 +85,8 @@ class DCASPipelineTest(DCASPipelineBaseTest):
         pipeline = DCASDataPipeline(
             self.farm_registry_group, self.request_date
         )
-        pipeline.data_query.setup()
+        conn_engine = create_engine(pipeline._conn_str())
+        pipeline.data_query.setup(conn_engine)
 
         grid_crop_meta_df = pd.DataFrame({
             'crop_id': [1],
@@ -114,6 +116,7 @@ class DCASPipelineTest(DCASPipelineBaseTest):
         pipeline.data_query.read_grid_data_crop_meta_parquet.\
             assert_called_once()
         pipeline.data_output.save.assert_called_once()
+        conn_engine.dispose()
 
 
 class DCASAllPipelineTest(TransactionTestCase, BasePipelineTest):
@@ -226,4 +229,4 @@ class DCASAllPipelineTest(TransactionTestCase, BasePipelineTest):
             )
         )
 
-        pipeline.data_output.cleanup()
+        pipeline.cleanup()
