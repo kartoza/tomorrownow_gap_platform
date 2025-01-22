@@ -1,9 +1,9 @@
 # coding=utf-8
-'''
+"""
 Tomorrow Now GAP.
 
 .. note:: DCAS tasks.
-'''
+"""
 
 from celery import shared_task
 import logging
@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 @shared_task(name='log_farms_without_messages')
 def log_farms_without_messages(parquet_path: str, request_id: int):
-    '''
+    """
     Celery task to log farms without messages.
 
     :param parquet_path: Path to the final farm crop Parquet file
     :type parquet_path: str
     :param request_id: ID of the related DCASRequest
     :type request_id: int
-    '''
+    """
     logger.info('Checking for farms without messages...')
 
     try:
