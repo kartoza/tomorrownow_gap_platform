@@ -95,9 +95,7 @@ class DCASDataPipeline:
 
     def cleanup_gdd_matrix(self):
         """Cleanup GDD Matrix."""
-        # Check if GDD Matrix is in cache
-        if cache.get(GrowthStageService.CACHE_KEY):
-            GrowthStageService.cleanup_matrix()
+        GrowthStageService.cleanup_matrix()
 
     def load_grid_data(self) -> pd.DataFrame:
         """Load grid data from FarmRegistry table.
