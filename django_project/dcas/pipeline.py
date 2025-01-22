@@ -310,19 +310,23 @@ class DCASDataPipeline:
         )
 
         # Process gdd cumulative
+        # for Total GDD, we use date from planting_date to request_date - 1
+        gdd_dates = self.data_input.historical_epoch[:-4]
+
         # add config_id
         grid_crop_df_meta = grid_crop_df_meta.assign(
             config_id=pd.Series(dtype='Int64')
         )
+        # add gdd columns for each date
         gdd_columns = []
-        for epoch in self.data_input.historical_epoch:
+        for epoch in gdd_dates:
             grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
             gdd_columns.append(f'gdd_sum_{epoch}')
 
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_total_gdd,
             grid_data_file_path,
-            self.data_input.historical_epoch,
+            gdd_dates,
             meta=grid_crop_df_meta
         )
 
@@ -334,7 +338,7 @@ class DCASDataPipeline:
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage,
-            self.data_input.historical_epoch,
+            gdd_dates,
             meta=grid_crop_df_meta
         )
 
