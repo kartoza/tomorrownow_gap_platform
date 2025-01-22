@@ -15,7 +15,7 @@ from django.db.models import Min
 import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
-
+from dcas.service import GrowthStageService
 from gap.models import FarmRegistryGroup, FarmRegistry, Grid, CropGrowthStage
 from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
@@ -89,6 +89,10 @@ class DCASDataPipeline:
         return 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'.format(
             **connection.settings_dict
         )
+
+    def cleanup_gdd_matrix(self):
+        """Cleanup GDD Matrix."""
+        GrowthStageService.cleanup_matrix()
 
     def load_grid_data(self) -> pd.DataFrame:
         """Load grid data from FarmRegistry table.
@@ -294,6 +298,9 @@ class DCASDataPipeline:
 
     def process_grid_crop_data(self):
         """Process Grid and Crop Data."""
+        # Load GDD Matrix before processing grid crop data
+        GrowthStageService.load_matrix()
+
         grid_data_file_path = self.data_output.grid_data_file_path
 
         # load grid with crop and planting date
@@ -445,5 +452,7 @@ class DCASDataPipeline:
 
         self.process_farm_registry_data()
         self.extract_csv_output()
+
+        self.cleanup_gdd_matrix()
 
         print(f'Finished {time.time() - start_time} seconds.')
