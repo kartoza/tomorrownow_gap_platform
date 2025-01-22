@@ -24,7 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Run DCAS Pipeline."""
         dt = datetime.date(2024, 12, 1)
-        farm_registry_group = FarmRegistryGroup.objects.get(id=13)
+        farm_registry_group = FarmRegistryGroup.objects.get(id=15)
 
         pipeline = DCASDataPipeline(farm_registry_group, dt)
 

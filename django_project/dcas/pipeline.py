@@ -300,6 +300,13 @@ class DCASDataPipeline:
         grid_crop_df_meta = self.data_query.grid_data_with_crop_meta(
             self.farm_registry_group
         )
+        # add farm_id
+        if "farm_id" not in grid_crop_df_meta.columns:
+            grid_crop_df_meta = grid_crop_df_meta.assign(
+                farm_id=pd.Series(dtype='Int64')
+            )
+        # Ensure the column order in `meta` matches the expected DataFrame
+        grid_crop_df_meta = grid_crop_df_meta[grid_crop_df.columns]
 
         # Process gdd cumulative
         # add config_id
@@ -380,13 +387,6 @@ class DCASDataPipeline:
             process_partition_message_output,
             meta=grid_crop_df_meta
         )
-        # Apply the new message filtering function
-        grid_crop_df = grid_crop_df.map_partitions(
-            filter_messages_by_weeks,
-            self.data_output.grid_crop_data_dir_path,
-            2,  # Weeks constraint (default: 2 weeks)
-            meta=grid_crop_df_meta
-        )
 
         self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
 
@@ -441,6 +441,25 @@ class DCASDataPipeline:
 
         return file_path
 
+    def filter_message_output(self):
+        """Filter messages before extracting CSV."""
+        print(f'Applying message: {self.data_output.farm_crop_data_path}')
+
+        # Read Parquet file (processed farm crop data)
+        df = dd.read_parquet(self.data_output.farm_crop_data_path)
+
+        # Apply message filtering
+        df = df.map_partitions(
+            filter_messages_by_weeks,
+            self.data_output.farm_crop_data_path,
+            2,  # Weeks constraint (default: 2 weeks)
+        )
+
+        # Save the filtered Parquet file (overwrite previous Parquet)
+        df.to_parquet(self.data_output.farm_crop_data_path, write_index=False)
+
+        print('Finished filtering messages.')
+
     def run(self):
         """Run data pipeline."""
         self.setup()
@@ -450,6 +469,9 @@ class DCASDataPipeline:
         self.process_grid_crop_data()
 
         self.process_farm_registry_data()
+
+        self.filter_message_output()
+
         self.extract_csv_output()
 
         print(f'Finished {time.time() - start_time} seconds.')
