@@ -25,7 +25,7 @@ class DCASOutputsTest(DCASPipelineBaseTest):
         mock_duckdb_connect.return_value = mock_conn
         data_output = DCASPipelineOutput(datetime.date(2025, 1, 1))
         data_output._setup_s3fs()
-
+        os.makedirs(data_output.TMP_BASE_DIR, exist_ok=True)
         with open(
             os.path.join(data_output.TMP_BASE_DIR, 'output_20250101.csv'),
             'w',
