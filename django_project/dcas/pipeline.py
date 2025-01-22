@@ -10,7 +10,6 @@ import datetime
 import time
 import numpy as np
 import pandas as pd
-from django.core.cache import cache
 from django.db import connection
 from django.db.models import Min
 import dask.dataframe as dd
