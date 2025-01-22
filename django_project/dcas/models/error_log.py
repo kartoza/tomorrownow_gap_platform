@@ -15,6 +15,7 @@ from dcas.models.request import DCASRequest
 
 class DCASErrorType(models.TextChoices):
     """Enum for error types in DCAS ErrorLog."""
+
     MISSING_MESSAGES = "MISSING_MESSAGES", _("Missing Messages")
     PROCESSING_FAILURE = "PROCESSING_FAILURE", _("Processing Failure")
     OTHER = "OTHER", _("Other")
