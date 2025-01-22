@@ -12,7 +12,6 @@ from django.core.management.base import BaseCommand
 from gap.models import (
     FarmRegistryGroup
 )
-from dcas.models import DCASConfig
 from dcas.pipeline import DCASDataPipeline
 
 
@@ -25,9 +24,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Run DCAS Pipeline."""
         dt = datetime.date(2024, 12, 1)
-        config = DCASConfig.objects.get(id=1)
         farm_registry_group = FarmRegistryGroup.objects.get(id=1)
 
-        pipeline = DCASDataPipeline(farm_registry_group, config, dt)
+        pipeline = DCASDataPipeline(farm_registry_group, dt)
 
         pipeline.run()

@@ -16,9 +16,8 @@ from django.db.models import Min
 import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
-
-from gap.models import FarmRegistryGroup, FarmRegistry, Grid
 from dcas.service import GrowthStageService
+from gap.models import FarmRegistryGroup, FarmRegistry, Grid, CropGrowthStage
 from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
     process_partition_total_gdd,
@@ -26,7 +25,8 @@ from dcas.partitions import (
     process_partition_growth_stage_precipitation,
     process_partition_message_output,
     process_partition_other_params,
-    process_partition_seasonal_precipitation
+    process_partition_seasonal_precipitation,
+    process_partition_farm_registry
 )
 from dcas.queries import DataQuery
 from dcas.outputs import DCASPipelineOutput, OutputType
@@ -34,6 +34,8 @@ from dcas.inputs import DCASPipelineInput
 
 
 logger = logging.getLogger(__name__)
+# Enable copy_on_write CoW globally
+pd.set_option("mode.copy_on_write", True)
 
 
 class DCASDataPipeline:
@@ -46,18 +48,14 @@ class DCASDataPipeline:
 
     def __init__(
         self, farm_registry_group: FarmRegistryGroup,
-        config: DCASConfig,
         request_date: datetime.date
     ):
         """Initialize DCAS Data Pipeline.
 
         :param farm_registry_group: _description_
         :type farm_registry_group: FarmRegistryGroup
-        :param config: _description_
-        :type config: DCASConfig
         """
         self.farm_registry_group = farm_registry_group
-        self.config = config
         self.fs = None
         self.minimum_plant_date = None
         self.crops = []
@@ -392,7 +390,58 @@ class DCASDataPipeline:
             meta=grid_crop_df_meta
         )
 
-        return grid_crop_df
+        self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
+
+    def process_farm_registry_data(self):
+        """Merge with farm registry data."""
+        farm_df = self.load_farm_registry_data()
+        farm_df_meta = self.data_query.farm_registry_meta(
+            self.farm_registry_group, self.request_date
+        )
+
+        # merge with grid crop data meta
+        farm_df_meta = self._append_grid_crop_meta(farm_df_meta)
+
+        # load mapping for CropGrowthStage
+        growth_stage_mapping = {}
+        for growth_stage in CropGrowthStage.objects.all():
+            growth_stage_mapping[growth_stage.id] = growth_stage.name
+
+        farm_df = farm_df.map_partitions(
+            process_partition_farm_registry,
+            self.data_output.grid_crop_data_path,
+            growth_stage_mapping,
+            meta=farm_df_meta
+        )
+
+        self.data_output.save(OutputType.FARM_CROP_DATA, farm_df)
+
+    def _append_grid_crop_meta(self, farm_df_meta: pd.DataFrame):
+        # load from grid_crop data
+        grid_crop_df_meta = self.data_query.read_grid_data_crop_meta_parquet(
+            self.data_output.grid_crop_data_dir_path
+        )
+
+        # adding new columns:
+        # - prev_growth_stage_id, prev_growth_stage_start_date,
+        # - config_id, growth_stage_start_date, growth_stage_id,
+        # - total_gdd, seasonal_precipitation, temperature, humidity,
+        # - p_pet, growth_stage_precipitation
+        # - message, message_2, message_3, message_4, message_5
+        # - growth_stage
+        meta = grid_crop_df_meta.drop(columns=[
+            'crop_id', 'crop_stage_type_id', 'planting_date',
+            'grid_id', 'planting_date_epoch', '__null_dask_index__'
+        ])
+        # add growth_stage
+        meta = meta.assign(growth_stage=None)
+        return pd.concat([farm_df_meta, meta], axis=1)
+
+    def extract_csv_output(self):
+        """Extract csv output file."""
+        file_path = self.data_output.convert_to_csv()
+
+        return file_path
 
     def run(self):
         """Run data pipeline."""
@@ -400,9 +449,10 @@ class DCASDataPipeline:
 
         start_time = time.time()
         self.data_collection()
-        grid_crop_df = self.process_grid_crop_data()
+        self.process_grid_crop_data()
 
-        self.data_output.save(OutputType.GRID_CROP_DATA, grid_crop_df)
+        self.process_farm_registry_data()
+        self.extract_csv_output()
 
         self.cleanup_gdd_matrix()
 
