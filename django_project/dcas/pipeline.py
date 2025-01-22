@@ -144,7 +144,6 @@ class DCASDataPipeline:
     def load_grid_weather_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Load Grid Weather data.
 
-        TODO: replace with function to read from ZARR/NetCDF File.
         :param df: DataFrame of Grid Data
         :type df: pd.DataFrame
         :return: Grid DataFrame with weather columns
@@ -201,14 +200,6 @@ class DCASDataPipeline:
                 f'max_humidity_{epoch}',
                 f'min_humidity_{epoch}'
             ])
-
-            # to be confirmed: GDD only from plantingDate to today date?
-            # or through 3rd forecast day?
-            # if date > self.request_date:
-            #     base_cols.extend([
-            #         f'max_temperature_{epoch}',
-            #         f'min_temperature_{epoch}'
-            #     ])
 
         df['temperature'] = df[temp_cols].mean(axis=1)
         df['humidity'] = df[humidity_cols].mean(axis=1)
