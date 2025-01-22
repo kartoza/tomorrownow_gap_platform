@@ -269,3 +269,19 @@ class DataQuery:
         df = conndb.sql(query).df()
         conndb.close()
         return df
+
+    def get_farms_without_messages(parquet_path: str):
+        """Query the final Parquet file for farms with missing messages."""
+        query = f"""
+            SELECT farm_id, crop_id
+            FROM read_parquet('{parquet_path}')
+            WHERE message IS NULL
+            AND message_2 IS NULL
+            AND message_3 IS NULL
+            AND message_4 IS NULL
+            AND message_5 IS NULL
+        """
+        conn = duckdb.connect()
+        df = conn.sql(query).df()
+        conn.close()
+        return df
