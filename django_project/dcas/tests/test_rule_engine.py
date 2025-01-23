@@ -6,20 +6,18 @@ Tomorrow Now GAP.
 """
 
 import numpy as np
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-from core.settings.utils import absolute_path
 from gap.models import (
-    IngestorSession, IngestorType,
     Attribute, CropGrowthStage, CropStageType, Crop
 )
 from dcas.models import DCASConfig
 from dcas.rules.rule_engine import DCASRuleEngine
 from dcas.rules.variables import DCASData
+from dcas.tests.base import BaseRuleEngineTest
 
 
-class DCASRuleEngineTest(TestCase):
+class DCASRuleEngineTest(TestCase, BaseRuleEngineTest):
     """DCAS Rule Engine test case."""
 
     fixtures = [
@@ -34,23 +32,6 @@ class DCASRuleEngineTest(TestCase):
         """Set the test class."""
         self.default_config = DCASConfig.objects.get(id=1)
         self._ingest_rule()
-
-    def _ingest_rule(self):
-        """Ingest ruleset."""
-        file_path = absolute_path(
-            'gap', 'tests', 'ingestor', 'data', 'dcas', 'valid.csv'
-        )
-        _file = open(file_path, 'rb')
-        session = IngestorSession.objects.create(
-            file=SimpleUploadedFile(_file.name, _file.read()),
-            ingestor_type=IngestorType.DCAS_RULE,
-            additional_config={
-                'rule_config_id': self.default_config.id
-            },
-            trigger_task=False
-        )
-        session.run()
-        session.delete()
 
     def test_execute_rule(self):
         """Test rule execution."""

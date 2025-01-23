@@ -37,32 +37,31 @@ def read_grid_data(
 
 
 def read_grid_crop_data(
-    parquet_file_path, grid_id_list: list,
-    crop_id_list: list, crop_stage_type_list: list
+    parquet_file_path, grid_crop_keys, num_threads = None
 ) -> pd.DataFrame:
     """Read grid data from parquet file.
 
     :param parquet_file_path: file_path to parquet file
     :type parquet_file_path: str
-    :param grid_id_list: List of grid_id to be filtered
-    :type grid_id_list: list
-    :param crop_id_list: List of crop_id to be filtered
-    :type crop_id_list: list
-    :param crop_stage_type_list: List of crop_stage_type to be filtered
-    :type crop_stage_type_list: list
+    :param grid_crop_keys: List of unique key
+    :type grid_crop_keys: list
+    :param num_threads: num threads for duck db
+    :type num_threads: int
     :return: DataFrame that contains grid_id and column_list
     :rtype: pd.DataFrame
     """
-    conndb = duckdb.connect()
+    config = {}
+    if num_threads is not None:
+        config['threads'] = num_threads
+    conndb = duckdb.connect(config=config)
     query = (
         f"""
         SELECT *
         FROM read_parquet('{parquet_file_path}')
-        WHERE grid_id IN {list(grid_id_list)} AND
-        crop_id IN {list(crop_id_list)} AND
-        crop_stage_type_id IN {list(crop_stage_type_list)}
+        WHERE grid_crop_key IN {grid_crop_keys}
         """
     )
+    # grid_crop_key = crop_id || '_' || crop_stage_type_id || '_' || grid_id
     df = conndb.sql(query).df()
     conndb.close()
     return df
