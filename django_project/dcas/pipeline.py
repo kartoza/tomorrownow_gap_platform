@@ -431,7 +431,8 @@ class DCASDataPipeline:
         # - growth_stage
         meta = grid_crop_df_meta.drop(columns=[
             'crop_id', 'crop_stage_type_id', 'planting_date',
-            'grid_id', 'planting_date_epoch', '__null_dask_index__'
+            'grid_id', 'planting_date_epoch', '__null_dask_index__',
+            'grid_crop_key'
         ])
         # add growth_stage
         meta = meta.assign(growth_stage=None)

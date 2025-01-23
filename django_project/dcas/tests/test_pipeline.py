@@ -95,7 +95,8 @@ class DCASPipelineTest(DCASPipelineBaseTest):
             'grid_id': [1],
             'planting_date_epoch': [1],
             '__null_dask_index__': [0],
-            'temperature': [10]
+            'temperature': [10],
+            'grid_crop_key': ['1_1_1']
         })
         pipeline.data_query.read_grid_data_crop_meta_parquet = MagicMock(
             return_value=grid_crop_meta_df
@@ -175,11 +176,14 @@ class DCASAllPipelineTest(TransactionTestCase, BasePipelineTest):
             os.path.exists(pipeline.data_output.grid_crop_data_dir_path)
         )
 
+        cassava_id = Crop.objects.get(name='Cassava').id
+        early_id = CropStageType.objects.get(name='Early').id
         df = read_grid_crop_data(
             pipeline.data_output.grid_crop_data_path,
-            [self.grid_1.id, self.grid_2.id],
-            [Crop.objects.get(name='Cassava').id],
-            [CropStageType.objects.get(name='Early').id]
+            [
+                f'{cassava_id}_{early_id}_{self.grid_1.id}',
+                f'{cassava_id}_{early_id}_{self.grid_2.id}'
+            ]
         )
         self.assertEqual(df.shape[0], 2)
         self.assertIn('message', df.columns)

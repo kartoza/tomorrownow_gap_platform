@@ -48,7 +48,8 @@ class DCASPartitionsTest(DCASPipelineBaseTest):
             'crop_stage_type_id': [1, 2],
             'planting_date_epoch': [5, 6],
             'farm_id': [3, 4],
-            'growth_stage_id': [1, 1]
+            'growth_stage_id': [1, 1],
+            'grid_crop_key': ['2_1_1', '10_2_2']
         })
 
         mock_read_grid_data.return_value = pd.DataFrame({
@@ -58,7 +59,8 @@ class DCASPartitionsTest(DCASPipelineBaseTest):
             'planting_date_epoch': [5, 6, 7],
             'temperature': [9, 8, 7],
             '__null_dask_index__': [0, 1, 2],
-            'planting_date': ['2025-01-01', '2025-01-05', '2025-01-05']
+            'planting_date': ['2025-01-01', '2025-01-05', '2025-01-05'],
+            'grid_crop_key': ['2_1_1', '10_2_2', '7_7_7']
         })
 
         result_df = process_partition_farm_registry(
