@@ -6,7 +6,7 @@ Tomorrow Now GAP.
 """
 
 import pandas as pd
-from sqlalchemy import create_engine, select, distinct, column, extract, func
+from sqlalchemy import select, distinct, column, extract, func
 from sqlalchemy.ext.automap import automap_base
 from geoalchemy2.functions import ST_X, ST_Y, ST_Centroid
 import duckdb
@@ -15,11 +15,11 @@ import duckdb
 class DataQuery:
     """Class to build SQLQuery using sqlalchemy."""
 
-    def __init__(self, connection_str, limit=None):
+    def __init__(self, limit=None):
         """Initialize query builder."""
-        self.connection_str = connection_str
         self.base_schema = None
         self.limit = limit
+        self.conn_engine = None
 
     @property
     def grid_id_index_col(self):
@@ -31,19 +31,17 @@ class DataQuery:
         """Get index column for FarmRegistry Data Query."""
         return 'farmregistry_id'
 
-    def setup(self):
+    def setup(self, conn_engine):
         """Set the builder class."""
+        self.conn_engine = conn_engine
         self._init_schema()
 
     def _init_schema(self):
-        # Create an SQLAlchemy engine
-        engine = create_engine(self.connection_str)
-
         # Use automap base
         self.base_schema = automap_base()
 
         # Reflect the tables
-        self.base_schema.prepare(engine, reflect=True)
+        self.base_schema.prepare(self.conn_engine, reflect=True)
 
         # Access reflected tables as classes
         # for table_name, mapped_class in self.base_schema.classes.items():
@@ -162,7 +160,7 @@ class DataQuery:
         ).distinct().select_from(subquery)
         df = pd.read_sql_query(
             sql_query,
-            con=self.connection_str,
+            con=self.conn_engine,
             index_col=self.grid_id_index_col,
         )
         df['prev_growth_stage_id'] = (
@@ -234,7 +232,7 @@ class DataQuery:
         sql_query = select(subquery)
         df = pd.read_sql_query(
             sql_query,
-            con=self.connection_str,
+            con=self.conn_engine,
             index_col=self.farmregistry_id_index_col,
         )
 

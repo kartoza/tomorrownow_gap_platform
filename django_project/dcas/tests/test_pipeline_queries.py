@@ -20,7 +20,7 @@ class DCASQueriesTest(DCASPipelineBaseTest):
         # Mock the connection object
         mock_conn = MagicMock()
         mock_duckdb_connect.return_value = mock_conn
-        data_query = DataQuery('')
+        data_query = DataQuery()
 
         data_query.read_grid_data_crop_meta_parquet('/tmp/dcas/grid_crop')
         mock_duckdb_connect.assert_called_once()

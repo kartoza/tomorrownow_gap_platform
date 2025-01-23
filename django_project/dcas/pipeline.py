@@ -15,6 +15,7 @@ from django.db.models import Min
 import dask.dataframe as dd
 from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
+from sqlalchemy import create_engine
 
 from gap.models import FarmRegistryGroup, FarmRegistry, Grid, CropGrowthStage
 from dcas.models import DCASConfig, DCASConfigCountry
@@ -31,6 +32,7 @@ from dcas.queries import DataQuery
 from dcas.outputs import DCASPipelineOutput, OutputType
 from dcas.inputs import DCASPipelineInput
 from dcas.functions import filter_messages_by_weeks
+from dcas.service import GrowthStageService
 
 
 logger = logging.getLogger(__name__)
@@ -57,16 +59,20 @@ class DCASDataPipeline:
         """
         self.farm_registry_group = farm_registry_group
         self.fs = None
+        self.conn_engine = None
         self.minimum_plant_date = None
         self.crops = []
         self.request_date = request_date
-        self.data_query = DataQuery(self._conn_str(), self.LIMIT)
+        self.data_query = DataQuery(self.LIMIT)
         self.data_output = DCASPipelineOutput(request_date)
         self.data_input = DCASPipelineInput(request_date)
 
     def setup(self):
         """Set the data pipeline."""
-        self.data_query.setup()
+        # initialize sqlalchemy engine
+        self.conn_engine = create_engine(self._conn_str())
+
+        self.data_query.setup(self.conn_engine)
 
         # fetch minimum plant date
         self.minimum_plant_date: datetime.date = FarmRegistry.objects.filter(
@@ -91,6 +97,10 @@ class DCASDataPipeline:
             **connection.settings_dict
         )
 
+    def cleanup_gdd_matrix(self):
+        """Cleanup GDD Matrix."""
+        GrowthStageService.cleanup_matrix()
+
     def load_grid_data(self) -> pd.DataFrame:
         """Load grid data from FarmRegistry table.
 
@@ -99,7 +109,7 @@ class DCASDataPipeline:
         """
         df = pd.read_sql_query(
             self.data_query.grid_data_query(self.farm_registry_group),
-            con=self._conn_str(),
+            con=self.conn_engine,
             index_col=self.data_query.grid_id_index_col,
         )
 
@@ -141,7 +151,6 @@ class DCASDataPipeline:
     def load_grid_weather_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Load Grid Weather data.
 
-        TODO: replace with function to read from ZARR/NetCDF File.
         :param df: DataFrame of Grid Data
         :type df: pd.DataFrame
         :return: Grid DataFrame with weather columns
@@ -198,14 +207,6 @@ class DCASDataPipeline:
                 f'max_humidity_{epoch}',
                 f'min_humidity_{epoch}'
             ])
-
-            # to be confirmed: GDD only from plantingDate to today date?
-            # or through 3rd forecast day?
-            # if date > self.request_date:
-            #     base_cols.extend([
-            #         f'max_temperature_{epoch}',
-            #         f'min_temperature_{epoch}'
-            #     ])
 
         df['temperature'] = df[temp_cols].mean(axis=1)
         df['humidity'] = df[humidity_cols].mean(axis=1)
@@ -295,6 +296,9 @@ class DCASDataPipeline:
 
     def process_grid_crop_data(self):
         """Process Grid and Crop Data."""
+        # Load GDD Matrix before processing grid crop data
+        GrowthStageService.load_matrix()
+
         grid_data_file_path = self.data_output.grid_data_file_path
 
         # load grid with crop and planting date
@@ -311,19 +315,23 @@ class DCASDataPipeline:
         grid_crop_df_meta = grid_crop_df_meta[grid_crop_df.columns]
 
         # Process gdd cumulative
+        # for Total GDD, we use date from planting_date to request_date - 1
+        gdd_dates = self.data_input.historical_epoch[:-4]
+
         # add config_id
         grid_crop_df_meta = grid_crop_df_meta.assign(
             config_id=pd.Series(dtype='Int64')
         )
+        # add gdd columns for each date
         gdd_columns = []
-        for epoch in self.data_input.historical_epoch:
+        for epoch in gdd_dates:
             grid_crop_df_meta[f'gdd_sum_{epoch}'] = np.nan
             gdd_columns.append(f'gdd_sum_{epoch}')
 
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_total_gdd,
             grid_data_file_path,
-            self.data_input.historical_epoch,
+            gdd_dates,
             meta=grid_crop_df_meta
         )
 
@@ -335,7 +343,7 @@ class DCASDataPipeline:
         )
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_growth_stage,
-            self.data_input.historical_epoch,
+            gdd_dates,
             meta=grid_crop_df_meta
         )
 
@@ -476,4 +484,13 @@ class DCASDataPipeline:
 
         self.extract_csv_output()
 
+        self.cleanup_gdd_matrix()
+
         print(f'Finished {time.time() - start_time} seconds.')
+
+    def cleanup(self):
+        """Cleanup resources."""
+        if self.conn_engine:
+            self.conn_engine.dispose()
+
+        self.data_output.cleanup()
