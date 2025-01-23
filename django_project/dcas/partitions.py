@@ -125,10 +125,13 @@ def process_partition_seasonal_precipitation(
 
     # calculate seasonal_precipitation
     grid_column_list.remove('grid_id')
-    df['seasonal_precipitation'] = df[grid_column_list].sum(axis=1)
+    seasonal_precipitation_df = df[grid_column_list].sum(axis=1)
+    seasonal_precipitation_df.name = 'seasonal_precipitation'
 
     # data cleanup
     df = df.drop(columns=grid_column_list)
+
+    df = pd.concat([df, seasonal_precipitation_df], axis=1)
 
     return df
 
@@ -224,10 +227,13 @@ def process_partition_growth_stage_precipitation(
         )
 
     grid_column_list.remove('grid_id')
-    df['growth_stage_precipitation'] = df[grid_column_list].sum(axis=1)
+    growth_stage_precipitation_df = df[grid_column_list].sum(axis=1)
+    growth_stage_precipitation_df.name = 'growth_stage_precipitation'
 
     # data cleanup
     df = df.drop(columns=grid_column_list)
+
+    df = pd.concat([df, growth_stage_precipitation_df], axis=1)
 
     return df
 
@@ -317,18 +323,14 @@ def process_partition_farm_registry(
     :return: merged dataframe
     :rtype: pd.DataFrame
     """
-    grid_id_list = df['grid_id'].unique()
-    crop_id_list = df['crop_id'].unique()
-    crop_stage_type_list = df['crop_stage_type_id'].unique()
-
     # read grid_data_df
     grid_data_df = read_grid_crop_data(
-        parquet_file_path, grid_id_list,
-        crop_id_list, crop_stage_type_list
+        parquet_file_path,
+        df['grid_crop_key'].to_list()
     )
 
     grid_data_df = grid_data_df.drop(
-        columns=['__null_dask_index__', 'planting_date']
+        columns=['__null_dask_index__', 'planting_date', 'grid_crop_key']
     )
 
     # merge the df with grid_data
