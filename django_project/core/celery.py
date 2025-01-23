@@ -94,8 +94,7 @@ app.conf.beat_schedule = {
     },
     'log-farms-without-messages': {
         'task': 'log_farms_without_messages',
-        'schedule': crontab(minute='0', hour='2'),  # TODO time
-        'args': ("parquet_file",)  # TODO path to file
+        'schedule': crontab(minute='0', hour='2'),
     },
 }
 
