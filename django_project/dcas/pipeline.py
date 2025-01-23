@@ -106,11 +106,12 @@ class DCASDataPipeline:
         :return: DataFrame of Grid Data
         :rtype: pd.DataFrame
         """
-        df = pd.read_sql_query(
-            self.data_query.grid_data_query(self.farm_registry_group),
-            con=self.conn_engine,
-            index_col=self.data_query.grid_id_index_col,
-        )
+        with self.conn_engine.connect() as conn:
+            df = pd.read_sql_query(
+                self.data_query.grid_data_query(self.farm_registry_group),
+                con=conn,
+                index_col=self.data_query.grid_id_index_col,
+            )
 
         return self._merge_grid_data_with_config(df)
 
@@ -431,7 +432,8 @@ class DCASDataPipeline:
         # - growth_stage
         meta = grid_crop_df_meta.drop(columns=[
             'crop_id', 'crop_stage_type_id', 'planting_date',
-            'grid_id', 'planting_date_epoch', '__null_dask_index__'
+            'grid_id', 'planting_date_epoch', '__null_dask_index__',
+            'grid_crop_key'
         ])
         # add growth_stage
         meta = meta.assign(growth_stage=None)
