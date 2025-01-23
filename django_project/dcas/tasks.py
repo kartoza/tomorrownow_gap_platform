@@ -5,9 +5,11 @@ Tomorrow Now GAP.
 .. note:: DCAS Tasks
 """
 
+import os
 from celery import shared_task
 import datetime
 import logging
+from django.core.files.storage import default_storage
 
 from gap.models import FarmRegistryGroup, FarmRegistry, Preferences
 from dcas.pipeline import DCASDataPipeline
@@ -56,3 +58,16 @@ def run_dcas():
         )
     )
     pipeline.run()
+
+    store_csv = dcas_config.get('store_csv', False)
+    if (
+        store_csv and
+        os.path.exists(pipeline.data_output.output_csv_file_path)
+    ):
+        s3_storage = default_storage
+        with open(pipeline.data_output.output_csv_file_path) as content:
+            out_path = os.path.join(
+                'dcas_csv',
+                os.path.basename(pipeline.data_output.output_csv_file_path)
+            )
+            s3_storage.save(out_path, content)
