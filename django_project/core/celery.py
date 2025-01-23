@@ -92,6 +92,11 @@ app.conf.beat_schedule = {
         # Run everyday at 00:15 UTC
         'schedule': crontab(minute='15', hour='00'),
     },
+    "monitor-ingestor-failures": {
+        "task": "notify_ingestor_failure",
+        "schedule": crontab(minute="10", hour="3"),
+        "args": (None, "Scheduled failure check"),
+    },
 }
 
 
