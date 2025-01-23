@@ -166,11 +166,12 @@ class DataQuery:
             column('grid_id'), column('planting_date_epoch'),
             column('grid_crop_key')
         ).distinct().select_from(subquery)
-        df = pd.read_sql_query(
-            sql_query,
-            con=self.conn_engine,
-            index_col=self.grid_id_index_col,
-        )
+        with self.conn_engine.connect() as conn:
+            df = pd.read_sql_query(
+                sql_query,
+                con=conn,
+                index_col=self.grid_id_index_col,
+            )
         df['prev_growth_stage_id'] = (
             df['prev_growth_stage_id'].astype('Int64')
         )
@@ -243,11 +244,12 @@ class DataQuery:
         subquery = subquery.subquery('farm_data')
 
         sql_query = select(subquery)
-        df = pd.read_sql_query(
-            sql_query,
-            con=self.conn_engine,
-            index_col=self.farmregistry_id_index_col,
-        )
+        with self.conn_engine.connect() as conn:
+            df = pd.read_sql_query(
+                sql_query,
+                con=conn,
+                index_col=self.farmregistry_id_index_col,
+            )
 
         df = df.assign(
             date=pd.Timestamp(request_date),

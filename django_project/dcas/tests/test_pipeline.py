@@ -142,17 +142,21 @@ class DCASAllPipelineTest(TransactionTestCase, BasePipelineTest):
     def setUp(self):
         """Set DCASAllPipelineTest class."""
         self.setup_test()
+        self._ingest_rule()
+
+        self.pipeline = DCASDataPipeline(
+            self.farm_registry_group, self.request_date
+        )
+        self.pipeline.GRID_CROP_NUM_PARTITIONS = 1
+        self.pipeline.data_output.TMP_BASE_DIR = f'/tmp/{uuid.uuid4().hex}'
+        self.pipeline.setup()
+
+    def tearDown(self):
+        """Clean test resources."""
+        self.pipeline.cleanup()
 
     def test_process_grid_crop_data(self):
         """Test process_grid_crop_data."""
-        self._ingest_rule()
-        pipeline = DCASDataPipeline(
-            self.farm_registry_group, self.request_date
-        )
-        pipeline.GRID_CROP_NUM_PARTITIONS = 1
-        pipeline.data_output.TMP_BASE_DIR = f'/tmp/{uuid.uuid4().hex}'
-        pipeline.setup()
-
         grid_data = {
             'grid_id': [self.grid_1.id, self.grid_2.id],
             'config_id': [1, 1],
@@ -162,24 +166,24 @@ class DCASAllPipelineTest(TransactionTestCase, BasePipelineTest):
             'total_precipitation': [17, 18],
             'total_evapotranspiration': [19, 20]
         }
-        for epoch in pipeline.data_input.historical_epoch:
+        for epoch in self.pipeline.data_input.historical_epoch:
             grid_data[f'max_temperature_{epoch}'] = [21, 22]
             grid_data[f'min_temperature_{epoch}'] = [23, 24]
             grid_data[f'total_rainfall_{epoch}'] = [25, 26]
 
         grid_df = pd.DataFrame(grid_data)
-        pipeline.data_output.save(OutputType.GRID_DATA, grid_df)
+        self.pipeline.data_output.save(OutputType.GRID_DATA, grid_df)
 
-        pipeline.process_grid_crop_data()
+        self.pipeline.process_grid_crop_data()
 
         self.assertTrue(
-            os.path.exists(pipeline.data_output.grid_crop_data_dir_path)
+            os.path.exists(self.pipeline.data_output.grid_crop_data_dir_path)
         )
 
         cassava_id = Crop.objects.get(name='Cassava').id
         early_id = CropStageType.objects.get(name='Early').id
         df = read_grid_crop_data(
-            pipeline.data_output.grid_crop_data_path,
+            self.pipeline.data_output.grid_crop_data_path,
             [
                 f'{cassava_id}_{early_id}_{self.grid_1.id}',
                 f'{cassava_id}_{early_id}_{self.grid_2.id}'
@@ -232,5 +236,3 @@ class DCASAllPipelineTest(TransactionTestCase, BasePipelineTest):
                 dtype='float64'
             )
         )
-
-        pipeline.cleanup()
