@@ -31,7 +31,6 @@ class DCASQueriesTest(DCASPipelineBaseTest):
     @patch("dcas.queries.duckdb.connect")
     def test_get_farms_without_messages(self, mock_duckdb_connect):
         """Test retrieving farms with missing messages."""
-
         # Mock DuckDB return DataFrame
         mock_df = pd.DataFrame({
             'farm_id': [1, 2, 3, 4],
