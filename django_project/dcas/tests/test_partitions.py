@@ -13,7 +13,8 @@ from dcas.partitions import (
     _merge_partition_gdd_config,
     process_partition_farm_registry,
     process_partition_seasonal_precipitation,
-    process_partition_other_params
+    process_partition_other_params,
+    process_partition_growth_stage_precipitation
 )
 
 
@@ -156,4 +157,39 @@ class DCASPartitionsTest(DCASPipelineBaseTest):
         pd.testing.assert_series_equal(
             result_df['p_pet'],
             pd.Series([15, 16], name='p_pet')
+        )
+
+    @patch('dcas.partitions.read_grid_data')
+    def test_process_partition_growth_precipitation(
+        self, mock_read_grid_data
+    ):
+        """Test process_partition_growth_stage_precipitation."""
+        epoch_list = [1, 2]
+        df = pd.DataFrame({
+            'grid_id': [1, 2, 1],
+            'growth_stage_start_date': [1, 2, 1]
+        })
+
+        mock_read_grid_data.return_value = pd.DataFrame({
+            'grid_id': [1, 2],
+            'total_rainfall_1': [10, 12],
+            'total_rainfall_2': [13, 14]
+        })
+
+        result_df = process_partition_growth_stage_precipitation(
+            df, 'test.parquet', epoch_list
+        )
+        mock_read_grid_data.assert_called_once()
+        self.assertEqual(result_df.shape[0], 3)
+        pd.testing.assert_series_equal(
+            result_df['grid_id'],
+            pd.Series([1, 2, 1], name='grid_id')
+        )
+        pd.testing.assert_series_equal(
+            result_df['growth_stage_precipitation'],
+            pd.Series(
+                [23, 14, 23],
+                name='growth_stage_precipitation',
+                dtype='float64'
+            )
         )
