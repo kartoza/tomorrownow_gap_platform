@@ -18,7 +18,9 @@ from gap.models import (
     IngestorSession,
     CollectorSession
 )
-from gap.tasks.ingestor import run_ingestor_session
+from gap.tasks.ingestor import (
+    run_ingestor_session, notify_ingestor_failure
+)
 
 logger = get_task_logger(__name__)
 
@@ -30,7 +32,11 @@ def run_collector_session(_id: int):
         session = CollectorSession.objects.get(id=_id)
         session.run()
     except CollectorSession.DoesNotExist:
-        logger.error('Collector Session {} does not exists'.format(_id))
+        logger.error(f"Collector Session {_id} does not exist")
+        notify_ingestor_failure.delay(_id, "Collector session not found")
+    except Exception as e:
+        logger.error(f"Error in Collector Session {_id}: {str(e)}")
+        notify_ingestor_failure.delay(_id, str(e))
 
 
 @app.task(name='cbam_collector_session')

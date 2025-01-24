@@ -285,6 +285,11 @@ class BackgroundTask(models.Model):
                 'progress_text'
             ]
         )
+        if self.task_name in ["ingestor_session", "collector_session"]:
+            from gap.tasks.ingestor import notify_ingestor_failure
+            if self.context_id:  # session id
+                session_id = int(self.context_id)
+                notify_ingestor_failure.delay(session_id, str(exception))
 
     def task_on_retried(self, reason):
         """Event handler when task is retried by celery.

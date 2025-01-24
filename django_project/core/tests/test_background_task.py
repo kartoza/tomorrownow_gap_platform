@@ -297,3 +297,33 @@ class TestBackgroundTask(TestCase):
         self.assertFalse(
             is_task_ignored("test-new-task")
         )
+
+    @mock.patch("gap.tasks.ingestor.notify_ingestor_failure.delay")
+    def test_task_on_errors_ingestor_session(self, mock_notify):
+        """Test that is triggered when ingestor_session fails."""
+        bg_task = BackgroundTaskF.create(
+            task_name="ingestor_session",
+            context_id="10"
+        )
+        bg_task.task_on_errors(exception="Test ingestor failure")
+        mock_notify.assert_called_once_with(10, "Test ingestor failure")
+
+    @mock.patch("gap.tasks.ingestor.notify_ingestor_failure.delay")
+    def test_task_on_errors_collector_session(self, mock_notify):
+        """Test that is triggered when collector_session fails."""
+        bg_task = BackgroundTaskF.create(
+            task_name="collector_session",
+            context_id="15"
+        )
+        bg_task.task_on_errors(exception="Test collector failure")
+        mock_notify.assert_called_once_with(15, "Test collector failure")
+
+    @mock.patch("gap.tasks.ingestor.notify_ingestor_failure.delay")
+    def test_task_on_errors_other_tasks(self, mock_notify):
+        """Test do not trigger failure notify."""
+        bg_task = BackgroundTaskF.create(
+            task_name="random_task",
+            context_id="20"
+        )
+        bg_task.task_on_errors(exception="Test failure")
+        mock_notify.assert_not_called()

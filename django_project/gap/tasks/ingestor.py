@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from core.celery import app
-from core.models import BackgroundTask
+from core.models import BackgroundTask, TaskStatus
 from gap.models.ingestor import (
     IngestorSession, IngestorType,
     IngestorSessionStatus
@@ -65,9 +65,6 @@ def notify_ingestor_failure(session_id: int, exception: str):
     :param exception: Exception message describing the failure
     """
     logger.error(f"Ingestor Session {session_id} failed: {exception}")
-    # Get celery task ID
-    task_id = notify_ingestor_failure.request.id
-
     # Retrieve the ingestor session
     try:
         session = IngestorSession.objects.get(id=session_id)
@@ -78,16 +75,19 @@ def notify_ingestor_failure(session_id: int, exception: str):
         return
 
     # Log failure in BackgroundTask
-    BackgroundTask.objects.get_or_create(
-        task_id=task_id,
-        defaults={
-            "task_name": "notify_ingestor_failure",
-            "status": "FAILED",
-            "parameters": f"Ingestor ID: {session_id}",
-            "errors": exception,
-            "last_update": timezone.now(),
-        },
-    )
+    background_task = BackgroundTask.objects.filter(
+        task_name="notify_ingestor_failure",
+        context_id=str(session_id)
+    ).first()
+
+    if background_task:
+        background_task.status = TaskStatus.STOPPED
+        background_task.errors = exception
+        background_task.last_update = timezone.now()
+        background_task.save(update_fields=["status", "errors", "last_update"])
+        logger.info(f"Updated BackgroundTask for session {session_id}")
+    else:
+        logger.warning(f"No BackgroundTask found for session {session_id}")
 
     # Send an email notification to admins
     # Get admin emails from the database
