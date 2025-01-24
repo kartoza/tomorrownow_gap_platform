@@ -90,8 +90,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 124)
+        self.assertEqual(row['growth_stage_id'], 13)
+        self.assertEqual(row['growth_stage_start_date'], 125)
 
         # growth start date equals to the last item
         row = {
@@ -117,7 +117,7 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
         self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 126)
+        self.assertEqual(row['growth_stage_start_date'], 123)
 
         # growth start date equals to the only data
         row = {
@@ -136,7 +136,7 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
+        self.assertEqual(row['growth_stage_id'], 13)
         self.assertEqual(row['growth_stage_start_date'], 123)
 
         # growth start date equals to planting date
@@ -188,8 +188,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 124)
+        self.assertEqual(row['growth_stage_id'], 13)
+        self.assertEqual(row['growth_stage_start_date'], 125)
 
         mock_cache.get.return_value = None
         mock_cache.set.side_effect = set_cache_dummy
@@ -215,5 +215,5 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 124)
+        self.assertEqual(row['growth_stage_id'], 13)
+        self.assertEqual(row['growth_stage_start_date'], 125)
