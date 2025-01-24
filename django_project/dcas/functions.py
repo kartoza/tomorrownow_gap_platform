@@ -47,7 +47,7 @@ def calculate_growth_stage(
         row['growth_stage_id'] = row['prev_growth_stage_id']
         row['growth_stage_start_date'] = row['prev_growth_stage_start_date']
         return row
-    print(growth_stage_dict)
+
     gdd_threshold = growth_stage_dict['gdd_threshold']
     row['growth_stage_id'] = growth_stage_dict['id']
 
