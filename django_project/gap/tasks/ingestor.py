@@ -64,7 +64,6 @@ def notify_ingestor_failure(session_id: int, exception: str):
     :param session_id: ID of the IngestorSession
     :param exception: Exception message describing the failure
     """
-    logger.error(f"Ingestor Session {session_id} failed: {exception}")
     # Retrieve the ingestor session
     try:
         session = IngestorSession.objects.get(id=session_id)
@@ -85,7 +84,6 @@ def notify_ingestor_failure(session_id: int, exception: str):
         background_task.errors = exception
         background_task.last_update = timezone.now()
         background_task.save(update_fields=["status", "errors", "last_update"])
-        logger.info(f"Updated BackgroundTask for session {session_id}")
     else:
         logger.warning(f"No BackgroundTask found for session {session_id}")
 

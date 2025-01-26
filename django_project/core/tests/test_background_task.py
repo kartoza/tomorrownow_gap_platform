@@ -30,6 +30,8 @@ from core.celery import (
 )
 from core.factories import BackgroundTaskF, UserF
 
+from gap.tasks.ingestor import notify_ingestor_failure
+
 
 mocked_dt = datetime.datetime(2024, 8, 14, 10, 10, 10, tzinfo=pytz.UTC)
 
@@ -327,3 +329,81 @@ class TestBackgroundTask(TestCase):
         )
         bg_task.task_on_errors(exception="Test failure")
         mock_notify.assert_not_called()
+
+    @mock.patch("gap.tasks.collector.notify_ingestor_failure.delay")
+    def test_task_on_errors_collector_session_exception(self, mock_notify):
+        """Testtriggered when CollectorSession fails with an error."""
+        bg_task = BackgroundTaskF.create(
+            task_name="collector_session",
+            context_id="25"
+        )
+
+        bg_task.task_on_errors(exception="Test collector failure")
+
+        mock_notify.assert_called_once_with(25, "Test collector failure")
+
+    @mock.patch("gap.tasks.ingestor.notify_ingestor_failure.delay")
+    def test_task_on_errors_ingestor_session_exception(self, mock_notify):
+        """Test triggered when IngestorSession fails with an error."""
+        bg_task = BackgroundTaskF.create(
+            task_name="ingestor_session",
+            context_id="30"
+        )
+
+        bg_task.task_on_errors(exception="Test ingestor failure")
+
+        mock_notify.assert_called_once_with(30, "Test ingestor failure")
+
+    @mock.patch("gap.tasks.ingestor.notify_ingestor_failure.delay")
+    def test_notify_ingestor_failure_session_not_found(self, mock_notify):
+        """Test when an ingestor session does not exist."""
+        with self.assertLogs("gap.tasks.ingestor", level="WARNING") as cm:
+            notify_ingestor_failure(9999, "Session not found")
+
+        self.assertIn("IngestorSession 9999 not found.", cm.output[0])
+
+    @mock.patch("gap.tasks.ingestor.IngestorSession.objects.get")
+    @mock.patch("gap.tasks.ingestor.logger")
+    @mock.patch("core.models.BackgroundTask.objects.filter")
+    def test_notify_ingestor_failure_no_background_task(
+        self, mock_background_task_filter, mock_logger, mock_ingestor_get
+    ):
+        """Test when no BackgroundTask exists for an ingestor session."""
+
+        # Mock IngestorSession.objects.get to return a dummy session
+        mock_ingestor_get.return_value = mock.Mock()
+
+        # Mock BackgroundTask filter to return None (task does not exist)
+        mock_background_task_filter.return_value.first.return_value = None
+
+        # Call function
+        notify_ingestor_failure(42, "Test failure")
+
+        # Ensure logger warning is logged
+        mock_logger.warning.assert_any_call(
+            "No BackgroundTask found for session 42"
+        )
+
+    @mock.patch("gap.tasks.ingestor.IngestorSession.objects.get")
+    @mock.patch("gap.tasks.ingestor.logger")
+    @mock.patch("django.contrib.auth.get_user_model")
+    def test_notify_ingestor_failure_no_admin_email(
+        self, mock_get_user_model, mock_logger, mock_ingestor_get
+    ):
+        """Test when no admin emails exist."""
+
+        # Mock IngestorSession.objects.get to return a dummy session
+        mock_ingestor_get.return_value = mock.Mock()
+
+        # Mock user model query to return empty list (no admin emails)
+        mock_user_manager = mock_get_user_model.return_value.objects
+        mock_filtered_users = mock_user_manager.filter.return_value
+        mock_filtered_users.values_list.return_value = []
+
+        # Call function
+        notify_ingestor_failure(42, "Test failure")
+
+        # Verify log message when no admin emails exist
+        mock_logger.warning.assert_any_call(
+            "No admin email found in settings.ADMINS"
+        )
