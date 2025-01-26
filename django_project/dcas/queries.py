@@ -283,18 +283,41 @@ class DataQuery:
         conndb.close()
         return df
 
-    def get_farms_without_messages(parquet_path: str):
-        """Query the final Parquet file for farms with missing messages."""
-        query = f"""
-            SELECT farm_id, crop_id
-            FROM read_parquet('{parquet_path}')
-            WHERE message IS NULL
-            AND message_2 IS NULL
-            AND message_3 IS NULL
-            AND message_4 IS NULL
-            AND message_5 IS NULL
+    def get_farms_without_messages(parquet_path: str, chunk_size: int = 500):
+        """
+        Fetch farms without advisory messages using chunked processing.
+
+        :param parquet_path: Path to the final Parquet file.
+        :type parquet_path: str
+        :param chunk_size: Number of records per chunk (default: 500).
+        :type chunk_size: int
+        :return: Generator yielding Pandas DataFrames in chunks.
+        :rtype: Generator[pd.DataFrame]
         """
         conn = duckdb.connect()
-        df = conn.sql(query).df()
-        conn.close()
-        return df
+        offset = 0  # Start at the beginning
+
+        try:
+            while True:
+                query = f"""
+                    SELECT farm_id, crop_id
+                    FROM read_parquet('{parquet_path}')
+                    WHERE message IS NULL
+                    AND message_2 IS NULL
+                    AND message_3 IS NULL
+                    AND message_4 IS NULL
+                    AND message_5 IS NULL
+                    LIMIT {chunk_size} OFFSET {offset}
+                """
+                df = conn.sql(query).df()
+
+                if df.empty:
+                    break  # Stop when there are no more records
+
+                yield df  # Yield the chunk
+                offset += chunk_size  # Move to the next batch
+
+        except Exception as e:
+            print(f"Error querying Parquet: {str(e)}")
+        finally:
+            conn.close()

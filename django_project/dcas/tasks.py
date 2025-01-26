@@ -17,16 +17,18 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(name='log_farms_without_messages')
-def log_farms_without_messages(request_date=None):
+def log_farms_without_messages(request_date=None, chunk_size=1000):
     """
-    Celery task to log farms without messages.
+    Celery task to log farms without messages using chunked queries.
 
     :param request_date: Date for the pipeline output
     :type request_date: datetime.date
+    :param chunk_size: Number of rows to process per iteration
+    :type chunk_size: int
     """
     if request_date is None:
         request_date = (datetime.utcnow() - timedelta(days=1)).date()
-    logger.info('Checking for farms without messages...')
+    logger.info(f"Checking for farms without messages for {request_date}...")
 
     try:
         # Get the most recent DCAS request
@@ -40,41 +42,45 @@ def log_farms_without_messages(request_date=None):
             dcas_output.DCAS_OUTPUT_DIR + '/*.parquet'
         )
 
-        # Query farms without messages
-        df = DataQuery.get_farms_without_messages(parquet_path)
-
-        if df.empty:
-            logger.info('No farms found with missing messages.')
-            return
-
-        # Log missing messages in the database
-        error_logs = []
-        for _, row in df.iterrows():
-            try:
-                farm = Farm.objects.get(id=row['farm_id'])
-            except Farm.DoesNotExist:
-                logger.warning(
-                    f"Farm ID {row['farm_id']} not found, skipping.")
+        # Query farms without messages in chunks
+        for df_chunk in DataQuery.get_farms_without_messages(
+            parquet_path, chunk_size=chunk_size
+        ):
+            if df_chunk.empty:
+                logger.info(
+                    "No farms found with missing messages in this chunk."
+                )
                 continue
 
-            error_logs.append(DCASErrorLog(
-                request=dcas_request,
-                farm_id=farm,
-                error_type=DCASErrorType.MISSING_MESSAGES,
-                error_message=(
-                    f"Farm {row['farm_id']} (Crop {row['crop_id']}) "
-                    f"has no advisory messages."
-                )
-            ))
+            # Log missing messages in the database
+            error_logs = []
+            for _, row in df_chunk.iterrows():
+                try:
+                    farm = Farm.objects.get(id=row['farm_id'])
+                except Farm.DoesNotExist:
+                    logger.warning(
+                        f"Farm ID {row['farm_id']} not found, skipping."
+                    )
+                    continue
 
-        # Bulk insert to improve performance
-        if error_logs:
-            DCASErrorLog.objects.bulk_create(error_logs)
-            logger.info(
-                f"Logged {len(error_logs)} farms with missing messages.")
+                error_logs.append(DCASErrorLog(
+                    request=dcas_request,
+                    farm_id=farm,
+                    error_type=DCASErrorType.MISSING_MESSAGES,
+                    error_message=(
+                        f"Farm {row['farm_id']} (Crop {row['crop_id']}) "
+                        f"has no advisory messages."
+                    )
+                ))
+
+            # Bulk insert logs per chunk to optimize database writes
+            if error_logs:
+                DCASErrorLog.objects.bulk_create(error_logs)
+                logger.info(
+                    f"Logged {len(error_logs)} farms with missing messages."
+                )
 
     except DCASRequest.DoesNotExist:
-        logger.error(
-            f"No DCASRequest found for request_date {request_date}.")
+        logger.error(f"No DCASRequest found for request_date {request_date}.")
     except Exception as e:
         logger.error(f"Error processing missing messages: {str(e)}")
