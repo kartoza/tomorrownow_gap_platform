@@ -369,7 +369,6 @@ class TestBackgroundTask(TestCase):
         self, mock_background_task_filter, mock_logger, mock_ingestor_get
     ):
         """Test when no BackgroundTask exists for an ingestor session."""
-
         # Mock IngestorSession.objects.get to return a dummy session
         mock_ingestor_get.return_value = mock.Mock()
 
@@ -391,7 +390,6 @@ class TestBackgroundTask(TestCase):
         self, mock_get_user_model, mock_logger, mock_ingestor_get
     ):
         """Test when no admin emails exist."""
-
         # Mock IngestorSession.objects.get to return a dummy session
         mock_ingestor_get.return_value = mock.Mock()
 
