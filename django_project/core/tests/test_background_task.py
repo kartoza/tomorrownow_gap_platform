@@ -11,6 +11,7 @@ import pytz
 from ast import literal_eval as make_tuple
 from django.test import TestCase
 from django.utils import timezone
+from django.conf import settings
 
 from core.models import BackgroundTask, TaskStatus
 from core.celery import (
@@ -30,7 +31,10 @@ from core.celery import (
 )
 from core.factories import BackgroundTaskF, UserF
 
-from gap.tasks.ingestor import notify_ingestor_failure
+from gap.tasks.ingestor import (
+    run_ingestor_session, notify_ingestor_failure
+)
+from gap.models.ingestor import IngestorSession
 
 
 mocked_dt = datetime.datetime(2024, 8, 14, 10, 10, 10, tzinfo=pytz.UTC)
@@ -405,3 +409,98 @@ class TestBackgroundTask(TestCase):
         mock_logger.warning.assert_any_call(
             "No admin email found in settings.ADMINS"
         )
+
+    @mock.patch("gap.tasks.ingestor.notify_ingestor_failure.delay")
+    @mock.patch("gap.models.ingestor.IngestorSession.objects.get")
+    def test_run_ingestor_session_not_found(self, mock_get, mock_notify):
+        """Test triggered when session is not found."""
+        mock_get.side_effect = IngestorSession.DoesNotExist
+
+        run_ingestor_session(9999)
+
+        mock_notify.assert_called_once_with(9999, "Session not found")
+
+    @mock.patch("gap.tasks.ingestor.IngestorSession.objects.get")
+    @mock.patch("gap.tasks.ingestor.logger")
+    @mock.patch("core.models.BackgroundTask.objects.filter")
+    def test_notify_ingestor_failure_with_existing_background_task(
+        self, mock_background_task_filter, mock_logger, mock_ingestor_get
+    ):
+        """Test that BackgroundTask is updated when it exists."""
+        # Mock IngestorSession.objects.get to return a dummy session
+        mock_ingestor_get.return_value = mock.Mock()
+
+        # Create a mock BackgroundTask instance
+        mock_task = mock.Mock()
+        mock_background_task_filter.return_value.first.return_value = mock_task
+
+        # Call function
+        notify_ingestor_failure(42, "Test failure")
+
+        # Ensure status, errors, and last_update were updated
+        self.assertEqual(mock_task.status, TaskStatus.STOPPED)
+        self.assertEqual(mock_task.errors, "Test failure")
+        self.assertTrue(mock_task.last_update)
+
+        # Ensure save() was called once with expected update fields
+        mock_task.save.assert_called_once_with(
+            update_fields=["status", "errors", "last_update"]
+        )
+
+    @mock.patch("gap.tasks.ingestor.send_mail")
+    @mock.patch("gap.tasks.ingestor.IngestorSession.objects.get")
+    @mock.patch("gap.tasks.ingestor.get_user_model")
+    def test_notify_ingestor_failure_with_admin_emails(
+        self, mock_get_user_model, mock_ingestor_get, mock_send_mail
+    ):
+        """Test that email is sent when admin emails exist."""
+        # Mock IngestorSession.objects.get to return a dummy session
+        mock_ingestor_get.return_value = mock.Mock()
+
+        # Mock user model query to return a list of admin emails
+        mock_user_manager = mock_get_user_model.return_value.objects
+        mock_filtered_users = mock_user_manager.filter.return_value
+        mock_filtered_users.values_list.return_value = ["admin@example.com"]
+
+        # Call function
+        notify_ingestor_failure(42, "Test failure")
+
+        # Ensure send_mail() was called with correct parameters
+        mock_send_mail.assert_called_once_with(
+            subject="Ingestor Failure Alert",
+            message=(
+                "Ingestor Session 42 has failed.\n\n"
+                "Error: Test failure\n\n"
+                "Please check the logs for more details."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[["admin@example.com"]],
+            fail_silently=False,
+        )
+
+    @mock.patch("gap.tasks.ingestor.IngestorSession.objects.get")
+    @mock.patch("gap.tasks.ingestor.get_user_model")
+    @mock.patch("gap.tasks.ingestor.send_mail")
+    def test_notify_ingestor_failure_return_value(
+        self, mock_send_mail, mock_get_user_model, mock_ingestor_get
+    ):
+        """Test that notify_ingestor_failure returns the expected string."""
+        # Mock IngestorSession.objects.get
+        mock_session = mock.Mock()
+        mock_ingestor_get.return_value = mock_session
+
+        # Mock user model query to return an admin email
+        mock_user_manager = mock_get_user_model.return_value.objects
+        mock_filtered_users = mock_user_manager.filter.return_value
+        mock_filtered_users.values_list.return_value = ["admin@example.com"]
+
+        # Call function and store return value
+        result = notify_ingestor_failure(42, "Test failure")
+
+        # Expected return message
+        expected_msg = (
+            "Logged ingestor failure for session 42 and notified admins"
+        )
+
+        # Assert function returned the expected message
+        self.assertEqual(result, expected_msg)
