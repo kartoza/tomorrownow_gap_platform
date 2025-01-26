@@ -53,3 +53,12 @@ class DCASErrorLog(models.Model):
         db_table = 'dcas_error_log'
         verbose_name = _('Error Log')
         ordering = ['-logged_at']
+
+    @classmethod
+    def export_resource_classes(cls):
+        """Export resource classes for import-export."""
+        from dcas.resources import DCASErrorLogResource
+
+        return {
+            "DCASErrorLog": ("DCASErrorLog Resource", DCASErrorLogResource)
+        }
