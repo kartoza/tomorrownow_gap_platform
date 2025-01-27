@@ -36,11 +36,15 @@ class DCASPipelineOutput:
     TMP_BASE_DIR = '/tmp/dcas'
     DCAS_OUTPUT_DIR = 'dcas_output'
 
-    def __init__(self, request_date, extract_additional_columns=False):
+    def __init__(
+        self, request_date, extract_additional_columns=False,
+        duck_db_num_threads=None
+    ):
         """Initialize DCASPipelineOutput."""
         self.fs = None
         self.request_date = request_date
         self.extract_additional_columns = extract_additional_columns
+        self.duck_db_num_threads = duck_db_num_threads
 
     def setup(self):
         """Set DCASPipelineOutput."""
@@ -233,14 +237,18 @@ class DCASPipelineOutput:
         if endpoint.endswith('/'):
             endpoint = endpoint[:-1]
 
-        conn = duckdb.connect(config={
+        config = {
             's3_access_key_id': s3['AWS_ACCESS_KEY_ID'],
             's3_secret_access_key': s3['AWS_SECRET_ACCESS_KEY'],
             's3_region': 'us-east-1',
             's3_url_style': 'path',
             's3_endpoint': endpoint,
             's3_use_ssl': not settings.DEBUG
-        })
+        }
+        if self.duck_db_num_threads:
+            config['threads'] = self.duck_db_num_threads
+
+        conn = duckdb.connect(config=config)
         conn.install_extension("httpfs")
         conn.load_extension("httpfs")
         conn.install_extension("spatial")
