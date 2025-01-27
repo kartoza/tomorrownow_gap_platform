@@ -19,6 +19,16 @@ class GrowthStageService:
         """
         Get the growth stage: crop ID, stage type, total GDD, config ID.
 
+        The threshold value in the fixture is upper threshold.
+        E.g. for Sorghum_Early:
+        - Germination 0 to 60
+        - Seeding and Establishment 61 to 400
+        - Flowering 401 to 680
+        This function will return the lower threshold to be used in
+        identifying the start date, e.g. for Sorghum_Early:
+        - Germination lower threshold 0
+        - Seeding and Establishment lower threshold 60
+        - Flowering lower threshold 400
         :param crop_id: ID of the crop
         :type crop_id: int
         :param crop_stage_type_id: ID of the crop stage type
@@ -27,7 +37,8 @@ class GrowthStageService:
         :type total_gdd: float
         :param config_id: ID of the configuration
         :type config_id: int
-        :return: Dictionary containing growth id, label, and gdd_threshold
+        :return: Dictionary containing growth id, label, and
+            gdd_threshold (lower threshold)
         :rtype: dict or None
         """
         cache_key = GrowthStageService.CACHE_KEY.format(
@@ -57,17 +68,20 @@ class GrowthStageService:
                 cache.set(cache_key, growth_stage_matrix, timeout=None)
 
         # Find the appropriate growth stage based on total GDD
-        prev_stage = growth_stage_matrix[0] if growth_stage_matrix else None
+        prev_stage = {
+            'gdd_treshold': 0
+        }
         for stage in growth_stage_matrix:
-            if total_gdd < stage["gdd_threshold"]:
+            if total_gdd <= stage["gdd_threshold"]:
                 return {
-                    "id": prev_stage["crop_growth_stage__id"],
-                    "label": prev_stage["crop_growth_stage__name"],
+                    "id": stage["crop_growth_stage__id"],
+                    "label": stage["crop_growth_stage__name"],
                     "gdd_threshold": prev_stage["gdd_threshold"]
                 }
             prev_stage = stage
 
         # Return the last stage if total GDD exceeds all thresholds
+        # TODO: to be confirmed to return last stage or not
         if growth_stage_matrix:
             last_stage = growth_stage_matrix[-1]
             return {

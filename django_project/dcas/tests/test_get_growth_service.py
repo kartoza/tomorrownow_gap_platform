@@ -55,6 +55,7 @@ class GrowthStageServiceTest(TestCase):
         self.assertIsNotNone(stage)
         self.assertEqual(stage["id"], 2)
         self.assertEqual(stage["label"], "Establishment")
+        self.assertEqual(stage["gdd_threshold"], 100)
 
         # Verify cache.get was called
         mock_cache.get.assert_called_once_with("gdd_matrix:2:1:1")
@@ -72,8 +73,9 @@ class GrowthStageServiceTest(TestCase):
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(2, 1, 150, 1)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 1)
-        self.assertEqual(stage["label"], "Germination")
+        self.assertEqual(stage["id"], 2)
+        self.assertEqual(stage["label"], "Establishment")
+        self.assertEqual(stage["gdd_threshold"], 105)
 
         # Verify cache.set was called to populate the cache
         mock_cache.set.assert_called_once()
@@ -101,8 +103,9 @@ class GrowthStageServiceTest(TestCase):
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(2, 1, 1000, 1)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 14)
-        self.assertEqual(stage["label"], "Seed setting")
+        self.assertEqual(stage["id"], 8)
+        self.assertEqual(stage["label"], "Physiological Maturity")
+        self.assertEqual(stage["gdd_threshold"], 750)
 
         # Verify cache.get was called
         mock_cache.get.assert_called_with("gdd_matrix:2:1:1")
@@ -130,8 +133,9 @@ class GrowthStageServiceTest(TestCase):
         # Fetch growth stage
         stage = GrowthStageService.get_growth_stage(9, 2, 150, 1)
         self.assertIsNotNone(stage)
-        self.assertEqual(stage["id"], 10)
-        self.assertEqual(stage["label"], "Maturity")
+        self.assertEqual(stage["id"], 11)
+        self.assertEqual(stage["label"], "Seedling")
+        self.assertEqual(stage["gdd_threshold"], 100)
 
         # Verify cache.get was called
         mock_cache.get.assert_called_once_with("gdd_matrix:9:2:1")
