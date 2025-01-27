@@ -92,10 +92,6 @@ app.conf.beat_schedule = {
         # Run everyday at 00:15 UTC
         'schedule': crontab(minute='15', hour='00'),
     },
-    'log-farms-without-messages': {
-        'task': 'log_farms_without_messages',
-        'schedule': crontab(minute='0', hour='2'),
-    },
 }
 
 

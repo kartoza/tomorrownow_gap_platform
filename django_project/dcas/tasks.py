@@ -17,27 +17,23 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(name='log_farms_without_messages')
-def log_farms_without_messages(request_date=None, chunk_size=1000):
+def log_farms_without_messages(request_id=None, chunk_size=1000):
     """
     Celery task to log farms without messages using chunked queries.
 
-    :param request_date: Date for the pipeline output
-    :type request_date: datetime.date
+    :param request_id: Id for the pipeline output
+    :type request_id: int
     :param chunk_size: Number of rows to process per iteration
     :type chunk_size: int
     """
-    if request_date is None:
-        request_date = (datetime.utcnow() - timedelta(days=1)).date()
-    logger.info(f"Checking for farms without messages for {request_date}...")
-
     try:
         # Get the most recent DCAS request
-        dcas_request = DCASRequest.objects.filter(
-            request_date=request_date
-        ).latest('created_at')
+        dcas_request = DCASRequest.objects.get(
+            id=request_id
+        )
 
         # Initialize pipeline output to get the directory path
-        dcas_output = DCASPipelineOutput(request_date)
+        dcas_output = DCASPipelineOutput(request_id)
         parquet_path = dcas_output._get_directory_path(
             dcas_output.DCAS_OUTPUT_DIR + '/*.parquet'
         )
@@ -81,6 +77,6 @@ def log_farms_without_messages(request_date=None, chunk_size=1000):
                 )
 
     except DCASRequest.DoesNotExist:
-        logger.error(f"No DCASRequest found for request_date {request_date}.")
+        logger.error(f"No DCASRequest found for request_id {request_id}.")
     except Exception as e:
         logger.error(f"Error processing missing messages: {str(e)}")
