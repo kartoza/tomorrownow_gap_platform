@@ -501,6 +501,7 @@ class TestBackgroundTask(TestCase):
     @mock.patch("gap.models.ingestor.CollectorSession.objects.get")
     @mock.patch("gap.tasks.collector.notify_collector_failure.delay")
     def test_run_collector_session_not_found(self, mock_notify, mock_get):
+        """Test triggered when collector session is not found."""
         mock_get.side_effect = CollectorSession.DoesNotExist
 
         run_collector_session(9999)
