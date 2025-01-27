@@ -7,7 +7,6 @@ Tomorrow Now GAP.
 
 from celery import shared_task
 import logging
-from datetime import datetime, timedelta
 from dcas.queries import DataQuery
 from dcas.models import DCASErrorLog, DCASRequest, DCASErrorType
 from dcas.outputs import DCASPipelineOutput
