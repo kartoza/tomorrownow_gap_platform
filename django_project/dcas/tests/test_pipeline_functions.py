@@ -31,7 +31,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'crop_stage_type_id': 9999,
             'prev_growth_stage_id': 111,
             'prev_growth_stage_start_date': 111,
-            'gdd_sum_123': 9999
+            'gdd_sum_123': 9999,
+            'config_id': 9999
         }
         epoch_list = [123]
         row = calculate_growth_stage(row, epoch_list)
@@ -51,7 +52,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'crop_stage_type_id': 2,
             'prev_growth_stage_id': 2,
             'prev_growth_stage_start_date': 111,
-            'gdd_sum_123': 440
+            'gdd_sum_123': 440,
+            'config_id': 1
         }
         epoch_list = [123]
         row = calculate_growth_stage(row, epoch_list)
@@ -75,7 +77,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'gdd_sum_123': 420,
             'gdd_sum_124': 440,
             'gdd_sum_125': 450,
-            'gdd_sum_126': 490
+            'gdd_sum_126': 490,
+            'config_id': 1
         }
         epoch_list = [
             123,
@@ -87,8 +90,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 124)
+        self.assertEqual(row['growth_stage_id'], 13)
+        self.assertEqual(row['growth_stage_start_date'], 125)
 
         # growth start date equals to the last item
         row = {
@@ -100,7 +103,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'gdd_sum_123': 410,
             'gdd_sum_124': 400,
             'gdd_sum_125': 420,
-            'gdd_sum_126': 440
+            'gdd_sum_126': 440,
+            'config_id': 1
         }
         epoch_list = [
             123,
@@ -113,7 +117,7 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
         self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 126)
+        self.assertEqual(row['growth_stage_start_date'], 123)
 
         # growth start date equals to the only data
         row = {
@@ -122,7 +126,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'planting_date_epoch': 123,
             'prev_growth_stage_id': None,
             'prev_growth_stage_start_date': None,
-            'gdd_sum_123': 450
+            'gdd_sum_123': 450,
+            'config_id': 1
         }
         epoch_list = [
             123
@@ -131,7 +136,7 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
+        self.assertEqual(row['growth_stage_id'], 13)
         self.assertEqual(row['growth_stage_start_date'], 123)
 
         # growth start date equals to planting date
@@ -142,7 +147,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'prev_growth_stage_id': None,
             'prev_growth_stage_start_date': None,
             'gdd_sum_123': np.nan,
-            'gdd_sum_124': 440
+            'gdd_sum_124': 440,
+            'config_id': 1
         }
         epoch_list = [
             123,
@@ -169,7 +175,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'gdd_sum_123': 420,
             'gdd_sum_124': 440,
             'gdd_sum_125': 450,
-            'gdd_sum_126': 490
+            'gdd_sum_126': 490,
+            'config_id': 1
         }
         epoch_list = [
             123,
@@ -181,8 +188,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 124)
+        self.assertEqual(row['growth_stage_id'], 13)
+        self.assertEqual(row['growth_stage_start_date'], 125)
 
         mock_cache.get.return_value = None
         mock_cache.set.side_effect = set_cache_dummy
@@ -195,7 +202,8 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
             'gdd_sum_123': 420,
             'gdd_sum_124': 440,
             'gdd_sum_125': 450,
-            'gdd_sum_126': 490
+            'gdd_sum_126': 490,
+            'config_id': 1
         }
         epoch_list = [
             123,
@@ -207,5 +215,5 @@ class DCASPipelineFunctionTest(DCASPipelineBaseTest):
 
         self.assertIn('growth_stage_id', row)
         self.assertIn('growth_stage_start_date', row)
-        self.assertEqual(row['growth_stage_id'], 2)
-        self.assertEqual(row['growth_stage_start_date'], 124)
+        self.assertEqual(row['growth_stage_id'], 13)
+        self.assertEqual(row['growth_stage_start_date'], 125)

@@ -6,19 +6,21 @@ Tomorrow Now GAP.
 """
 
 import pandas as pd
-from sqlalchemy import create_engine, select, distinct, column, extract, func
+from sqlalchemy import select, distinct, column, extract, func, cast
 from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.types import String as SqlString
 from geoalchemy2.functions import ST_X, ST_Y, ST_Centroid
+import duckdb
 
 
 class DataQuery:
     """Class to build SQLQuery using sqlalchemy."""
 
-    def __init__(self, connection_str, limit=None):
+    def __init__(self, limit=None):
         """Initialize query builder."""
-        self.connection_str = connection_str
         self.base_schema = None
         self.limit = limit
+        self.conn_engine = None
 
     @property
     def grid_id_index_col(self):
@@ -30,19 +32,17 @@ class DataQuery:
         """Get index column for FarmRegistry Data Query."""
         return 'farmregistry_id'
 
-    def setup(self):
+    def setup(self, conn_engine):
         """Set the builder class."""
+        self.conn_engine = conn_engine
         self._init_schema()
 
     def _init_schema(self):
-        # Create an SQLAlchemy engine
-        engine = create_engine(self.connection_str)
-
         # Use automap base
         self.base_schema = automap_base()
 
         # Reflect the tables
-        self.base_schema.prepare(engine, reflect=True)
+        self.base_schema.prepare(self.conn_engine, reflect=True)
 
         # Access reflected tables as classes
         # for table_name, mapped_class in self.base_schema.classes.items():
@@ -119,6 +119,11 @@ class DataQuery:
                 'epoch',
                 func.DATE(self.farmregistry.c.growth_stage_start_date)
             ).label('prev_growth_stage_start_date'),
+            (
+                cast(self.farmregistry.c.crop_id, SqlString) + '_' +
+                cast(self.farmregistry.c.crop_stage_type_id, SqlString) + '_' +
+                cast(self.grid.c.id, SqlString)
+            ).label('grid_crop_key')
         ).select_from(self.farmregistry).join(
             self.farm, self.farmregistry.c.farm_id == self.farm.c.id
         ).join(
@@ -143,7 +148,8 @@ class DataQuery:
             column('prev_growth_stage_id'),
             column('prev_growth_stage_start_date'),
             column('grid_id'),
-            column('planting_date_epoch')
+            column('planting_date_epoch'),
+            column('grid_crop_key')
         ).distinct().select_from(subquery)
 
     def grid_data_with_crop_meta(self, farm_registry_group):
@@ -157,13 +163,15 @@ class DataQuery:
             column('crop_stage_type_id'), column('planting_date'),
             column('prev_growth_stage_id'),
             column('prev_growth_stage_start_date'),
-            column('grid_id'), column('planting_date_epoch')
+            column('grid_id'), column('planting_date_epoch'),
+            column('grid_crop_key')
         ).distinct().select_from(subquery)
-        df = pd.read_sql_query(
-            sql_query,
-            con=self.connection_str,
-            index_col=self.grid_id_index_col,
-        )
+        with self.conn_engine.connect() as conn:
+            df = pd.read_sql_query(
+                sql_query,
+                con=conn,
+                index_col=self.grid_id_index_col,
+            )
         df['prev_growth_stage_id'] = (
             df['prev_growth_stage_id'].astype('Int64')
         )
@@ -181,14 +189,8 @@ class DataQuery:
                 func.DATE(self.farmregistry.c.planting_date)
             ).label('planting_date_epoch'),
             self.farmregistry.c.crop_id.label('crop_id'),
-            self.farmregistry.c.crop_growth_stage_id.label(
-                'crop_growth_stage_id'
-            ),
             self.farmregistry.c.crop_stage_type_id.label(
                 'crop_stage_type_id'
-            ),
-            self.farmregistry.c.growth_stage_start_date.label(
-                'growth_stage_start_date'
             ),
             self.farmregistry.c.group_id,
             self.farm.c.id.label('farm_id'),
@@ -197,8 +199,14 @@ class DataQuery:
             self.grid.c.id.label('grid_id'),
             self.grid.c.unique_id.label('grid_unique_id'),
             self.farmregistry.c.id.label('registry_id'),
-            self.cropgrowthstage.c.name.label('growth_stage'),
-            (self.crop.c.name + '_' + self.cropstagetype.c.name).label('crop')
+            (self.crop.c.name + '_' + self.cropstagetype.c.name).label('crop'),
+            self.country.c.iso_a3.label('iso_a3'),
+            self.country.c.id.label('country_id'),
+            (
+                cast(self.crop.c.id, SqlString) + '_' +
+                cast(self.cropstagetype.c.id, SqlString) + '_' +
+                cast(self.grid.c.id, SqlString)
+            ).label('grid_crop_key'),
         ).select_from(self.farmregistry).join(
             self.farm, self.farmregistry.c.farm_id == self.farm.c.id
         ).join(
@@ -209,10 +217,7 @@ class DataQuery:
             self.cropstagetype,
             self.farmregistry.c.crop_stage_type_id == self.cropstagetype.c.id
         ).join(
-            self.cropgrowthstage,
-            self.farmregistry.c.crop_growth_stage_id ==
-            self.cropgrowthstage.c.id,
-            isouter=True
+            self.country, self.grid.c.country_id == self.country.c.id
         ).where(
             self.farmregistry.c.group_id == farm_registry_group.id
         ).order_by(
@@ -239,11 +244,12 @@ class DataQuery:
         subquery = subquery.subquery('farm_data')
 
         sql_query = select(subquery)
-        df = pd.read_sql_query(
-            sql_query,
-            con=self.connection_str,
-            index_col=self.farmregistry_id_index_col,
-        )
+        with self.conn_engine.connect() as conn:
+            df = pd.read_sql_query(
+                sql_query,
+                con=conn,
+                index_col=self.farmregistry_id_index_col,
+            )
 
         df = df.assign(
             date=pd.Timestamp(request_date),
@@ -251,4 +257,28 @@ class DataQuery:
             month=lambda x: x.date.dt.month,
             day=lambda x: x.date.dt.day
         )
+        return df
+
+    def read_grid_data_crop_meta_parquet(
+        self, parquet_file_path
+    ) -> pd.DataFrame:
+        """Read grid data from parquet file.
+
+        :param parquet_file_path: file_path to parquet file
+        :type parquet_file_path: str
+        :return: DataFrame
+        :rtype: pd.DataFrame
+        """
+        if not parquet_file_path.endswith('.parquet'):
+            parquet_file_path += '/*.parquet'
+        conndb = duckdb.connect()
+        query = (
+            f"""
+            SELECT *
+            FROM read_parquet('{parquet_file_path}')
+            LIMIT 1
+            """
+        )
+        df = conndb.sql(query).df()
+        conndb.close()
         return df
