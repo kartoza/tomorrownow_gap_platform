@@ -445,6 +445,10 @@ class DCASDataPipeline:
 
         return file_path
 
+    def send_csv_to_sftp(self, file_path):
+        """Upload the given CSV file to SFTP."""
+        self.data_output._upload_to_sftp(file_path)
+
     def run(self):
         """Run data pipeline."""
         self.setup()
@@ -454,7 +458,9 @@ class DCASDataPipeline:
         self.process_grid_crop_data()
 
         self.process_farm_registry_data()
-        self.extract_csv_output()
+        csv_file = self.extract_csv_output()
+
+        self.send_csv_to_sftp(csv_file)
 
         self.cleanup_gdd_matrix()
 

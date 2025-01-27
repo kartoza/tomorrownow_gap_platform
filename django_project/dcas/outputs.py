@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: DCAS Outputs
 """
 
+import paramiko
 import os
 import shutil
 import fsspec
@@ -26,6 +27,7 @@ class OutputType:
     GRID_DATA = 1
     GRID_CROP_DATA = 2
     FARM_CROP_DATA = 3
+    MESSAGE_DATA = 4
 
 
 class DCASPipelineOutput:
@@ -189,6 +191,38 @@ class DCASPipelineOutput:
         file_path = self.grid_data_file_path
         print(f'writing dataframe to {file_path}')
         df.to_parquet(file_path)
+
+    def _upload_to_sftp(self, local_file):
+        """Upload CSV file to Docker SFTP."""
+        try:
+            print(f'Connecting to SFTP server at '
+                  f'{settings.SFTP_HOST}:{settings.SFTP_PORT}...')
+            transport = paramiko.Transport(
+                (settings.SFTP_HOST, settings.SFTP_PORT)
+            )
+            transport.connect(
+                username=settings.SFTP_USERNAME,
+                password=settings.SFTP_PASSWORD
+            )
+
+            sftp = paramiko.SFTPClient.from_transport(transport)
+
+            # Ensure correct remote path
+            remote_file_path = (
+                f"{settings.SFTP_REMOTE_PATH}/{os.path.basename(local_file)}"
+            )
+            print(f"Uploading {local_file} to {remote_file_path}...")
+
+            sftp.put(local_file, remote_file_path)  # Upload file
+
+            print("Upload to Docker SFTP successful!")
+
+            # Close connection
+            sftp.close()
+            transport.close()
+
+        except Exception as e:
+            print(f"Failed to upload to SFTP: {e}")
 
     def _get_connection(self, s3):
         endpoint = s3['AWS_ENDPOINT_URL']
