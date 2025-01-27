@@ -150,8 +150,6 @@ class DCASPipelineOutput:
             self._save_grid_crop_data(df)
         elif type == OutputType.FARM_CROP_DATA:
             self._save_farm_crop_data(df)
-        elif type == OutputType.MESSAGE_DATA:
-            self._save_message_output_csv(df)
         else:
             raise ValueError(f'Invalid output type {type} to be saved!')
 
@@ -193,26 +191,6 @@ class DCASPipelineOutput:
         file_path = self.grid_data_file_path
         print(f'writing dataframe to {file_path}')
         df.to_parquet(file_path)
-
-    def _save_message_output_csv(self, df: dask_df):
-        """Save message output as CSV."""
-        df = df.compute()  # Convert Dask to Pandas
-
-        # Define output CSV file path
-        dir_path = os.path.dirname(self.csv_data_output_file)
-        file_path = self.csv_data_output_file
-
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-        print('Saving to CSV')
-        # Save to CSV
-        df.to_csv(file_path, index=False)
-        # Upload to SFTP Docker container
-        self._upload_to_sftp(file_path)
 
     def _upload_to_sftp(self, local_file):
         """Upload CSV file to Docker SFTP."""
