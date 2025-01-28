@@ -50,12 +50,16 @@ class DCASDataPipeline:
     def __init__(
         self, farm_registry_group: FarmRegistryGroup,
         request_date: datetime.date, farm_num_partitions = None,
-        grid_crop_num_partitions = None
+        grid_crop_num_partitions = None, duck_db_num_threads=None
     ):
         """Initialize DCAS Data Pipeline.
 
-        :param farm_registry_group: _description_
+        :param farm_registry_group: farm registry to process
         :type farm_registry_group: FarmRegistryGroup
+        :param request_date: date to process
+        :type request_date: date
+        :param duck_db_num_threads: number of threads for duck db
+        :type duck_db_num_threads: int
         """
         self.farm_registry_group = farm_registry_group
         self.fs = None
@@ -63,8 +67,11 @@ class DCASDataPipeline:
         self.minimum_plant_date = None
         self.crops = []
         self.request_date = request_date
+        self.duck_db_num_threads = duck_db_num_threads
         self.data_query = DataQuery(self.LIMIT)
-        self.data_output = DCASPipelineOutput(request_date)
+        self.data_output = DCASPipelineOutput(
+            request_date, duck_db_num_threads=duck_db_num_threads
+        )
         self.data_input = DCASPipelineInput(request_date)
         self.NUM_PARTITIONS = (
             self.DEFAULT_NUM_PARTITIONS if farm_num_partitions is None else
@@ -115,11 +122,12 @@ class DCASDataPipeline:
         :return: DataFrame of Grid Data
         :rtype: pd.DataFrame
         """
-        df = pd.read_sql_query(
-            self.data_query.grid_data_query(self.farm_registry_group),
-            con=self.conn_engine,
-            index_col=self.data_query.grid_id_index_col,
-        )
+        with self.conn_engine.connect() as conn:
+            df = pd.read_sql_query(
+                self.data_query.grid_data_query(self.farm_registry_group),
+                con=conn,
+                index_col=self.data_query.grid_id_index_col,
+            )
 
         return self._merge_grid_data_with_config(df)
 
@@ -333,6 +341,7 @@ class DCASDataPipeline:
             process_partition_total_gdd,
             grid_data_file_path,
             gdd_dates,
+            self.duck_db_num_threads,
             meta=grid_crop_df_meta
         )
 
@@ -360,6 +369,7 @@ class DCASDataPipeline:
             process_partition_seasonal_precipitation,
             grid_data_file_path,
             self.data_input.historical_epoch,
+            self.duck_db_num_threads,
             meta=grid_crop_df_meta
         )
 
@@ -372,6 +382,7 @@ class DCASDataPipeline:
         grid_crop_df = grid_crop_df.map_partitions(
             process_partition_other_params,
             grid_data_file_path,
+            self.duck_db_num_threads,
             meta=grid_crop_df_meta
         )
 
@@ -383,6 +394,7 @@ class DCASDataPipeline:
             process_partition_growth_stage_precipitation,
             grid_data_file_path,
             self.data_input.historical_epoch,
+            self.duck_db_num_threads,
             meta=grid_crop_df_meta
         )
 
@@ -420,6 +432,7 @@ class DCASDataPipeline:
             process_partition_farm_registry,
             self.data_output.grid_crop_data_path,
             growth_stage_mapping,
+            self.duck_db_num_threads,
             meta=farm_df_meta
         )
 
@@ -440,7 +453,8 @@ class DCASDataPipeline:
         # - growth_stage
         meta = grid_crop_df_meta.drop(columns=[
             'crop_id', 'crop_stage_type_id', 'planting_date',
-            'grid_id', 'planting_date_epoch', '__null_dask_index__'
+            'grid_id', 'planting_date_epoch', '__null_dask_index__',
+            'grid_crop_key'
         ])
         # add growth_stage
         meta = meta.assign(growth_stage=None)
@@ -452,6 +466,10 @@ class DCASDataPipeline:
 
         return file_path
 
+    def send_csv_to_sftp(self, file_path):
+        """Upload the given CSV file to SFTP."""
+        self.data_output._upload_to_sftp(file_path)
+
     def run(self):
         """Run data pipeline."""
         self.setup()
@@ -461,7 +479,9 @@ class DCASDataPipeline:
         self.process_grid_crop_data()
 
         self.process_farm_registry_data()
-        self.extract_csv_output()
+        csv_file = self.extract_csv_output()
+
+        self.send_csv_to_sftp(csv_file)
 
         self.cleanup_gdd_matrix()
 

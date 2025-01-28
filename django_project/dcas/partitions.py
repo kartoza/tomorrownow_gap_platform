@@ -19,7 +19,8 @@ from dcas.functions import (
 
 
 def process_partition_total_gdd(
-    df: pd.DataFrame, parquet_file_path: str, epoch_list: list
+    df: pd.DataFrame, parquet_file_path: str, epoch_list: list,
+    num_threads = None
 ) -> pd.DataFrame:
     """Calculate cumulative sum of GDD for each day.
 
@@ -29,6 +30,8 @@ def process_partition_total_gdd(
     :type parquet_file_path: str
     :param epoch_list: List of epoch in current process
     :type epoch_list: list
+    :param num_threads: number of threads for duck db
+    :type num_threads: int
     :return: DataFrame with GDD cumulative sum for each day columns
     :rtype: pd.DataFrame
     """
@@ -40,7 +43,8 @@ def process_partition_total_gdd(
     # read grid_data_df
     grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
-        parquet_file_path, grid_column_list, grid_id_list
+        parquet_file_path, grid_column_list, grid_id_list,
+        num_threads=num_threads
     )
 
     # merge the df with grid_data
@@ -97,7 +101,8 @@ def process_partition_total_gdd(
 
 
 def process_partition_seasonal_precipitation(
-    df: pd.DataFrame, parquet_file_path: str, epoch_list: list
+    df: pd.DataFrame, parquet_file_path: str, epoch_list: list,
+    num_threads = None
 ) -> pd.DataFrame:
     """Calculate seasonal precipitation parameter.
 
@@ -107,6 +112,8 @@ def process_partition_seasonal_precipitation(
     :type parquet_file_path: str
     :param epoch_list: List of epoch in current process
     :type epoch_list: list
+    :param num_threads: number of threads for duck db
+    :type num_threads: int
     :return: DataFrame with seasonal_precipitation column
     :rtype: pd.DataFrame
     """
@@ -117,7 +124,8 @@ def process_partition_seasonal_precipitation(
     # read grid_data_df
     grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
-        parquet_file_path, grid_column_list, grid_id_list
+        parquet_file_path, grid_column_list, grid_id_list,
+        num_threads=num_threads
     )
 
     # merge the df with grid_data
@@ -125,16 +133,19 @@ def process_partition_seasonal_precipitation(
 
     # calculate seasonal_precipitation
     grid_column_list.remove('grid_id')
-    df['seasonal_precipitation'] = df[grid_column_list].sum(axis=1)
+    seasonal_precipitation_df = df[grid_column_list].sum(axis=1)
+    seasonal_precipitation_df.name = 'seasonal_precipitation'
 
     # data cleanup
     df = df.drop(columns=grid_column_list)
+
+    df = pd.concat([df, seasonal_precipitation_df], axis=1)
 
     return df
 
 
 def process_partition_other_params(
-    df: pd.DataFrame, parquet_file_path: str
+    df: pd.DataFrame, parquet_file_path: str, num_threads = None
 ) -> pd.DataFrame:
     """Merge temperature, humidity, and p_pet to current DataFrame.
 
@@ -142,6 +153,8 @@ def process_partition_other_params(
     :type df: pd.DataFrame
     :param parquet_file_path: parquet that has temperature, humidity and p_pet
     :type parquet_file_path: str
+    :param num_threads: number of threads for duck db
+    :type num_threads: int
     :return: DataFrame with temperature, humidity, and p_pet columns.
     :rtype: pd.DataFrame
     """
@@ -150,7 +163,8 @@ def process_partition_other_params(
     # read grid_data_df
     grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
-        parquet_file_path, grid_column_list, grid_id_list
+        parquet_file_path, grid_column_list, grid_id_list,
+        num_threads=num_threads
     )
 
     # merge the df with grid_data
@@ -189,7 +203,8 @@ def process_partition_growth_stage(
 
 
 def process_partition_growth_stage_precipitation(
-    df: pd.DataFrame, parquet_file_path: str, epoch_list: list
+    df: pd.DataFrame, parquet_file_path: str, epoch_list: list,
+    num_threads = None
 ) -> pd.DataFrame:
     """Calculate growth_stage_percipitation for df partition.
 
@@ -199,6 +214,8 @@ def process_partition_growth_stage_precipitation(
     :type parquet_file_path: str
     :param epoch_list: List of epoch in current process
     :type epoch_list: list
+    :param num_threads: number of threads for duck db
+    :type num_threads: int
     :return: DataFrame with growth_stage_precipitation column
     :rtype: pd.DataFrame
     """
@@ -209,7 +226,8 @@ def process_partition_growth_stage_precipitation(
     # read grid_data_df
     grid_id_list = df['grid_id'].unique()
     grid_data_df = read_grid_data(
-        parquet_file_path, grid_column_list, grid_id_list
+        parquet_file_path, grid_column_list, grid_id_list,
+        num_threads=num_threads
     )
 
     # merge the df with grid_data
@@ -224,10 +242,13 @@ def process_partition_growth_stage_precipitation(
         )
 
     grid_column_list.remove('grid_id')
-    df['growth_stage_precipitation'] = df[grid_column_list].sum(axis=1)
+    growth_stage_precipitation_df = df[grid_column_list].sum(axis=1)
+    growth_stage_precipitation_df.name = 'growth_stage_precipitation'
 
     # data cleanup
     df = df.drop(columns=grid_column_list)
+
+    df = pd.concat([df, growth_stage_precipitation_df], axis=1)
 
     return df
 
@@ -304,7 +325,8 @@ def _merge_partition_gdd_config(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def process_partition_farm_registry(
-    df: pd.DataFrame, parquet_file_path: str, growth_stage_mapping: dict
+    df: pd.DataFrame, parquet_file_path: str, growth_stage_mapping: dict,
+    num_threads = None
 ) -> pd.DataFrame:
     """Merge farm registry dataframe with grid crop data.
 
@@ -314,21 +336,20 @@ def process_partition_farm_registry(
     :type parquet_file_path: str
     :param growth_stage_mapping: dict mapping of growthstage label
     :type growth_stage_mapping: dict
+    :param num_threads: number of threads for duck db
+    :type num_threads: int
     :return: merged dataframe
     :rtype: pd.DataFrame
     """
-    grid_id_list = df['grid_id'].unique()
-    crop_id_list = df['crop_id'].unique()
-    crop_stage_type_list = df['crop_stage_type_id'].unique()
-
     # read grid_data_df
     grid_data_df = read_grid_crop_data(
-        parquet_file_path, grid_id_list,
-        crop_id_list, crop_stage_type_list
+        parquet_file_path,
+        df['grid_crop_key'].to_list(),
+        num_threads=num_threads
     )
 
     grid_data_df = grid_data_df.drop(
-        columns=['__null_dask_index__', 'planting_date']
+        columns=['__null_dask_index__', 'planting_date', 'grid_crop_key']
     )
 
     # merge the df with grid_data

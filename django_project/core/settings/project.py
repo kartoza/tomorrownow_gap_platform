@@ -104,3 +104,12 @@ MIDDLEWARE_CELERY = (
 )
 
 MIDDLEWARE = MIDDLEWARE + MIDDLEWARE_CELERY
+
+# SFTP settings
+SFTP_HOST = os.getenv("SFTP_HOST", "127.0.0.1")  # Default: localhost
+SFTP_PORT = int(os.getenv("SFTP_PORT", "2222"))  # Default: 2222
+SFTP_USERNAME = os.getenv("SFTP_USERNAME", "user")
+SFTP_PASSWORD = os.getenv("SFTP_PASSWORD", "password")
+SFTP_REMOTE_PATH = os.getenv(
+    "SFTP_REMOTE_PATH", "upload"
+)
