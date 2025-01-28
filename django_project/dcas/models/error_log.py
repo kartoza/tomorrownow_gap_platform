@@ -13,6 +13,14 @@ from gap.models.farm import Farm
 from dcas.models.request import DCASRequest
 
 
+class DCASErrorType(models.TextChoices):
+    """Enum for error types in DCAS ErrorLog."""
+
+    MISSING_MESSAGES = "MISSING_MESSAGES", _("Missing Messages")
+    PROCESSING_FAILURE = "PROCESSING_FAILURE", _("Processing Failure")
+    OTHER = "OTHER", _("Other")
+
+
 class DCASErrorLog(models.Model):
     """Model to store farms that cannot be processed."""
 
@@ -24,6 +32,12 @@ class DCASErrorLog(models.Model):
     farm_id = models.ForeignKey(
         Farm, on_delete=models.CASCADE,
         help_text="The unique identifier of the farm that failed to process."
+    )
+    error_type = models.CharField(
+        max_length=50,
+        choices=DCASErrorType.choices,
+        default=DCASErrorType.OTHER,
+        help_text="The type of error encountered."
     )
     error_message = models.TextField(
         help_text="Details about why the farm could not be processed."
@@ -39,3 +53,12 @@ class DCASErrorLog(models.Model):
         db_table = 'dcas_error_log'
         verbose_name = _('Error Log')
         ordering = ['-logged_at']
+
+    @classmethod
+    def export_resource_classes(cls):
+        """Export resource classes for import-export."""
+        from dcas.resources import DCASErrorLogResource
+
+        return {
+            "DCASErrorLog": ("DCASErrorLog Resource", DCASErrorLogResource)
+        }

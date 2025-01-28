@@ -5,6 +5,8 @@ Tomorrow Now GAP DCAS.
 .. note:: Admin for DCAS Models
 """
 
+from import_export.admin import ExportMixin
+from import_export_celery.admin_actions import create_export_job_action
 from django.contrib import admin
 
 from dcas.models import (
@@ -17,6 +19,7 @@ from dcas.models import (
     GDDConfig,
     GDDMatrix
 )
+from dcas.resources import DCASErrorLogResource
 
 
 class ConfigByCountryInline(admin.TabularInline):
@@ -65,13 +68,23 @@ class DCASOutputAdmin(admin.ModelAdmin):
 
 
 @admin.register(DCASErrorLog)
-class DCASErrorLogAdmin(admin.ModelAdmin):
-    """Admin page for DCASErrorLog."""
+class DCASErrorLogAdmin(ExportMixin, admin.ModelAdmin):
+    """Admin class for DCASErrorLog model."""
 
-    list_display = ('logged_at', 'request', 'farm_id', 'error_message')
-    list_filter = ('request', 'farm_id')
-    search_fields = ('error_message',)
-    ordering = ('-logged_at',)
+    resource_class = DCASErrorLogResource
+    actions = [create_export_job_action]
+
+    list_display = (
+        "id",
+        "request_id",
+        "farm_id",
+        "error_type",
+        "error_message",
+        "logged_at",
+    )
+
+    search_fields = ("error_message", "farm_id", "request__id")
+    list_filter = ("error_type", "logged_at")
 
 # GDD Config and Matrix
 
