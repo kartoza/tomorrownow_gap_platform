@@ -67,7 +67,7 @@ class DataQuery:
         self.grid = self.base_schema.classes['gap_grid'].__table__
         self.country = self.base_schema.classes['gap_country'].__table__
 
-    def grid_data_query(self, farm_registry_group):
+    def grid_data_query(self, farm_registry_group_ids):
         """Get query for Grid Data."""
         subquery = select(
             self.grid.c.id.label(self.grid_id_index_col),
@@ -82,7 +82,7 @@ class DataQuery:
         ).join(
             self.country, self.grid.c.country_id == self.country.c.id
         ).where(
-            self.farmregistry.c.group_id == farm_registry_group.id
+            self.farmregistry.c.group_id.in_(farm_registry_group_ids)
         ).order_by(
             self.grid.c.id
         )
@@ -101,7 +101,7 @@ class DataQuery:
             column('country_id'),
         ).select_from(subquery)
 
-    def _grid_data_with_crop_subquery(self, farm_registry_group):
+    def _grid_data_with_crop_subquery(self, farm_registry_group_ids):
         return select(
             self.grid.c.id.label(self.grid_id_index_col),
             self.grid.c.id.label('grid_id'),
@@ -129,14 +129,14 @@ class DataQuery:
         ).join(
             self.grid, self.farm.c.grid_id == self.grid.c.id
         ).where(
-            self.farmregistry.c.group_id == farm_registry_group.id
+            self.farmregistry.c.group_id.in_(farm_registry_group_ids)
         ).order_by(
             self.grid.c.id
         )
 
-    def grid_data_with_crop_query(self, farm_registry_group):
+    def grid_data_with_crop_query(self, farm_registry_group_ids):
         """Get grid data with crop query."""
-        subquery = self._grid_data_with_crop_subquery(farm_registry_group)
+        subquery = self._grid_data_with_crop_subquery(farm_registry_group_ids)
         if self.limit:
             # for testing purpose
             subquery = subquery.limit(self.limit)
@@ -152,9 +152,9 @@ class DataQuery:
             column('grid_crop_key')
         ).distinct().select_from(subquery)
 
-    def grid_data_with_crop_meta(self, farm_registry_group):
+    def grid_data_with_crop_meta(self, farm_registry_group_ids):
         """Get metadata for grid with crop data."""
-        subquery = self._grid_data_with_crop_subquery(farm_registry_group)
+        subquery = self._grid_data_with_crop_subquery(farm_registry_group_ids)
         subquery = subquery.limit(1)
         subquery = subquery.subquery('grid_data')
         sql_query = select(
@@ -180,7 +180,7 @@ class DataQuery:
         )
         return df
 
-    def _farm_registry_subquery(self, farm_registry_group):
+    def _farm_registry_subquery(self, farm_registry_group_ids):
         subquery = select(
             self.farmregistry.c.id.label('farmregistry_id'),
             self.farmregistry.c.planting_date.label('planting_date'),
@@ -219,16 +219,16 @@ class DataQuery:
         ).join(
             self.country, self.grid.c.country_id == self.country.c.id
         ).where(
-            self.farmregistry.c.group_id == farm_registry_group.id
+            self.farmregistry.c.group_id.in_(farm_registry_group_ids)
         ).order_by(
             self.grid.c.id, self.farmregistry.c.id
         )
 
         return subquery
 
-    def farm_registry_query(self, farm_registry_group):
+    def farm_registry_query(self, farm_registry_group_ids):
         """Get Farm Registry data query."""
-        subquery = self._farm_registry_subquery(farm_registry_group)
+        subquery = self._farm_registry_subquery(farm_registry_group_ids)
         if self.limit:
             # for testing purpose
             subquery = subquery.limit(self.limit)
@@ -237,9 +237,9 @@ class DataQuery:
 
         return select(subquery)
 
-    def farm_registry_meta(self, farm_registry_group, request_date):
+    def farm_registry_meta(self, farm_registry_group_ids, request_date):
         """Get metadata for farm registry query."""
-        subquery = self._farm_registry_subquery(farm_registry_group)
+        subquery = self._farm_registry_subquery(farm_registry_group_ids)
         subquery = subquery.limit(1)
         subquery = subquery.subquery('farm_data')
 

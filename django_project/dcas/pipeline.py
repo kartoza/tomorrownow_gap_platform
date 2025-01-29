@@ -42,26 +42,25 @@ pd.set_option("mode.copy_on_write", True)
 class DCASDataPipeline:
     """Class for DCAS data pipeline."""
 
-    DEFAULT_NUM_PARTITIONS = 10
-    # GRID_CROP_NUM_PARTITIONS = 100
-    DEFAULT_GRID_CROP_NUM_PARTITIONS = 2
+    DEFAULT_NUM_PARTITIONS = 25
+    DEFAULT_GRID_CROP_NUM_PARTITIONS = 25
     LIMIT = None
 
     def __init__(
-        self, farm_registry_group: FarmRegistryGroup,
+        self, farm_registry_group_ids: list,
         request_date: datetime.date, farm_num_partitions = None,
         grid_crop_num_partitions = None, duck_db_num_threads=None
     ):
         """Initialize DCAS Data Pipeline.
 
-        :param farm_registry_group: farm registry to process
-        :type farm_registry_group: FarmRegistryGroup
+        :param farm_registry_group_ids: list of farm registry group id
+        :type farm_registry_group_ids: list
         :param request_date: date to process
         :type request_date: date
         :param duck_db_num_threads: number of threads for duck db
         :type duck_db_num_threads: int
         """
-        self.farm_registry_group = farm_registry_group
+        self.farm_registry_group_ids = farm_registry_group_ids
         self.fs = None
         self.conn_engine = None
         self.minimum_plant_date = None
@@ -91,11 +90,11 @@ class DCASDataPipeline:
 
         # fetch minimum plant date
         self.minimum_plant_date: datetime.date = FarmRegistry.objects.filter(
-            group=self.farm_registry_group
+            group_id__in=self.farm_registry_group_ids
         ).aggregate(Min('planting_date'))['planting_date__min']
         # fetch crop id list
         farm_qs = FarmRegistry.objects.filter(
-            group=self.farm_registry_group
+            group_id__in=self.farm_registry_group_ids
         ).order_by('crop_id').values_list(
             'crop_id', flat=True
         ).distinct('crop_id')
@@ -124,7 +123,7 @@ class DCASDataPipeline:
         """
         with self.conn_engine.connect() as conn:
             df = pd.read_sql_query(
-                self.data_query.grid_data_query(self.farm_registry_group),
+                self.data_query.grid_data_query(self.farm_registry_group_ids),
                 con=conn,
                 index_col=self.data_query.grid_id_index_col,
             )
@@ -259,7 +258,7 @@ class DCASDataPipeline:
         """
         ddf = dd.read_sql_query(
             sql=self.data_query.grid_data_with_crop_query(
-                self.farm_registry_group
+                self.farm_registry_group_ids
             ),
             con=self._conn_str(),
             index_col=self.data_query.grid_id_index_col,
@@ -281,7 +280,7 @@ class DCASDataPipeline:
         :rtype: dask_df
         """
         sql_query = self.data_query.farm_registry_query(
-            self.farm_registry_group
+            self.farm_registry_group_ids
         )
 
         df = dd.read_sql_query(
@@ -320,7 +319,7 @@ class DCASDataPipeline:
         # load grid with crop and planting date
         grid_crop_df = self.load_grid_data_with_crop()
         grid_crop_df_meta = self.data_query.grid_data_with_crop_meta(
-            self.farm_registry_group
+            self.farm_registry_group_ids
         )
 
         # Process gdd cumulative
@@ -417,7 +416,7 @@ class DCASDataPipeline:
         """Merge with farm registry data."""
         farm_df = self.load_farm_registry_data()
         farm_df_meta = self.data_query.farm_registry_meta(
-            self.farm_registry_group, self.request_date
+            self.farm_registry_group_ids, self.request_date
         )
 
         # merge with grid crop data meta
@@ -473,22 +472,15 @@ class DCASDataPipeline:
     def run(self):
         """Run data pipeline."""
         self.setup()
-
         start_time = time.time()
         self.data_collection()
         self.process_grid_crop_data()
-
         self.process_farm_registry_data()
-        csv_file = self.extract_csv_output()
-
-        self.send_csv_to_sftp(csv_file)
-
-        self.cleanup_gdd_matrix()
-
         print(f'Finished {time.time() - start_time} seconds.')
 
     def cleanup(self):
         """Cleanup resources."""
+        self.cleanup_gdd_matrix()
         if self.conn_engine:
             self.conn_engine.dispose()
 
