@@ -7,20 +7,20 @@ Tomorrow Now GAP.
 
 import os
 import pandas as pd
-import geopandas as gpd
 import fsspec
-import pyarrow as pa
-import pyarrow.parquet as pq
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from django.db.models.functions.datetime import TruncDate, ExtractYear
-from shapely.wkt import loads
 from django.contrib.gis.db.models.functions import AsWKT
+import dask_geopandas as dg
+from dask_geopandas.io.parquet import to_parquet
+import dask.dataframe as dd
 
 from gap.models import (
     Measurement, Dataset, Country
 )
 from gap.providers.observation import ST_X, ST_Y
+from gap.utils.dask import execute_dask_compute
 
 
 
@@ -76,7 +76,7 @@ class Command(BaseCommand):
     def _get_directory_path(self):
         return (
             f"s3://{self.s3['AWS_BUCKET_NAME']}/"
-            f"{self.s3['AWS_DIR_PREFIX']}/tahmo/"
+            f"{self.s3['AWS_DIR_PREFIX']}/tahmo_2/"
         )
 
     def handle(self, *args, **options):
@@ -96,6 +96,7 @@ class Command(BaseCommand):
             'st_code': F('station__code'),
             'st_id': F('station__id'),
             'country': F('station__country'),
+            'iso_a3': F('station__country__iso_a3'),
             'geometry': AsWKT('geom')
         }
 
@@ -144,7 +145,8 @@ class Command(BaseCommand):
                     'st_code',
                     'st_id',
                     'geometry',
-                    'country'
+                    'country',
+                    'iso_a3'
                 ],
                 columns='attr',
                 values='value'
@@ -155,25 +157,23 @@ class Command(BaseCommand):
             df['month'] = df['date'].apply(lambda x: x.month)
             df['day'] = df['date'].apply(lambda x: x.day)
 
+            # create dask dataframe
+            ddf = dd.from_pandas(df, npartitions=2)
+
             # Create a GeoDataFrame
-            df['geometry'] = df['geometry'].apply(
-                lambda x: loads(x)
+            df_geo = dg.from_dask_dataframe(
+                ddf,
+                geometry=dg.from_wkt(ddf['geometry'])
             )
-            gdf = gpd.GeoDataFrame(df, geometry='geometry')
 
-            # Set the CRS (update 'EPSG:4326'
-            # if your geometry usesa different CRS)
-            gdf.set_crs(epsg=4326, inplace=True)
+            print('Saving to parquet')
 
-            # View the GeoDataFrame
-            # print(gdf)
-
-            arrow_table = gdf.to_arrow()
-            table = pa.table(arrow_table)
-
-            pq.write_to_dataset(
-                table,
-                root_path=s3_path,
-                partition_cols=['country', 'year', 'month'],
-                filesystem=fs
+            x = to_parquet(
+                df_geo,
+                s3_path,
+                partition_on=['iso_a3', 'year', 'month', 'day'],
+                filesystem=fs,
+                compute=False
             )
+            print(f'writing to {s3_path}')
+            execute_dask_compute(x)
