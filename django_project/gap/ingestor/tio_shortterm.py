@@ -55,6 +55,12 @@ def path(filename):
     return f'{settings.STORAGE_DIR_PREFIX}tio-short-term-collector/{filename}'
 
 
+def trigger_task_after_ingestor_completed():
+    """Trigger DCAS after T.io ingestor is completed."""
+    from dcas.tasks import run_dcas
+    run_dcas.delay()
+
+
 class TioShortTermCollector(BaseIngestor):
     """Collector for Tio Short Term data."""
 
@@ -110,8 +116,8 @@ class TioShortTermCollector(BaseIngestor):
                 continue
 
             # Get the data
-            location_input = DatasetReaderInput.from_polygon(
-                grid.geometry
+            location_input = DatasetReaderInput.from_point(
+                grid.geometry.centroid
             )
             forecast_attrs = dataset.datasetattribute_set.filter(
                 dataset__type__type=CastType.FORECAST
@@ -488,15 +494,18 @@ class TioShortTermIngestor(BaseZarrIngestor):
     def run(self):
         """Run TomorrowIO Ingestor."""
         # Run the ingestion
+        is_success = False
         try:
             self._run()
             self.session.notes = json.dumps(self.metadata, default=str)
+            is_success = True
         except Exception as e:
             logger.error('Ingestor TomorrowIO failed!')
             logger.error(traceback.format_exc())
             raise e
         finally:
-            pass
+            if is_success:
+                trigger_task_after_ingestor_completed()
 
     def _process_tio_shortterm_data(
             self, forecast_date: date, lat_arr: List[CoordMapping],

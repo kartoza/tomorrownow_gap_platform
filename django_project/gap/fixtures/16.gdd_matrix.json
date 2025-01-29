@@ -1,0 +1,1564 @@
+[
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 1,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 105,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 2,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 110,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 3,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 82,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 4,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 225,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 5,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 440,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 6,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 200,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 7,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 13,
+            "gdd_threshold": 450,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 8,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 13,
+            "gdd_threshold": 660,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 9,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 13,
+            "gdd_threshold": 1240,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 10,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 600,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 11,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 825,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 12,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1400,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 13,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 14,
+            "gdd_threshold": 750,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 14,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 14,
+            "gdd_threshold": 990,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 15,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 14,
+            "gdd_threshold": 1530,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 16,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1050,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 17,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1320,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 18,
+        "fields": {
+            "crop": 2,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 2700,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 19,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 81,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 20,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 81,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 21,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 81,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 22,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 149,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 23,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 122,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 24,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 149,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 25,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 284,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 26,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 905,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 27,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 1108,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 28,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 419,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 29,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1027,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 30,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1243,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 31,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 554,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 32,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 1162,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 33,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 1378,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 34,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 10,
+            "gdd_threshold": 743,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 35,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 10,
+            "gdd_threshold": 1243,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 36,
+        "fields": {
+            "crop": 8,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 10,
+            "gdd_threshold": 1675,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 37,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 60,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 38,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 180,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 39,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 120,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 40,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 16,
+            "gdd_threshold": 400,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 41,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 16,
+            "gdd_threshold": 680,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 42,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 16,
+            "gdd_threshold": 500,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 43,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 680,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 44,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1060,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 45,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1125,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 46,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 900,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 47,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 1430,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 48,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 1750,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 49,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1120,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 50,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1870,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 51,
+        "fields": {
+            "crop": 6,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 2250,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 52,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 175,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 53,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 175,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 54,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 175,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 55,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 1300,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 56,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 1300,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 57,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 1300,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 58,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 3,
+            "gdd_threshold": 2425,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 59,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 3,
+            "gdd_threshold": 2650,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 60,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 3,
+            "gdd_threshold": 3100,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 61,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 3238,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 62,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 3400,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 63,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 3850,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 64,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 3988,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 65,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 4150,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 66,
+        "fields": {
+            "crop": 10,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 4600,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 67,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 145,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 68,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 203,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 69,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 203,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 70,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 348,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 71,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 406,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 72,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 406,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 73,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 754,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 74,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 1059,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 75,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 1059,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 76,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 15,
+            "gdd_threshold": 1131,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 77,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 15,
+            "gdd_threshold": 1494,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 78,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 15,
+            "gdd_threshold": 1566,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 79,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1494,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 80,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1929,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 81,
+        "fields": {
+            "crop": 3,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 2001,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 82,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 70,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 83,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 70,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 84,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 70,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 85,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 210,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 86,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 210,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 87,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 210,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 88,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 410,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 89,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 510,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 90,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 560,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 91,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 660,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 92,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 780,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 93,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 890,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 94,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 12,
+            "gdd_threshold": 1000,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 95,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 12,
+            "gdd_threshold": 1180,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 96,
+        "fields": {
+            "crop": 5,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 12,
+            "gdd_threshold": 1340,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 97,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 70,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 98,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 70,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 99,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 70,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 100,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 220,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 101,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 230,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 102,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 230,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 103,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 520,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 104,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 560,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 105,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 580,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 106,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 690,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 107,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 740,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 108,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 850,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 109,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 12,
+            "gdd_threshold": 990,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 110,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 12,
+            "gdd_threshold": 1290,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 111,
+        "fields": {
+            "crop": 7,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 12,
+            "gdd_threshold": 1450,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 112,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 113,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 113,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 113,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 114,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 113,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 115,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 270,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 116,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 270,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 117,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 2,
+            "gdd_threshold": 270,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 118,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 833,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 119,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 1058,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 120,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 1283,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 121,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1170,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 122,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1395,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 123,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 1890,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 124,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 2025,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 125,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 2340,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 126,
+        "fields": {
+            "crop": 4,
+            "crop_stage_type": 3,
+            "crop_growth_stage": 7,
+            "gdd_threshold": 2970,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 127,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 75,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 128,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 1,
+            "gdd_threshold": 75,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 129,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 11,
+            "gdd_threshold": 180,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 130,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 11,
+            "gdd_threshold": 225,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 131,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 630,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 132,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 5,
+            "gdd_threshold": 750,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 133,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 705,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 134,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 4,
+            "gdd_threshold": 825,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 135,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 6,
+            "gdd_threshold": 810,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 136,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 6,
+            "gdd_threshold": 930,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 137,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 9,
+            "gdd_threshold": 915,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 138,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 9,
+            "gdd_threshold": 1035,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 139,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1125,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 140,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 8,
+            "gdd_threshold": 1245,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 141,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 1,
+            "crop_growth_stage": 10,
+            "gdd_threshold": 1200,
+            "config": 1
+        }
+    },
+    {
+        "model": "dcas.gddmatrix",
+        "pk": 142,
+        "fields": {
+            "crop": 9,
+            "crop_stage_type": 2,
+            "crop_growth_stage": 10,
+            "gdd_threshold": 1350,
+            "config": 1
+        }
+    }    
+]

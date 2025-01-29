@@ -1,0 +1,72 @@
+[
+    {
+        "model": "gap.crop",
+        "pk": 2,
+        "fields": {
+            "name": "Maize"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 8,
+        "fields": {
+            "name": "Finger Millet"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 6,
+        "fields": {
+            "name": "Sorghum"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 10,
+        "fields": {
+            "name": "Cassava"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 3,
+        "fields": {
+            "name": "Potato"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 5,
+        "fields": {
+            "name": "Sunflower"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 7,
+        "fields": {
+            "name": "Soybean"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 4,
+        "fields": {
+            "name": "Green Gram"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 9,
+        "fields": {
+            "name": "Cowpea"
+        }
+    },
+    {
+        "model": "gap.crop",
+        "pk": 1,
+        "fields": {
+            "name": "Common Beans"
+        }
+    }
+]

@@ -9,7 +9,8 @@ from django.contrib.gis.geos import Point
 from factory.django import DjangoModelFactory
 
 from gap.models import (
-    FarmCategory, FarmRSVPStatus, Farm
+    FarmCategory, FarmRSVPStatus, Farm, FarmRegistry,
+    FarmRegistryGroup
 )
 from gap.models.farm_group import FarmGroup
 
@@ -61,3 +62,28 @@ class FarmGroupFactory(DjangoModelFactory):
         model = FarmGroup
 
     name = factory.Sequence(lambda n: f'name-{n}')
+
+
+class FarmRegistryGroupFactory(DjangoModelFactory):
+    """Factory class for FarmRegistryGroup model."""
+
+    class Meta:  # noqa
+        model = FarmRegistryGroup
+
+    name = factory.Sequence(lambda n: f'name-{n}')
+    date_time = factory.Faker('date')
+
+
+class FarmRegistryFactory(DjangoModelFactory):
+    """Factory class for FarmRegistry model."""
+
+    class Meta:  # noqa
+        model = FarmRegistry
+
+    group = factory.SubFactory(FarmRegistryGroupFactory)
+    farm = factory.SubFactory(FarmFactory)
+    crop = factory.SubFactory('gap.factories.crop_insight.CropFactory')
+    crop_stage_type = factory.SubFactory(
+        'gap.factories.crop_insight.CropStageTypeFactory'
+    )
+    planting_date = factory.Faker('date')

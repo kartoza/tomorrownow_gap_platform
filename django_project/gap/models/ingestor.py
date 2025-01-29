@@ -38,6 +38,7 @@ class IngestorType:
     CABI_PRISE_EXCEL = 'Cabi Prise Excel'
     CBAM_BIAS_ADJUST = 'CBAM Bias Adjusted'
     DCAS_RULE = 'DCAS Rules'
+    FARM_REGISTRY = 'Farm Registry'
 
 
 class IngestorSessionStatus:
@@ -82,6 +83,7 @@ class BaseSession(models.Model):
             ),
             (IngestorType.CBAM_BIAS_ADJUST, IngestorType.CBAM_BIAS_ADJUST),
             (IngestorType.DCAS_RULE, IngestorType.DCAS_RULE),
+            (IngestorType.FARM_REGISTRY, IngestorType.FARM_REGISTRY),
         ),
         max_length=512
     )
@@ -208,6 +210,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.cabi_prise import CabiPriseIngestor
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
         from gap.ingestor.dcas_rule import DcasRuleIngestor
+        from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -234,6 +237,8 @@ class IngestorSession(BaseSession):
             ingestor = CBAMBiasAdjustIngestor
         elif self.ingestor_type == IngestorType.DCAS_RULE:
             ingestor = DcasRuleIngestor
+        elif self.ingestor_type == IngestorType.FARM_REGISTRY:
+            ingestor = DCASFarmRegistryIngestor
 
         if ingestor:
             ingestor(self, working_dir).run()

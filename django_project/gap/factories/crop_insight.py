@@ -15,7 +15,7 @@ from gap.models import (
     FarmShortTermForecast, FarmShortTermForecastData,
     FarmProbabilisticWeatherForcast, FarmSuitablePlantingWindowSignal,
     FarmPlantingWindowTable, FarmPestManagement, FarmCropVariety,
-    CropInsightRequest
+    CropInsightRequest, CropStageType
 )
 
 
@@ -134,3 +134,12 @@ class CropInsightRequestFactory(DjangoModelFactory):
 
     unique_id = factory.Faker('uuid4')
     requested_by = factory.SubFactory(UserF)
+
+
+class CropStageTypeFactory(DjangoModelFactory):
+    """Factory class for CropStageType model."""
+
+    class Meta:  # noqa
+        model = CropStageType
+
+    name = factory.Sequence(lambda n: f'name-{n}')

@@ -41,17 +41,18 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | Product | Provider | Resolution | Source | Version | API product_type |
 |---------|----------|------------|--------|---------|------------------|
 | **Historical Data** |
-| CBAM Daily Historical Reanalysis (2012 - 2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis |
-| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Tomorrow.io | 4km² | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis_bias_adjust |
+| CBAM Daily Historical Reanalysis (2012 - 2023) | Tomorrow.io | 4km x 4km | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis |
+| CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Tomorrow.io | 4km x 4km | Tomorrow.io CBAM 1F enhanced bias-corrected reanalysis | 2012-2023 | cbam_historical_analysis_bias_adjust |
 | Ground Observations (TAHMO stations) | TAHMO weather stations | 300+ stations across East Africa | TAHMO Gap Filled Data (csv) | 2018-2024 | tahmo_ground_observation |
 | Ground Observations (Arable stations) | Arable weather stations | 300+ stations across East Africa | Arable (API) | | arable_ground_observation |
 | Disdrometer Observation Data | disdrometers | | Tahmo (API) | | disdrometer_ground_observation |
 | Radiosonde Observations (Windborne) | WindBorne Systems | 100 weather balloons| Windborne Systems | | windborne_radiosonde_observation |
 | **Weather Forecasts** |
-| CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km² | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | cbam_shortterm_forecast |
-| Salient Seasonal weather forecast (3-months) | Salient | 9km² | Salient (API) | v9 | salient_seasonal_forecast |
+| CBAM Short-Term weather forecast (14-days) | Tomorrow.io | 4km x 4km | Tomorrow.io CBAM satellite enhanced short-term weather forecasts | | cbam_shortterm_forecast |
+| Salient Seasonal weather forecast (3-months) | Salient | 28km x 28km | Salient (API) | v9 | salient_seasonal_forecast |
 | |
 
+> Note: The Today value from the CBAM sort term weather forecast is store and can be accessed for historical records dating back to 12 October 2024
 
 ## Attributes Table
 
@@ -107,6 +108,10 @@ TomorrowNow provides access to the data through a RESTful API, available at http
 | CBAM Daily Historical Reanalysis (Bias-Corrected) (2012-2023) | Max Total Temperature | Maximum temperature (0000:2300) | °C | max_temperature |
 | **Ground Observations (TAHMO stations)** |
 | Ground Observations (TAHMO stations) | Precipitation | | mm/day | precipitation |
+| Ground Observations (TAHMO stations) | Precipitation Total Chirps | | % | precipitation_total_chirps |
+| Ground Observations (TAHMO stations) | Precipitation Total Chirps Qflag | | % | precipitation_total_chirps_qflag |
+| Ground Observations (TAHMO stations) | Precipitation Total Era5 | | % | precipitation_total_era5 |
+| Ground Observations (TAHMO stations) | Precipitation Total Qflag | | % | precipitation_total_qflag |
 | Ground Observations (TAHMO stations) | Solar radiation | | Wh/m2 | solar_radiation |
 | Ground Observations (TAHMO stations) | Relative Humidity Max | | % | max_relative_humidity |
 | Ground Observations (TAHMO stations) | Relative Humidity Min | | % | min_relative_humidity |

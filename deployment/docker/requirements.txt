@@ -95,3 +95,21 @@ duckdb==1.1.3
 
 # durable rules engine
 durable-rules==2.0.28
+
+# sqlalchemy
+sqlalchemy==2.0.36
+GeoAlchemy2==0.16.0
+
+# dask geopandas
+dask-geopandas==0.4.2
+
+# duckdb
+duckdb==1.1.3
+pyarrow==18.1.0
+
+# paramiko (ssh)
+paramiko==3.5.0
+
+# djngo-import-export
+django-import-export==4.3.4
+django-import-export-celery==1.7.1

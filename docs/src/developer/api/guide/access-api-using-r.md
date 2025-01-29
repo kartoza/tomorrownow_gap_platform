@@ -51,6 +51,7 @@ This tutorial demonstrates how to download a NetCDF file from GAP API, save it l
 
     - You can download the full code from [here](https://github.com/kartoza/tomorrownow_gap/blob/main/examples/sample.R).
     - Once you have downloaded the sample code, then you can open the file from RStudio (File -> Open File).
+    - Other example [fetch by points](https://github.com/kartoza/tomorrownow_gap/blob/main/examples/sample_points.R) is to show an example fetching the data by list of point from CSV file.
 
 2. **Set the username and password**
 
