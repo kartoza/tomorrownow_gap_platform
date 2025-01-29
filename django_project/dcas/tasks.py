@@ -207,7 +207,7 @@ def run_dcas(request_id=None):
     else:
         dcas_request.start_time = None
         dcas_request.end_time = None
-        dcas_request.status=TaskStatus.PENDING
+        dcas_request.status = TaskStatus.PENDING
         dcas_request.progress_text = None
         dcas_request.save()
 

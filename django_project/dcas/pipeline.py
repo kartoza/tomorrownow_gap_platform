@@ -17,7 +17,7 @@ from dask.dataframe.core import DataFrame as dask_df
 from django.contrib.gis.db.models import Union
 from sqlalchemy import create_engine
 
-from gap.models import FarmRegistryGroup, FarmRegistry, Grid, CropGrowthStage
+from gap.models import FarmRegistry, Grid, CropGrowthStage
 from dcas.models import DCASConfig, DCASConfigCountry
 from dcas.partitions import (
     process_partition_total_gdd,
