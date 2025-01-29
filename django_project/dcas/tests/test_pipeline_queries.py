@@ -80,12 +80,12 @@ class DCASQueriesTest(DCASPipelineBaseTest):
     def test_grid_data_with_crop_meta(self):
         """Test grid_data_with_crop_meta functions."""
         pipeline = DCASDataPipeline(
-            self.farm_registry_group, self.request_date
+            [self.farm_registry_group.id], self.request_date
         )
         conn_engine = create_engine(pipeline._conn_str())
         pipeline.data_query.setup(conn_engine)
         df = pipeline.data_query.grid_data_with_crop_meta(
-            self.farm_registry_group
+            [self.farm_registry_group.id]
         )
         self.assertIn('crop_id', df.columns)
         self.assertIn('crop_stage_type_id', df.columns)
