@@ -116,8 +116,8 @@ class TioShortTermCollector(BaseIngestor):
                 continue
 
             # Get the data
-            location_input = DatasetReaderInput.from_polygon(
-                grid.geometry
+            location_input = DatasetReaderInput.from_point(
+                grid.geometry.centroid
             )
             forecast_attrs = dataset.datasetattribute_set.filter(
                 dataset__type__type=CastType.FORECAST
