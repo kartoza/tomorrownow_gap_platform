@@ -35,13 +35,14 @@ class ArableAPI:
             raise Exception('Base URL for arable is not set.')
 
         self.DEVICES = f'{base_url}/devices'
-        self.DATA = f'{base_url}/data/daily'
+        self.DATA = f'{base_url}/data/hourly'
 
 
 class ArableIngestor(BaseIngestor):
     """Ingestor for arable data."""
 
     api_key = None
+    hourly_exclude = ['mean_rh', 'meant']
 
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
@@ -60,12 +61,14 @@ class ArableIngestor(BaseIngestor):
             name=DATASET_NAME,
             provider=self.provider,
             type=self.dataset_type,
-            time_step=DatasetTimeStep.DAILY,
+            time_step=DatasetTimeStep.HOURLY,
             store_type=DatasetStore.TABLE
         )
 
         self.attributes = {}
         for dataset_attr in self.dataset.datasetattribute_set.all():
+            if dataset_attr.source in self.hourly_exclude:
+                continue
             self.attributes[dataset_attr.source] = dataset_attr.id
 
     def get(self, url, params=None, page=1, is_pagination=True):
