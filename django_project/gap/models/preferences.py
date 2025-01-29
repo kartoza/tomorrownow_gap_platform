@@ -72,10 +72,13 @@ def user_file_uploader_config_default() -> dict:
 def default_dcas_config() -> dict:
     """Return dictionary for default dcas config."""
     return {
-        'weekday': 1,  # Monday=0, Sunday=6
+        'weekdays': [1],  # Monday=0, Sunday=6
         'override_request_date': None,
         'farm_npartitions': None,
-        'grid_crop_npartitions': None
+        'grid_crop_npartitions': None,
+        'farm_registries': [],
+        'store_csv_to_minio': False,
+        'store_csv_to_sftp': False,
     }
 
 
@@ -177,6 +180,15 @@ class Preferences(SingletonModel):
         blank=True,
         null=True,
         help_text='Config for DCAS module.'
+    )
+
+    # duckdb configuration
+    duckdb_threads_num = models.IntegerField(
+        default=2,
+        help_text=(
+            'Number of threads for duckdb computation, '
+            'higher number will use more memory and cpu.'
+        )
     )
 
     class Meta:  # noqa: D106

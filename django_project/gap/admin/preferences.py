@@ -56,6 +56,7 @@ class PreferencesAdmin(admin.ModelAdmin):
                 'fields': (
                     'ingestor_config',
                     'dask_threads_num',
+                    'duckdb_threads_num'
                 )
             }
         ),
