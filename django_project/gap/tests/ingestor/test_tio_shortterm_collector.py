@@ -141,11 +141,8 @@ class TioShortTermCollectorTest(BaseTestWithPatchResponses, TestCase):
                 _data,
                 {
                     'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': [
-                            [[0.0, 0.0], [0.0, 0.01], [0.01, 0.01],
-                             [0.01, 0.0], [0.0, 0.0]]
-                        ]
+                        'type': 'Point',
+                        'coordinates': [0.005, 0.005]
                     },
                     'data': [
                         {
