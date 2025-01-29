@@ -11,9 +11,8 @@ import traceback
 import datetime
 import logging
 import tempfile
-from django.core.files.storage import default_storage
+from django.core.files.storage import storages
 from django.utils import timezone
-from django.conf import settings
 
 from core.models.background_task import TaskStatus
 from gap.models import FarmRegistryGroup, FarmRegistry, Preferences, Farm
@@ -110,18 +109,23 @@ class DCASPreferences:
     @staticmethod
     def object_storage_path(filename):
         """Return object storage upload path for csv output."""
+        dir_prefix = os.environ.get('MINIO_GAP_AWS_DIR_PREFIX', '')
         return (
-            f'{settings.STORAGE_DIR_PREFIX}{DCAS_OBJECT_STORAGE_DIR}/'
+            f'{dir_prefix}/{DCAS_OBJECT_STORAGE_DIR}/'
             f'{filename}'
         )
 
 
 def save_dcas_ouput_to_object_storage(file_path):
     """Store dcas csv file to object_storage."""
-    s3_storage = default_storage
+    s3_storage = storages['gap_products']
     with open(file_path) as content:
-        out_path = os.path.join('dcas_csv', os.path.basename(file_path))
-        s3_storage.save(out_path, content)
+        s3_storage.save(
+            DCASPreferences.object_storage_path(
+                os.path.basename(file_path)
+            ),
+            content
+        )
     return True
 
 
@@ -144,6 +148,7 @@ def export_dcas_output(request_id, delivery_method):
     )
     with tempfile.TemporaryDirectory() as tmpdir:
         dcas_output.TMP_BASE_DIR = tmpdir
+        dcas_output._setup_s3fs()
         is_success = False
         file_path = None
         filename = os.path.basename(dcas_output.output_csv_file_path)
@@ -169,10 +174,10 @@ def export_dcas_output(request_id, delivery_method):
                 dcas_ouput_file.path = (
                     DCASPreferences.object_storage_path(filename)
                 )
-                dcas_output.size = file_stats.st_size
+                dcas_ouput_file.size = file_stats.st_size
             else:
                 dcas_ouput_file.status = TaskStatus.STOPPED
-            dcas_output.save()
+            dcas_ouput_file.save()
 
 
 @shared_task(name="export_dcas_minio")
@@ -215,7 +220,7 @@ def run_dcas(request_id=None):
 
     if not dcas_config.is_scheduled_to_run:
         dcas_request.progress_text = (
-            f'DCAS: skipping weekday {current_dt.weekday()}'
+            f'DCAS: skipping weekday {dcas_config.request_date.weekday()}'
         )
         dcas_request.save()
         logger.info(dcas_request.progress_text)
@@ -251,13 +256,16 @@ def run_dcas(request_id=None):
     # run pipeline
     pipeline = DCASDataPipeline(
         dcas_config.farm_registry_groups, dcas_config.request_date,
-        crop_num_partitions=dcas_config.farm_num_partitions,
+        farm_num_partitions=dcas_config.farm_num_partitions,
         grid_crop_num_partitions=dcas_config.grid_crop_num_partitions,
         duck_db_num_threads=dcas_config.duck_db_num_threads
     )
 
     errors = None
     try:
+        logger.info(
+            f'Processing DCAS for request_date: {dcas_config.request_date}'
+        )
         pipeline.run()
     except Exception as ex:
         errors = str(ex)

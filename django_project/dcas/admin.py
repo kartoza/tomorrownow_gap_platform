@@ -21,7 +21,7 @@ from dcas.models import (
 )
 from dcas.resources import DCASErrorLogResource
 from core.utils.file import format_size
-from dcas.tasks import run_dcas
+from dcas.tasks import run_dcas, export_dcas_minio, export_dcas_sftp
 
 
 class ConfigByCountryInline(admin.TabularInline):
@@ -64,13 +64,39 @@ def trigger_dcas_processing(modeladmin, request, queryset):
     )
 
 
+@admin.action(description='Send DCAS output to minio')
+def trigger_dcas_output_to_minio(modeladmin, request, queryset):
+    """Send DCAS output to minio."""
+    export_dcas_minio.delay(queryset.first().id)
+    modeladmin.message_user(
+        request,
+        'Process will be started in background!',
+        messages.SUCCESS
+    )
+
+
+@admin.action(description='Send DCAS output to sftp')
+def trigger_dcas_output_to_sftp(modeladmin, request, queryset):
+    """Send DCAS output to sftp."""
+    export_dcas_sftp.delay(queryset.first().id)
+    modeladmin.message_user(
+        request,
+        'Process will be started in background!',
+        messages.SUCCESS
+    )
+
+
 @admin.register(DCASRequest)
 class DCASRequestAdmin(admin.ModelAdmin):
     """Admin page for DCASRequest."""
 
     list_display = ('requested_at', 'start_time', 'end_time', 'status')
     list_filter = ('country',)
-    actions = (trigger_dcas_processing,)
+    actions = (
+        trigger_dcas_processing,
+        trigger_dcas_output_to_minio,
+        trigger_dcas_output_to_sftp
+    )
 
 
 @admin.register(DCASOutput)
