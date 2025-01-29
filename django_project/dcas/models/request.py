@@ -38,8 +38,6 @@ class DCASRequest(models.Model):
         max_length=255,
         choices=TaskStatus.choices,
         default=TaskStatus.PENDING,
-        null=True,
-        blank=True,
         help_text="The status of the process."
     )
     progress_text = models.TextField(

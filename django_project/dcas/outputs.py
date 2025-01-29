@@ -205,8 +205,9 @@ class DCASPipelineOutput:
         print(f'writing dataframe to {file_path}')
         df.to_parquet(file_path)
 
-    def _upload_to_sftp(self, local_file):
+    def upload_to_sftp(self, local_file):
         """Upload CSV file to Docker SFTP."""
+        is_success = False
         try:
             print(f'Connecting to SFTP server at '
                   f'{settings.SFTP_HOST}:{settings.SFTP_PORT}...')
@@ -234,8 +235,11 @@ class DCASPipelineOutput:
             sftp.close()
             transport.close()
 
+            is_success = True
         except Exception as e:
             print(f"Failed to upload to SFTP: {e}")
+
+        return is_success
 
     def _get_connection(self, s3):
         endpoint = s3['AWS_ENDPOINT_URL']

@@ -465,10 +465,6 @@ class DCASDataPipeline:
 
         return file_path
 
-    def send_csv_to_sftp(self, file_path):
-        """Upload the given CSV file to SFTP."""
-        self.data_output._upload_to_sftp(file_path)
-
     def run(self):
         """Run data pipeline."""
         self.setup()
