@@ -110,8 +110,10 @@ class DCASPreferences:
     def object_storage_path(filename):
         """Return object storage upload path for csv output."""
         dir_prefix = os.environ.get('MINIO_GAP_AWS_DIR_PREFIX', '')
+        if dir_prefix and not dir_prefix.endswith('/'):
+            dir_prefix += '/'
         return (
-            f'{dir_prefix}/{DCAS_OBJECT_STORAGE_DIR}/'
+            f'{dir_prefix}{DCAS_OBJECT_STORAGE_DIR}/'
             f'{filename}'
         )
 
@@ -273,9 +275,6 @@ def run_dcas(request_id=None):
         logger.error(traceback.format_exc())
         raise ex
     finally:
-        # cleanup
-        pipeline.cleanup()
-
         dcas_request.end_time = timezone.now()
         if errors:
             dcas_request.progress_text = (
@@ -294,6 +293,9 @@ def run_dcas(request_id=None):
                 export_dcas_minio.delay(dcas_config.id)
             elif dcas_config.store_csv_to_sftp:
                 export_dcas_sftp.delay(dcas_config.id)
+
+        # cleanup
+        pipeline.cleanup()
 
 
 @shared_task(name='log_farms_without_messages')
