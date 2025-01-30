@@ -103,6 +103,7 @@ class Dataset(Definition):
             (DatasetStore.NETCDF, DatasetStore.NETCDF),
             (DatasetStore.ZARR, DatasetStore.ZARR),
             (DatasetStore.EXT_API, DatasetStore.EXT_API),
+            (DatasetStore.PARQUET, DatasetStore.PARQUET),
         ),
         max_length=512
     )

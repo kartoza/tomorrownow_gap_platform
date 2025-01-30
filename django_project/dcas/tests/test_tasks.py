@@ -8,18 +8,26 @@ Tomorrow Now GAP.
 import os
 import csv
 import tempfile
-from mock import patch
+from mock import patch, MagicMock
 import datetime
 import pytz
+import pandas as pd
 
 from gap.models import TaskStatus, Preferences
 from dcas.models import (
     DCASRequest,
-    DCASOutput, DCASDeliveryMethod
+    DCASOutput,
+    DCASDeliveryMethod,
+    DCASErrorLog,
+    DCASErrorType
 )
 from dcas.tests.base import DCASPipelineBaseTest
 from dcas.tasks import (
-    DCASPreferences, export_dcas_minio, export_dcas_sftp, run_dcas
+    DCASPreferences,
+    export_dcas_minio,
+    export_dcas_sftp,
+    run_dcas,
+    log_farms_without_messages
 )
 from gap.factories import FarmRegistryGroupFactory
 
@@ -218,3 +226,49 @@ class DCASPipelineTaskTest(DCASPipelineBaseTest):
             status=TaskStatus.COMPLETED
         ).first()
         self.assertTrue(check_request)
+
+    @patch("duckdb.connect")
+    def test_log_farms_without_messages(self, mocked_duck_db):
+        """Test log_farms_without_messages."""
+        # create request
+        request = DCASRequest.objects.create(
+            requested_at=datetime.datetime(
+                2025, 1, 27, 0, 0, 0,
+                tzinfo=pytz.UTC
+            )
+        )
+
+        # Mock DuckDB return DataFrames (Simulating chunked retrieval)
+        chunk_1 = pd.DataFrame(
+            {
+                'farm_id': [
+                    self.farm_registry_1.farm.id,
+                    self.farm_registry_2.farm.id
+                ],
+                'crop': ['Maize Early', 'Cassava Mid'],
+                'farm_unique_id': [1, 2],
+                'growth_stage': ['testA', 'testB']
+            }
+        )
+
+        expected_chunks = [chunk_1]
+
+        # Configure mock connection to return chunks in order
+        conn = MagicMock()
+        conn.sql.return_value.df.side_effect = expected_chunks
+        mocked_duck_db.return_value = conn
+
+        # run error handling
+        log_farms_without_messages(request.id, 2)
+
+        error_logs = DCASErrorLog.objects.filter(
+            request=request,
+            error_type=DCASErrorType.MISSING_MESSAGES
+        )
+        self.assertEqual(error_logs.count(), 2)
+        error_log1 = error_logs.filter(farm=self.farm_registry_1.farm).first()
+        self.assertTrue(error_log1)
+        self.assertIn('Farm 1', error_log1.error_message)
+        error_log2 = error_logs.filter(farm=self.farm_registry_2.farm).first()
+        self.assertTrue(error_log2)
+        self.assertIn('Farm 2', error_log2.error_message)

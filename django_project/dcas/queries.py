@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: DCAS Functions to process row data.
 """
 
+import datetime
 import pandas as pd
 from sqlalchemy import select, distinct, column, extract, func, cast
 from sqlalchemy.ext.automap import automap_base
@@ -283,30 +284,38 @@ class DataQuery:
         conndb.close()
         return df
 
-    def get_farms_without_messages(parquet_path: str, chunk_size: int = 500):
+    def get_farms_without_messages(
+        date: datetime.date, parquet_path: str, conn, chunk_size: int = 500
+    ):
         """
         Fetch farms without advisory messages using chunked processing.
 
+        :param date: FarmRegistries date to be filtered.
+        :type date: datetime.date
         :param parquet_path: Path to the final Parquet file.
         :type parquet_path: str
+        :param conn: DuckDB connection.
+        :type conn: DuckDB connection
         :param chunk_size: Number of records per chunk (default: 500).
         :type chunk_size: int
         :return: Generator yielding Pandas DataFrames in chunks.
         :rtype: Generator[pd.DataFrame]
         """
-        conn = duckdb.connect()
         offset = 0  # Start at the beginning
 
         try:
             while True:
                 query = f"""
-                    SELECT farm_id, crop_id
-                    FROM read_parquet('{parquet_path}')
+                    SELECT farm_id, crop, farm_unique_id, growth_stage
+                    FROM read_parquet('{parquet_path}', hive_partitioning=true)
                     WHERE message IS NULL
                     AND message_2 IS NULL
                     AND message_3 IS NULL
                     AND message_4 IS NULL
                     AND message_5 IS NULL
+                    AND year={date.year} AND month={date.month} AND
+                    day={date.day}
+                    ORDER BY registry_id
                     LIMIT {chunk_size} OFFSET {offset}
                 """
                 df = conn.sql(query).df()

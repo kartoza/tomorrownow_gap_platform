@@ -92,6 +92,11 @@ class DCASPreferences:
         """Check if process should store csv to sftp."""
         return self.dcas_config.get('store_csv_to_sftp', False)
 
+    @property
+    def trigger_error_handling(self):
+        """Check if process should trigger error handling."""
+        return self.dcas_config.get('trigger_error_handling', False)
+
     def to_dict(self):
         """Export the config to dict."""
         return {
@@ -103,7 +108,8 @@ class DCASPreferences:
             'grid_crop_num_partitions': self.grid_crop_num_partitions,
             'duck_db_num_threads': self.duck_db_num_threads,
             'store_csv_to_minio': self.store_csv_to_minio,
-            'store_csv_to_sftp': self.store_csv_to_sftp
+            'store_csv_to_sftp': self.store_csv_to_sftp,
+            'trigger_error_handling': self.trigger_error_handling
         }
 
     @staticmethod
@@ -290,16 +296,20 @@ def run_dcas(request_id=None):
 
         if dcas_request.status == TaskStatus.COMPLETED:
             if dcas_config.store_csv_to_minio:
-                export_dcas_minio.delay(dcas_config.id)
+                export_dcas_minio.delay(dcas_request.id)
             elif dcas_config.store_csv_to_sftp:
-                export_dcas_sftp.delay(dcas_config.id)
+                export_dcas_sftp.delay(dcas_request.id)
+
+            # Trigger error handling task
+            if dcas_config.trigger_error_handling:
+                log_farms_without_messages.delay(dcas_request.id)
 
         # cleanup
         pipeline.cleanup()
 
 
 @shared_task(name='log_farms_without_messages')
-def log_farms_without_messages(request_id=None, chunk_size=1000):
+def log_farms_without_messages(request_id, chunk_size=1000):
     """
     Celery task to log farms without messages using chunked queries.
 
@@ -309,20 +319,34 @@ def log_farms_without_messages(request_id=None, chunk_size=1000):
     :type chunk_size: int
     """
     try:
+        preferences = Preferences.load()
         # Get the most recent DCAS request
         dcas_request = DCASRequest.objects.get(
             id=request_id
         )
 
         # Initialize pipeline output to get the directory path
-        dcas_output = DCASPipelineOutput(request_id)
-        parquet_path = dcas_output._get_directory_path(
-            dcas_output.DCAS_OUTPUT_DIR + '/*.parquet'
+        dcas_output = DCASPipelineOutput(
+            dcas_request.requested_at.date(),
+            duck_db_num_threads=preferences.duckdb_threads_num
         )
+        dcas_output._setup_s3fs()
+        parquet_path = dcas_output._get_directory_path(
+            dcas_output.DCAS_OUTPUT_DIR
+        ) + '/iso_a3=*/year=*/month=*/day=*/*.parquet'
+
+        # Clear existing DCASErrorLog
+        DCASErrorLog.objects.filter(
+            request=dcas_request,
+            error_type=DCASErrorType.MISSING_MESSAGES
+        ).delete()
 
         # Query farms without messages in chunks
         for df_chunk in DataQuery.get_farms_without_messages(
-            parquet_path, chunk_size=chunk_size
+            dcas_request.requested_at.date(),
+            parquet_path,
+            dcas_output._get_connection(dcas_output.s3),
+            chunk_size=chunk_size
         ):
             if df_chunk.empty:
                 logger.info(
@@ -333,9 +357,7 @@ def log_farms_without_messages(request_id=None, chunk_size=1000):
             # Log missing messages in the database
             error_logs = []
             for _, row in df_chunk.iterrows():
-                try:
-                    farm = Farm.objects.get(id=row['farm_id'])
-                except Farm.DoesNotExist:
+                if not Farm.objects.filter(id=row['farm_id']).exists():
                     logger.warning(
                         f"Farm ID {row['farm_id']} not found, skipping."
                     )
@@ -343,10 +365,11 @@ def log_farms_without_messages(request_id=None, chunk_size=1000):
 
                 error_logs.append(DCASErrorLog(
                     request=dcas_request,
-                    farm_id=farm,
+                    farm_id=row['farm_id'],
                     error_type=DCASErrorType.MISSING_MESSAGES,
                     error_message=(
-                        f"Farm {row['farm_id']} (Crop {row['crop_id']}) "
+                        f"Farm {row['farm_unique_id']} "
+                        f"({row['crop']} - {row['growth_stage']}) "
                         f"has no advisory messages."
                     )
                 ))
