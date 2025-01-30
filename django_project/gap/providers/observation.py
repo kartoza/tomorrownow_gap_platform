@@ -735,6 +735,24 @@ class TahmoParquetReader(ObservationDatasetReader):
                 LIMIT 10
                 """  # Do we need a limit?
             )
+        # Handle Polygon Query
+        elif self.location_input.type == LocationInputType.POLYGON:
+            polygon_wkt = self.location_input.polygon.wkt
+            self.query = (
+                f"""
+                SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
+                {attributes}
+                FROM read_parquet(
+                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    hive_partitioning=true)
+                WHERE year >= {start_date.year} AND year <= {end_date.year}
+                AND month >= {start_date.month} AND month <= {end_date.month}
+                AND day >= {start_date.day} AND day <= {end_date.day}
+                AND ST_Within(ST_GeomFromWKB(geometry),
+                ST_GeomFromText('{polygon_wkt}'))
+                ORDER BY date
+                """
+            )
 
         else:
             raise NotImplementedError(
