@@ -333,8 +333,8 @@ def log_farms_without_messages(request_id, chunk_size=1000):
         dcas_output._setup_s3fs()
         parquet_path = dcas_output._get_directory_path(
             dcas_output.DCAS_OUTPUT_DIR
-        )+ '/iso_a3=*/year=*/month=*/day=*/*.parquet'
-        print(parquet_path)
+        ) + '/iso_a3=*/year=*/month=*/day=*/*.parquet'
+
         # Clear existing DCASErrorLog
         DCASErrorLog.objects.filter(
             request=dcas_request,
