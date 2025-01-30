@@ -693,29 +693,53 @@ class TahmoParquetReader(ObservationDatasetReader):
         :param end_date:  end date for reading historical data
         :type end_date: datetime
         """
-        if self.location_input.type != LocationInputType.BBOX:
-            raise NotImplementedError('Only BBOX is supported!')
-
         attributes = ', '.join(
             [a.attribute.variable_name for a in self.attributes]
         )
         s3_path = self._get_directory_path()
-        points = self.location_input.points
-        self.query = (
-            f"""
-            SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
-            {attributes}
-            FROM read_parquet('{s3_path}country=*/year=*/month=*/*.parquet',
-            hive_partitioning=true)
-            WHERE year>={start_date.year} AND month>={start_date.month} AND
-            day>={start_date.day} AND
-            year<={end_date.year} AND month<={end_date.month} AND
-            day<={end_date.day} AND
-            ST_Within(ST_GeomFromWKB(geometry), ST_MakeEnvelope(
-            {points[0].x}, {points[0].y}, {points[1].x}, {points[1].y}))
-            ORDER BY date
-            """
-        )
+        # Handle BBOX Query
+        if self.location_input.type == LocationInputType.BBOX:
+            points = self.location_input.points
+            self.query = (
+                f"""
+                SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
+                {attributes}
+                FROM read_parquet(
+                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    hive_partitioning=true)
+                WHERE year>={start_date.year} AND month>={start_date.month} AND
+                day>={start_date.day} AND
+                year<={end_date.year} AND month<={end_date.month} AND
+                day<={end_date.day} AND
+                ST_Within(ST_GeomFromWKB(geometry), ST_MakeEnvelope(
+                {points[0].x}, {points[0].y}, {points[1].x}, {points[1].y}))
+                ORDER BY date
+                """
+            )
+
+        # Handle Point Query
+        elif self.location_input.type == LocationInputType.POINT:
+            query_point = self.location_input.point
+            self.query = (
+                f"""
+                SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
+                {attributes}
+                FROM read_parquet(
+                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    hive_partitioning=true)
+                WHERE year >= {start_date.year} AND year <= {end_date.year}
+                AND month >= {start_date.month} AND month <= {end_date.month}
+                AND day >= {start_date.day} AND day <= {end_date.day}
+                ORDER BY ST_Distance(ST_GeomFromWKB(geometry),
+                ST_GeomFromText('POINT({query_point.x} {query_point.y})')) ASC
+                LIMIT 10
+                """  # Do we need a limit?
+            )
+
+        else:
+            raise NotImplementedError(
+                'Only BBOX and Point queries are supported!'
+            )
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
