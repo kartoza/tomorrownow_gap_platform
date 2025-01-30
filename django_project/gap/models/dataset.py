@@ -41,6 +41,7 @@ class DatasetStore:
     ZARR = 'ZARR'
     EXT_API = 'EXT_API'
     ZIP_FILE = 'ZIP_FILE'
+    PARQUET = 'PARQUET'
 
 
 class DatasetTimeStep:
@@ -102,6 +103,7 @@ class Dataset(Definition):
             (DatasetStore.NETCDF, DatasetStore.NETCDF),
             (DatasetStore.ZARR, DatasetStore.ZARR),
             (DatasetStore.EXT_API, DatasetStore.EXT_API),
+            (DatasetStore.PARQUET, DatasetStore.PARQUET),
         ),
         max_length=512
     )
@@ -150,6 +152,7 @@ class DataSourceFile(models.Model):
             (DatasetStore.NETCDF, DatasetStore.NETCDF),
             (DatasetStore.ZARR, DatasetStore.ZARR),
             (DatasetStore.ZIP_FILE, DatasetStore.ZIP_FILE),
+            (DatasetStore.PARQUET, DatasetStore.PARQUET),
         ),
         max_length=512
     )
