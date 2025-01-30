@@ -10,7 +10,7 @@ from gap.models import Dataset, DatasetStore
 from gap.providers.airborne_observation import ObservationAirborneDatasetReader
 from gap.providers.cbam import CBAMZarrReader, CBAMNetCDFReader  # noqa
 from gap.providers.observation import (
-    ObservationDatasetReader, TahmoParquetReader
+    ObservationDatasetReader, ObservationParquetReader
 )
 from gap.providers.salient import (
     SalientNetCDFReader, SalientZarrReader
@@ -37,7 +37,7 @@ def get_reader_from_dataset(dataset: Dataset):
     elif dataset.provider.name == NetCDFProvider.SALIENT:
         return SalientZarrReader
     # elif dataset.name == 'Tahmo Ground Observational':
-    #     return TahmoParquetReader
+    #     return ObservationParquetReader
     elif dataset.provider.name in ['Tahmo', 'Arable']:
         return ObservationDatasetReader
     elif dataset.provider.name in [WINBORNE_PROVIDER]:

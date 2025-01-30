@@ -24,6 +24,8 @@ from django.conf import settings
 from gap.models import (
     Dataset,
     DatasetAttribute,
+    DataSourceFile,
+    DatasetStore,
     Station,
     Measurement,
     Preferences
@@ -537,7 +539,7 @@ class ObservationDatasetReader(BaseDatasetReader):
         )
 
 
-class TahmoParquetReaderValue(DatasetReaderValue):
+class ObservationParquetReaderValue(DatasetReaderValue):
     """Class to generate the query output from Parquet files."""
 
     def __init__(
@@ -547,7 +549,7 @@ class TahmoParquetReaderValue(DatasetReaderValue):
             start_date: datetime,
             end_date: datetime,
             query) -> None:
-        """Initialize TahmoParquetReaderValue class.
+        """Initialize ObservationParquetReaderValue class.
 
         :param val: value that has been read
         :type val: List[DatasetTimelineValue]
@@ -604,7 +606,7 @@ class TahmoParquetReaderValue(DatasetReaderValue):
                     yield chunk
 
 
-class TahmoParquetReader(ObservationDatasetReader):
+class ObservationParquetReader(ObservationDatasetReader):
     """Class to read tahmo dataset in GeoParquet."""
 
     def __init__(
@@ -613,7 +615,7 @@ class TahmoParquetReader(ObservationDatasetReader):
             end_date: datetime,
             altitudes: Tuple[float, float] = None
     ) -> None:
-        """Initialize TahmoParquetReader class.
+        """Initialize ObservationParquetReader class.
 
         :param dataset: Dataset from observation provider
         :type dataset: Dataset
@@ -663,13 +665,24 @@ class TahmoParquetReader(ObservationDatasetReader):
         return results
 
     def _get_directory_path(self):
-        return (
-            f"s3://{self.s3['AWS_BUCKET_NAME']}/"
-            f"{self.s3['AWS_DIR_PREFIX']}tahmo/"
-        )
+        """Fetch the DataSourceFile for the dataset."""
+        data_source = DataSourceFile.objects.filter(
+            dataset=self.dataset,
+            format=DatasetStore.PARQUET,
+            is_latest=True
+        ).order_by('-id').first()
+
+        if not data_source:
+            raise ValueError(
+                "No valid DataSourceFile found for this dataset."
+            )
+
+        return data_source.file.url
 
     def _get_connection(self):
-        conn = duckdb.connect(config={
+        duckdb_threads = Preferences.load().duckdb_threads_num
+        
+        config={
             'enable_object_cache': True,
             's3_access_key_id': self.s3['AWS_ACCESS_KEY_ID'],
             's3_secret_access_key': self.s3['AWS_SECRET_ACCESS_KEY'],
@@ -677,7 +690,11 @@ class TahmoParquetReader(ObservationDatasetReader):
             's3_url_style': 'path',
             's3_endpoint': self.s3['AWS_ENDPOINT_URL'],
             's3_use_ssl': not settings.DEBUG
-        })
+        }
+        # Only add 'threads' key if a valid thread count exists
+        if duckdb_threads:
+            config['threads'] = duckdb_threads
+        conn = duckdb.connect(config=config)
         conn.install_extension("httpfs")
         conn.load_extension("httpfs")
         conn.install_extension("spatial")
@@ -697,12 +714,14 @@ class TahmoParquetReader(ObservationDatasetReader):
             [a.attribute.variable_name for a in self.attributes]
         )
         s3_path = self._get_directory_path()
+        # Determine if dataset has time column
+        time_column = "time," if self.has_time_column else ""
         # Handle BBOX Query
         if self.location_input.type == LocationInputType.BBOX:
             points = self.location_input.points
             self.query = (
                 f"""
-                SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
+                SELECT date, {time_column}, loc_y as lat, loc_x as lon, st_code as station_id,
                 {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
@@ -722,7 +741,7 @@ class TahmoParquetReader(ObservationDatasetReader):
             query_point = self.location_input.point
             self.query = (
                 f"""
-                SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
+                SELECT date, {time_column}, loc_y as lat, loc_x as lon, st_code as station_id,
                 {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
@@ -740,7 +759,7 @@ class TahmoParquetReader(ObservationDatasetReader):
             polygon_wkt = self.location_input.polygon.wkt
             self.query = (
                 f"""
-                SELECT date, loc_y as lat, loc_x as lon, st_code as station_id,
+                SELECT date, {time_column}, loc_y as lat, loc_x as lon, st_code as station_id,
                 {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
@@ -765,7 +784,7 @@ class TahmoParquetReader(ObservationDatasetReader):
         :return: Data Value.
         :rtype: DatasetReaderValue
         """
-        return TahmoParquetReaderValue(
+        return ObservationParquetReaderValue(
             self._get_connection(), self.location_input, self.attributes,
             self.start_date, self.end_date, self.query
         )
