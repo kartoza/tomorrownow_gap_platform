@@ -144,14 +144,21 @@ class DCASErrorLogAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "id",
         "request_id",
-        "farm_id",
+        "get_farm_unique_id",
         "error_type",
         "error_message",
         "logged_at",
     )
 
-    search_fields = ("error_message", "farm_id", "request__id")
-    list_filter = ("error_type", "logged_at")
+    search_fields = ("error_message", "farm__unique_id", "request__id")
+    list_filter = ("error_type", "logged_at", "request_id")
+
+    def get_farm_unique_id(self, obj: DCASErrorLog):
+        """Get the farm unique ID."""
+        return obj.farm.unique_id
+
+    get_farm_unique_id.short_description = 'Farm ID'
+    get_farm_unique_id.admin_order_field = 'farm__unique_id'
 
 # GDD Config and Matrix
 

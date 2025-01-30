@@ -326,11 +326,15 @@ def log_farms_without_messages(request_id, chunk_size=1000):
         )
 
         # Initialize pipeline output to get the directory path
-        dcas_output = DCASPipelineOutput(dcas_request.requested_at.date())
-        parquet_path = dcas_output._get_directory_path(
-            dcas_output.DCAS_OUTPUT_DIR + '/*.parquet'
+        dcas_output = DCASPipelineOutput(
+            dcas_request.requested_at.date(),
+            duck_db_num_threads=preferences.duckdb_threads_num
         )
-
+        dcas_output._setup_s3fs()
+        parquet_path = dcas_output._get_directory_path(
+            dcas_output.DCAS_OUTPUT_DIR
+        )+ '/iso_a3=*/year=*/month=*/day=*/*.parquet'
+        print(parquet_path)
         # Clear existing DCASErrorLog
         DCASErrorLog.objects.filter(
             request=dcas_request,
@@ -340,8 +344,9 @@ def log_farms_without_messages(request_id, chunk_size=1000):
         # Query farms without messages in chunks
         for df_chunk in DataQuery.get_farms_without_messages(
             dcas_request.requested_at.date(),
-            parquet_path, chunk_size=chunk_size,
-            num_threads=preferences.duckdb_threads_num
+            parquet_path,
+            dcas_output._get_connection(dcas_output.s3),
+            chunk_size=chunk_size
         ):
             if df_chunk.empty:
                 logger.info(
@@ -363,7 +368,8 @@ def log_farms_without_messages(request_id, chunk_size=1000):
                     farm_id=row['farm_id'],
                     error_type=DCASErrorType.MISSING_MESSAGES,
                     error_message=(
-                        f"Farm {row['farm_id']} (Crop {row['crop_id']}) "
+                        f"Farm {row['farm_unique_id']} "
+                        f"({row['crop']} - {row['growth_stage']}) "
                         f"has no advisory messages."
                     )
                 ))

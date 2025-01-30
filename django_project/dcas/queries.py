@@ -285,30 +285,29 @@ class DataQuery:
         return df
 
     def get_farms_without_messages(
-        date: datetime.date, parquet_path: str, chunk_size: int = 500,
-        num_threads = None
+        date: datetime.date, parquet_path: str, conn, chunk_size: int = 500
     ):
         """
         Fetch farms without advisory messages using chunked processing.
 
+        :param date: FarmRegistries date to be filtered.
+        :type date: datetime.date
         :param parquet_path: Path to the final Parquet file.
         :type parquet_path: str
+        :param conn: DuckDB connection.
+        :type conn: DuckDB connection
         :param chunk_size: Number of records per chunk (default: 500).
         :type chunk_size: int
         :return: Generator yielding Pandas DataFrames in chunks.
         :rtype: Generator[pd.DataFrame]
         """
-        config = {}
-        if num_threads is not None:
-            config['threads'] = num_threads
-        conn = duckdb.connect(config=config)
         offset = 0  # Start at the beginning
 
         try:
             while True:
                 query = f"""
-                    SELECT farm_id, crop_id
-                    FROM read_parquet('{parquet_path}')
+                    SELECT farm_id, crop, farm_unique_id, growth_stage
+                    FROM read_parquet('{parquet_path}', hive_partitioning=true)
                     WHERE message IS NULL
                     AND message_2 IS NULL
                     AND message_3 IS NULL
