@@ -21,7 +21,12 @@ from dcas.models import (
 )
 from dcas.resources import DCASErrorLogResource
 from core.utils.file import format_size
-from dcas.tasks import run_dcas, export_dcas_minio, export_dcas_sftp
+from dcas.tasks import (
+    run_dcas,
+    export_dcas_minio,
+    export_dcas_sftp,
+    log_farms_without_messages
+)
 
 
 class ConfigByCountryInline(admin.TabularInline):
@@ -86,6 +91,17 @@ def trigger_dcas_output_to_sftp(modeladmin, request, queryset):
     )
 
 
+@admin.action(description='Trigger DCAS error handling')
+def trigger_dcas_error_handling(modeladmin, request, queryset):
+    """Trigger DCAS error handling."""
+    log_farms_without_messages.delay(queryset.first().id)
+    modeladmin.message_user(
+        request,
+        'Process will be started in background!',
+        messages.SUCCESS
+    )
+
+
 @admin.register(DCASRequest)
 class DCASRequestAdmin(admin.ModelAdmin):
     """Admin page for DCASRequest."""
@@ -95,7 +111,8 @@ class DCASRequestAdmin(admin.ModelAdmin):
     actions = (
         trigger_dcas_processing,
         trigger_dcas_output_to_minio,
-        trigger_dcas_output_to_sftp
+        trigger_dcas_output_to_sftp,
+        trigger_dcas_error_handling
     )
 
 
