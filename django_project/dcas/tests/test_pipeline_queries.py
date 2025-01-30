@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import re
+import datetime
 from mock import patch, MagicMock
 import pandas as pd
 from sqlalchemy import create_engine
@@ -47,6 +48,7 @@ class DCASQueriesTest(DCASPipelineBaseTest):
         # Call the function
         result_chunks = list(
             DataQuery.get_farms_without_messages(
+                datetime.date(2025, 1, 1),
                 "/tmp/dcas/farm_crop.parquet", chunk_size=2
             )
         )
@@ -66,7 +68,10 @@ class DCASQueriesTest(DCASPipelineBaseTest):
             r"AND message_2 IS NULL "
             r"AND message_3 IS NULL "
             r"AND message_4 IS NULL "
-            r"AND message_5 IS NULL"
+            r"AND message_5 IS NULL "
+            r"AND year=2025 AND month=1 AND "
+            r"day=1 "
+            r"ORDER BY registry_id "
             r"(\s+LIMIT\s+\d+\s+OFFSET\s+\d+)?"
         )
 

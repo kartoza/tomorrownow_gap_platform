@@ -314,7 +314,7 @@ class DataQuery:
                     AND message_3 IS NULL
                     AND message_4 IS NULL
                     AND message_5 IS NULL
-                    WHERE year={date.year} AND month={date.month} AND
+                    AND year={date.year} AND month={date.month} AND
                     day={date.day}
                     ORDER BY registry_id
                     LIMIT {chunk_size} OFFSET {offset}
