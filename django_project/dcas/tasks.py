@@ -290,9 +290,9 @@ def run_dcas(request_id=None):
 
         if dcas_request.status == TaskStatus.COMPLETED:
             if dcas_config.store_csv_to_minio:
-                export_dcas_minio.delay(dcas_config.id)
+                export_dcas_minio.delay(dcas_request.id)
             elif dcas_config.store_csv_to_sftp:
-                export_dcas_sftp.delay(dcas_config.id)
+                export_dcas_sftp.delay(dcas_request.id)
 
         # cleanup
         pipeline.cleanup()
