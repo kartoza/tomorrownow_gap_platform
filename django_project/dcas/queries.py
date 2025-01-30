@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: DCAS Functions to process row data.
 """
 
+import datetime
 import pandas as pd
 from sqlalchemy import select, distinct, column, extract, func, cast
 from sqlalchemy.ext.automap import automap_base
@@ -283,7 +284,10 @@ class DataQuery:
         conndb.close()
         return df
 
-    def get_farms_without_messages(parquet_path: str, chunk_size: int = 500):
+    def get_farms_without_messages(
+        date: datetime.date, parquet_path: str, chunk_size: int = 500,
+        num_threads = None
+    ):
         """
         Fetch farms without advisory messages using chunked processing.
 
@@ -294,7 +298,10 @@ class DataQuery:
         :return: Generator yielding Pandas DataFrames in chunks.
         :rtype: Generator[pd.DataFrame]
         """
-        conn = duckdb.connect()
+        config = {}
+        if num_threads is not None:
+            config['threads'] = num_threads
+        conn = duckdb.connect(config=config)
         offset = 0  # Start at the beginning
 
         try:
@@ -307,6 +314,9 @@ class DataQuery:
                     AND message_3 IS NULL
                     AND message_4 IS NULL
                     AND message_5 IS NULL
+                    WHERE year={date.year} AND month={date.month} AND
+                    day={date.day}
+                    ORDER BY registry_id
                     LIMIT {chunk_size} OFFSET {offset}
                 """
                 df = conn.sql(query).df()

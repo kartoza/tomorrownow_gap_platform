@@ -299,7 +299,7 @@ def run_dcas(request_id=None):
 
 
 @shared_task(name='log_farms_without_messages')
-def log_farms_without_messages(request_id=None, chunk_size=1000):
+def log_farms_without_messages(request_id, chunk_size=1000):
     """
     Celery task to log farms without messages using chunked queries.
 
@@ -309,20 +309,23 @@ def log_farms_without_messages(request_id=None, chunk_size=1000):
     :type chunk_size: int
     """
     try:
+        preferences = Preferences.load()
         # Get the most recent DCAS request
         dcas_request = DCASRequest.objects.get(
             id=request_id
         )
 
         # Initialize pipeline output to get the directory path
-        dcas_output = DCASPipelineOutput(request_id)
+        dcas_output = DCASPipelineOutput(dcas_request.requested_at.date())
         parquet_path = dcas_output._get_directory_path(
             dcas_output.DCAS_OUTPUT_DIR + '/*.parquet'
         )
 
         # Query farms without messages in chunks
         for df_chunk in DataQuery.get_farms_without_messages(
-            parquet_path, chunk_size=chunk_size
+            dcas_request.requested_at.date(),
+            parquet_path, chunk_size=chunk_size,
+            num_threads=preferences.duckdb_threads_num
         ):
             if df_chunk.empty:
                 logger.info(
