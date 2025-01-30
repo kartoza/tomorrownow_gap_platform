@@ -179,6 +179,7 @@ class DCASPipelineOutput:
             self._get_directory_path(self.DCAS_OUTPUT_DIR),
             partition_on=['iso_a3', 'year', 'month', 'day'],
             filesystem=self.fs,
+            compression='zstd',
             compute=False
         )
         print(f'writing to {self._get_directory_path(self.DCAS_OUTPUT_DIR)}')
