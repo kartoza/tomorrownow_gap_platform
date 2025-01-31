@@ -346,6 +346,10 @@ class TestObservationParquetReader(TestCase):
         mock_connection
     ):
         """Test SQL query generation for POINT location input."""
+        self.station = StationFactory.create(
+            geometry=Point(26.97, -12.56, srid=4326),
+            provider=self.dataset.provider
+        )
         # Mock the S3 directory path to prevent querying DataSourceFile
         mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
 
@@ -364,7 +368,7 @@ class TestObservationParquetReader(TestCase):
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
         self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("ST_Distance", reader.query)
+        self.assertIn("AND st_code =", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -457,14 +461,26 @@ class TestObservationParquetReader(TestCase):
         # Mock the S3 directory path to avoid database dependency
         mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
 
-        # Create a LIST_OF_POINT location input
-        points = MultiPoint(
-            [
-                Point(36.8, -1.3),
-                Point(37.1, -1.2),
-                Point(36.9, -1.4)
-            ]
+        # Ensure stations exist before test
+        self.station_1 = StationFactory.create(
+            geometry=Point(36.8, -1.3, srid=4326),
+            provider=self.dataset.provider
         )
+        self.station_2 = StationFactory.create(
+            geometry=Point(37.1, -1.2, srid=4326),
+            provider=self.dataset.provider
+        )
+        self.station_3 = StationFactory.create(
+            geometry=Point(36.9, -1.4, srid=4326),
+            provider=self.dataset.provider
+        )
+
+        # Create a LIST_OF_POINT location input
+        points = MultiPoint([
+            Point(36.8, -1.3),
+            Point(37.1, -1.2),
+            Point(36.9, -1.4)
+        ])
         location_input = DatasetReaderInput.from_list_of_points(points)
 
         # Initialize the reader
@@ -479,7 +495,7 @@ class TestObservationParquetReader(TestCase):
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
         self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("ST_Within(ST_GeomFromWKB(geometry),", reader.query)
+        self.assertIn("AND st_code IN (", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -501,6 +517,10 @@ class TestObservationParquetReader(TestCase):
     ):
         """Test reading historical data calls the CSV export function."""
         # Mock S3 path to avoid querying `DataSourceFile`
+        self.station = StationFactory.create(
+            geometry=Point(26.97, -12.56, srid=4326),
+            provider=self.dataset.provider
+        )
         mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
 
         # Mock DuckDB connection to prevent real queries

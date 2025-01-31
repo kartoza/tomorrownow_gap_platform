@@ -608,7 +608,7 @@ class ObservationParquetReaderValue(DatasetReaderValue):
                     yield chunk
 
     def to_csv(self, suffix='.csv', separator=','):
-        """Generate CSV file from DuckDB query and save to object storage.
+        """Generate CSV file save directly to object storage.
 
         :param suffix: File extension, defaults to '.csv'
         :type suffix: str, optional
@@ -618,38 +618,23 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         :rtype: str
         """
         output = self._get_file_remote_url(suffix)
-        s3_storage = storages["gap_products"]
 
-        with tempfile.NamedTemporaryFile(
-            suffix=suffix,
-            delete=False
-        ) as tmp_file:
-            file_path = tmp_file.name  # Temporary CSV file path
+        try:
+            # COPY statement to write directly to S3
+            export_query = (
+                f"""
+                COPY ({self.query})
+                TO 's3://tngap-products/{output}'
+                (HEADER, DELIMITER '{separator}');
+                """
+            )
 
-            try:
-                # **Use DuckDB's COPY statement to export data**
-                export_query = (
-                    f"""
-                    COPY ({self.query})
-                    TO '{file_path}'
-                    (HEADER, DELIMITER '{separator}');
-                    """
-                )
+            self.conn.sql(export_query)
+            print(f"CSV successfully uploaded to S3: {output}")
 
-                self.conn.sql(export_query)  # Execute COPY command
-
-            except Exception as e:
-                print(f"Error generating CSV: {e}")
-                raise
-
-            finally:
-                # **Upload CSV to S3**
-                s3_storage.transfer_config = (
-                    Preferences.user_file_s3_transfer_config()
-                )
-                s3_storage.save(output, open(file_path, 'rb'))
-                print(f"CSV uploaded to S3: {output}")
-                os.remove(file_path)
+        except Exception as e:
+            print(f"Error generating CSV: {e}")
+            raise
 
         return output
 
@@ -768,6 +753,24 @@ class ObservationParquetReader(ObservationDatasetReader):
         conn.load_extension("spatial")
         return conn
 
+    def _get_nearest_stations_from_postgis(self, points):
+        """Find the nearest stations for a list of points using PostGIS."""
+        nearest_stations = []
+
+        for point in points:
+            nearest_station = Station.objects.filter(
+                provider=self.dataset.provider
+            ).annotate(
+                distance=Distance("geometry", point)
+            ).order_by("distance").first()
+
+            if nearest_station:
+                nearest_stations.append(nearest_station.id)
+
+        if not nearest_stations:
+            raise ValueError("No nearest stations found!")
+
+        return nearest_stations
 
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
@@ -809,21 +812,31 @@ class ObservationParquetReader(ObservationDatasetReader):
         # Handle Point Query
         elif self.location_input.type == LocationInputType.POINT:
             query_point = self.location_input.point
+
+            # **Step 1: Find the nearest station using PostGIS**
+            nearest_station = Station.objects.filter(
+                provider=self.dataset.provider
+            ).annotate(
+                distance=Distance("geometry", query_point)
+            ).order_by("distance").first()
+
+            if not nearest_station:
+                raise ValueError("No nearest station found!")
+
+            # **Step 2: Use the nearest station ID in the DuckDB query**
             self.query = (
                 f"""
                 SELECT date, {time_column} loc_y as lat, loc_x as lon,
-                st_code as station_id,
-                {attributes}
+                st_code as station_id, {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
                     hive_partitioning=true)
                 WHERE year >= {start_date.year} AND year <= {end_date.year}
                 AND month >= {start_date.month} AND month <= {end_date.month}
                 AND day >= {start_date.day} AND day <= {end_date.day}
-                ORDER BY ST_Distance(ST_GeomFromWKB(geometry),
-                ST_GeomFromText('POINT({query_point.x} {query_point.y})')) ASC
-                LIMIT 10
-                """  # Do we need a limit?
+                AND st_code = '{nearest_station.code}'
+                ORDER BY date
+                """
             )
         # Handle Polygon Query
         elif self.location_input.type == LocationInputType.POLYGON:
@@ -846,9 +859,10 @@ class ObservationParquetReader(ObservationDatasetReader):
             )
         # Handle List of Points Query
         elif self.location_input.type == LocationInputType.LIST_OF_POINT:
-            multipoint_wkt = "MULTIPOINT(" + ", ".join(
-                [f"{p.x} {p.y}" for p in self.location_input.points]
-            ) + ")"
+            points = self.location_input.points
+            nearest_station_ids = (
+                self._get_nearest_stations_from_postgis(points)
+            )
 
             self.query = (
                 f"""
@@ -860,8 +874,8 @@ class ObservationParquetReader(ObservationDatasetReader):
                 WHERE year >= {start_date.year} AND year <= {end_date.year}
                 AND month >= {start_date.month} AND month <= {end_date.month}
                 AND day >= {start_date.day} AND day <= {end_date.day}
-                AND ST_Within(ST_GeomFromWKB(geometry),
-                    ST_GeomFromText('{multipoint_wkt}'))
+                AND st_code IN (
+                    {", ".join(f"'{s}'" for s in nearest_station_ids)})
                 ORDER BY date
                 """
             )
@@ -875,8 +889,7 @@ class ObservationParquetReader(ObservationDatasetReader):
                 "Failed to generate SQL query for the given location input."
             )
 
-        self.data_values = self.get_data_values()
-        self.data_values.to_csv()
+        self.get_data_values().to_csv()
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
