@@ -8,6 +8,7 @@ Tomorrow Now GAP.
 import os
 import json
 import duckdb
+import uuid
 from _collections_abc import dict_values
 from datetime import datetime
 import pandas as pd
@@ -26,6 +27,7 @@ from gap.models import (
     DatasetAttribute,
     DataSourceFile,
     DatasetStore,
+    DatasetTimeStep,
     Station,
     Measurement,
     Preferences
@@ -605,6 +607,69 @@ class ObservationParquetReaderValue(DatasetReaderValue):
                         break
                     yield chunk
 
+    def to_csv(self, suffix='.csv', separator=','):
+        """Generate CSV file from DuckDB query and save to object storage.
+
+        :param suffix: File extension, defaults to '.csv'
+        :type suffix: str, optional
+        :param separator: CSV separator, defaults to ','
+        :type separator: str, optional
+        :return: File path of the saved CSV file.
+        :rtype: str
+        """
+        output = self._get_file_remote_url(suffix)
+        s3_storage = storages["gap_products"]
+
+        with tempfile.NamedTemporaryFile(
+            suffix=suffix,
+            delete=False
+        ) as tmp_file:
+            file_path = tmp_file.name  # Temporary CSV file path
+
+            try:
+                # **Use DuckDB's COPY statement to export data**
+                export_query = (
+                    f"""
+                    COPY ({self.query})
+                    TO '{file_path}'
+                    (HEADER, DELIMITER '{separator}');
+                    """
+                )
+
+                self.conn.sql(export_query)  # Execute COPY command
+
+            except Exception as e:
+                print(f"Error generating CSV: {e}")
+                raise
+
+            finally:
+                # **Upload CSV to S3**
+                s3_storage.transfer_config = (
+                    Preferences.user_file_s3_transfer_config()
+                )
+                s3_storage.save(output, open(file_path, 'rb'))
+                print(f"CSV uploaded to S3: {output}")
+                os.remove(file_path)
+
+        return output
+
+    def _get_file_remote_url(self, suffix):
+        """Generate a valid and secure S3 file path.
+
+        :param suffix: File extension.
+        :type suffix: str
+        :return: Secure and organized file path for S3 storage.
+        :rtype: str
+        """
+        s3 = self._get_s3_variables()
+
+        output_url = s3["AWS_DIR_PREFIX"]
+        if output_url and not output_url.endswith('/'):
+            output_url += '/'
+        output_url += f'user_data/{uuid.uuid4().hex}{suffix}'
+
+        return output_url
+
 
 class ObservationParquetReader(ObservationDatasetReader):
     """Class to read tahmo dataset in GeoParquet."""
@@ -633,6 +698,7 @@ class ObservationParquetReader(ObservationDatasetReader):
             altitudes=altitudes
         )
         self.s3 = self._get_s3_variables()
+        self.has_time_column = dataset.time_step != DatasetTimeStep.DAILY
 
     def _get_s3_variables(self) -> dict:
         """Get s3 env variables for product bucket.
@@ -671,18 +737,19 @@ class ObservationParquetReader(ObservationDatasetReader):
             format=DatasetStore.PARQUET,
             is_latest=True
         ).order_by('-id').first()
+        print(f'data_source: {data_source}')
 
         if not data_source:
             raise ValueError(
                 "No valid DataSourceFile found for this dataset."
             )
 
-        return data_source.file.url
+        return f"s3://{self.s3['AWS_BUCKET_NAME']}/{data_source.name}/"
 
     def _get_connection(self):
         duckdb_threads = Preferences.load().duckdb_threads_num
-        
-        config={
+
+        config = {
             'enable_object_cache': True,
             's3_access_key_id': self.s3['AWS_ACCESS_KEY_ID'],
             's3_secret_access_key': self.s3['AWS_SECRET_ACCESS_KEY'],
@@ -714,14 +781,17 @@ class ObservationParquetReader(ObservationDatasetReader):
             [a.attribute.variable_name for a in self.attributes]
         )
         s3_path = self._get_directory_path()
+        print(f's3_path: {s3_path}')
         # Determine if dataset has time column
         time_column = "time," if self.has_time_column else ""
+        self.query = None
         # Handle BBOX Query
         if self.location_input.type == LocationInputType.BBOX:
             points = self.location_input.points
             self.query = (
                 f"""
-                SELECT date, {time_column}, loc_y as lat, loc_x as lon, st_code as station_id,
+                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                st_code as station_id,
                 {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
@@ -741,7 +811,8 @@ class ObservationParquetReader(ObservationDatasetReader):
             query_point = self.location_input.point
             self.query = (
                 f"""
-                SELECT date, {time_column}, loc_y as lat, loc_x as lon, st_code as station_id,
+                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                st_code as station_id,
                 {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
@@ -759,7 +830,8 @@ class ObservationParquetReader(ObservationDatasetReader):
             polygon_wkt = self.location_input.polygon.wkt
             self.query = (
                 f"""
-                SELECT date, {time_column}, loc_y as lat, loc_x as lon, st_code as station_id,
+                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                st_code as station_id,
                 {attributes}
                 FROM read_parquet(
                     '{s3_path}country=*/year=*/month=*/*.parquet',
@@ -777,6 +849,13 @@ class ObservationParquetReader(ObservationDatasetReader):
             raise NotImplementedError(
                 'Only BBOX and Point queries are supported!'
             )
+        if self.query is None:
+            raise ValueError(
+                "Failed to generate SQL query for the given location input."
+            )
+
+        self.data_values = self.get_data_values()
+        self.data_values.to_csv()
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
