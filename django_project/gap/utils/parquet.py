@@ -9,7 +9,7 @@ Tomorrow Now GAP.
 import os
 import logging
 import pandas as pd
-import fsspec
+import numpy as np
 from django.db.models import F
 from django.db.models.functions.datetime import (
     TruncDate,
@@ -18,16 +18,17 @@ from django.db.models.functions.datetime import (
     ExtractMonth,
     ExtractDay
 )
+from django.contrib.gis.db.models import Union
 from django.contrib.gis.db.models.functions import AsWKB
-import dask_geopandas as dg
-from dask_geopandas.io.parquet import to_parquet
-import dask.dataframe as dd
+import duckdb
+from django.conf import settings
+from django.core.files.storage import storages
 
 from gap.models import (
-    Measurement, Dataset, DataSourceFile
+    Measurement, Dataset, DataSourceFile, Station,
+    DatasetAttribute
 )
 from gap.providers.observation import ST_X, ST_Y
-from gap.utils.dask import execute_dask_compute
 from gap.utils.ingestor_config import get_ingestor_config_from_preferences
 
 
@@ -39,10 +40,19 @@ class ParquetConverter:
 
     DEFAULT_NUM_PARTITIONS = 1
 
-    def __init__(self, dataset: Dataset):
+    def __init__(self, dataset: Dataset, data_source: DataSourceFile):
         """Initialize ParquetConverter class."""
         self.dataset = dataset
         self.config = get_ingestor_config_from_preferences(dataset.provider)
+        self.data_source = data_source
+        self.attributes = [
+            a.attribute.variable_name for a in
+            DatasetAttribute.objects.select_related(
+                'attribute'
+            ).filter(
+                dataset=dataset
+            )
+        ]
 
     def _get_s3_variables(self) -> dict:
         """Get s3 env variables for product bucket.
@@ -96,32 +106,145 @@ class ParquetConverter:
             f"{self.s3['AWS_DIR_PREFIX']}/{data_source.name}/"
         )
 
-    def _get_data_source_file(self) -> DataSourceFile:
-        return None
+    def _get_connection(self, s3):
+        endpoint = s3['AWS_ENDPOINT_URL']
+        if settings.DEBUG:
+            endpoint = endpoint.replace('http://', '')
+        else:
+            endpoint = endpoint.replace('https://', '')
+        if endpoint.endswith('/'):
+            endpoint = endpoint[:-1]
 
-    def _store_dataframe_as_geoparquet(self, df: pd.DataFrame, fs, s3_path):
-        # create dask dataframe
-        ddf = dd.from_pandas(df, npartitions=self.DEFAULT_NUM_PARTITIONS)
+        config = {
+            's3_access_key_id': s3['AWS_ACCESS_KEY_ID'],
+            's3_secret_access_key': s3['AWS_SECRET_ACCESS_KEY'],
+            's3_region': 'us-east-1',
+            's3_url_style': 'path',
+            's3_endpoint': endpoint,
+            's3_use_ssl': not settings.DEBUG,
+            'threads': 1
+        }
 
-        # Create a GeoDataFrame
-        df_geo = dg.from_dask_dataframe(
-            ddf,
-            geometry=dg.from_wkb(ddf['geometry'])
+        conn = duckdb.connect(config=config)
+        conn.install_extension("httpfs")
+        conn.load_extension("httpfs")
+        conn.install_extension("spatial")
+        conn.load_extension("spatial")
+        return conn
+
+    def _check_parquet_exists(self, s3_path: str, year: int):
+        s3_storage = storages['gap_products']
+        path = f'{s3_path.replace(f's3://{self.s3['AWS_BUCKET_NAME']}/', '')}year={year}'
+        _, files = s3_storage.listdir(path)
+        return len(files) > 0
+
+    def _store_dataframe_as_geoparquet(self, df: pd.DataFrame, s3_path, bbox):
+        conn = self._get_connection(self.s3)
+        # copy df to duckdb table
+        columns = [c for c in list(df.columns) if c != 'geom']
+        sql = (
+            f"""
+            CREATE TABLE weather AS 
+            SELECT {','.join(columns)}, ST_GeomFromWKB(geom) AS geometry FROM df
+            ORDER BY 
+            ST_Hilbert(ST_GeomFromWKB(geom), ST_Extent(ST_MakeEnvelope({bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]})));
+            """
         )
-
-        # Save to GeoParquet files
-        print('Saving to parquet')
-        x = to_parquet(
-            df_geo,
-            s3_path,
-            partition_on=['iso_a3', 'year', 'month', 'day'],
-            filesystem=fs,
-            compute=False
+        conn.sql(sql)
+        # export to parquet file
+        sql = (
+            f"""
+            COPY (SELECT * FROM weather)
+            TO '{s3_path}'
+            (FORMAT 'parquet', COMPRESSION 'zstd', PARTITION_BY (year), OVERWRITE_OR_IGNORE true);
+            """
         )
-        print(f'writing to {s3_path}')
-        execute_dask_compute(x)
+        conn.sql(sql)
+        conn.close()
 
-    def _process_year(self, year: int, fs, s3_path):
+    def _append_dataframe_to_geoparquet(self, df: pd.DataFrame, s3_path, bbox, year):
+        # TODO: check if parquet file for year exists
+        conn = self._get_connection(self.s3)
+
+        # copy original parquet to duckdb table
+        sql = (
+            f"""
+            CREATE TABLE tmp_weather AS 
+            SELECT *
+            FROM read_parquet('{s3_path}year=*/*.parquet', hive_partitioning=true)
+            WHERE year={year}
+            """
+        )
+        conn.sql(sql)
+
+        # insert df to duckdb table
+        columns = [c for c in list(df.columns) if c != 'geom']
+        sql = (
+            f"""
+            INSERT INTO tmp_weather BY NAME
+            SELECT {','.join(columns)}, ST_GeomFromWKB(geom) AS geometry FROM df
+            """
+        )
+        conn.sql(sql)
+
+        # order the table
+        sql = (
+            f"""
+            CREATE TABLE weather AS 
+            SELECT * FROM tmp_weather
+            ORDER BY 
+            ST_Hilbert(geometry, ST_Extent(ST_MakeEnvelope({bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]})));
+            """
+        )
+        conn.sql(sql)
+
+        # export to parquet file
+        sql = (
+            f"""
+            COPY (SELECT * FROM weather)
+            TO '{s3_path}'
+            (FORMAT 'parquet', COMPRESSION 'zstd', PARTITION_BY (year), OVERWRITE_OR_IGNORE true);
+            """
+        )
+        conn.sql(sql)
+        conn.close()
+
+    def _get_station_bounds(self):
+        combined_bbox = Station.objects.filter(
+            provider=self.dataset.provider
+        ).aggregate(
+            combined_geometry=Union('geometry')
+        )
+        return combined_bbox['combined_geometry'].extent
+
+    def _get_station_df(self, year):
+        station_ids = list(Measurement.objects.filter(
+            dataset_attribute__dataset=self.dataset,
+            date_time__year=year
+        ).distinct('station_id').values_list(
+            'station_id',
+            flat=True
+        ))
+
+        stations = Station.objects.filter(
+            id__in=station_ids
+        ).order_by('id')
+        fields = {
+            'loc_x': ST_X('geometry'),
+            'loc_y': ST_Y('geometry'),
+            'st_id': F('id'),
+            'st_code': F('code'),
+            'iso_a3': F('country__iso_a3'),
+            'geom': AsWKB('geometry'),
+        }
+        stations = stations.annotate(**fields).values(
+            *(list(fields.keys()) + ['altitude', 'country_id'])
+        )
+        df = pd.DataFrame(list(stations))
+        df['altitude'] = df['altitude'].astype('double')
+        return df
+
+    def _process_year(self, year: int):
         fields = {
             'date': (
                 TruncDate('date_time')
@@ -129,17 +252,8 @@ class ParquetConverter:
             'time': (
                 TruncTime('date_time')
             ),
-            'loc_x': ST_X('geom'),
-            'loc_y': ST_Y('geom'),
-            'altitude': F('station__altitude'),
             'attr': F('dataset_attribute__attribute__variable_name'),
-            'st_code': F('station__code'),
             'st_id': F('station__id'),
-            'country': F('station__country'),
-            'iso_a3': F('station__country__iso_a3'),
-            'geometry': AsWKB('geom'),
-            'last_loc_x': ST_X('geom'),
-            'last_loc_y': ST_Y('geom'),
             'year': (
                 ExtractYear('date_time')
             ),
@@ -158,39 +272,42 @@ class ParquetConverter:
         ).order_by('date_time', 'station_id')
         print(f'Year {year} total_count: {measurements.count()}')
 
-        measurements = measurements.annotate(
-            geom=F('station__geometry'),
-        ).annotate(**fields).values(
+        measurements = measurements.annotate(**fields).values(
             *(list(fields.keys()) + ['value'])
         )
 
         # Convert to DataFrame
         df = pd.DataFrame(list(measurements))
-
         # Pivot the data to make attributes columns
         df = df.pivot_table(
-            index=list(fields.keys()) - ['attr'],
+            index=[k for k in list(fields.keys()) if k != 'attr'],
             columns='attr',
             values='value'
         ).reset_index()
+        print(f'Year {year} after pivot total_count: {df.shape[0]}')
 
-        # # Extract year, month, and day from the date column
-        # df['year'] = df['date'].apply(lambda x: x.year)
-        # df['month'] = df['date'].apply(lambda x: x.month)
-        # df['day'] = df['date'].apply(lambda x: x.day)
+        # add missing attributes
+        missing_cols = []
+        for attribute in self.attributes:
+            if attribute in df.columns:
+                continue
+            missing_cols.append(
+                pd.Series(np.nan, dtype='double', index=df.index, name=attribute)
+            )
+        if missing_cols:
+            print(f'Adding missing columns: {len(missing_cols)}')
+            missing_cols.insert(0, df)
+            df = pd.concat(missing_cols, axis=1)
 
-        self._store_dataframe_as_geoparquet(df, fs, s3_path)
+        station_df = self._get_station_df(year)
+        # merge df with station_df
+        df = df.merge(station_df, on=['st_id'], how='inner')
+
+        return df
 
     def run(self):
         """Run the converter."""
-        fs = fsspec.filesystem(
-            's3',
-            key=self.s3.get('AWS_ACCESS_KEY_ID'),
-            secret=self.s3.get('AWS_SECRET_ACCESS_KEY'),
-            client_kwargs=self._get_s3_client_kwargs()
-        )
-        data_source_file = self._get_data_source_file()
-        s3_path = self._get_directory_path(data_source_file)
+        s3_path = self._get_directory_path(self.data_source)
 
         # get all distinct years
         years = list(Measurement.objects.annotate(
@@ -202,5 +319,10 @@ class ParquetConverter:
             flat=True
         ))
 
+        station_bbox = self._get_station_bounds()
         for year in years:
-            self._process_year(year, fs, s3_path)
+            print(f'data exists for year {year}: {self._check_parquet_exists(s3_path, year)}')
+            df = self._process_year(year)
+
+            # self._store_dataframe_as_geoparquet(df, s3_path, station_bbox)
+            self._append_dataframe_to_geoparquet(df, s3_path, station_bbox, year)
