@@ -5,16 +5,23 @@ Tomorrow Now GAP.
 .. note:: Unit tests for Tahmo Reader.
 """
 
+from unittest.mock import patch, MagicMock
+import duckdb
+
 from django.test import TestCase
 from datetime import datetime
 from django.contrib.gis.geos import (
-    Point, MultiPoint, MultiPolygon, Polygon
+    Point, MultiPoint, MultiPolygon, Polygon,
+    GEOSGeometry
 )
 
 from gap.providers import (
     ObservationDatasetReader
 )
-from gap.providers.observation import ObservationReaderValue
+from gap.providers.observation import (
+    ObservationReaderValue, ObservationParquetReaderValue,
+    ObservationParquetReader
+)
 from gap.factories import (
     ProviderFactory,
     DatasetFactory,
@@ -254,3 +261,305 @@ class TestObservationReader(TestCase):
         d = reader_value.to_netcdf_stream()
         res = list(d)
         self.assertIsNotNone(res)
+
+
+class TestObservationParquetReader(TestCase):
+    """Unit tests for ObservationParquetReader class."""
+
+    def setUp(self):
+        """Set up test environment."""
+        self.dataset = DatasetFactory.create(
+            provider=ProviderFactory(name='Tahmo')
+        )
+        self.attribute = AttributeFactory.create(
+            name='Surface air temperature',
+            variable_name='surface_air_temperature'
+        )
+        self.dataset_attr = DatasetAttributeFactory.create(
+            dataset=self.dataset,
+            attribute=self.attribute,
+            source='surface_air_temperature'
+        )
+
+        # Mock S3 settings
+        self.s3_mock = {
+            "AWS_BUCKET_NAME": "test-bucket",
+            "AWS_DIR_PREFIX": "test_prefix/",
+            "AWS_ACCESS_KEY_ID": "mock-key",
+            "AWS_SECRET_ACCESS_KEY": "mock-secret",
+            "AWS_ENDPOINT_URL": "http://localhost:9000"
+        }
+
+        self.start_date = datetime(2020, 1, 1)
+        self.end_date = datetime(2020, 12, 31)
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    def test_initialize_reader(
+        self,
+        mock_get_directory_path,
+        mock_connection
+    ):
+        """Test initialization of ObservationParquetReader."""
+        # Mock the S3 directory path to prevent querying DataSourceFile
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        # Create a dummy bbox location input
+        bbox = [-180, -90, 180, 90]
+        location_input = DatasetReaderInput.from_bbox(bbox)
+
+        # Initialize the reader
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        # Ensure query is not set before calling read_historical_data
+        self.assertFalse(hasattr(reader, "query"))
+
+        # Call read_historical_data (this will use the mocked S3 path)
+        reader.read_historical_data(self.start_date, self.end_date)
+
+        # Now assert query exists
+        self.assertTrue(hasattr(reader, "query"))
+        self.assertIsInstance(reader.query, str)
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    def test_generate_query_for_point(
+        self,
+        mock_get_directory_path,
+        mock_connection
+    ):
+        """Test SQL query generation for POINT location input."""
+        # Mock the S3 directory path to prevent querying DataSourceFile
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        # Create a POINT location input
+        location_input = DatasetReaderInput.from_point(Point(36.8219, -1.2921))
+
+        # Initialize the reader
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        # Call read_historical_data (this will use the mocked S3 path)
+        reader.read_historical_data(self.start_date, self.end_date)
+
+        # Assert query is generated correctly
+        self.assertIn("FROM read_parquet(", reader.query)
+        self.assertIn("WHERE year >=", reader.query)
+        self.assertIn("ST_Distance", reader.query)
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    def test_generate_query_for_bbox(
+        self,
+        mock_get_directory_path,
+        mock_connection
+    ):
+        """Test SQL query generation for BBOX location input."""
+        # Mock the S3 path
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        bbox = [-180.0, -90.0, 180.0, 90.0]
+        location_input = DatasetReaderInput.from_bbox(bbox)
+
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        reader.read_historical_data(self.start_date, self.end_date)
+
+        normalized_query = "".join(reader.query.split())
+        expected_substring = "ST_MakeEnvelope(-180.0,-90.0,180.0,90.0)"
+
+        self.assertIn(expected_substring, normalized_query)
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    def test_generate_query_for_polygon(
+        self,
+        mock_get_directory_path,
+        mock_connection
+    ):
+        """Test SQL query generation for POLYGON location input."""
+        # Mock the S3 directory path to avoid querying the database
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        # Create a POLYGON location input
+        polygon_wkt = (
+            "POLYGON((36.8 -1.3, 37.0 -1.3, 37.0 -1.1, 36.8 -1.1, 36.8 -1.3))"
+        )
+        location_input = DatasetReaderInput.from_polygon(
+            GEOSGeometry(polygon_wkt)
+        )
+
+        # Initialize the reader
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        # Call read_historical_data (this will use the mocked S3 path)
+        reader.read_historical_data(self.start_date, self.end_date)
+
+        # Assert query is generated correctly
+        self.assertIn("FROM read_parquet(", reader.query)
+        self.assertIn("WHERE year >=", reader.query)
+        self.assertIn("ST_Within(ST_GeomFromWKB(geometry),", reader.query)
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    def test_generate_query_for_list_of_points(
+        self,
+        mock_get_directory_path,
+        mock_connection
+    ):
+        """Test SQL query generation for LIST_OF_POINT location input."""
+        # Mock the S3 directory path to avoid database dependency
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        # Create a LIST_OF_POINT location input
+        points = MultiPoint(
+            [
+                Point(36.8, -1.3),
+                Point(37.1, -1.2),
+                Point(36.9, -1.4)
+            ]
+        )
+        location_input = DatasetReaderInput.from_list_of_points(points)
+
+        # Initialize the reader
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        # Call read_historical_data (this will use the mocked S3 path)
+        reader.read_historical_data(self.start_date, self.end_date)
+
+        # Assert query is generated correctly
+        self.assertIn("FROM read_parquet(", reader.query)
+        self.assertIn("WHERE year >=", reader.query)
+        self.assertIn("ST_Within(ST_GeomFromWKB(geometry),", reader.query)
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    @patch(
+        "gap.providers.observation.ObservationParquetReaderValue.to_csv"
+    )
+    def test_read_historical_data(
+        self,
+        mock_to_csv,
+        mock_get_directory_path,
+        mock_get_connection
+    ):
+        """Test reading historical data calls the CSV export function."""
+        # Mock S3 path to avoid querying `DataSourceFile`
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        # Mock DuckDB connection to prevent real queries
+        mock_conn = MagicMock()
+        mock_get_connection.return_value = mock_conn
+
+        # Mock `to_csv` to prevent actual file operations
+        mock_to_csv.return_value = "s3://test-bucket/tahmo/mock.csv"
+
+        # Create mock dataset & location
+        location_input = DatasetReaderInput.from_point(Point(36.8, -1.3))
+
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        # Run the function
+        reader.read_historical_data(self.start_date, self.end_date)
+
+        # Ensure `to_csv` was called (CSV export is executed)
+        mock_to_csv.assert_called_once()
+
+    @patch("gap.providers.observation.ObservationParquetReaderValue.to_csv")
+    def test_csv_export(self, mock_to_csv):
+        """Test CSV export is triggered correctly."""
+        point = Point(x=26.97, y=-12.56, srid=4326)
+        location_input = DatasetReaderInput.from_point(point)
+
+        reader_value = ObservationParquetReaderValue(
+            duckdb.connect(),
+            location_input,
+            [self.dataset_attr],
+            self.start_date,
+            self.end_date,
+            "SELECT * FROM table"
+        )
+
+        reader_value.to_csv()
+
+        mock_to_csv.assert_called_once()
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReaderValue.to_csv_stream"
+    )
+    def test_csv_stream_export(self, mock_to_csv_stream):
+        """Test CSV stream export is triggered correctly."""
+        point = Point(x=26.97, y=-12.56, srid=4326)
+        location_input = DatasetReaderInput.from_point(point)
+
+        reader_value = ObservationParquetReaderValue(
+            duckdb.connect(),
+            location_input,
+            [self.dataset_attr],
+            self.start_date,
+            self.end_date,
+            "SELECT * FROM table"
+        )
+
+        reader_value.to_csv_stream()
+
+        mock_to_csv_stream.assert_called_once()
