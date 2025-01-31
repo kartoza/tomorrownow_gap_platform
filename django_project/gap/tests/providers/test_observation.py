@@ -583,3 +583,67 @@ class TestObservationParquetReader(TestCase):
         reader_value.to_csv_stream()
 
         mock_to_csv_stream.assert_called_once()
+
+    @patch("gap.providers.observation.ObservationParquetReaderValue.to_netcdf")
+    def test_netcdf_export(self, mock_to_netcdf):
+        """Test NetCDF export is triggered correctly."""
+        point = Point(x=26.97, y=-12.56, srid=4326)
+        location_input = DatasetReaderInput.from_point(point)
+
+        reader_value = ObservationParquetReaderValue(
+            duckdb.connect(),
+            location_input,
+            [self.dataset_attr],
+            self.start_date,
+            self.end_date,
+            "SELECT * FROM table"
+        )
+
+        reader_value.to_netcdf()
+
+        mock_to_netcdf.assert_called_once()
+
+    @patch(
+        "gap.providers.observation.ObservationParquetReader._get_connection"
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    @patch("gap.providers.observation.ObservationParquetReaderValue.to_netcdf")
+    def test_read_historical_data_netcdf(
+        self,
+        mock_to_netcdf,
+        mock_get_directory_path,
+        mock_get_connection
+    ):
+        """Test reading historical data calls the NetCDF export function."""
+        self.station = StationFactory.create(
+            geometry=Point(26.97, -12.56, srid=4326),
+            provider=self.dataset.provider
+        )
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        # Mock DuckDB connection to prevent real queries
+        mock_conn = MagicMock()
+        mock_get_connection.return_value = mock_conn
+
+        # Mock `to_netcdf` to prevent actual file operations
+        mock_to_netcdf.return_value = "s3://test-bucket/tahmo/mock.nc"
+
+        # Create mock dataset & location
+        location_input = DatasetReaderInput.from_point(Point(36.8, -1.3))
+
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        # Run the function
+        reader.read_historical_data(self.start_date, self.end_date)
+        reader.get_data_values().to_netcdf()
+
+        # Ensure `to_netcdf` was called (NetCDF export is executed)
+        mock_to_netcdf.assert_called_once()

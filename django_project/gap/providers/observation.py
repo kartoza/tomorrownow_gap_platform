@@ -13,6 +13,7 @@ from _collections_abc import dict_values
 from datetime import datetime
 import pandas as pd
 import tempfile
+import xarray as xr
 from django.db.models import Exists, OuterRef, F, FloatField, QuerySet
 from django.db.models.functions.datetime import TruncDate, TruncTime
 from django.contrib.gis.geos import Polygon, Point
@@ -634,6 +635,44 @@ class ObservationParquetReaderValue(DatasetReaderValue):
 
         except Exception as e:
             print(f"Error generating CSV: {e}")
+            raise
+
+        return output
+
+    def to_netcdf(self, suffix=".nc"):
+        """Generate NetCDF file and save directly to object storage.
+
+        :param suffix: File extension, defaults to '.nc'
+        :type suffix: str, optional
+        :return: File path of the saved NetCDF file.
+        :rtype: str
+        """
+        output = self._get_file_remote_url(suffix)
+
+        try:
+            # Execute the DuckDB query and fetch data
+            df = self.conn.sql(self.query).df()
+
+            # Convert DataFrame to Xarray Dataset
+            ds = xr.Dataset.from_dataframe(df)
+
+            # Create a temporary NetCDF file
+            with tempfile.NamedTemporaryFile(
+                suffix=suffix, delete=True, delete_on_close=False
+            ) as tmp_file:
+                ds.to_netcdf(tmp_file.name, format="NETCDF4")
+
+                # Upload to S3 (MinIO)
+                s3_storage = storages["gap_products"]
+                s3_storage.transfer_config = (
+                    Preferences.user_file_s3_transfer_config()
+                )
+                s3_storage.save(output, tmp_file)
+
+            print(f"NetCDF successfully uploaded to S3: {output}")
+
+        except Exception as e:
+            print(f"Error generating NetCDF: {e}")
             raise
 
         return output
