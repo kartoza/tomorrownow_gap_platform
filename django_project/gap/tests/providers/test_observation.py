@@ -647,3 +647,115 @@ class TestObservationParquetReader(TestCase):
 
         # Ensure `to_netcdf` was called (NetCDF export is executed)
         mock_to_netcdf.assert_called_once()
+
+    @patch(
+        "gap.providers.observation."
+        "ObservationParquetReaderValue.to_netcdf_as_stream"
+    )
+    def test_netcdf_as_stream_export(self, mock_to_netcdf_stream):
+        """Test NetCDF stream export is triggered correctly."""
+        point = Point(x=26.97, y=-12.56, srid=4326)
+        location_input = DatasetReaderInput.from_point(point)
+
+        reader_value = ObservationParquetReaderValue(
+            duckdb.connect(),
+            location_input,
+            [self.dataset_attr],
+            self.start_date,
+            self.end_date,
+            "SELECT * FROM table"
+        )
+
+        list(reader_value.to_netcdf_as_stream())
+
+        mock_to_netcdf_stream.assert_called_once()
+
+    @patch("gap.providers.observation.ObservationParquetReaderValue.conn")
+    def test_csv_stream_export_query(self, mock_conn):
+        """Test that the DuckDB export query executes correctly."""
+        mock_duckdb = MagicMock()
+        mock_conn.sql.return_value = mock_duckdb
+
+        point = Point(x=26.97, y=-12.56, srid=4326)
+        location_input = DatasetReaderInput.from_point(point)
+
+        reader_value = ObservationParquetReaderValue(
+            duckdb.connect(),
+            location_input,
+            [self.dataset_attr],
+            self.start_date,
+            self.end_date,
+            "SELECT * FROM table"
+        )
+
+        list(reader_value.to_csv_stream())
+
+        mock_conn.sql.assert_called()
+
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_connection"
+        )
+    )
+    @patch(
+        (
+            "gap.providers.observation."
+            "ObservationParquetReader._get_directory_path"
+        )
+    )
+    def test_unsupported_location_type(
+        self,
+        mock_get_directory_path,
+        mock_connection
+    ):
+        """Test that NotImplementedError is raised."""
+        mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
+
+        location_input = MagicMock()
+        location_input.type = "UNSUPPORTED_TYPE"  # Unsupported location type
+
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+
+        with self.assertRaises(NotImplementedError):
+            reader.read_historical_data(self.start_date, self.end_date)
+
+    @patch("gap.providers.observation.duckdb.connect")
+    def test_duckdb_connection(self, mock_duckdb_connect):
+        """Test that DuckDB connection is configured correctly."""
+        self.dataset = DatasetFactory.create(
+            provider=ProviderFactory(name="Tahmo")
+        )
+        self.dataset_attr = DatasetAttributeFactory.create(
+            dataset=self.dataset
+        )
+        self.location_input = DatasetReaderInput.from_bbox(
+            [-180, -90, 180, 90]
+        )
+        self.start_date = datetime(2020, 1, 1)
+        self.end_date = datetime(2020, 12, 31)
+
+        mock_conn = MagicMock()
+        mock_duckdb_connect.return_value = mock_conn
+
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr],
+            self.location_input,
+            self.start_date,
+            self.end_date
+        )
+
+        conn = reader._get_connection()
+
+        # Ensure duckdb.connect was called with a configuration
+        mock_duckdb_connect.assert_called_once()
+        self.assertEqual(conn, mock_conn)
+
+        # Ensure extensions are loaded
+        mock_conn.install_extension.assert_any_call("httpfs")
+        mock_conn.load_extension.assert_any_call("httpfs")
+        mock_conn.install_extension.assert_any_call("spatial")
+        mock_conn.load_extension.assert_any_call("spatial")

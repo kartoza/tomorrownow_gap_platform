@@ -619,25 +619,51 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         :rtype: str
         """
         output = self._get_file_remote_url(suffix)
-
+        self.s3 = self._get_s3_variables()
         try:
             # COPY statement to write directly to S3
             export_query = (
                 f"""
                 COPY ({self.query})
-                TO 's3://tngap-products/{output}'
+                TO 's3://{self.s3['AWS_BUCKET_NAME']}/{output}'
                 (HEADER, DELIMITER '{separator}');
                 """
             )
 
             self.conn.sql(export_query)
-            print(f"CSV successfully uploaded to S3: {output}")
 
         except Exception as e:
             print(f"Error generating CSV: {e}")
             raise
 
         return output
+
+    def to_netcdf_as_stream(self, suffix='.nc'):
+        """Generate NetCDF bytes stream.
+
+        :param suffix: File extension, defaults to '.nc'
+        :type suffix: str, optional
+        :yield: bytes of netcdf file
+        :rtype: bytes
+        """
+        with tempfile.NamedTemporaryFile(
+            suffix=suffix,
+            delete=True,
+            delete_on_close=False
+        ) as tmp_file:
+            # Convert query results to a DataFrame
+            df = self.conn.sql(self.query).df()
+
+            # Convert DataFrame to Xarray Dataset
+            ds = xr.Dataset.from_dataframe(df)
+
+            # Save dataset to NetCDF
+            ds.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
+
+            # Stream the file
+            with open(tmp_file.name, 'rb') as f:
+                while chunk := f.read(self.chunk_size_in_bytes):
+                    yield chunk
 
     def to_netcdf(self, suffix=".nc"):
         """Generate NetCDF file and save directly to object storage.
@@ -761,7 +787,6 @@ class ObservationParquetReader(ObservationDatasetReader):
             format=DatasetStore.PARQUET,
             is_latest=True
         ).order_by('-id').first()
-        print(f'data_source: {data_source}')
 
         if not data_source:
             raise ValueError(
@@ -823,7 +848,7 @@ class ObservationParquetReader(ObservationDatasetReader):
             [a.attribute.variable_name for a in self.attributes]
         )
         s3_path = self._get_directory_path()
-        print(f's3_path: {s3_path}')
+
         # Determine if dataset has time column
         time_column = "time," if self.has_time_column else ""
         self.query = None
