@@ -8,15 +8,19 @@ Tomorrow Now GAP.
 import os
 
 import requests
+from datetime import datetime
 from django.contrib.gis.geos import Point
 
 from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import ApiKeyNotFoundException
 from gap.models import (
     Provider, Station, StationType, IngestorSession, Dataset, DatasetType,
-    DatasetTimeStep, DatasetStore, Country, Measurement
+    Country, Measurement
 )
 from gap.models.preferences import Preferences
+from core.utils.date import (
+    find_max_min_epoch_dates
+)
 
 PROVIDER = 'Arable'
 STATION_TYPE = 'Ground Observations'
@@ -56,12 +60,10 @@ class ArableIngestor(BaseIngestor):
         self.dataset_type = DatasetType.objects.get(
             variable_name=DATASET_TYPE
         )
-        self.dataset, _ = Dataset.objects.get_or_create(
+        self.dataset, _ = Dataset.objects.get(
             name=DATASET_NAME,
             provider=self.provider,
-            type=self.dataset_type,
-            time_step=DatasetTimeStep.DAILY,
-            store_type=DatasetStore.TABLE
+            type=self.dataset_type
         )
 
         self.attributes = {}
@@ -121,7 +123,15 @@ class ArableIngestor(BaseIngestor):
         data = self.get(
             ArableAPI().DATA, params=params, is_pagination=False
         )
+        min_time = None
+        max_time = None
         for row in data:
+            epoch = int(datetime.fromisoformat(row['time']).timestamp())
+            min_time, max_time = find_max_min_epoch_dates(
+                min_time, max_time, epoch
+            )
+
+            # iterate attribute value
             for source, attr_id in self.attributes.items():
                 try:
                     value = row[source]
@@ -136,6 +146,7 @@ class ArableIngestor(BaseIngestor):
                         )
                 except KeyError:
                     pass
+        return min_time, max_time
 
     def run(self):
         """Run the ingestor."""
@@ -143,6 +154,8 @@ class ArableIngestor(BaseIngestor):
 
         # Get stations or devices
         devices = self.get(ArableAPI().DEVICES)
+        min_time = None
+        max_time = None
         for device in devices:
             # Skip device that does not have location
             try:
@@ -175,4 +188,10 @@ class ArableIngestor(BaseIngestor):
             )
 
             # Get station data
-            self.get_data(station)
+            epoch_min, epoch_max = self.get_data(station)
+            min_time, max_time = find_max_min_epoch_dates(
+                min_time, max_time, epoch_min
+            )
+            min_time, max_time = find_max_min_epoch_dates(
+                min_time, max_time, epoch_max
+            )
