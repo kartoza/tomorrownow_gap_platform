@@ -15,8 +15,6 @@ from django.utils import timezone
 from core.celery import app
 from core.models import BackgroundTask, TaskStatus
 from gap.models import (
-    Preferences,
-    Provider,
     Dataset,
     DatasetStore,
     DataSourceFile,
@@ -28,6 +26,7 @@ from gap.models import (
 from gap.tasks.ingestor import (
     run_ingestor_session
 )
+from gap.utils.ingestor_config import get_ingestor_config_from_preferences
 
 logger = get_task_logger(__name__)
 
@@ -61,18 +60,6 @@ def run_cbam_collector_session():
         )
 
 
-def _get_ingestor_config_from_preferences(provider: Provider) -> dict:
-    """Retrieve additional config for a provider.
-
-    :param provider: provider
-    :type provider: Provider
-    :return: additional config for Ingestor
-    :rtype: dict
-    """
-    config = Preferences.load().ingestor_config
-    return config.get(provider.name, {})
-
-
 def _do_run_zarr_collector(
         dataset: Dataset, collector_session: CollectorSession,
         ingestor_type):
@@ -93,7 +80,7 @@ def _do_run_zarr_collector(
     total_file = collector_session.dataset_files.count()
     if total_file > 0:
         additional_conf = {}
-        config = _get_ingestor_config_from_preferences(dataset.provider)
+        config = get_ingestor_config_from_preferences(dataset.provider)
 
         use_latest_datasource = config.get('use_latest_datasource', True)
         if use_latest_datasource:
