@@ -8,7 +8,7 @@ Tomorrow Now GAP.
 import os
 
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from django.contrib.gis.geos import Point
 
 from gap.ingestor.base import BaseIngestor
@@ -60,15 +60,26 @@ class ArableIngestor(BaseIngestor):
         self.dataset_type = DatasetType.objects.get(
             variable_name=DATASET_TYPE
         )
-        self.dataset, _ = Dataset.objects.get(
-            name=DATASET_NAME,
-            provider=self.provider,
-            type=self.dataset_type
-        )
+        self.dataset = self._init_dataset()
+        self.data_source_file = None
 
         self.attributes = {}
         for dataset_attr in self.dataset.datasetattribute_set.all():
             self.attributes[dataset_attr.source] = dataset_attr.id
+
+    def _init_dataset(self) -> Dataset:
+        """Fetch dataset for this ingestor.
+
+        :return: Dataset for this ingestor
+        :rtype: Dataset
+        """
+        return Dataset.objects.get(
+            name=DATASET_NAME,
+            provider__name=PROVIDER
+        )
+
+    def get_data_source_file(self):
+        return self.data_source_file
 
     def get(self, url, params=None, page=1, is_pagination=True):
         """Request the API."""
@@ -194,4 +205,15 @@ class ArableIngestor(BaseIngestor):
             )
             min_time, max_time = find_max_min_epoch_dates(
                 min_time, max_time, epoch_max
+            )
+
+        # update the ingested max and min dates
+        if min_time:
+            self.min_ingested_date = datetime.fromtimestamp(
+                min_time, tz=timezone.utc
+            )
+
+        if max_time:
+            self.max_ingested_date = datetime.fromtimestamp(
+                max_time, tz=timezone.utc
             )

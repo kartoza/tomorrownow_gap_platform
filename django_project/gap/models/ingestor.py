@@ -211,6 +211,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
         from gap.ingestor.dcas_rule import DcasRuleIngestor
         from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
+        from gap.utils.parquet import ParquetIngestorAppender
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -241,7 +242,19 @@ class IngestorSession(BaseSession):
             ingestor = DCASFarmRegistryIngestor
 
         if ingestor:
-            ingestor(self, working_dir).run()
+            ingestor_obj = ingestor(self, working_dir)
+            ingestor_obj.run()
+
+            if (
+                self.status == IngestorSessionStatus.SUCCESS and
+                self.ingestor_type in [
+                    IngestorType.ARABLE,
+                    IngestorType.TAHMO_API,
+                    IngestorType.WIND_BORNE_SYSTEMS_API
+                ]
+            ):
+                # run converter to parquet
+                pass
         else:
             raise Exception(
                 f'No Ingestor class for {self.ingestor_type}'

@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import os
+from typing import Tuple
 from datetime import datetime
 
 import requests
@@ -44,7 +45,7 @@ class WindBorneSystemsAPI:
         if not self.password:
             raise EnvIsNotSetException(PASSWORD_ENV_NAME)
 
-    def measurements(self, mission_id, since=None) -> (list, int, bool):
+    def measurements(self, mission_id, since=None) -> Tuple[list, int, bool]:
         """Return measurements, since and has_next_page."""
         params = {
             'include_ids': True,
@@ -97,17 +98,22 @@ class WindBorneSystemsIngestor(BaseIngestor):
         self.dataset_type = DatasetType.objects.get(
             variable_name=DATASET_TYPE
         )
-        self.dataset, _ = Dataset.objects.get_or_create(
-            name=DATASET_NAME,
-            provider=self.provider,
-            type=self.dataset_type,
-            time_step=DatasetTimeStep.OTHER,
-            store_type=DatasetStore.TABLE
-        )
+        self.dataset = self._init_dataset()
 
         self.attributes = {}
         for dataset_attr in self.dataset.datasetattribute_set.all():
             self.attributes[dataset_attr.source] = dataset_attr
+
+    def _init_dataset(self) -> Dataset:
+        """Fetch dataset for this ingestor.
+
+        :return: Dataset for this ingestor
+        :rtype: Dataset
+        """
+        return Dataset.objects.get(
+            name=DATASET_NAME,
+            provider__name=PROVIDER
+        )
 
     def mission_ids(self, api: WindBorneSystemsAPI):
         """Mission ids."""

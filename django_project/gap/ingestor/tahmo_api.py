@@ -110,17 +110,22 @@ class TahmoAPIIngestor(BaseIngestor):
         self.dataset_type = DatasetType.objects.get(
             variable_name=DATASET_TYPE
         )
-        self.dataset, _ = Dataset.objects.get_or_create(
-            name=DATASET_NAME,
-            provider=self.provider,
-            type=self.dataset_type,
-            time_step=DatasetTimeStep.QUARTER_HOURLY,
-            store_type=DatasetStore.TABLE
-        )
+        self.dataset = self._init_dataset()
 
         self.attributes = {}
         for dataset_attr in self.dataset.datasetattribute_set.all():
             self.attributes[dataset_attr.source] = dataset_attr
+
+    def _init_dataset(self) -> Dataset:
+        """Fetch dataset for this ingestor.
+
+        :return: Dataset for this ingestor
+        :rtype: Dataset
+        """
+        return Dataset.objects.get(
+            name=DATASET_NAME,
+            provider__name=PROVIDER
+        )
 
     @staticmethod
     def last_date_time(

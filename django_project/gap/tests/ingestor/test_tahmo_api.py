@@ -167,8 +167,10 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[TAHMO_API_USERNAME_ENV_NAME] = ''
         os.environ[TAHMO_API_PASSWORD_ENV_NAME] = ''
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(
             session.notes,
@@ -180,8 +182,10 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[TAHMO_API_USERNAME_ENV_NAME] = 'Username'
         os.environ[TAHMO_API_PASSWORD_ENV_NAME] = ''
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(
             session.notes,
@@ -201,8 +205,10 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[TAHMO_API_USERNAME_ENV_NAME] = 'Username'
         os.environ[TAHMO_API_PASSWORD_ENV_NAME] = 'password'
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(Station.objects.count(), 2)
@@ -246,8 +252,10 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
             2024, 6, 1, 0, 0, 0
         )
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(Station.objects.count(), 2)

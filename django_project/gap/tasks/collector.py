@@ -93,7 +93,7 @@ def _do_run_zarr_collector(
             if data_source:
                 additional_conf = {
                     'datasourcefile_id': data_source.id,
-                    'datasourcefile_zarr_exists': True
+                    'datasourcefile_exists': True
                 }
         additional_conf.update(config)
 
