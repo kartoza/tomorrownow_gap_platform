@@ -23,7 +23,7 @@ class TestDateUtilities(TestCase):
             find_max_min_epoch_dates(None, None, 1000),
             (1000, 1000)
         )
-    
+
     def test_min_none(self):
         """Test that returns min None."""
         self.assertEqual(
@@ -37,7 +37,7 @@ class TestDateUtilities(TestCase):
             find_max_min_epoch_dates(500, None, 1000),
             (500, 1000)
         )
-    
+
     def test_epoch_smaller_than_min(self):
         """Test if epoch smaller than min."""
         self.assertEqual(

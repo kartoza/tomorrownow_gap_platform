@@ -54,7 +54,7 @@ class CoordMapping:
 
 class BaseIngestor:
     """Collector/Ingestor Base class.
-    
+
     Available config for ingestor:
     datasourcefile_id: Id of existing DataSourceFile
     datasourcefile_exists: Indicates that Zarr exists on s3,

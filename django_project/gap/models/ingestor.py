@@ -211,7 +211,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
         from gap.ingestor.dcas_rule import DcasRuleIngestor
         from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
-        from gap.utils.parquet import ParquetIngestorAppender
+        # from gap.utils.parquet import ParquetIngestorAppender
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:

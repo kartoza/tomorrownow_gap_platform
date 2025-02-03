@@ -21,8 +21,7 @@ from gap.ingestor.exceptions import FileNotFoundException
 from gap.models import (
     Provider, Station, StationType, Country,
     IngestorSession, IngestorSessionProgress, IngestorSessionStatus,
-    Measurement, Dataset, DatasetType, DatasetTimeStep,
-    DatasetStore, DatasetAttribute
+    Measurement, Dataset, DatasetType, DatasetAttribute
 )
 from gap.ingestor.base import BaseIngestor
 

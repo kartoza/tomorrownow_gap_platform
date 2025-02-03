@@ -78,9 +78,6 @@ class ArableIngestor(BaseIngestor):
             provider__name=PROVIDER
         )
 
-    def get_data_source_file(self):
-        return self.data_source_file
-
     def get(self, url, params=None, page=1, is_pagination=True):
         """Request the API."""
         if params is None:

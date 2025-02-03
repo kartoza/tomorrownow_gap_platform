@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 
 def find_max_min_epoch_dates(min_epoch, max_epoch, epoch):
-    """Compare max and min epoch values against epoch. 
+    """Compare max and min epoch values against epoch.
 
     :param min_epoch: Min epoch value, could be None
     :type min_epoch: int
@@ -51,9 +51,16 @@ def split_epochs_by_year(start_epoch, end_epoch):
 
     current_year = start_dt.year
     while current_year <= end_dt.year:
-        year_start = datetime(current_year, 1, 1, tzinfo=timezone.utc).timestamp()
-        year_end = datetime(current_year + 1, 1, 1, tzinfo=timezone.utc).timestamp() - 1  # Last second of the year
-        
+        year_start = (
+            datetime(current_year, 1, 1, tzinfo=timezone.utc).timestamp()
+        )
+        year_end = (
+            datetime(
+                current_year + 1, 1, 1,
+                tzinfo=timezone.utc
+            ).timestamp() - 1
+        )
+
         start = max(start_epoch, year_start)
         end = min(end_epoch, year_end)
 
@@ -62,4 +69,3 @@ def split_epochs_by_year(start_epoch, end_epoch):
         current_year += 1
 
     return results
-

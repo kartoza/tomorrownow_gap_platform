@@ -18,8 +18,7 @@ from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import EnvIsNotSetException
 from gap.models import (
     Provider, StationType, IngestorSession, Dataset,
-    DatasetType, DatasetTimeStep, DatasetStore, Station, StationHistory,
-    Measurement
+    DatasetType, Station, StationHistory, Measurement
 )
 
 PROVIDER = 'WindBorne Systems'

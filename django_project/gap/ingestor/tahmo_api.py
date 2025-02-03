@@ -17,7 +17,7 @@ from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import EnvIsNotSetException
 from gap.models import (
     Country, Provider, StationType, IngestorSession, Dataset,
-    DatasetType, DatasetAttribute, DatasetTimeStep, DatasetStore, Station,
+    DatasetType, DatasetAttribute, Station,
     Measurement
 )
 from gap.models.preferences import Preferences
