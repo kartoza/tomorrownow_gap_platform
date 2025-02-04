@@ -372,6 +372,13 @@ class TestObservationParquetReader(TestCase):
             geometry=Point(26.97, -12.56, srid=4326),
             provider=self.dataset.provider
         )
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
+        )
         # Mock the S3 directory path to prevent querying DataSourceFile
         mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
 
@@ -390,7 +397,7 @@ class TestObservationParquetReader(TestCase):
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
         self.assertIn("WHERE year>=", reader.query)
-        self.assertIn("st_code =", reader.query)
+        self.assertIn("st_id =", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -496,6 +503,25 @@ class TestObservationParquetReader(TestCase):
             geometry=Point(36.9, -1.4, srid=4326),
             provider=self.dataset.provider
         )
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station_1,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
+        )
+        MeasurementFactory.create(
+            station=self.station_2,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
+        )
+        MeasurementFactory.create(
+            station=self.station_3,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
+        )
 
         # Create a LIST_OF_POINT location input
         points = MultiPoint([
@@ -517,7 +543,7 @@ class TestObservationParquetReader(TestCase):
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
         self.assertIn("WHERE year>=", reader.query)
-        self.assertIn("st_code IN (", reader.query)
+        self.assertIn("st_id IN (", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -542,6 +568,13 @@ class TestObservationParquetReader(TestCase):
         self.station = StationFactory.create(
             geometry=Point(26.97, -12.56, srid=4326),
             provider=self.dataset.provider
+        )
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
         )
         mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
 
@@ -642,6 +675,13 @@ class TestObservationParquetReader(TestCase):
         self.station = StationFactory.create(
             geometry=Point(26.97, -12.56, srid=4326),
             provider=self.dataset.provider
+        )
+        dt1 = datetime(2019, 11, 1, 0, 0, 0)
+        MeasurementFactory.create(
+            station=self.station,
+            dataset_attribute=self.dataset_attr,
+            date_time=dt1,
+            value=100
         )
         mock_get_directory_path.return_value = "s3://test-bucket/tahmo/"
 

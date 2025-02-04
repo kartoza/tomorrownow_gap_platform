@@ -7,7 +7,10 @@ Tomorrow Now GAP.
 
 from gap.ingestor.wind_borne_systems import PROVIDER as WINBORNE_PROVIDER
 from gap.models import Dataset, DatasetStore
-from gap.providers.airborne_observation import ObservationAirborneDatasetReader
+from gap.providers.airborne_observation import (
+    ObservationAirborneDatasetReader,
+    ObservationAirborneParquetReader
+)
 from gap.providers.cbam import CBAMZarrReader, CBAMNetCDFReader  # noqa
 from gap.providers.observation import (
     ObservationDatasetReader, ObservationParquetReader
@@ -42,7 +45,7 @@ def get_reader_from_dataset(dataset: Dataset, use_parquet=False):
         return ObservationDatasetReader
     elif dataset.provider.name in [WINBORNE_PROVIDER]:
         if use_parquet:
-            return ObservationParquetReader
+            return ObservationAirborneParquetReader
         return ObservationAirborneDatasetReader
     elif (
         dataset.provider.name == TIO_PROVIDER and
