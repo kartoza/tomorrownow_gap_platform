@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: DCAS Outputs
 """
 
+import paramiko
 import os
 import shutil
 import fsspec
@@ -26,6 +27,7 @@ class OutputType:
     GRID_DATA = 1
     GRID_CROP_DATA = 2
     FARM_CROP_DATA = 3
+    MESSAGE_DATA = 4
 
 
 class DCASPipelineOutput:
@@ -34,11 +36,15 @@ class DCASPipelineOutput:
     TMP_BASE_DIR = '/tmp/dcas'
     DCAS_OUTPUT_DIR = 'dcas_output'
 
-    def __init__(self, request_date, extract_additional_columns=False):
+    def __init__(
+        self, request_date, extract_additional_columns=False,
+        duck_db_num_threads=None
+    ):
         """Initialize DCASPipelineOutput."""
         self.fs = None
         self.request_date = request_date
         self.extract_additional_columns = extract_additional_columns
+        self.duck_db_num_threads = duck_db_num_threads
 
     def setup(self):
         """Set DCASPipelineOutput."""
@@ -80,6 +86,15 @@ class DCASPipelineOutput:
         """Return full path to the farm crop data parquet file."""
         return self._get_directory_path(
             self.DCAS_OUTPUT_DIR) + '/*.parquet'
+
+    @property
+    def output_csv_file_path(self):
+        """Return full path to output csv file."""
+        dt = self.request_date.strftime('%Y%m%d')
+        return os.path.join(
+            self.TMP_BASE_DIR,
+            f'output_{dt}.csv'
+        )
 
     def _setup_s3fs(self):
         """Initialize s3fs."""
@@ -170,6 +185,7 @@ class DCASPipelineOutput:
             self._get_directory_path(self.DCAS_OUTPUT_DIR),
             partition_on=['iso_a3', 'year', 'month', 'day'],
             filesystem=self.fs,
+            compression='zstd',
             compute=False
         )
         print(f'writing to {self._get_directory_path(self.DCAS_OUTPUT_DIR)}')
@@ -196,6 +212,42 @@ class DCASPipelineOutput:
         print(f'writing dataframe to {file_path}')
         df.to_parquet(file_path)
 
+    def upload_to_sftp(self, local_file):
+        """Upload CSV file to Docker SFTP."""
+        is_success = False
+        try:
+            print(f'Connecting to SFTP server at '
+                  f'{settings.SFTP_HOST}:{settings.SFTP_PORT}...')
+            transport = paramiko.Transport(
+                (settings.SFTP_HOST, settings.SFTP_PORT)
+            )
+            transport.connect(
+                username=settings.SFTP_USERNAME,
+                password=settings.SFTP_PASSWORD
+            )
+
+            sftp = paramiko.SFTPClient.from_transport(transport)
+
+            # Ensure correct remote path
+            remote_file_path = (
+                f"{settings.SFTP_REMOTE_PATH}/{os.path.basename(local_file)}"
+            )
+            print(f"Uploading {local_file} to {remote_file_path}...")
+
+            sftp.put(local_file, remote_file_path)  # Upload file
+
+            print("Upload to Docker SFTP successful!")
+
+            # Close connection
+            sftp.close()
+            transport.close()
+
+            is_success = True
+        except Exception as e:
+            print(f"Failed to upload to SFTP: {e}")
+
+        return is_success
+
     def _get_connection(self, s3):
         endpoint = s3['AWS_ENDPOINT_URL']
         if settings.DEBUG:
@@ -205,14 +257,18 @@ class DCASPipelineOutput:
         if endpoint.endswith('/'):
             endpoint = endpoint[:-1]
 
-        conn = duckdb.connect(config={
+        config = {
             's3_access_key_id': s3['AWS_ACCESS_KEY_ID'],
             's3_secret_access_key': s3['AWS_SECRET_ACCESS_KEY'],
             's3_region': 'us-east-1',
             's3_url_style': 'path',
             's3_endpoint': endpoint,
             's3_use_ssl': not settings.DEBUG
-        })
+        }
+        if self.duck_db_num_threads:
+            config['threads'] = self.duck_db_num_threads
+
+        conn = duckdb.connect(config=config)
         conn.install_extension("httpfs")
         conn.load_extension("httpfs")
         conn.install_extension("spatial")
@@ -221,11 +277,7 @@ class DCASPipelineOutput:
 
     def convert_to_csv(self):
         """Convert output to csv file."""
-        dt = self.request_date.strftime('%Y%m%d')
-        file_path = os.path.join(
-            self.TMP_BASE_DIR,
-            f'output_{dt}.csv'
-        )
+        file_path = self.output_csv_file_path
         column_list = [
             'farm_unique_id as farmer_id', 'crop',
             'planting_date as plantingDate', 'growth_stage as growthStage',

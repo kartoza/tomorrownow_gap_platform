@@ -56,6 +56,7 @@ class PreferencesAdmin(admin.ModelAdmin):
                 'fields': (
                     'ingestor_config',
                     'dask_threads_num',
+                    'duckdb_threads_num'
                 )
             }
         ),
@@ -66,6 +67,13 @@ class PreferencesAdmin(admin.ModelAdmin):
                     'api_log_batch_size',
                     'api_use_x_accel_redirect',
                     'user_file_uploader_config'
+                )
+            }
+        ),
+        (
+            'DCAS Config', {
+                'fields': (
+                    'dcas_config',
                 )
             }
         ),

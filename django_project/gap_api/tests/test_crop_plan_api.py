@@ -119,7 +119,10 @@ class CropPlanAPITest(BaseAPIViewTest):
 
     def test_correct(self):
         """Test correct."""
-        response = self.request(reverse('api:v1:crop-plan'))
+        response = self.request(
+            reverse('api:v1:crop-plan') +
+            '?farm_ids=farm-1,farm-2'
+        )
         self.assertEqual(response.status_code, 200)
         _data = response.data
         self.assertEqual(len(_data), 2)

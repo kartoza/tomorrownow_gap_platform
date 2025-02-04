@@ -6,6 +6,7 @@ Tomorrow Now GAP.
 """
 
 import tempfile
+import traceback
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -182,11 +183,14 @@ class IngestorSession(BaseSession):
 
     collectors = models.ManyToManyField(CollectorSession, blank=True)
 
-    def __init__(self, *args, trigger_task=True, **kwargs):
+    def __init__(
+        self, *args, trigger_task=True, trigger_parquet=True, **kwargs
+    ):
         """Initialize IngestorSession class."""
         super().__init__(*args, **kwargs)
         # Set the temporary attribute
         self._trigger_task = trigger_task
+        self._trigger_parquet = trigger_parquet
 
     def save(self, *args, **kwargs):
         """Override ingestor save."""
@@ -211,6 +215,7 @@ class IngestorSession(BaseSession):
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
         from gap.ingestor.dcas_rule import DcasRuleIngestor
         from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
+        from gap.utils.parquet import ParquetIngestorAppender
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -241,7 +246,28 @@ class IngestorSession(BaseSession):
             ingestor = DCASFarmRegistryIngestor
 
         if ingestor:
-            ingestor(self, working_dir).run()
+            ingestor_obj = ingestor(self, working_dir)
+            ingestor_obj.run()
+
+            if (
+                self.status == IngestorSessionStatus.SUCCESS and
+                self._trigger_parquet and
+                self.ingestor_type in [
+                    IngestorType.ARABLE,
+                    IngestorType.TAHMO_API,
+                    IngestorType.WIND_BORNE_SYSTEMS_API
+                ]
+            ):
+                data_source, _ = ingestor._init_datasource()
+                # run converter to parquet
+                converter = ParquetIngestorAppender(
+                    ingestor._init_dataset(),
+                    data_source,
+                    ingestor.min_ingested_date,
+                    ingestor.max_ingested_date
+                )
+                converter.setup()
+                converter.run()
         else:
             raise Exception(
                 f'No Ingestor class for {self.ingestor_type}'
@@ -259,6 +285,7 @@ class IngestorSession(BaseSession):
                     IngestorSessionStatus.CANCELLED
                 )
         except Exception as e:
+            print(traceback.format_exc())
             self.status = IngestorSessionStatus.FAILED
             self.notes = f'{e}'
 
