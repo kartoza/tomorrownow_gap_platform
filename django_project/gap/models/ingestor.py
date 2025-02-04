@@ -5,6 +5,7 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
+import datetime
 import tempfile
 import traceback
 
@@ -184,13 +185,12 @@ class IngestorSession(BaseSession):
     collectors = models.ManyToManyField(CollectorSession, blank=True)
 
     def __init__(
-        self, *args, trigger_task=True, trigger_parquet=True, **kwargs
+        self, *args, trigger_task=True, **kwargs
     ):
         """Initialize IngestorSession class."""
         super().__init__(*args, **kwargs)
         # Set the temporary attribute
         self._trigger_task = trigger_task
-        self._trigger_parquet = trigger_parquet
 
     def save(self, *args, **kwargs):
         """Override ingestor save."""
@@ -250,21 +250,19 @@ class IngestorSession(BaseSession):
             ingestor_obj.run()
 
             if (
-                self.status == IngestorSessionStatus.SUCCESS and
-                self._trigger_parquet and
                 self.ingestor_type in [
                     IngestorType.ARABLE,
                     IngestorType.TAHMO_API,
                     IngestorType.WIND_BORNE_SYSTEMS_API
                 ]
             ):
-                data_source, _ = ingestor._init_datasource()
+                data_source, _ = ingestor_obj._init_datasource()
                 # run converter to parquet
                 converter = ParquetIngestorAppender(
-                    ingestor._init_dataset(),
+                    ingestor_obj._init_dataset(),
                     data_source,
-                    ingestor.min_ingested_date,
-                    ingestor.max_ingested_date
+                    ingestor_obj.min_ingested_date,
+                    ingestor_obj.max_ingested_date
                 )
                 converter.setup()
                 converter.run()
