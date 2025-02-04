@@ -10,7 +10,8 @@ from django.test import TestCase
 
 from core.utils.date import (
     find_max_min_epoch_dates,
-    split_epochs_by_year
+    split_epochs_by_year,
+    split_epochs_by_year_month
 )
 
 
@@ -178,3 +179,90 @@ class TestDateUtilities(TestCase):
         self.assertEqual(
             split_epochs_by_year(int(start_epoch), int(start_epoch)), expected
         )
+
+
+class TestSplitEpochsByYearMonth(TestCase):
+    """Test method split_epochs_by_year_month."""
+
+    def test_same_month(self):
+        """Test same month."""
+        start_epoch = datetime(2023, 5, 10, tzinfo=timezone.utc).timestamp()
+        end_epoch = datetime(2023, 5, 25, tzinfo=timezone.utc).timestamp()
+        expected = [(2023, 5, int(start_epoch), int(end_epoch))]
+        self.assertEqual(
+            split_epochs_by_year_month(int(start_epoch), int(end_epoch)),
+            expected
+        )
+
+    def test_crossing_two_months(self):
+        """Test crossing two months."""
+        start_epoch = datetime(2023, 11, 20, tzinfo=timezone.utc).timestamp()
+        end_epoch = datetime(2023, 12, 10, tzinfo=timezone.utc).timestamp()
+        expected = [
+            (2023, 11, int(start_epoch),
+             int(datetime(2023, 11, 30, 23, 59, 59,
+                          tzinfo=timezone.utc).timestamp())),
+            (2023, 12,
+             int(datetime(2023, 12, 1, tzinfo=timezone.utc).timestamp()),
+             int(end_epoch))
+        ]
+        self.assertEqual(
+            split_epochs_by_year_month(int(start_epoch), int(end_epoch)),
+            expected
+        )
+
+    def test_crossing_year_boundary(self):
+        """Test crossing year."""
+        start_epoch = datetime(2023, 12, 20, tzinfo=timezone.utc).timestamp()
+        end_epoch = datetime(2024, 1, 10, tzinfo=timezone.utc).timestamp()
+        expected = [
+            (2023, 12, int(start_epoch),
+             int(datetime(2023, 12, 31, 23, 59, 59,
+                          tzinfo=timezone.utc).timestamp())),
+            (2024, 1,
+             int(datetime(2024, 1, 1, tzinfo=timezone.utc).timestamp()),
+             int(end_epoch))
+        ]
+        self.assertEqual(
+            split_epochs_by_year_month(int(start_epoch), int(end_epoch)),
+            expected
+        )
+
+    def test_multiple_years_and_months(self):
+        """Test multiple years and months."""
+        start_epoch = datetime(2022, 10, 15, tzinfo=timezone.utc).timestamp()
+        end_epoch = datetime(2023, 2, 20, tzinfo=timezone.utc).timestamp()
+        expected = [
+            (2022, 10, int(start_epoch),
+             int(datetime(2022, 10, 31, 23, 59, 59,
+                          tzinfo=timezone.utc).timestamp())),
+            (2022, 11,
+             int(datetime(2022, 11, 1, tzinfo=timezone.utc).timestamp()),
+             int(datetime(2022, 11, 30, 23, 59, 59,
+                          tzinfo=timezone.utc).timestamp())),
+            (2022, 12,
+             int(datetime(2022, 12, 1, tzinfo=timezone.utc).timestamp()),
+             int(datetime(2022, 12, 31, 23, 59, 59,
+                          tzinfo=timezone.utc).timestamp())),
+            (2023, 1,
+             int(datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp()),
+             int(datetime(2023, 1, 31, 23, 59, 59,
+                          tzinfo=timezone.utc).timestamp())),
+            (2023, 2,
+             int(datetime(2023, 2, 1, tzinfo=timezone.utc).timestamp()),
+             int(end_epoch))
+        ]
+        self.assertEqual(
+            split_epochs_by_year_month(int(start_epoch), int(end_epoch)),
+            expected
+        )
+
+    def test_same_start_and_end(self):
+        """Test same input."""
+        start_epoch = datetime(2023, 7, 15, tzinfo=timezone.utc).timestamp()
+        expected = [(2023, 7, int(start_epoch), int(start_epoch))]
+        self.assertEqual(
+            split_epochs_by_year_month(int(start_epoch), int(start_epoch)),
+            expected
+        )
+
