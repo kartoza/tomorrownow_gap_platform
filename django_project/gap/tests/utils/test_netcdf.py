@@ -35,7 +35,8 @@ from gap.providers import (
     SalientZarrReader,
     CBAMZarrReader,
     get_reader_from_dataset,
-    ObservationParquetReader
+    ObservationParquetReader,
+    ObservationAirborneParquetReader
 )
 from gap.factories import (
     ProviderFactory,
@@ -487,7 +488,7 @@ class TestCBAMNetCDFReader(TestCase):
         dataset4 = DatasetFactory.create(
             provider=ProviderFactory(name='WindBorne Systems'))
         reader = get_reader_from_dataset(dataset4, use_parquet=True)
-        self.assertEqual(reader, ObservationParquetReader)
+        self.assertEqual(reader, ObservationAirborneParquetReader)
 
     def test_read_variables_by_point(self):
         """Test read variables xarray by point."""
