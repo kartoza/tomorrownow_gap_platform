@@ -578,7 +578,7 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         return self._val
 
     def to_json(self):
-        """Generate json"""
+        """Generate json."""
         output = {
             'geometry': json.loads(self.location_input.geometry.json),
         }
@@ -590,7 +590,7 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         )
         df = df.drop(columns=['date', 'time', 'lat', 'lon'])
         # Replace NaN with None
-        df = df.replace({np.nan:None})
+        df = df.replace({np.nan: None})
         output['data'] = df.to_dict(orient="records")
         # TODO: the current structure is not consistent with others
         self.conn.close()
