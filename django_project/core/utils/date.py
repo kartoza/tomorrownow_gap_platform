@@ -87,17 +87,28 @@ def split_epochs_by_year_month(start_epoch, end_epoch):
 
     current_year, current_month = start_dt.year, start_dt.month
     while (current_year, current_month) <= (end_dt.year, end_dt.month):
-        month_start = datetime(current_year, current_month, 1, tzinfo=timezone.utc).timestamp()
-        
+        month_start = datetime(
+            current_year, current_month, 1, tzinfo=timezone.utc
+        ).timestamp()
+
         if current_month == 12:
-            month_end = datetime(current_year + 1, 1, 1, tzinfo=timezone.utc).timestamp() - 1  # Last second of the month
+            # Last second of the month
+            month_end = datetime(
+                current_year + 1, 1, 1,
+                tzinfo=timezone.utc
+            ).timestamp() - 1
         else:
-            month_end = datetime(current_year, current_month + 1, 1, tzinfo=timezone.utc).timestamp() - 1
-        
+            month_end = datetime(
+                current_year, current_month + 1, 1,
+                tzinfo=timezone.utc
+            ).timestamp() - 1
+
         start = max(start_epoch, month_start)
         end = min(end_epoch, month_end)
 
-        results.append((current_year, current_month, int(start), int(end)))
+        results.append(
+            (current_year, current_month, int(start), int(end))
+        )
 
         # Move to next month
         if current_month == 12:

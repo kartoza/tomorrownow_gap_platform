@@ -265,4 +265,3 @@ class TestSplitEpochsByYearMonth(TestCase):
             split_epochs_by_year_month(int(start_epoch), int(start_epoch)),
             expected
         )
-
