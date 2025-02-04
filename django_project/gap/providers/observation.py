@@ -728,6 +728,9 @@ class ObservationParquetReaderValue(DatasetReaderValue):
 class ObservationParquetReader(ObservationDatasetReader):
     """Class to read tahmo dataset in GeoParquet."""
 
+    has_month_partition = False
+    station_id_key = 'st_id'
+
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
             location_input: DatasetReaderInput, start_date: datetime,
@@ -837,6 +840,10 @@ class ObservationParquetReader(ObservationDatasetReader):
             [a.attribute.variable_name for a in self.attributes]
         )
         s3_path = self._get_directory_path()
+        if self.has_month_partition:
+            s3_path += 'year=*/month=*/*.parquet'
+        else:
+            s3_path += 'year=*/*.parquet'
 
         # Determine if dataset has time column
         time_column = (
@@ -853,9 +860,7 @@ class ObservationParquetReader(ObservationDatasetReader):
                 {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id,
                 {attributes}
-                FROM read_parquet(
-                    '{s3_path}year=*/*.parquet',
-                    hive_partitioning=true)
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
                 WHERE year>={start_date.year} AND year<={end_date.year} AND
                 date_time>='{start_date}' AND date_time<='{end_date}' AND
                 ST_Within(geometry, ST_MakeEnvelope(
@@ -882,12 +887,10 @@ class ObservationParquetReader(ObservationDatasetReader):
                 SELECT date_time::date as date,
                 {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id, {attributes}
-                FROM read_parquet(
-                    '{s3_path}year=*/*.parquet',
-                    hive_partitioning=true)
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
                 WHERE year>={start_date.year} AND year<={end_date.year} AND
                 date_time>='{start_date}' AND date_time<='{end_date}' AND
-                st_id = '{nearest_station.id}'
+                {self.station_id_key} = '{nearest_station.id}'
                 ORDER BY date_time
                 """
             )
@@ -900,9 +903,7 @@ class ObservationParquetReader(ObservationDatasetReader):
                 {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id,
                 {attributes}
-                FROM read_parquet(
-                    '{s3_path}year=*/*.parquet',
-                    hive_partitioning=true)
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
                 WHERE year>={start_date.year} AND year<={end_date.year} AND
                 date_time>='{start_date}' AND date_time<='{end_date}' AND
                 ST_Within(geometry, ST_GeomFromText('{polygon_wkt}'))
@@ -918,18 +919,16 @@ class ObservationParquetReader(ObservationDatasetReader):
             ):
                 raise ValueError("No nearest station found!")
 
+            station_ids = ", ".join(f"'{s.id}'" for s in nearest_stations)
             self.query = (
                 f"""
                 SELECT date_time::date as date,
                 {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id, {attributes}
-                FROM read_parquet(
-                    '{s3_path}year=*/*.parquet',
-                    hive_partitioning=true)
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
                 WHERE year>={start_date.year} AND year<={end_date.year} AND
                 date_time>='{start_date}' AND date_time<='{end_date}' AND
-                st_id IN (
-                    {", ".join(f"'{s.id}'" for s in nearest_stations)})
+                {self.station_id_key} IN ({station_ids})
                 ORDER BY date_time
                 """
             )
