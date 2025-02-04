@@ -23,7 +23,7 @@ from gap.providers.tio import (
 from gap.utils.netcdf import NetCDFProvider
 
 
-def get_reader_from_dataset(dataset: Dataset):
+def get_reader_from_dataset(dataset: Dataset, use_parquet=False):
     """Create a new Reader from given dataset.
 
     :param dataset: Dataset to be read
@@ -36,11 +36,13 @@ def get_reader_from_dataset(dataset: Dataset):
         return CBAMZarrReader
     elif dataset.provider.name == NetCDFProvider.SALIENT:
         return SalientZarrReader
-    # elif dataset.name == 'Tahmo Ground Observational':
-    #     return ObservationParquetReader
     elif dataset.provider.name in ['Tahmo', 'Arable']:
+        if use_parquet:
+            return ObservationParquetReader
         return ObservationDatasetReader
     elif dataset.provider.name in [WINBORNE_PROVIDER]:
+        if use_parquet:
+            return ObservationParquetReader
         return ObservationAirborneDatasetReader
     elif (
         dataset.provider.name == TIO_PROVIDER and

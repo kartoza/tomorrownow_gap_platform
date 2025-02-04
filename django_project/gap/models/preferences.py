@@ -166,6 +166,15 @@ class Preferences(SingletonModel):
         )
     )
 
+    # api log batch size
+    api_use_parquet = models.BooleanField(
+        default=False,
+        help_text=(
+            'When set to True, API will use parquet reader '
+            'instead of EAV.'
+        )
+    )
+
     # UserFile Uploader s3 config
     user_file_uploader_config = models.JSONField(
         default=user_file_uploader_config_default,
