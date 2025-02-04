@@ -260,20 +260,23 @@ class DCASPipelineTest(DCASPipelineBaseTest):
         # Mock the DataFrame returned by read_grid_data_crop_meta_parquet
         mock_read_parquet.return_value = pd.DataFrame({
             "grid_id": [1, 2],
+            "registry_id": [1001, 1002],
             "growth_stage_id": [10, 20],
             "growth_stage_start_date": ["2024-01-01", "2024-02-15"],
         })
 
-        # Create Valid Mocked FarmRegistry Objects (with real `id` values)
+        # Mock FarmRegistry instances (with real `id` values)
         farm_registry_mock_1 = mock.Mock()
-        farm_registry_mock_1.id = 1
-        farm_registry_mock_1.farm_id = "FARM-001"
+        farm_registry_mock_1.id = 1001
+        farm_registry_mock_1.crop_growth_stage_id = None
+        farm_registry_mock_1.growth_stage_start_date = None
 
         farm_registry_mock_2 = mock.Mock()
-        farm_registry_mock_2.id = 2
-        farm_registry_mock_2.farm_id = "FARM-002"
+        farm_registry_mock_2.id = 1002
+        farm_registry_mock_2.crop_growth_stage_id = None
+        farm_registry_mock_2.growth_stage_start_date = None
 
-        # Mock `FarmRegistry.objects.filter()` to return these objects
+        # Mock FarmRegistry.objects.filter(id__in=registry_ids)
         mock_farmregistry_filter.return_value = [
             farm_registry_mock_1,
             farm_registry_mock_2
@@ -285,11 +288,20 @@ class DCASPipelineTest(DCASPipelineBaseTest):
         )
         pipeline.update_farm_registry_growth_stage()
 
-        # Validate bulk_update() calls
-        expected_updates = [
-            farm_registry_mock_1,
-            farm_registry_mock_2,
-        ]
+        # Ensure the updates were applied correctly
+        self.assertEqual(
+            farm_registry_mock_1.crop_growth_stage_id, 10
+        )
+        self.assertEqual(
+            farm_registry_mock_1.growth_stage_start_date, "2024-01-01"
+        )
+        self.assertEqual(farm_registry_mock_2.crop_growth_stage_id, 20)
+        self.assertEqual(
+            farm_registry_mock_2.growth_stage_start_date, "2024-02-15"
+        )
+
+        # Ensure bulk_update() was called with the correct objects
+        expected_updates = [farm_registry_mock_1, farm_registry_mock_2]
         mock_bulk_update.assert_called_once_with(
             expected_updates, [
                 "crop_growth_stage_id",
