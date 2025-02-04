@@ -215,7 +215,10 @@ class IngestorSession(BaseSession):
         from gap.ingestor.cbam_bias_adjust import CBAMBiasAdjustIngestor
         from gap.ingestor.dcas_rule import DcasRuleIngestor
         from gap.ingestor.farm_registry import DCASFarmRegistryIngestor
-        from gap.utils.parquet import ParquetIngestorAppender
+        from gap.utils.parquet import (
+            ParquetIngestorAppender,
+            WindborneParquetIngestorAppender
+        )
 
         ingestor = None
         if self.ingestor_type == IngestorType.TAHMO:
@@ -258,7 +261,10 @@ class IngestorSession(BaseSession):
             ):
                 data_source, _ = ingestor_obj._init_datasource()
                 # run converter to parquet
-                converter = ParquetIngestorAppender(
+                appender_cls = ParquetIngestorAppender
+                if self.ingestor_type == IngestorType.WIND_BORNE_SYSTEMS_API:
+                    appender_cls = WindborneParquetIngestorAppender
+                converter = appender_cls(
                     ingestor_obj._init_dataset(),
                     data_source,
                     ingestor_obj.min_ingested_date,
