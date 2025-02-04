@@ -63,7 +63,8 @@ class ParquetConverterTest(TestCase):
         session = IngestorSession.objects.create(
             file=self.correct_file,
             ingestor_type=self.ingestor_type,
-            trigger_task=False
+            trigger_task=False,
+            trigger_parquet=False
         )
         session.run()
         session.refresh_from_db()
@@ -99,7 +100,8 @@ class ParquetConverterTest(TestCase):
         session = IngestorSession.objects.create(
             file=self.correct_file,
             ingestor_type=self.ingestor_type,
-            trigger_task=False
+            trigger_task=False,
+            trigger_parquet=False
         )
         session.run()
         session.refresh_from_db()

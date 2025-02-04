@@ -119,7 +119,8 @@ class ArableIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[API_KEY_ENV_NAME] = 'API_KEY_ENV_NAME'
         session = IngestorSession.objects.create(
             ingestor_type=self.ingestor_type,
-            trigger_task=False
+            trigger_task=False,
+            trigger_parquet=False
         )
         session.run()
         session.refresh_from_db()

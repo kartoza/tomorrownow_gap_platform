@@ -450,8 +450,8 @@ class WindborneParquetConverter(ParquetConverter):
             month=TruncMonth('date_time')
         ).filter(
             dataset_attribute__dataset=self.dataset
-        ).order_by('months').distinct('months').values_list(
-            'months',
+        ).order_by('month').distinct('month').values_list(
+            'month',
             flat=True
         ))
 
@@ -529,8 +529,19 @@ class ParquetIngestorAppender(ParquetConverter):
                 self._store_dataframe_as_geoparquet(df, s3_path, station_bbox)
 
 
-class WindborneParquetIngestorAppender(ParquetIngestorAppender):
+class WindborneParquetIngestorAppender(
+    WindborneParquetConverter, ParquetIngestorAppender
+):
     """Class to append data to parquet from Ingestor."""
+
+    def __init__(
+        self, dataset: Dataset, data_source: DataSourceFile,
+        start_date: datetime, end_date: datetime, mode='a'
+    ):
+        """Initialize ParquetIngestorAppender."""
+        super().__init__(dataset, data_source, mode)
+        self.start_date = start_date
+        self.end_date = end_date
 
     def run(self):
         """Run the converter."""

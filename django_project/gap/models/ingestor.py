@@ -5,7 +5,6 @@ Tomorrow Now GAP.
 .. note:: Models
 """
 
-import datetime
 import tempfile
 import traceback
 
@@ -185,12 +184,13 @@ class IngestorSession(BaseSession):
     collectors = models.ManyToManyField(CollectorSession, blank=True)
 
     def __init__(
-        self, *args, trigger_task=True, **kwargs
+        self, *args, trigger_task=True, trigger_parquet=True, **kwargs
     ):
         """Initialize IngestorSession class."""
         super().__init__(*args, **kwargs)
         # Set the temporary attribute
         self._trigger_task = trigger_task
+        self._trigger_parquet = trigger_parquet
 
     def save(self, *args, **kwargs):
         """Override ingestor save."""
@@ -253,6 +253,7 @@ class IngestorSession(BaseSession):
             ingestor_obj.run()
 
             if (
+                self._trigger_parquet and
                 self.ingestor_type in [
                     IngestorType.ARABLE,
                     IngestorType.TAHMO_API,
