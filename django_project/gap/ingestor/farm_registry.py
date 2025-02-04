@@ -163,7 +163,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         return None  # Return None for invalid dates
 
     def _bulk_insert_farms_and_registries(self):
-        """Bulk insert Farms first, then FarmRegistry to prevent related object issues."""
+        """Bulk insert Farms first, then FarmRegistry."""
         if not self.farm_list:
             return
 
@@ -178,7 +178,11 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                 # Step 2: Retrieve all inserted farms and map them
                 farm_map = {
                     farm.unique_id: farm
-                    for farm in Farm.objects.filter(unique_id__in=[data["unique_id"] for data in self.farm_list])
+                    for farm in Farm.objects.filter(
+                        unique_id__in=[
+                            data["unique_id"] for data in self.farm_list
+                        ]
+                    )
                 }
 
                 # Step 3: Prepare FarmRegistry objects with mapped farms
@@ -196,7 +200,8 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
                 # Step 4: Bulk insert FarmRegistry only if valid records exist
                 if registries:
-                    FarmRegistry.objects.bulk_create(registries, ignore_conflicts=True)
+                    FarmRegistry.objects.bulk_create(
+                        registries, ignore_conflicts=True)
 
                 # Clear batch lists
                 self.farm_list.clear()
@@ -218,14 +223,15 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             crop = self.crop_lookup.get(crop_name)
             if not crop:
                 crop, _ = Crop.objects.get_or_create(name__iexact=crop_name)
-                self.crop_lookup[crop_name] = crop  # Cache it
+                self.crop_lookup[crop_name] = crop
 
             stage_type = self.stage_lookup.get(row[crop_key])
             if not stage_type:
                 stage_type = CropStageType.objects.filter(
-                    Q(name__iexact=row[crop_key]) | Q(alias__iexact=row[crop_key])
+                    Q(name__iexact=row[crop_key]) | Q(
+                        alias__iexact=row[crop_key])
                 ).first()
-                self.stage_lookup[row[crop_key]] = stage_type  # Cache it
+                self.stage_lookup[row[crop_key]] = stage_type
 
             farmer_id_key = Keys.get_farm_id_key(row)
             # Store farm data as a dictionary
@@ -236,11 +242,13 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             }
             self.farm_list.append(farm_data)
 
-            planting_date = self._parse_planting_date(row[Keys.get_planting_date_key(row)])
+            planting_date = self._parse_planting_date(
+                row[Keys.get_planting_date_key(row)]
+            )
 
             registry_data = {
                 "group": self.group,
-                "farm_unique_id": row[farmer_id_key].strip(),  # Store only the unique_id
+                "farm_unique_id": row[farmer_id_key].strip(),
                 "crop": crop,
                 "crop_stage_type": stage_type,
                 "planting_date": planting_date,
@@ -316,7 +324,7 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             self._run(dir_path)
         finally:
             shutil.rmtree(dir_path)
-        
+
         # Final batch insert if records are left
         if len(self.farm_list) >= self.BATCH_SIZE:
             self._bulk_insert_farms_and_registries()
