@@ -658,7 +658,7 @@ class ObservationParquetReaderValue(DatasetReaderValue):
             ds = xr.Dataset.from_dataframe(df)
 
             # Save dataset to NetCDF
-            ds.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
+            ds.to_netcdf(tmp_file.name, format='NETCDF4', engine='h5netcdf')
 
             # Stream the file
             with open(tmp_file.name, 'rb') as f:
@@ -686,7 +686,11 @@ class ObservationParquetReaderValue(DatasetReaderValue):
             with tempfile.NamedTemporaryFile(
                 suffix=suffix, delete=True, delete_on_close=False
             ) as tmp_file:
-                ds.to_netcdf(tmp_file.name, format="NETCDF4")
+                ds.to_netcdf(
+                    tmp_file.name,
+                    format="NETCDF4",
+                    engine='h5netcdf'
+                )
 
                 # Upload to S3 (MinIO)
                 s3_storage = storages["gap_products"]
