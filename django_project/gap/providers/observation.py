@@ -962,8 +962,6 @@ class ObservationParquetReader(ObservationDatasetReader):
                 "Failed to generate SQL query for the given location input."
             )
 
-        self.get_data_values().to_csv()
-
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.
 
