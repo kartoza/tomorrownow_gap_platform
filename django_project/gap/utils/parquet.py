@@ -571,18 +571,18 @@ class WindborneParquetIngestorAppender(WindborneParquetConverter):
         )
 
         station_bbox = self._get_station_bounds()
-        for year, start_epoch, end_epoch in date_list:
+        for year, month, start_epoch, end_epoch in date_list:
             start_dt = datetime.fromtimestamp(start_epoch, tz=timezone.utc)
             end_dt = datetime.fromtimestamp(end_epoch, tz=timezone.utc)
 
             parquet_exists = self._check_parquet_exists(
-                s3_path, year, month=start_dt.month
+                s3_path, year, month=month
             )
             df = self._process_date_range(year, start_dt, end_dt)
 
             if self.mode == 'a' and parquet_exists:
                 self._append_dataframe_to_geoparquet(
-                    df, s3_path, station_bbox, year, month=start_dt.month
+                    df, s3_path, station_bbox, year, month=month
                 )
             else:
                 self._store_dataframe_as_geoparquet(
