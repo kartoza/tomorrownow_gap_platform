@@ -10,11 +10,10 @@ import os
 import logging
 import pandas as pd
 import numpy as np
+from datetime import datetime, timezone
 from django.db.models import F
 from django.db.models.functions.datetime import (
-    TruncDate,
     ExtractYear,
-    TruncTime,
     ExtractMonth,
     ExtractDay
 )
@@ -30,6 +29,7 @@ from gap.models import (
 )
 from gap.providers.observation import ST_X, ST_Y
 from gap.utils.ingestor_config import get_ingestor_config_from_preferences
+from core.utils.date import split_epochs_by_year
 
 
 logger = logging.getLogger(__name__)
@@ -40,12 +40,7 @@ class ParquetConverter:
 
     STATION_JOIN_KEY = 'st_id'
     WEATHER_FIELDS = {
-        'date': (
-            TruncDate('date_time')
-        ),
-        'time': (
-            TruncTime('date_time')
-        ),
+        'dt': F('date_time'),
         'attr': F('dataset_attribute__attribute__variable_name'),
         'st_id': F('station__id'),
         'year': (
@@ -164,6 +159,7 @@ class ParquetConverter:
         return len(files) > 0
 
     def _store_dataframe_as_geoparquet(self, df: pd.DataFrame, s3_path, bbox):
+        print('Writing a new parquet file')
         conn = self._get_connection(self.s3)
         # copy df to duckdb table
         columns = [c for c in list(df.columns) if c != 'geom']
@@ -196,7 +192,7 @@ class ParquetConverter:
     def _append_dataframe_to_geoparquet(
         self, df: pd.DataFrame, s3_path, bbox, year
     ):
-        # TODO: check if parquet file for year exists
+        print(f'Appending dataframe to existing {year}')
         conn = self._get_connection(self.s3)
 
         # copy original parquet to duckdb table
@@ -296,6 +292,8 @@ class ParquetConverter:
             values='value'
         ).reset_index()
         print(f'Year {year} after pivot total_count: {df.shape[0]}')
+        # rename date time column
+        df = df.rename(columns={'dt': 'date_time'})
 
         # add missing attributes
         missing_cols = []
@@ -346,7 +344,6 @@ class ParquetConverter:
         station_bbox = self._get_station_bounds()
         for year in years:
             parquet_exists = self._check_parquet_exists(s3_path, year)
-            print(f'data exists for year {year}: {parquet_exists}')
             df = self._process_year(year)
 
             if self.mode == 'a' and parquet_exists:
@@ -362,12 +359,7 @@ class WindborneParquetConverter(ParquetConverter):
 
     STATION_JOIN_KEY = 'st_hist_id'
     WEATHER_FIELDS = {
-        'date': (
-            TruncDate('date_time')
-        ),
-        'time': (
-            TruncTime('date_time')
-        ),
+        'dt': F('date_time'),
         'attr': F('dataset_attribute__attribute__variable_name'),
         'st_id': F('station__id'),
         'st_hist_id': F('station_history__id'),
@@ -421,3 +413,58 @@ class WindborneParquetConverter(ParquetConverter):
         df = pd.DataFrame(list(stations))
         df['altitude'] = df['altitude'].astype('double')
         return df
+
+
+class ParquetIngestorAppender(ParquetConverter):
+    """Class to append data to parquet from Ingestor."""
+
+    def __init__(
+        self, dataset: Dataset, data_source: DataSourceFile,
+        start_date: datetime, end_date: datetime, mode='a'
+    ):
+        """Initialize ParquetIngestorAppender."""
+        super().__init__(dataset, data_source, mode)
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def _process_date_range(
+        self, year: int, start_date: datetime, end_date: datetime
+    ):
+        measurements = Measurement.objects.filter(
+            dataset_attribute__dataset=self.dataset,
+            date_time__year=year,
+            date_time__gte=start_date,
+            date_time__lte=end_date
+        ).order_by('date_time', 'station_id')
+        print(
+            f'{start_date} to {end_date} total_count: {measurements.count()}'
+        )
+
+        measurements = measurements.annotate(**self.WEATHER_FIELDS).values(
+            *(list(self.WEATHER_FIELDS.keys()) + ['value'])
+        )
+
+        return self._process_weather_df(year, list(measurements))
+
+    def run(self):
+        """Run the converter."""
+        s3_path = self._get_directory_path(self.data_source)
+        date_list = split_epochs_by_year(
+            int(self.start_date.timestamp()),
+            int(self.end_date.timestamp()),
+        )
+
+        station_bbox = self._get_station_bounds()
+        for year, start_epoch, end_epoch in date_list:
+            start_dt = datetime.fromtimestamp(start_epoch, tz=timezone.utc)
+            end_dt = datetime.fromtimestamp(end_epoch, tz=timezone.utc)
+
+            parquet_exists = self._check_parquet_exists(s3_path, year)
+            df = self._process_date_range(year, start_dt, end_dt)
+
+            if self.mode == 'a' and parquet_exists:
+                self._append_dataframe_to_geoparquet(
+                    df, s3_path, station_bbox, year
+                )
+            else:
+                self._store_dataframe_as_geoparquet(df, s3_path, station_bbox)

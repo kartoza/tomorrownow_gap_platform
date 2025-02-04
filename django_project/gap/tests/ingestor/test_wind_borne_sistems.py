@@ -143,8 +143,10 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[USERNAME_ENV_NAME] = ''
         os.environ[PASSWORD_ENV_NAME] = ''
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(
             session.notes,
@@ -156,8 +158,10 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[USERNAME_ENV_NAME] = 'Username'
         os.environ[PASSWORD_ENV_NAME] = ''
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(
             session.notes,
@@ -197,8 +201,10 @@ class WindBorneSystemsAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
 
         # First import
         session = IngestorSession.objects.create(
-            ingestor_type=self.ingestor_type
+            ingestor_type=self.ingestor_type,
+            trigger_task=False
         )
+        session.run()
         session.refresh_from_db()
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(Station.objects.count(), 2)

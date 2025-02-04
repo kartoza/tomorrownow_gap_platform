@@ -200,7 +200,7 @@ class TestSalientIngestor(SalientIngestorBaseTest):
             ingestor_type=IngestorType.SALIENT,
             additional_config={
                 'datasourcefile_id': datasource.id,
-                'datasourcefile_zarr_exists': True
+                'datasourcefile_exists': True
             },
             trigger_task=False
         )
