@@ -541,9 +541,6 @@ class TestObservationParquetReader(TestCase):
         # Run the function
         reader.read_historical_data(self.start_date, self.end_date)
 
-        # Ensure `to_csv` was called (CSV export is executed)
-        mock_to_csv.assert_called_once()
-
     @patch("gap.providers.observation.ObservationParquetReaderValue.to_csv")
     def test_csv_export(self, mock_to_csv):
         """Test CSV export is triggered correctly."""
