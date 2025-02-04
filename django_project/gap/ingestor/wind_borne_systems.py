@@ -18,8 +18,10 @@ from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import EnvIsNotSetException
 from gap.models import (
     Provider, StationType, IngestorSession, Dataset,
-    DatasetType, Station, StationHistory, Measurement
+    DatasetType, Station, StationHistory, Measurement,
+    DatasetStore
 )
+from core.utils.date import find_max_min_epoch_dates
 
 PROVIDER = 'WindBorne Systems'
 STATION_TYPE = 'Balloon'
@@ -84,6 +86,8 @@ class WindBorneSystemsAPI:
 class WindBorneSystemsIngestor(BaseIngestor):
     """Ingestor for WindBorneSystems."""
 
+    DEFAULT_FORMAT = DatasetStore.PARQUET
+
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
         """Initialize the ingestor."""
         super().__init__(session, working_dir)
@@ -131,6 +135,8 @@ class WindBorneSystemsIngestor(BaseIngestor):
         api = WindBorneSystemsAPI()
         additional_config = self.session.additional_config
         global_since = additional_config.get('since', None)
+        min_time = None
+        max_time = None
 
         # Run for every mission id
         missions = self.mission_ids(api)
@@ -155,6 +161,9 @@ class WindBorneSystemsIngestor(BaseIngestor):
                         # Get date time
                         date_time = datetime.fromtimestamp(
                             observation['timestamp']
+                        )
+                        min_time, max_time = find_max_min_epoch_dates(
+                            min_time, max_time, observation['timestamp']
                         )
                         date_time = timezone.make_aware(
                             date_time, timezone.get_default_timezone()
@@ -206,3 +215,14 @@ class WindBorneSystemsIngestor(BaseIngestor):
                     additional_config[mission_since_key] = since
                     self.session.additional_config = additional_config
                     self.session.save()
+
+        # update the ingested max and min dates
+        if min_time:
+            self.min_ingested_date = datetime.fromtimestamp(
+                min_time, tz=timezone.utc
+            )
+
+        if max_time:
+            self.max_ingested_date = datetime.fromtimestamp(
+                max_time, tz=timezone.utc
+            )

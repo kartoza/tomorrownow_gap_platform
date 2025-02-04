@@ -429,12 +429,13 @@ class ParquetIngestorAppender(ParquetConverter):
     """Class to append data to parquet from Ingestor."""
 
     def __init__(
-        self, dataset, data_source, start_date_epoch, end_date_epoch, mode='a'
+        self, dataset: Dataset, data_source: DataSourceFile,
+        start_date: datetime, end_date: datetime, mode='a'
     ):
         """Initialize ParquetIngestorAppender."""
         super().__init__(dataset, data_source, mode)
-        self.start_date_epoch = start_date_epoch
-        self.end_date_epoch = end_date_epoch
+        self.start_date = start_date
+        self.end_date = end_date
 
     def _process_date_range(
         self, year: int, start_date: datetime, end_date: datetime
@@ -459,8 +460,8 @@ class ParquetIngestorAppender(ParquetConverter):
         """Run the converter."""
         s3_path = self._get_directory_path(self.data_source)
         date_list = split_epochs_by_year(
-            self.start_date_epoch,
-            self.end_date_epoch
+            int(self.start_date.timestamp()),
+            int(self.end_date.timestamp()),
         )
 
         station_bbox = self._get_station_bounds()

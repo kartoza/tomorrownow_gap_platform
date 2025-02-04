@@ -7,6 +7,7 @@ Tomorrow Now GAP.
 
 from celery.utils.log import get_task_logger
 
+import uuid
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -14,9 +15,14 @@ from django.utils import timezone
 
 from core.celery import app
 from core.models import BackgroundTask, TaskStatus
+from gap.models import Dataset, DataSourceFile, Preferences, DatasetStore
 from gap.models.ingestor import (
     IngestorSession, IngestorType,
     IngestorSessionStatus
+)
+from gap.utils.parquet import (
+    ParquetConverter,
+    WindborneParquetConverter
 )
 
 logger = get_task_logger(__name__)
@@ -113,3 +119,51 @@ def notify_ingestor_failure(session_id: int, exception: str):
     return (
         f"Logged ingestor failure for session {session_id} and notified admins"
     )
+
+
+def _get_data_source(dataset: Dataset, provider_conf: dict):
+    # get latest one if exists
+    data_source = DataSourceFile.objects.filter(
+        dataset=dataset,
+        format=DatasetStore.PARQUET,
+        is_latest=True
+    ).last()
+    if data_source:
+        return data_source
+
+    data_source = DataSourceFile.objects.create(
+        dataset=dataset,
+        format=DatasetStore.PARQUET,
+        name=provider_conf.get('parquet_name', str(uuid.uuid4())),
+        start_date_time=timezone.now(),
+        end_date_time=timezone.now(),
+        created_on=timezone.now()
+    )
+    return data_source
+
+
+@app.task(name='convert_dataset_to_parquet')
+def convert_dataset_to_parquet(dataset_id: int):
+    """Convert dataset EAV to parquet files."""
+    dataset = Dataset.objects.get(id=dataset_id)
+    if dataset.name not in [
+        'Tahmo Ground Observational',
+        'Arable Ground Observational',
+        'Tahmo Disdrometer Observational',
+        'WindBorne Balloons Observations'
+    ]:
+        raise ValueError(
+            f'Invalid dataset {dataset.name} to be converted into parquet!'
+        )
+
+    converter_class = ParquetConverter
+    if dataset.name == 'WindBorne Balloons Observations':
+        converter_class = WindborneParquetConverter
+
+    ingestor_conf = Preferences.load().ingestor_config
+    provider_conf = ingestor_conf.get(dataset.provider.name, {})
+    data_source = _get_data_source(dataset, provider_conf)
+
+    converter = converter_class(dataset, data_source)
+    converter.setup()
+    converter.run()

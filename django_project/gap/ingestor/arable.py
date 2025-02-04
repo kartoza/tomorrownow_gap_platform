@@ -15,7 +15,7 @@ from gap.ingestor.base import BaseIngestor
 from gap.ingestor.exceptions import ApiKeyNotFoundException
 from gap.models import (
     Provider, Station, StationType, IngestorSession, Dataset, DatasetType,
-    Country, Measurement
+    Country, Measurement, DatasetStore
 )
 from gap.models.preferences import Preferences
 from core.utils.date import (
@@ -45,6 +45,7 @@ class ArableAPI:
 class ArableIngestor(BaseIngestor):
     """Ingestor for arable data."""
 
+    DEFAULT_FORMAT = DatasetStore.PARQUET
     api_key = None
 
     def __init__(self, session: IngestorSession, working_dir: str = '/tmp'):
@@ -108,6 +109,7 @@ class ArableIngestor(BaseIngestor):
     @staticmethod
     def last_iso_date_time(station: Station) -> str | None:
         """Last date measurements of station."""
+        # TODO: we need to query the parquet to get the last date time
         first_measurement = Measurement.objects.filter(
             station=station
         ).order_by('-date_time').first()

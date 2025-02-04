@@ -200,6 +200,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         mock_timezone.now.return_value = datetime(
             2024, 3, 1, 0, 0, 0
         )
+        mock_timezone.utc = timezone.utc
 
         self.init_mock_requests()
         os.environ[TAHMO_API_USERNAME_ENV_NAME] = 'Username'
@@ -210,6 +211,7 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         )
         session.run()
         session.refresh_from_db()
+        print(session.notes)
         self.assertEqual(session.status, IngestorSessionStatus.SUCCESS)
         self.assertEqual(Station.objects.count(), 2)
 
