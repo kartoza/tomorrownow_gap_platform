@@ -347,6 +347,9 @@ class ParquetConverter:
         measurements = measurements.order_by('date_time', 'station_id')
         print(f'Year {year} total_count: {measurements.count()}')
 
+        if measurements.count() == 0:
+            return None
+
         measurements = measurements.annotate(**self.WEATHER_FIELDS).values(
             *(list(self.WEATHER_FIELDS.keys()) + ['value'])
         )
@@ -371,6 +374,9 @@ class ParquetConverter:
         for year in years:
             parquet_exists = self._check_parquet_exists(s3_path, year)
             df = self._process_subset(year)
+
+            if df is None:
+                continue
 
             if self.mode == 'a' and parquet_exists:
                 self._append_dataframe_to_geoparquet(
@@ -464,6 +470,9 @@ class WindborneParquetConverter(ParquetConverter):
             )
             df = self._process_subset(year, month=month)
 
+            if df is None:
+                continue
+
             if self.mode == 'a' and parquet_exists:
                 self._append_dataframe_to_geoparquet(
                     df, s3_path, station_bbox, year, month=month
@@ -499,6 +508,9 @@ class ParquetIngestorAppender(ParquetConverter):
             f'{start_date} to {end_date} total_count: {measurements.count()}'
         )
 
+        if measurements.count() == 0:
+            return None
+
         measurements = measurements.annotate(**self.WEATHER_FIELDS).values(
             *(list(self.WEATHER_FIELDS.keys()) + ['value'])
         )
@@ -520,6 +532,9 @@ class ParquetIngestorAppender(ParquetConverter):
 
             parquet_exists = self._check_parquet_exists(s3_path, year)
             df = self._process_date_range(year, start_dt, end_dt)
+
+            if df is None:
+                continue
 
             if self.mode == 'a' and parquet_exists:
                 self._append_dataframe_to_geoparquet(
@@ -554,6 +569,9 @@ class WindborneParquetIngestorAppender(WindborneParquetConverter):
             f'{start_date} to {end_date} total_count: {measurements.count()}'
         )
 
+        if measurements.count() == 0:
+            return None
+
         measurements = measurements.annotate(**self.WEATHER_FIELDS).values(
             *(list(self.WEATHER_FIELDS.keys()) + ['value'])
         )
@@ -579,6 +597,9 @@ class WindborneParquetIngestorAppender(WindborneParquetConverter):
                 s3_path, year, month=month
             )
             df = self._process_date_range(year, start_dt, end_dt)
+
+            if df is None:
+                continue
 
             if self.mode == 'a' and parquet_exists:
                 self._append_dataframe_to_geoparquet(
