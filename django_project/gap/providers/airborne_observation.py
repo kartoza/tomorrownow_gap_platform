@@ -111,4 +111,5 @@ class ObservationAirborneParquetReader(
     """Class for parquet reader for Airborne dataset."""
 
     has_month_partition = True
+    has_altitudes = True
     station_id_key = 'st_hist_id'

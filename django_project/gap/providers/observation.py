@@ -9,6 +9,7 @@ import os
 import json
 import duckdb
 import uuid
+import numpy as np
 from _collections_abc import dict_values
 from datetime import datetime
 import pandas as pd
@@ -576,6 +577,25 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         """Get DuckDB Connection."""
         return self._val
 
+    def to_json(self):
+        """Generate json"""
+        output = {
+            'geometry': json.loads(self.location_input.geometry.json),
+        }
+        # Convert query results to a DataFrame
+        df = self.conn.sql(self.query).df()
+        # Combine date and time columns
+        df['datetime'] = pd.to_datetime(
+            df['date'].dt.strftime('%Y-%m-%d') + ' ' + df['time']
+        )
+        df = df.drop(columns=['date', 'time', 'lat', 'lon'])
+        # Replace NaN with None
+        df = df.replace({np.nan:None})
+        output['data'] = df.to_dict(orient="records")
+        # TODO: the current structure is not consistent with others
+        self.conn.close()
+        return output
+
     def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream.
 
@@ -734,6 +754,7 @@ class ObservationParquetReader(ObservationDatasetReader):
     """Class to read tahmo dataset in GeoParquet."""
 
     has_month_partition = False
+    has_altitudes = False
     station_id_key = 'st_id'
 
     def __init__(
@@ -844,6 +865,8 @@ class ObservationParquetReader(ObservationDatasetReader):
         attributes = ', '.join(
             [a.attribute.variable_name for a in self.attributes]
         )
+        if self.has_altitudes:
+            attributes = 'altitude, ' + attributes
         s3_path = self._get_directory_path()
         if self.has_month_partition:
             s3_path += 'year=*/month=*/*.parquet'
