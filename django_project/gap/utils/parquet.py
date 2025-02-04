@@ -529,9 +529,7 @@ class ParquetIngestorAppender(ParquetConverter):
                 self._store_dataframe_as_geoparquet(df, s3_path, station_bbox)
 
 
-class WindborneParquetIngestorAppender(
-    WindborneParquetConverter, ParquetIngestorAppender
-):
+class WindborneParquetIngestorAppender(WindborneParquetConverter):
     """Class to append data to parquet from Ingestor."""
 
     def __init__(
@@ -542,6 +540,27 @@ class WindborneParquetIngestorAppender(
         super().__init__(dataset, data_source, mode)
         self.start_date = start_date
         self.end_date = end_date
+
+    def _process_date_range(
+        self, year: int, start_date: datetime, end_date: datetime
+    ):
+        measurements = Measurement.objects.filter(
+            dataset_attribute__dataset=self.dataset,
+            date_time__year=year,
+            date_time__gte=start_date,
+            date_time__lte=end_date
+        ).order_by('date_time', 'station_id')
+        print(
+            f'{start_date} to {end_date} total_count: {measurements.count()}'
+        )
+
+        measurements = measurements.annotate(**self.WEATHER_FIELDS).values(
+            *(list(self.WEATHER_FIELDS.keys()) + ['value'])
+        )
+
+        return self._process_weather_df(
+            year, list(measurements), month=start_date.month
+        )
 
     def run(self):
         """Run the converter."""
