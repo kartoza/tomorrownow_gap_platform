@@ -825,25 +825,6 @@ class ObservationParquetReader(ObservationDatasetReader):
         conn.load_extension("spatial")
         return conn
 
-    def _get_nearest_stations_from_postgis(self, points):
-        """Find the nearest stations for a list of points using PostGIS."""
-        nearest_stations = []
-
-        for point in points:
-            nearest_station = Station.objects.filter(
-                provider=self.dataset.provider
-            ).annotate(
-                distance=Distance("geometry", point)
-            ).order_by("distance").first()
-
-            if nearest_station:
-                nearest_stations.append(nearest_station.id)
-
-        if not nearest_stations:
-            raise ValueError("No nearest stations found!")
-
-        return nearest_stations
-
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
 
@@ -885,18 +866,16 @@ class ObservationParquetReader(ObservationDatasetReader):
 
         # Handle Point Query
         elif self.location_input.type == LocationInputType.POINT:
-            query_point = self.location_input.point
-
             # **Step 1: Find the nearest station using PostGIS**
-            nearest_station = Station.objects.filter(
-                provider=self.dataset.provider
-            ).annotate(
-                distance=Distance("geometry", query_point)
-            ).order_by("distance").first()
+            nearest_stations = self.get_nearest_stations()
 
-            if not nearest_station:
+            if (
+                nearest_stations is None or
+                self._get_count(nearest_stations) == 0
+            ):
                 raise ValueError("No nearest station found!")
 
+            nearest_station = nearest_stations[0]
             # **Step 2: Use the nearest station ID in the DuckDB query**
             self.query = (
                 f"""
@@ -908,7 +887,7 @@ class ObservationParquetReader(ObservationDatasetReader):
                     hive_partitioning=true)
                 WHERE year>={start_date.year} AND year<={end_date.year} AND
                 date_time>='{start_date}' AND date_time<='{end_date}' AND
-                st_code = '{nearest_station.code}'
+                st_id = '{nearest_station.id}'
                 ORDER BY date_time
                 """
             )
@@ -932,10 +911,12 @@ class ObservationParquetReader(ObservationDatasetReader):
             )
         # Handle List of Points Query
         elif self.location_input.type == LocationInputType.LIST_OF_POINT:
-            points = self.location_input.points
-            nearest_station_ids = (
-                self._get_nearest_stations_from_postgis(points)
-            )
+            nearest_stations = self.get_nearest_stations()
+            if (
+                nearest_stations is None or
+                self._get_count(nearest_stations) == 0
+            ):
+                raise ValueError("No nearest station found!")
 
             self.query = (
                 f"""
@@ -947,8 +928,8 @@ class ObservationParquetReader(ObservationDatasetReader):
                     hive_partitioning=true)
                 WHERE year>={start_date.year} AND year<={end_date.year} AND
                 date_time>='{start_date}' AND date_time<='{end_date}' AND
-                st_code IN (
-                    {", ".join(f"'{s}'" for s in nearest_station_ids)})
+                st_id IN (
+                    {", ".join(f"'{s.id}'" for s in nearest_stations)})
                 ORDER BY date_time
                 """
             )
