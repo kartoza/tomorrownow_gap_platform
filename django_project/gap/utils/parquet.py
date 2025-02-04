@@ -42,12 +42,7 @@ class ParquetConverter:
 
     STATION_JOIN_KEY = 'st_id'
     WEATHER_FIELDS = {
-        'date': (
-            TruncDate('date_time')
-        ),
-        'time': (
-            TruncTime('date_time')
-        ),
+        'dt': F('date_time'),
         'attr': F('dataset_attribute__attribute__variable_name'),
         'st_id': F('station__id'),
         'year': (
@@ -299,6 +294,8 @@ class ParquetConverter:
             values='value'
         ).reset_index()
         print(f'Year {year} after pivot total_count: {df.shape[0]}')
+        # rename date time column
+        df = df.rename(columns={'dt': 'date_time'})
 
         # add missing attributes
         missing_cols = []
@@ -364,12 +361,7 @@ class WindborneParquetConverter(ParquetConverter):
 
     STATION_JOIN_KEY = 'st_hist_id'
     WEATHER_FIELDS = {
-        'date': (
-            TruncDate('date_time')
-        ),
-        'time': (
-            TruncTime('date_time')
-        ),
+        'dt': F('date_time'),
         'attr': F('dataset_attribute__attribute__variable_name'),
         'st_id': F('station__id'),
         'st_hist_id': F('station_history__id'),
