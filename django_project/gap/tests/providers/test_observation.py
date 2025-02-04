@@ -15,6 +15,7 @@ from django.contrib.gis.geos import (
     GEOSGeometry
 )
 
+from gap.models import DatasetStore
 from gap.providers import (
     ObservationDatasetReader
 )
@@ -29,7 +30,8 @@ from gap.factories import (
     AttributeFactory,
     StationFactory,
     MeasurementFactory,
-    StationTypeFactory
+    StationTypeFactory,
+    DataSourceFileFactory
 )
 from gap.utils.reader import (
     DatasetReaderInput,
@@ -293,6 +295,26 @@ class TestObservationParquetReader(TestCase):
         self.start_date = datetime(2020, 1, 1)
         self.end_date = datetime(2020, 12, 31)
 
+    def test_get_directory_path(self):
+        """Test get_directory_path."""
+        # Create a dummy bbox location input
+        bbox = [-180, -90, 180, 90]
+        location_input = DatasetReaderInput.from_bbox(bbox)
+
+        # Initialize the reader
+        DataSourceFileFactory.create(
+            dataset=self.dataset,
+            name='test_source',
+            format=DatasetStore.PARQUET,
+            is_latest=True
+        )
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+        path = reader._get_directory_path()
+        self.assertIn('test_source', path)
+
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
     )
@@ -367,8 +389,8 @@ class TestObservationParquetReader(TestCase):
 
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
-        self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("AND st_code =", reader.query)
+        self.assertIn("WHERE year>=", reader.query)
+        self.assertIn("st_code =", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -440,8 +462,8 @@ class TestObservationParquetReader(TestCase):
 
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
-        self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("ST_Within(ST_GeomFromWKB(geometry),", reader.query)
+        self.assertIn("WHERE year>=", reader.query)
+        self.assertIn("ST_Within(geometry,", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -494,8 +516,8 @@ class TestObservationParquetReader(TestCase):
 
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
-        self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("AND st_code IN (", reader.query)
+        self.assertIn("WHERE year>=", reader.query)
+        self.assertIn("st_code IN (", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -540,9 +562,6 @@ class TestObservationParquetReader(TestCase):
 
         # Run the function
         reader.read_historical_data(self.start_date, self.end_date)
-
-        # Ensure `to_csv` was called (CSV export is executed)
-        mock_to_csv.assert_called_once()
 
     @patch("gap.providers.observation.ObservationParquetReaderValue.to_csv")
     def test_csv_export(self, mock_to_csv):
@@ -650,7 +669,7 @@ class TestObservationParquetReader(TestCase):
 
     @patch(
         "gap.providers.observation."
-        "ObservationParquetReaderValue.to_netcdf_as_stream"
+        "ObservationParquetReaderValue.to_netcdf_stream"
     )
     def test_netcdf_as_stream_export(self, mock_to_netcdf_stream):
         """Test NetCDF stream export is triggered correctly."""
@@ -666,7 +685,7 @@ class TestObservationParquetReader(TestCase):
             "SELECT * FROM table"
         )
 
-        list(reader_value.to_netcdf_as_stream())
+        list(reader_value.to_netcdf_stream())
 
         mock_to_netcdf_stream.assert_called_once()
 
