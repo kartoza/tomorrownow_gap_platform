@@ -15,6 +15,7 @@ from django.contrib.gis.geos import (
     GEOSGeometry
 )
 
+from gap.models import DatasetStore
 from gap.providers import (
     ObservationDatasetReader
 )
@@ -29,7 +30,8 @@ from gap.factories import (
     AttributeFactory,
     StationFactory,
     MeasurementFactory,
-    StationTypeFactory
+    StationTypeFactory,
+    DataSourceFileFactory
 )
 from gap.utils.reader import (
     DatasetReaderInput,
@@ -292,6 +294,26 @@ class TestObservationParquetReader(TestCase):
 
         self.start_date = datetime(2020, 1, 1)
         self.end_date = datetime(2020, 12, 31)
+
+    def test_get_directory_path(self):
+        """Test get_directory_path."""
+        # Create a dummy bbox location input
+        bbox = [-180, -90, 180, 90]
+        location_input = DatasetReaderInput.from_bbox(bbox)
+
+        # Initialize the reader
+        data_source = DataSourceFileFactory.create(
+            dataset=self.dataset,
+            name='test_source',
+            format=DatasetStore.PARQUET,
+            is_latest=True
+        )
+        reader = ObservationParquetReader(
+            self.dataset, [self.dataset_attr], location_input,
+            self.start_date, self.end_date
+        )
+        path = reader._get_directory_path()
+        self.assertIn('test_source', path)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
