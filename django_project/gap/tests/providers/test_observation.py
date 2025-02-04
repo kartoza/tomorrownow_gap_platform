@@ -302,7 +302,7 @@ class TestObservationParquetReader(TestCase):
         location_input = DatasetReaderInput.from_bbox(bbox)
 
         # Initialize the reader
-        data_source = DataSourceFileFactory.create(
+        DataSourceFileFactory.create(
             dataset=self.dataset,
             name='test_source',
             format=DatasetStore.PARQUET,

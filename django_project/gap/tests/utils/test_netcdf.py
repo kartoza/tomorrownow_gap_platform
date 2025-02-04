@@ -18,7 +18,7 @@ from django.contrib.gis.geos import (
 )
 from unittest.mock import Mock, MagicMock, patch
 
-from gap.models import Provider, Dataset, DatasetAttribute, Preferences
+from gap.models import Provider, Dataset, DatasetAttribute
 from gap.utils.reader import (
     DatasetTimelineValue,
     DatasetReaderValue,
