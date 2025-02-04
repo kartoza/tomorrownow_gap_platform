@@ -650,7 +650,7 @@ class TestObservationParquetReader(TestCase):
 
     @patch(
         "gap.providers.observation."
-        "ObservationParquetReaderValue.to_netcdf_as_stream"
+        "ObservationParquetReaderValue.to_netcdf_stream"
     )
     def test_netcdf_as_stream_export(self, mock_to_netcdf_stream):
         """Test NetCDF stream export is triggered correctly."""
@@ -666,7 +666,7 @@ class TestObservationParquetReader(TestCase):
             "SELECT * FROM table"
         )
 
-        list(reader_value.to_netcdf_as_stream())
+        list(reader_value.to_netcdf_stream())
 
         mock_to_netcdf_stream.assert_called_once()
 

@@ -638,7 +638,7 @@ class ObservationParquetReaderValue(DatasetReaderValue):
 
         return output
 
-    def to_netcdf_as_stream(self, suffix='.nc'):
+    def to_netcdf_stream(self, suffix='.nc'):
         """Generate NetCDF bytes stream.
 
         :param suffix: File extension, defaults to '.nc'
