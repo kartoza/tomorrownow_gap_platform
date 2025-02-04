@@ -367,8 +367,8 @@ class TestObservationParquetReader(TestCase):
 
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
-        self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("AND st_code =", reader.query)
+        self.assertIn("WHERE year>=", reader.query)
+        self.assertIn("st_code =", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -440,8 +440,8 @@ class TestObservationParquetReader(TestCase):
 
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
-        self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("ST_Within(ST_GeomFromWKB(geometry),", reader.query)
+        self.assertIn("WHERE year>=", reader.query)
+        self.assertIn("ST_Within(geometry,", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"
@@ -494,8 +494,8 @@ class TestObservationParquetReader(TestCase):
 
         # Assert query is generated correctly
         self.assertIn("FROM read_parquet(", reader.query)
-        self.assertIn("WHERE year >=", reader.query)
-        self.assertIn("AND st_code IN (", reader.query)
+        self.assertIn("WHERE year>=", reader.query)
+        self.assertIn("st_code IN (", reader.query)
 
     @patch(
         "gap.providers.observation.ObservationParquetReader._get_connection"

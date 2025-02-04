@@ -793,7 +793,11 @@ class ObservationParquetReader(ObservationDatasetReader):
                 "No valid DataSourceFile found for this dataset."
             )
 
-        return f"s3://{self.s3['AWS_BUCKET_NAME']}/{data_source.name}/"
+        return (
+            f"s3://{self.s3['AWS_BUCKET_NAME']}/"
+            f"{self.s3['AWS_DIR_PREFIX']}/"
+            f"{data_source.name}/"
+        )
 
     def _get_connection(self):
         duckdb_threads = Preferences.load().duckdb_threads_num
@@ -850,26 +854,28 @@ class ObservationParquetReader(ObservationDatasetReader):
         s3_path = self._get_directory_path()
 
         # Determine if dataset has time column
-        time_column = "time," if self.has_time_column else ""
+        time_column = (
+            "strftime(date_time, '%H:%M:%S') as time," if
+            self.has_time_column else ""
+        )
         self.query = None
         # Handle BBOX Query
         if self.location_input.type == LocationInputType.BBOX:
             points = self.location_input.points
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id,
                 {attributes}
                 FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    '{s3_path}year=*/*.parquet',
                     hive_partitioning=true)
-                WHERE year>={start_date.year} AND month>={start_date.month} AND
-                day>={start_date.day} AND
-                year<={end_date.year} AND month<={end_date.month} AND
-                day<={end_date.day} AND
-                ST_Within(ST_GeomFromWKB(geometry), ST_MakeEnvelope(
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                ST_Within(geometry, ST_MakeEnvelope(
                 {points[0].x}, {points[0].y}, {points[1].x}, {points[1].y}))
-                ORDER BY date
+                ORDER BY date_time
                 """
             )
 
@@ -890,16 +896,16 @@ class ObservationParquetReader(ObservationDatasetReader):
             # **Step 2: Use the nearest station ID in the DuckDB query**
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id, {attributes}
                 FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    '{s3_path}year=*/*.parquet',
                     hive_partitioning=true)
-                WHERE year >= {start_date.year} AND year <= {end_date.year}
-                AND month >= {start_date.month} AND month <= {end_date.month}
-                AND day >= {start_date.day} AND day <= {end_date.day}
-                AND st_code = '{nearest_station.code}'
-                ORDER BY date
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                st_code = '{nearest_station.code}'
+                ORDER BY date_time
                 """
             )
         # Handle Polygon Query
@@ -907,18 +913,17 @@ class ObservationParquetReader(ObservationDatasetReader):
             polygon_wkt = self.location_input.polygon.wkt
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id,
                 {attributes}
                 FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    '{s3_path}year=*/*.parquet',
                     hive_partitioning=true)
-                WHERE year >= {start_date.year} AND year <= {end_date.year}
-                AND month >= {start_date.month} AND month <= {end_date.month}
-                AND day >= {start_date.day} AND day <= {end_date.day}
-                AND ST_Within(ST_GeomFromWKB(geometry),
-                ST_GeomFromText('{polygon_wkt}'))
-                ORDER BY date
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                ST_Within(geometry, ST_GeomFromText('{polygon_wkt}'))
+                ORDER BY date_time
                 """
             )
         # Handle List of Points Query
@@ -930,17 +935,17 @@ class ObservationParquetReader(ObservationDatasetReader):
 
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id, {attributes}
                 FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
+                    '{s3_path}year=*/*.parquet',
                     hive_partitioning=true)
-                WHERE year >= {start_date.year} AND year <= {end_date.year}
-                AND month >= {start_date.month} AND month <= {end_date.month}
-                AND day >= {start_date.day} AND day <= {end_date.day}
-                AND st_code IN (
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                st_code IN (
                     {", ".join(f"'{s}'" for s in nearest_station_ids)})
-                ORDER BY date
+                ORDER BY date_time
                 """
             )
 
