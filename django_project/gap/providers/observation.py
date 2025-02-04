@@ -635,6 +635,8 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         except Exception as e:
             print(f"Error generating CSV: {e}")
             raise
+        finally:
+            self.conn.close()
 
         return output
 
@@ -664,6 +666,7 @@ class ObservationParquetReaderValue(DatasetReaderValue):
             with open(tmp_file.name, 'rb') as f:
                 while chunk := f.read(self.chunk_size_in_bytes):
                     yield chunk
+            self.conn.close()
 
     def to_netcdf(self, suffix=".nc"):
         """Generate NetCDF file and save directly to object storage.
@@ -704,6 +707,8 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         except Exception as e:
             print(f"Error generating NetCDF: {e}")
             raise
+        finally:
+            self.conn.close()
 
         return output
 
