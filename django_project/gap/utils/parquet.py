@@ -13,9 +13,7 @@ import numpy as np
 from datetime import datetime, timezone
 from django.db.models import F
 from django.db.models.functions.datetime import (
-    TruncDate,
     ExtractYear,
-    TruncTime,
     ExtractMonth,
     ExtractDay
 )
