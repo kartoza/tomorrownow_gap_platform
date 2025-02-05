@@ -701,6 +701,10 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         try:
             # Execute the DuckDB query and fetch data
             df = self.conn.sql(self.query).df()
+            # Drop the station_id column
+            df = df.drop(columns=["station_id"])
+            # Set correct index
+            df = df.set_index(["date", "lat", "lon"])
 
             # Convert DataFrame to Xarray Dataset
             ds = xr.Dataset.from_dataframe(df)
