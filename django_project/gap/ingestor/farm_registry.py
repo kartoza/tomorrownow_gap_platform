@@ -98,6 +98,8 @@ class Keys:
 class DCASFarmRegistryIngestor(BaseIngestor):
     """Ingestor for DCAS Farmer Registry data."""
 
+    BATCH_SIZE = 100000
+
     def __init__(self, session: IngestorSession, working_dir='/tmp'):
         """Initialize the ingestor with session and working directory.
 
@@ -113,6 +115,16 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
         # Placeholder for the group created during this session
         self.group = None
+
+        self.farm_list = []
+        self.registry_list = []
+        # Initialize lookup dictionaries
+        self.crop_lookup = {
+            c.name.lower(): c for c in Crop.objects.all()
+        }
+        self.stage_lookup = {
+            s.name.lower(): s for s in CropStageType.objects.all()
+        }
 
     def _extract_zip_file(self):
         """Extract the ZIP file to a temporary directory."""
@@ -134,7 +146,10 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
     def _create_registry_group(self):
         """Create a new FarmRegistryGroup."""
+        group_name = "farm_registry_" + \
+            datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')
         self.group = self.group_model.objects.create(
+            name=group_name,
             date_time=datetime.now(timezone.utc),
             is_latest=True
         )
@@ -153,51 +168,110 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         logger.error(f"Invalid date format: {date_str}")
         return None  # Return None for invalid dates
 
+    def _bulk_insert_farms_and_registries(self):
+        """Bulk insert Farms first, then FarmRegistry."""
+        if not self.farm_list:
+            return
+
+        try:
+            with transaction.atomic():  # Ensure database consistency
+                # Step 1: Bulk insert farms and retrieve saved instances
+                Farm.objects.bulk_create(
+                    [Farm(**data) for data in self.farm_list],
+                    ignore_conflicts=True
+                )
+
+                # Step 2: Fetch inserted farms with primary keys
+                farm_map = {
+                    farm.unique_id: farm
+                    for farm in Farm.objects.filter(
+                        unique_id__in=[
+                            data["unique_id"] for data in self.farm_list
+                        ]
+                    )
+                }
+
+                # Step 3: Prepare FarmRegistry objects using mapped farms
+                registries = []
+                for data in self.registry_list:
+                    farm_instance = farm_map.get(data["farm_unique_id"])
+                    if not farm_instance:
+                        continue  # Skip if farm does not exist
+
+                    registries.append(FarmRegistry(
+                        group=data["group"],
+                        farm=farm_instance,
+                        crop=data["crop"],
+                        crop_stage_type=data["crop_stage_type"],
+                        planting_date=data["planting_date"],
+                    ))
+
+                # Step 4: Bulk insert FarmRegistry only if valid records exist
+                if registries:
+                    FarmRegistry.objects.bulk_create(
+                        registries, ignore_conflicts=True
+                    )
+
+                # Clear batch lists
+                self.farm_list.clear()
+                self.registry_list.clear()
+
+        except Exception as e:
+            logger.error(f"Bulk insert failed due to {e}")
+            self.session.status = IngestorSessionStatus.FAILED
+            self.session.notes = str(e)
+            self.session.save()
 
     def _process_row(self, row):
-        """Process a single row from the input file."""
+        """Process a single row from the CSV file."""
         try:
-            # Parse latitude and longitude to create a geometry point
             latitude = float(row[Keys.FINAL_LATITUDE])
             longitude = float(row[Keys.FINAL_LONGITUDE])
             point = Point(x=longitude, y=latitude, srid=4326)
 
-            # get crop and stage type
             crop_key = Keys.get_crop_key(row)
-            crop_with_stage = row[crop_key].lower().split('_')
-            crop, _ = Crop.objects.get_or_create(
-                name__iexact=crop_with_stage[0],
-                defaults={
-                    'name': crop_with_stage[0].title()
-                }
-            )
-            stage_type = CropStageType.objects.get(
-                Q(name__iexact=crop_with_stage[1]) |
-                Q(alias__iexact=crop_with_stage[1])
-            )
+            crop_name = row[crop_key].lower().split('_')[0]
 
-            # Parse planting date dynamically
-            planting_date_key = Keys.get_planting_date_key(row)
-            planting_date = self._parse_planting_date(row[planting_date_key])
+            crop = self.crop_lookup.get(crop_name)
+            if not crop:
+                crop, _ = Crop.objects.get_or_create(name__iexact=crop_name)
+                self.crop_lookup[crop_name] = crop
 
-            # Get or create the Farm instance
+            stage_type = self.stage_lookup.get(
+                row[crop_key].lower().split('_')[1]
+            )
+            if not stage_type:
+                stage_type = CropStageType.objects.filter(
+                    Q(name__iexact=row[crop_key]) | Q(
+                        alias__iexact=row[crop_key])
+                ).first()
+                self.stage_lookup[row[crop_key]] = stage_type
+
             farmer_id_key = Keys.get_farm_id_key(row)
-            farm, _ = Farm.objects.get_or_create(
-                unique_id=row[farmer_id_key].strip(),
-                defaults={
-                    'geometry': point,
-                    'crop': crop
-                }
+            # Store farm data as a dictionary
+            farm_data = {
+                "unique_id": row[farmer_id_key].strip(),
+                "geometry": point,
+                "crop": crop
+            }
+            self.farm_list.append(farm_data)
+
+            planting_date = self._parse_planting_date(
+                row[Keys.get_planting_date_key(row)]
             )
 
-            # Create the FarmRegistry entry
-            FarmRegistry.objects.update_or_create(
-                group=self.group,
-                farm=farm,
-                crop=crop,
-                crop_stage_type=stage_type,
-                planting_date=planting_date,
-            )
+            registry_data = {
+                "group": self.group,
+                "farm_unique_id": row[farmer_id_key].strip(),
+                "crop": crop,
+                "crop_stage_type": stage_type,
+                "planting_date": planting_date,
+            }
+            self.registry_list.append(registry_data)
+
+            # Batch process every BATCH_SIZE records
+            if len(self.farm_list) >= self.BATCH_SIZE:
+                self._bulk_insert_farms_and_registries()
 
         except Exception as e:
             logger.error(f"Error processing row: {row} - {e}")
@@ -254,5 +328,18 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         dir_path = self._extract_zip_file()
         try:
             self._run(dir_path)
+
+            # Final batch insert (ensures all remaining farms are inserted)
+            if self.farm_list:
+                self._bulk_insert_farms_and_registries()
+
+            # If no errors occurred in `_run()`, mark as SUCCESS
+            if self.session.status != IngestorSessionStatus.FAILED:
+                self.session.status = IngestorSessionStatus.SUCCESS
+        except Exception as e:
+            self.session.status = IngestorSessionStatus.FAILED
+            self.session.notes = str(e)
         finally:
             shutil.rmtree(dir_path)
+            self.session.end_at = datetime.now(timezone.utc)
+            self.session.save()
