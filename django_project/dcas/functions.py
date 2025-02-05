@@ -151,7 +151,7 @@ def get_last_message_date(
     """
     # Read historical messages
     historical_data = read_grid_crop_data(
-        historical_parquet_path, [], [crop_id], []
+        historical_parquet_path, [], [crop_id],
     )
 
     # Filter messages for the given farm, crop, and message code
@@ -195,7 +195,8 @@ def filter_messages_by_weeks(
     print("Available columns in df:", df.columns)  # Debugging line
 
     if 'farm_id' not in df.columns:
-        raise KeyError("Column 'farm_id' is missing in the DataFrame!")
+        df["farm_id"] = df["grid_id"]
+        # id' is missing in the DataFrame!")
     min_allowed_date = (
         pd.Timestamp.now() - pd.Timedelta(weeks=weeks_constraint)
     )
