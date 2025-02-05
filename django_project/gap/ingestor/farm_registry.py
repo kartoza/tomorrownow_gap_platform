@@ -118,7 +118,13 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
         self.farm_list = []
         self.registry_list = []
-
+        # Initialize lookup dictionaries
+        self.crop_lookup = {
+            c.name.lower(): c for c in Crop.objects.all()
+        }
+        self.stage_lookup = {
+            s.name.lower(): s for s in CropStageType.objects.all()
+        }
 
     def _extract_zip_file(self):
         """Extract the ZIP file to a temporary directory."""
@@ -319,14 +325,6 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         """Run the ingestion process."""
         if not self.session.file:
             raise FileNotFoundException("No file found for ingestion.")
-        # Preload crop & stage types
-        self.crop_lookup = {
-            c.name.lower(): c for c in Crop.objects.all()
-        }
-        self.stage_lookup = {
-            s.name.lower(): s for s in CropStageType.objects.all()
-        }
-
         dir_path = self._extract_zip_file()
         try:
             self._run(dir_path)
