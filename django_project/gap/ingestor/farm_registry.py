@@ -168,14 +168,14 @@ class DCASFarmRegistryIngestor(BaseIngestor):
             return
 
         try:
-            with transaction.atomic():  # Ensures independent transaction
-                # Step 1: Bulk insert farms
+            with transaction.atomic():  # Ensure database consistency
+                # Step 1: Bulk insert farms and retrieve saved instances
                 Farm.objects.bulk_create(
                     [Farm(**data) for data in self.farm_list],
                     ignore_conflicts=True
                 )
 
-                # Step 2: Retrieve all inserted farms and map them
+                # Step 2: Fetch inserted farms with primary keys
                 farm_map = {
                     farm.unique_id: farm
                     for farm in Farm.objects.filter(
@@ -185,23 +185,26 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                     )
                 }
 
-                # Step 3: Prepare FarmRegistry objects with mapped farms
+                # Step 3: Prepare FarmRegistry objects using mapped farms
                 registries = []
                 for data in self.registry_list:
                     farm_instance = farm_map.get(data["farm_unique_id"])
-                    if farm_instance:
-                        registries.append(FarmRegistry(
-                            group=data["group"],
-                            farm=farm_instance,
-                            crop=data["crop"],
-                            crop_stage_type=data["crop_stage_type"],
-                            planting_date=data["planting_date"],
-                        ))
+                    if not farm_instance:
+                        continue  # Skip if farm does not exist
+
+                    registries.append(FarmRegistry(
+                        group=data["group"],
+                        farm=farm_instance,
+                        crop=data["crop"],
+                        crop_stage_type=data["crop_stage_type"],
+                        planting_date=data["planting_date"],
+                    ))
 
                 # Step 4: Bulk insert FarmRegistry only if valid records exist
                 if registries:
                     FarmRegistry.objects.bulk_create(
-                        registries, ignore_conflicts=True)
+                        registries, ignore_conflicts=True
+                    )
 
                 # Clear batch lists
                 self.farm_list.clear()
@@ -209,6 +212,9 @@ class DCASFarmRegistryIngestor(BaseIngestor):
 
         except Exception as e:
             logger.error(f"Bulk insert failed due to {e}")
+            self.session.status = IngestorSessionStatus.FAILED
+            self.session.notes = str(e)
+            self.session.save()
 
     def _process_row(self, row):
         """Process a single row from the CSV file."""
@@ -225,7 +231,9 @@ class DCASFarmRegistryIngestor(BaseIngestor):
                 crop, _ = Crop.objects.get_or_create(name__iexact=crop_name)
                 self.crop_lookup[crop_name] = crop
 
-            stage_type = self.stage_lookup.get(row[crop_key])
+            stage_type = self.stage_lookup.get(
+                row[crop_key].lower().split('_')[1]
+            )
             if not stage_type:
                 stage_type = CropStageType.objects.filter(
                     Q(name__iexact=row[crop_key]) | Q(
@@ -322,9 +330,18 @@ class DCASFarmRegistryIngestor(BaseIngestor):
         dir_path = self._extract_zip_file()
         try:
             self._run(dir_path)
+
+            # Final batch insert (ensures all remaining farms are inserted)
+            if self.farm_list:
+                self._bulk_insert_farms_and_registries()
+
+            # If no errors occurred in `_run()`, mark as SUCCESS
+            if self.session.status != IngestorSessionStatus.FAILED:
+                self.session.status = IngestorSessionStatus.SUCCESS
+        except Exception as e:
+            self.session.status = IngestorSessionStatus.FAILED
+            self.session.notes = str(e)
         finally:
             shutil.rmtree(dir_path)
-
-        # Final batch insert if records are left
-        if len(self.farm_list) >= self.BATCH_SIZE:
-            self._bulk_insert_farms_and_registries()
+            self.session.end_at = datetime.now(timezone.utc)
+            self.session.save()

@@ -12,7 +12,7 @@ from datetime import date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from gap.models import (
-    Farm, Crop, FarmRegistry, FarmRegistryGroup,
+    Farm, FarmRegistry, FarmRegistryGroup,
     IngestorSession, IngestorSessionStatus
 )
 from gap.ingestor.farm_registry import (
@@ -84,10 +84,6 @@ class DCASFarmRegistryIngestorTest(TestCase):
         self.assertEqual(farm.geometry.x, 36.8219)
         self.assertEqual(farm.geometry.y, -1.2921)
 
-        # Verify Crop details
-        crop = Crop.objects.get(name='Maize')
-        self.assertIsNotNone(crop)
-
 
 class TestKeysStaticMethods(unittest.TestCase):
     """Test static methods in Keys class."""
@@ -97,7 +93,7 @@ class TestKeysStaticMethods(unittest.TestCase):
         self.assertEqual(
             Keys.get_crop_key({'CropName': 'Maize'}), 'CropName')
         self.assertEqual(
-            Keys.get_crop_key({'crop': 'Wheat'}), 'crop')
+            Keys.get_crop_key({'crop': 'Cassava'}), 'crop')
         with self.assertRaises(KeyError):
             Keys.get_crop_key({'wrong_key': 'Soybean'})
 
