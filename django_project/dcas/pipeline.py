@@ -526,8 +526,17 @@ class DCASDataPipeline:
 
     def _append_grid_crop_meta(self, farm_df_meta: pd.DataFrame):
         # load from grid_crop data
-        grid_crop_df_meta = self.data_query.read_grid_data_crop_meta_parquet(
-            self.data_output.grid_crop_data_dir_path
+        grid_crop_df_meta_chunks = (
+            self.data_query.read_grid_data_crop_meta_parquet(
+                self.data_output.grid_crop_data_dir_path
+            )
+        )
+        # Convert iterator to a single DataFrame
+        grid_crop_df_meta = pd.concat(
+            list(
+                grid_crop_df_meta_chunks
+            ),
+            ignore_index=True
         )
 
         # adding new columns:
