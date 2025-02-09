@@ -8,11 +8,12 @@ Tomorrow Now GAP.
 import os
 import logging
 import unittest
+from unittest.mock import patch
 from datetime import date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from gap.models import (
-    Farm, Crop, FarmRegistry, FarmRegistryGroup,
+    Farm, FarmRegistry, FarmRegistryGroup,
     IngestorSession, IngestorSessionStatus
 )
 from gap.ingestor.farm_registry import (
@@ -46,26 +47,26 @@ class DCASFarmRegistryIngestorTest(TestCase):
             'farm_registry',
             'test_farm_registry.zip'  # Pre-existing ZIP file
         )
-
-    def test_successful_ingestion(self):
-        """Test successful ingestion of farmer registry data."""
         with open(self.test_zip_path, 'rb') as _file:
-            test_file = SimpleUploadedFile(_file.name, _file.read())
+            self.test_file = SimpleUploadedFile(_file.name, _file.read())
 
-        session = IngestorSession.objects.create(
-            file=test_file,
+        self.session = IngestorSession.objects.create(
+            file=self.test_file,
             ingestor_type='Farm Registry',
             trigger_task=False
         )
 
-        ingestor = DCASFarmRegistryIngestor(session)
-        ingestor.run()
+        self.ingestor = DCASFarmRegistryIngestor(self.session)
+
+    def test_successful_ingestion(self):
+        """Test successful ingestion of farmer registry data."""
+        self.ingestor.run()
 
         # Verify session status
-        session.refresh_from_db()
-        print(session.status, session.notes)
+        self.session.refresh_from_db()
+        print(self.session.status, self.session.notes)
         self.assertEqual(
-            session.status,
+            self.session.status,
             IngestorSessionStatus.SUCCESS,
             "Session status should be SUCCESS."
         )
@@ -84,9 +85,47 @@ class DCASFarmRegistryIngestorTest(TestCase):
         self.assertEqual(farm.geometry.x, 36.8219)
         self.assertEqual(farm.geometry.y, -1.2921)
 
-        # Verify Crop details
-        crop = Crop.objects.get(name='Maize')
-        self.assertIsNotNone(crop)
+    def test_bulk_insert_with_empty_farm_list(self):
+        """Test `_bulk_insert_farms_and_registries()`."""
+        # Ensure farm_list is empty
+        self.ingestor.farm_list = []
+
+        # Patch bulk_create to ensure it does NOT get called
+        with patch("gap.models.Farm.objects.bulk_create") as mock_bulk_create:
+            self.ingestor._bulk_insert_farms_and_registries()
+
+            # Assert bulk_create was NEVER called
+            mock_bulk_create.assert_not_called()
+
+    @patch(
+        "gap.ingestor.farm_registry.DCASFarmRegistryIngestor._run",
+        side_effect=Exception("Fatal error")
+    )
+    def test_run_failure_sets_failed_status(self, mock_run):
+        """Ensure session status is marked as FAILED."""
+        self.ingestor.run()
+
+        # Refresh session and check status
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.status, IngestorSessionStatus.FAILED)
+        self.assertIn("Fatal error", self.session.notes)
+
+    def test_stage_lookup_population(self):
+        """Ensure `_process_row` correctly updates `stage_lookup`."""
+        # Create a CropStageType instance
+        row = {
+            'CropName': 'Maize_Mid',
+            'FarmerId': 'F100',
+            'FinalLatitude': '36.8219',
+            'FinalLongitude': '-1.2921',
+            'PlantingDate': '2024-01-01'
+        }
+
+        self.ingestor._process_row(row)
+
+        # Ensure that the crop stage type is added to stage_lookup
+        crop_stage_key = "mid"
+        self.assertIn(crop_stage_key, self.ingestor.stage_lookup)
 
 
 class TestKeysStaticMethods(unittest.TestCase):
@@ -97,7 +136,7 @@ class TestKeysStaticMethods(unittest.TestCase):
         self.assertEqual(
             Keys.get_crop_key({'CropName': 'Maize'}), 'CropName')
         self.assertEqual(
-            Keys.get_crop_key({'crop': 'Wheat'}), 'crop')
+            Keys.get_crop_key({'crop': 'Cassava'}), 'crop')
         with self.assertRaises(KeyError):
             Keys.get_crop_key({'wrong_key': 'Soybean'})
 

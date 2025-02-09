@@ -66,6 +66,7 @@ class PreferencesAdmin(admin.ModelAdmin):
                     'dask_threads_num_api',
                     'api_log_batch_size',
                     'api_use_x_accel_redirect',
+                    'api_use_parquet',
                     'user_file_uploader_config'
                 )
             }

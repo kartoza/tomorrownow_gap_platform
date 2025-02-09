@@ -136,7 +136,7 @@ class TestTioIngestor(TestCase):
             trigger_task=False,
             additional_config={
                 'datasourcefile_id': self.zarr_source.id,
-                'datasourcefile_zarr_exists': True
+                'datasourcefile_exists': True
             }
         )
         self.session.collectors.set([self.collector])
@@ -171,7 +171,7 @@ class TestTioIngestor(TestCase):
             ingestor_type=IngestorType.TOMORROWIO,
             additional_config={
                 'datasourcefile_id': datasource.id,
-                'datasourcefile_zarr_exists': True,
+                'datasourcefile_exists': True,
                 'remove_temp_file': False
             },
             trigger_task=False

@@ -43,6 +43,23 @@ class DatasetStore:
     ZIP_FILE = 'ZIP_FILE'
     PARQUET = 'PARQUET'
 
+    @classmethod
+    def to_ext(cls, store_type: str) -> str:
+        """Get file extension of a store type."""
+        if store_type == DatasetStore.NETCDF:
+            return '.nc'
+        elif store_type == DatasetStore.ZARR:
+            return '.zarr'
+        elif store_type == DatasetStore.ZIP_FILE:
+            return '.zip'
+        elif store_type == DatasetStore.PARQUET:
+            # for partitioned parquet, we don't use file ext
+            return ''
+        else:
+            raise NotImplementedError(
+                f'{store_type} does not have store implementation!'
+            )
+
 
 class DatasetTimeStep:
     """Dataset Time Step."""
