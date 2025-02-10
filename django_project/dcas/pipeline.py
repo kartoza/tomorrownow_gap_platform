@@ -475,8 +475,6 @@ class DCASDataPipeline:
 
     def filter_message_output(self):
         """Filter messages before extracting CSV."""
-        print(f'Applying message: {self.data_output.grid_crop_data_path}')
-
         # Read Parquet file (processed farm crop data)
         df = dd.read_parquet(self.data_output.grid_crop_data_path)
 
@@ -516,8 +514,6 @@ class DCASDataPipeline:
             write_index=False,
             storage_options=self.data_output.s3_options
         )
-
-        print('Finished filtering messages.')
 
     def run(self):
         """Run data pipeline."""
