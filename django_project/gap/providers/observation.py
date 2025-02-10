@@ -9,6 +9,7 @@ import os
 import json
 import duckdb
 import uuid
+import numpy as np
 from _collections_abc import dict_values
 from datetime import datetime
 import pandas as pd
@@ -576,6 +577,25 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         """Get DuckDB Connection."""
         return self._val
 
+    def to_json(self):
+        """Generate json."""
+        output = {
+            'geometry': json.loads(self.location_input.geometry.json),
+        }
+        # Convert query results to a DataFrame
+        df = self.conn.sql(self.query).df()
+        # Combine date and time columns
+        df['datetime'] = pd.to_datetime(
+            df['date'].dt.strftime('%Y-%m-%d') + ' ' + df['time']
+        )
+        df = df.drop(columns=['date', 'time', 'lat', 'lon'])
+        # Replace NaN with None
+        df = df.replace({np.nan: None})
+        output['data'] = df.to_dict(orient="records")
+        # TODO: the current structure is not consistent with others
+        self.conn.close()
+        return output
+
     def to_csv_stream(self, suffix='.csv', separator=','):
         """Generate csv bytes stream.
 
@@ -635,10 +655,12 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         except Exception as e:
             print(f"Error generating CSV: {e}")
             raise
+        finally:
+            self.conn.close()
 
         return output
 
-    def to_netcdf_as_stream(self, suffix='.nc'):
+    def to_netcdf_stream(self, suffix='.nc'):
         """Generate NetCDF bytes stream.
 
         :param suffix: File extension, defaults to '.nc'
@@ -658,12 +680,13 @@ class ObservationParquetReaderValue(DatasetReaderValue):
             ds = xr.Dataset.from_dataframe(df)
 
             # Save dataset to NetCDF
-            ds.to_netcdf(tmp_file.name, format='NETCDF4', engine='netcdf4')
+            ds.to_netcdf(tmp_file.name, format='NETCDF4', engine='h5netcdf')
 
             # Stream the file
             with open(tmp_file.name, 'rb') as f:
                 while chunk := f.read(self.chunk_size_in_bytes):
                     yield chunk
+            self.conn.close()
 
     def to_netcdf(self, suffix=".nc"):
         """Generate NetCDF file and save directly to object storage.
@@ -678,6 +701,10 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         try:
             # Execute the DuckDB query and fetch data
             df = self.conn.sql(self.query).df()
+            # Drop the station_id column
+            df = df.drop(columns=["station_id"])
+            # Set correct index
+            df = df.set_index(["date", "lat", "lon"])
 
             # Convert DataFrame to Xarray Dataset
             ds = xr.Dataset.from_dataframe(df)
@@ -686,7 +713,11 @@ class ObservationParquetReaderValue(DatasetReaderValue):
             with tempfile.NamedTemporaryFile(
                 suffix=suffix, delete=True, delete_on_close=False
             ) as tmp_file:
-                ds.to_netcdf(tmp_file.name, format="NETCDF4")
+                ds.to_netcdf(
+                    tmp_file.name,
+                    format="NETCDF4",
+                    engine='h5netcdf'
+                )
 
                 # Upload to S3 (MinIO)
                 s3_storage = storages["gap_products"]
@@ -700,6 +731,8 @@ class ObservationParquetReaderValue(DatasetReaderValue):
         except Exception as e:
             print(f"Error generating NetCDF: {e}")
             raise
+        finally:
+            self.conn.close()
 
         return output
 
@@ -723,6 +756,10 @@ class ObservationParquetReaderValue(DatasetReaderValue):
 
 class ObservationParquetReader(ObservationDatasetReader):
     """Class to read tahmo dataset in GeoParquet."""
+
+    has_month_partition = False
+    has_altitudes = False
+    station_id_key = 'st_id'
 
     def __init__(
             self, dataset: Dataset, attributes: List[DatasetAttribute],
@@ -793,7 +830,11 @@ class ObservationParquetReader(ObservationDatasetReader):
                 "No valid DataSourceFile found for this dataset."
             )
 
-        return f"s3://{self.s3['AWS_BUCKET_NAME']}/{data_source.name}/"
+        return (
+            f"s3://{self.s3['AWS_BUCKET_NAME']}/"
+            f"{self.s3['AWS_DIR_PREFIX']}/"
+            f"{data_source.name}/"
+        )
 
     def _get_connection(self):
         duckdb_threads = Preferences.load().duckdb_threads_num
@@ -817,25 +858,6 @@ class ObservationParquetReader(ObservationDatasetReader):
         conn.load_extension("spatial")
         return conn
 
-    def _get_nearest_stations_from_postgis(self, points):
-        """Find the nearest stations for a list of points using PostGIS."""
-        nearest_stations = []
-
-        for point in points:
-            nearest_station = Station.objects.filter(
-                provider=self.dataset.provider
-            ).annotate(
-                distance=Distance("geometry", point)
-            ).order_by("distance").first()
-
-            if nearest_station:
-                nearest_stations.append(nearest_station.id)
-
-        if not nearest_stations:
-            raise ValueError("No nearest stations found!")
-
-        return nearest_stations
-
     def read_historical_data(self, start_date: datetime, end_date: datetime):
         """Read historical data from dataset.
 
@@ -847,59 +869,61 @@ class ObservationParquetReader(ObservationDatasetReader):
         attributes = ', '.join(
             [a.attribute.variable_name for a in self.attributes]
         )
+        if self.has_altitudes:
+            attributes = 'altitude, ' + attributes
         s3_path = self._get_directory_path()
+        if self.has_month_partition:
+            s3_path += 'year=*/month=*/*.parquet'
+        else:
+            s3_path += 'year=*/*.parquet'
 
         # Determine if dataset has time column
-        time_column = "time," if self.has_time_column else ""
+        time_column = (
+            "strftime(date_time, '%H:%M:%S') as time," if
+            self.has_time_column else ""
+        )
         self.query = None
         # Handle BBOX Query
         if self.location_input.type == LocationInputType.BBOX:
             points = self.location_input.points
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id,
                 {attributes}
-                FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
-                    hive_partitioning=true)
-                WHERE year>={start_date.year} AND month>={start_date.month} AND
-                day>={start_date.day} AND
-                year<={end_date.year} AND month<={end_date.month} AND
-                day<={end_date.day} AND
-                ST_Within(ST_GeomFromWKB(geometry), ST_MakeEnvelope(
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                ST_Within(geometry, ST_MakeEnvelope(
                 {points[0].x}, {points[0].y}, {points[1].x}, {points[1].y}))
-                ORDER BY date
+                ORDER BY date_time
                 """
             )
 
         # Handle Point Query
         elif self.location_input.type == LocationInputType.POINT:
-            query_point = self.location_input.point
-
             # **Step 1: Find the nearest station using PostGIS**
-            nearest_station = Station.objects.filter(
-                provider=self.dataset.provider
-            ).annotate(
-                distance=Distance("geometry", query_point)
-            ).order_by("distance").first()
+            nearest_stations = self.get_nearest_stations()
 
-            if not nearest_station:
+            if (
+                nearest_stations is None or
+                self._get_count(nearest_stations) == 0
+            ):
                 raise ValueError("No nearest station found!")
 
+            nearest_station = nearest_stations[0]
             # **Step 2: Use the nearest station ID in the DuckDB query**
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id, {attributes}
-                FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
-                    hive_partitioning=true)
-                WHERE year >= {start_date.year} AND year <= {end_date.year}
-                AND month >= {start_date.month} AND month <= {end_date.month}
-                AND day >= {start_date.day} AND day <= {end_date.day}
-                AND st_code = '{nearest_station.code}'
-                ORDER BY date
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                {self.station_id_key} = '{nearest_station.id}'
+                ORDER BY date_time
                 """
             )
         # Handle Polygon Query
@@ -907,40 +931,37 @@ class ObservationParquetReader(ObservationDatasetReader):
             polygon_wkt = self.location_input.polygon.wkt
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id,
                 {attributes}
-                FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
-                    hive_partitioning=true)
-                WHERE year >= {start_date.year} AND year <= {end_date.year}
-                AND month >= {start_date.month} AND month <= {end_date.month}
-                AND day >= {start_date.day} AND day <= {end_date.day}
-                AND ST_Within(ST_GeomFromWKB(geometry),
-                ST_GeomFromText('{polygon_wkt}'))
-                ORDER BY date
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                ST_Within(geometry, ST_GeomFromText('{polygon_wkt}'))
+                ORDER BY date_time
                 """
             )
         # Handle List of Points Query
         elif self.location_input.type == LocationInputType.LIST_OF_POINT:
-            points = self.location_input.points
-            nearest_station_ids = (
-                self._get_nearest_stations_from_postgis(points)
-            )
+            nearest_stations = self.get_nearest_stations()
+            if (
+                nearest_stations is None or
+                self._get_count(nearest_stations) == 0
+            ):
+                raise ValueError("No nearest station found!")
 
+            station_ids = ", ".join(f"'{s.id}'" for s in nearest_stations)
             self.query = (
                 f"""
-                SELECT date, {time_column} loc_y as lat, loc_x as lon,
+                SELECT date_time::date as date,
+                {time_column} loc_y as lat, loc_x as lon,
                 st_code as station_id, {attributes}
-                FROM read_parquet(
-                    '{s3_path}country=*/year=*/month=*/*.parquet',
-                    hive_partitioning=true)
-                WHERE year >= {start_date.year} AND year <= {end_date.year}
-                AND month >= {start_date.month} AND month <= {end_date.month}
-                AND day >= {start_date.day} AND day <= {end_date.day}
-                AND st_code IN (
-                    {", ".join(f"'{s}'" for s in nearest_station_ids)})
-                ORDER BY date
+                FROM read_parquet('{s3_path}', hive_partitioning=true)
+                WHERE year>={start_date.year} AND year<={end_date.year} AND
+                date_time>='{start_date}' AND date_time<='{end_date}' AND
+                {self.station_id_key} IN ({station_ids})
+                ORDER BY date_time
                 """
             )
 
@@ -952,8 +973,6 @@ class ObservationParquetReader(ObservationDatasetReader):
             raise ValueError(
                 "Failed to generate SQL query for the given location input."
             )
-
-        self.get_data_values().to_csv()
 
     def get_data_values(self) -> DatasetReaderValue:
         """Fetch data values from dataset.

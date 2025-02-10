@@ -648,7 +648,10 @@ class MeasurementAPI(GAPAPILoggingMixin, APIView):
                 dataset_dict[da.dataset.id].add_attribute(da)
             else:
                 try:
-                    reader = get_reader_from_dataset(da.dataset)
+                    reader = get_reader_from_dataset(
+                        da.dataset,
+                        self._preferences.api_use_parquet
+                    )
                     dataset_dict[da.dataset.id] = reader(
                         da.dataset, [da], location, start_dt, end_dt,
                         altitudes=(min_altitudes, max_altitudes),

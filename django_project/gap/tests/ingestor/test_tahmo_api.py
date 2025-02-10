@@ -207,7 +207,8 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         os.environ[TAHMO_API_PASSWORD_ENV_NAME] = 'password'
         session = IngestorSession.objects.create(
             ingestor_type=self.ingestor_type,
-            trigger_task=False
+            trigger_task=False,
+            trigger_parquet=False
         )
         session.run()
         session.refresh_from_db()
@@ -255,7 +256,8 @@ class TahmoAPIIngestorTest(BaseTestWithPatchResponses, TestCase):
         )
         session = IngestorSession.objects.create(
             ingestor_type=self.ingestor_type,
-            trigger_task=False
+            trigger_task=False,
+            trigger_parquet=False
         )
         session.run()
         session.refresh_from_db()
