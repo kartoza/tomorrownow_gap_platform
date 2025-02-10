@@ -479,14 +479,13 @@ class DCASDataPipeline:
 
         # Read Parquet file (processed farm crop data)
         df = dd.read_parquet(self.data_output.grid_crop_data_path)
-        
+
         if "farm_id" not in df.columns:
-            print("⚠️ WARNING: `farm_id` is missing! Adding placeholder column.")
             df["farm_id"] = df["grid_id"]
-        
+
         df["farm_id"] = df["farm_id"].astype(int)
         df["crop_id"] = df["crop_id"].astype(int)
-        
+
         meta = {
             "farm_id": np.int64,
             "crop_id": np.int64,
@@ -506,9 +505,9 @@ class DCASDataPipeline:
             2,  # Weeks constraint (default: 2 weeks)
             meta=meta
         )
-        
+
         parquet_path = self.data_output._get_directory_path(
-            self.data_output.DCAS_OUTPUT_DIR 
+            self.data_output.DCAS_OUTPUT_DIR
         ) + '/iso_a3=*/year=*/month=*/day=*/*.parquet'
 
         # Save the filtered Parquet file (overwrite previous Parquet)
