@@ -9,7 +9,6 @@ Tomorrow Now GAP.
 # import os
 from mock import patch, MagicMock
 import pandas as pd
-import numpy as np
 import dask.dataframe as dd
 # from django.test import TransactionTestCase
 from sqlalchemy import create_engine
@@ -124,7 +123,6 @@ class DCASPipelineTest(DCASPipelineBaseTest):
     @patch("dask.dataframe.DataFrame.to_parquet")  # Mock to_parquet
     def test_filter_message_output(self, mock_to_parquet, mock_read_parquet):
         """Ensure `df.to_parquet()` is executed for Codecov coverage."""
-
         test_data = {
             "grid_id": [1, 2],
             "crop_id": [100, 200],
